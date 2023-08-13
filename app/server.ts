@@ -1,13 +1,13 @@
-var signUpRouter = require('./routes/signUp');
-var signInRouter = require('./routes/signIn');
-var oauth2Router = require('./routes/oauth2');
+import * as restify from 'restify';
+import signUpRouter from './routes/signUp';
+import signInRouter from './routes/signIn';
+import oauth2Router from './routes/oauth2';
 
-const restify = require('restify');
 const server = restify.createServer();
 
 server.use(restify.plugins.queryParser());
 
-//routes
+// Routes
 signUpRouter.applyRoutes(server);
 signInRouter.applyRoutes(server);
 oauth2Router.applyRoutes(server);
