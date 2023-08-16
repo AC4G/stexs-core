@@ -5,19 +5,26 @@
   "main": "./app/server.ts",
   "type": "commonjs",
   "scripts": {
-    "start": "concurrently \"tsc -w\" \"nodemon ./dist/server.js\""
+    "start": "concurrently \"tsc -w\" \"nodemon ./dist/app/server.js\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/nodemailer": "^6.4.9",
+    "@types/pg": "^8.10.2",
     "@types/restify": "^8.5.7",
+    "dotenv": "^16.3.1",
+    "express-validator": "^7.0.1",
+    "nodemailer": "^6.9.4",
     "nodemon": "^3.0.1",
+    "pg": "^8.11.2",
     "restify": "^11.1.0",
     "restify-errors": "^8.0.2",
     "restify-router": "^0.6.2"
   },
   "devDependencies": {
+    "@types/pg": "^8.10.2",
     "@types/restify": "^8.5.7",
     "concurrently": "^8.2.0",
     "typescript": "^5.1.6"
