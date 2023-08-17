@@ -1,12 +1,49 @@
-import * as restify from 'restify';
-import { Router } from 'restify-router';
+import { 
+    Router, 
+    Request, 
+    Response 
+} from 'express';
 import db from '../database';
 import sendEmail from '../services/emailService';
-import { message, errorMessage } from '../services/responseBuilder';
+import { 
+    message, 
+    errorMessage, 
+    errorMessagesFromValidator 
+} from '../services/messageBuilderService';
+import { body, validationResult } from 'express-validator';
 
-const router = new Router();
+const router = Router();
 
-router.post('/signUp', async (req: restify.Request, res: restify.Response) => {
+router.post('/', [
+    body('username')
+        .notEmpty()
+        .withMessage('USERNAME_REQUIRED: Please provide a username.')
+        .bail()
+        .custom(value => {
+            if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
+                throw new Error('INVALID_USERNAME: Username cannot look like an email address.');
+            }
+
+            return true;
+        }),
+    body('email')
+        .notEmpty()
+        .withMessage('EMAIL_REQUIRED: Please provide an email.')
+        .bail()
+        .isEmail()
+        .withMessage('INVALID_EMAIL: Please enter a valid email address.'),
+    body('password')
+        .notEmpty()
+        .withMessage('PASSWORD_REQUIRED: Please provide an password.')
+        .bail()
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]+$/)
+        .withMessage('INVALID_PASSWORD: Your password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.')
+], async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(errorMessagesFromValidator(errors));
+    }
+
     const { username, password, email } = req.body;
 
     const query = `
@@ -18,23 +55,24 @@ router.post('/signUp', async (req: restify.Request, res: restify.Response) => {
     try {
         const result = await db.query(query, [email, password, { username }]);
 
-        res.send(201, 
+        res.status(201).json( 
             message('Sign-up successful. Check your email for confirmation!', { 
-                input: req.body,
                 output: {
                     userId: result.rows[0].id
                 } 
             })
         );
     } catch (error) {
-        if (error.hint) {
-            return res.send(400,
-                errorMessage('INVALID_INPUT_DATA', error.hint, { input: req.body })
+        const err = error as { hint: string | null; };
+
+        if (err.hint) {
+            return res.status(400).json(
+                errorMessage('INVALID_INPUT_DATA', err.hint)
             );
         }
 
-        return res.send(400, 
-            errorMessage('INVALID_REQUEST', 'Can\'t process the request', { input: req.body })
+        return res.status(400).json( 
+            errorMessage('INVALID_REQUEST', 'Cannot process the request')
         );
     }
 

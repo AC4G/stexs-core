@@ -1,9 +1,8 @@
-import * as restify from 'restify';
-import { Router } from 'restify-router';
-const router = new Router();
+import { Router, Request, Response } from 'express';
+const router = Router();
 
-router.post('/signIn', (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    return next();
+router.post('/signIn', (req: Request, res: Response) => {
+    return res.send({});
 });
 
 export default router;
