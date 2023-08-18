@@ -13,29 +13,12 @@ export function message(
     }
 }
 
-export function errorMessage(
-    code: string, 
-    message: string,
-    data: Record<string, any> = {}
-) {
-    return {
-        error: {
-            code,
-            message,
-            timestamp: new Date().toISOString(),
-            data: {
-                ...data
-            }
-        }
-    }
-}
-
 interface Error {
     code: string;
     message: string;
-    data: {
+    data?: {
         [key: string]: string;
-    } | {};
+    };
 }
 
 interface ErrorResponse extends Error {

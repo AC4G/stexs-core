@@ -7,7 +7,7 @@ import db from '../database';
 import sendEmail from '../services/emailService';
 import { 
     message, 
-    errorMessage, 
+    errorMessages, 
     errorMessagesFromValidator 
 } from '../services/messageBuilderService';
 import { body, validationResult } from 'express-validator';
@@ -19,9 +19,11 @@ router.post('/', [
         .notEmpty()
         .withMessage('USERNAME_REQUIRED: Please provide a username.')
         .bail()
+        .isLength({ max: 100 })
+        .withMessage('INVALID_USERNAME: Username can be maximum 100 characters long.')
         .custom(value => {
             if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
-                throw new Error('INVALID_USERNAME: Username cannot look like an email address.');
+                throw new Error('INVALID_USERNAME: Username cannot look like an email address!');
             }
 
             return true;
@@ -37,7 +39,7 @@ router.post('/', [
         .withMessage('PASSWORD_REQUIRED: Please provide an password.')
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]+$/)
-        .withMessage('INVALID_PASSWORD: Your password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.')
+        .withMessage('INVALID_PASSWORD: Your password must contain at least one uppercase letter, one lowercase letter, one number, and one special character!')
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -66,13 +68,15 @@ router.post('/', [
         const err = error as { hint: string | null; };
 
         if (err.hint) {
+            const path = err.hint.split(' ').pop()!;
+
             return res.status(400).json(
-                errorMessage('INVALID_INPUT_DATA', err.hint)
+                errorMessages([{ code: 'INVALID_INPUT_DATA', message: err.hint + '.', data: { path } }])
             );
         }
 
         return res.status(400).json( 
-            errorMessage('INVALID_REQUEST', 'Cannot process the request')
+            errorMessages([{ code: 'INVALID_REQUEST', message: 'Cannot process the request' }])
         );
     }
 
