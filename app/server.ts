@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import signUpRouter from './routes/signUp';
 import signInRouter from './routes/signIn';
 import oauth2Router from './routes/oauth2';
-import { PORT } from '../env-config';
+import { SERVER_PORT } from '../env-config';
 
 const server = express();
 
@@ -15,6 +15,6 @@ server.use('/signUp', signUpRouter);
 server.use('/signIn', signInRouter);
 server.use('/oauth2', oauth2Router);
 
-server.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`);
+server.listen(SERVER_PORT, () => {
+    console.log(`Server is listening on port ${SERVER_PORT}`);
 });

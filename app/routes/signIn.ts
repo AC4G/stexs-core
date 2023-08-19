@@ -5,6 +5,7 @@ import {
 } from 'express';
 import db from '../database';
 import { body, validationResult } from 'express-validator';
+import generateAccessToken from '../services/jwtService';
 import { errorMessages, errorMessagesFromValidator } from '../services/messageBuilderService';
 
 const router = Router();
@@ -37,6 +38,14 @@ router.post('/', [
     if (result.rowCount === 0) {
         return res.status(400).json(errorMessages([{ code: 'INVALID_CREDENTIALS', message: 'Invalid credentials. Please check your username/email and password.' }]));
     }
+
+    const user = result.rows[0];
+
+    const body = generateAccessToken({
+        sub: user.id
+    });
+
+    return res.send(body);
 });
 
 export default router;
