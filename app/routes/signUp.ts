@@ -21,7 +21,7 @@ router.post('/', [
         .bail()
         .isLength({ max: 100 })
         .withMessage('INVALID_USERNAME: Username can be maximum 100 characters long.')
-        .custom(value => {
+        .custom((value: string) => {
             if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
                 throw new Error('INVALID_USERNAME: Username cannot look like an email address!');
             }
@@ -55,7 +55,11 @@ router.post('/', [
     `;
 
     try {
-        const result = await db.query(query, [email, password, { username }]);
+        const result = await db.query(query, [
+            email, 
+            password, 
+            { username }
+        ]);
 
         res.status(201).json( 
             message('Sign-up successful. Check your email for confirmation!', { 
@@ -71,12 +75,19 @@ router.post('/', [
             const path = err.hint.split(' ').pop()!;
 
             return res.status(400).json(
-                errorMessages([{ code: 'INVALID_INPUT_DATA', message: err.hint + '.', data: { path } }])
+                errorMessages([{ 
+                    code: 'INVALID_INPUT_DATA', 
+                    message: err.hint + '.', 
+                    data: { path } 
+                }])
             );
         }
 
         return res.status(400).json( 
-            errorMessages([{ code: 'INVALID_REQUEST', message: 'Cannot process the request' }])
+            errorMessages([{ 
+                code: 'INVALID_REQUEST', 
+                message: 'Cannot process the request' 
+            }])
         );
     }
 
