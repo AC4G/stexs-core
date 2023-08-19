@@ -10,8 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '../database';
 
 export default function generateAccessToken(additionalPayload: any, refreshToken: boolean = true) {
-    const iat = new Date().getTime();
-    const exp = new Date((iat + JWT_EXPIRY_LIMIT)).getTime();
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + JWT_EXPIRY_LIMIT;
 
     if (additionalPayload.grant_type !== 'client_credentials') {
         const deleteQuery = `
