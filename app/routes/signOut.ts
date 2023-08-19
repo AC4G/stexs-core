@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { expressjwt as jwt, Request } from 'express-jwt';
 import { 
     ACCESS_TOKEN_SECRET, 
@@ -17,8 +17,11 @@ router.post('/', [
         issuer: ISSUER,
         algorithms: ['HS256']
      }),
-    function(err, req, res, next){
-        return res.status(err.status).json(errorMessages([{ code: err.code.toUpperCase(), message: err.message }]));
+    function(err: any, req: Request, res: Response, next: NextFunction){
+        return res.status(err.status).json(errorMessages([{ 
+            code: err.code.toUpperCase(), 
+            message: err.message 
+        }]));
     }
 ], async (req: Request, res: Response) => {
     const userId = req.auth.sub;

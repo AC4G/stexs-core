@@ -36,7 +36,10 @@ router.post('/', [
     const result = await db.query(query, [identifier, password]);
 
     if (result.rowCount === 0) {
-        return res.status(400).json(errorMessages([{ code: 'INVALID_CREDENTIALS', message: 'Invalid credentials. Please check your username/email and password.' }]));
+        return res.status(400).json(errorMessages([{ 
+            code: 'INVALID_CREDENTIALS', 
+            message: 'Invalid credentials. Please check your username/email and password.' 
+        }]));
     }
 
     const user = result.rows[0];
@@ -45,7 +48,7 @@ router.post('/', [
         sub: user.id
     });
 
-    return res.send(body);
+    res.send(body);
 });
 
 export default router;
