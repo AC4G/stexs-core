@@ -12,9 +12,8 @@ import db from '../database';
 export default function generateAccessToken(additionalPayload: any, refreshToken: boolean = true) {
     const iat = new Date().getTime();
     const exp = new Date((iat + JWT_EXPIRY_LIMIT)).getTime();
-    
+
     if (additionalPayload.grant_type !== 'client_credentials') {
-        console.log({ here: 'yes' });
         const deleteQuery = `
             DELETE FROM auth.refresh_tokens
             WHERE user_id = $1 AND grant_type = $2
