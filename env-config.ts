@@ -14,3 +14,4 @@ export const REFRESH_TOKEN_SECRET: string = process.env.REFRESH_TOKEN_SECRET!;
 export const ISSUER: string = process.env.ISSUER!;
 export const AUDIENCE: string = process.env.AUDIENCE!;
 export const JWT_EXPIRY_LIMIT: number = parseInt(process.env.JWT_EXPIRY_LIMIT!);
+export const REDIRECT_TO_SIGN_IN: string = process.env.REDIRECT_TO_SIGN_IN!;

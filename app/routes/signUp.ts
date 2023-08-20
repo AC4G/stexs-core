@@ -11,6 +11,8 @@ import {
     errorMessagesFromValidator 
 } from '../services/messageBuilderService';
 import { body, validationResult } from 'express-validator';
+import crypto from 'crypto';
+import { ISSUER } from '../../env-config';
 
 const router = Router();
 
@@ -47,10 +49,17 @@ router.post('/', [
     }
 
     const { username, password, email } = req.body;
+    const token = crypto.randomBytes(Math.ceil(16 / 2)).toString('hex').slice(0, 16);
 
     const query = `
-        INSERT INTO auth.users (email, encrypted_password, raw_user_meta_data)
-        VALUES ($1, $2, $3::jsonb)
+        INSERT INTO auth.users (
+            email, 
+            encrypted_password, 
+            raw_user_meta_data,
+            verification_token,
+            verification_sent_at
+        )
+        VALUES ($1, $2, $3::jsonb, $4, CURRENT_TIMESTAMP)
         RETURNING id;
     `;
 
@@ -58,11 +67,12 @@ router.post('/', [
         const result = await db.query(query, [
             email, 
             password, 
-            { username }
+            { username },
+            token
         ]);
 
         res.status(201).json( 
-            message('Sign-up successful. Check your email for confirmation!', { 
+            message('Sign-up successful. Check your email for an verification link!', { 
                 output: {
                     userId: result.rows[0].id
                 } 
@@ -91,7 +101,7 @@ router.post('/', [
         );
     }
 
-    await sendEmail(email, 'Confirmation Email', null, 'Please confirm your email.');
+    await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify-email?email=' + email + '&token=' + token}`);
 });
 
 export default router;

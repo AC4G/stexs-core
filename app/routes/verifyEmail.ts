@@ -1,0 +1,72 @@
+import { 
+    Router, 
+    Request,
+    Response
+} from 'express';
+import { errorMessages, errorMessagesFromValidator, message } from '../services/messageBuilderService';
+import db from '../database';
+import { check, validationResult } from 'express-validator';
+import { REDIRECT_TO_SIGN_IN } from '../../env-config';
+
+const router = Router();
+
+router.get('/', [
+    check('email')
+        .notEmpty()
+        .withMessage('EMAIL_REQUIRED: Please provide an email')
+        .bail()
+        .isEmail()
+        .withMessage('INVALID_EMAIL: Please enter a valid email address.'),
+    check('token')
+        .notEmpty()
+        .withMessage('TOKEN_REQUIRED: Please provide the verification token from your email.')
+], async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(errorMessagesFromValidator(errors));
+    }
+
+    const signInURL = new URL(REDIRECT_TO_SIGN_IN);
+    const source = 'verify-email';
+
+    signInURL.searchParams.set('source', source);
+
+    const query = `
+        SELECT * FROM auth.users 
+        WHERE email = $1
+    `;
+
+    const result = await db.query(query, [req.query.email]);
+
+    if (result.rowCount === 0 || result.rows[0].verification_token !== req.query.token) {
+        signInURL.searchParams.append('code', 'error');
+        signInURL.searchParams.append('message', 'Provided verification link is invalid.');
+
+        return res.redirect(302, signInURL.toString());
+    }
+
+    if (!result.rows[0].verification_token) {
+        signInURL.searchParams.append('code', 'error');
+        signInURL.searchParams.append('message', 'The email address has already been verified.');
+
+        return res.redirect(302, signInURL.toString());
+    }
+
+    const updateQuery = `
+        UPDATE auth.users
+        SET 
+            verification_token = NULL,
+            verification_sent_at = NULL,
+            email_confirmed_at = NOW()
+        WHERE id = $1;
+    `;
+
+    await db.query(updateQuery, [result.rows[0].id]);
+
+    signInURL.searchParams.append('code', 'success');
+    signInURL.searchParams.append('message', 'Email successfully verified.');
+
+    return res.redirect(302, signInURL.toString());
+});
+
+export default router;
