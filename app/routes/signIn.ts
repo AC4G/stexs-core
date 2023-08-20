@@ -26,7 +26,7 @@ router.post('/', [
     const { identifier, password } = req.body;
 
     const query = `
-        SELECT u.id, p.username
+        SELECT u.id, u.verification_sent_at
         FROM auth.users u
         LEFT JOIN public.profiles p ON u.id = p.user_id
         WHERE (u.email = $1 OR p.username = $1)
@@ -42,10 +42,15 @@ router.post('/', [
         }]));
     }
 
-    const user = result.rows[0];
+    if (result.rows[0].verification_sent_at) {
+        return res.status(400).json(errorMessages([{
+            code: 'EMAIL_NOT_VERIFIED',
+            message: 'Please verify your email before proceeding.'
+        }]));
+    }
 
     const body = generateAccessToken({
-        sub: user.id
+        sub: result.rows[0].id
     });
 
     res.send(body);

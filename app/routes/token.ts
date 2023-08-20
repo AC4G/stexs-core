@@ -1,13 +1,37 @@
-import { Router, Response } from 'express';
-import { Request } from 'express-jwt';
+import { 
+    Router,
+    Response, 
+    NextFunction 
+} from 'express';
 import { errorMessages } from '../services/messageBuilderService';
 import db from '../database';
 import generateAccessToken from '../services/jwtService';
-import { validateJWT } from '../middlewares/jwtValidationMiddleware';
+import { 
+    AUDIENCE, 
+    ISSUER, 
+    REFRESH_TOKEN_SECRET 
+} from '../../env-config';
+import { expressjwt as jwt, Request } from 'express-jwt';
 
 const router = Router();
 
-router.post('/', validateJWT(), async (req: Request, res: Response) => {
+router.post('/', [
+    jwt({ 
+        secret: REFRESH_TOKEN_SECRET, 
+        audience: AUDIENCE,
+        issuer: ISSUER,
+        algorithms: ['HS256'],
+        getToken: (req: Request) => {
+            return req.body.refresh_token || null;
+        }
+    }),
+    function(err: any, req: Request, res: Response, next: NextFunction){
+        return res.status(err.status).json(errorMessages([{ 
+            code: err.code.toUpperCase(), 
+            message: err.message 
+        }]));
+    }
+], async (req: Request, res: Response) => {
     const token = req.auth;
 
     const query = `
