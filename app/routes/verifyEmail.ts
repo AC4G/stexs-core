@@ -3,17 +3,27 @@ import {
     Request,
     Response
 } from 'express';
-import { errorMessages, errorMessagesFromValidator, message } from '../services/messageBuilderService';
+import { 
+    errorMessages, 
+    errorMessagesFromValidator, 
+    message 
+} from '../services/messageBuilderService';
 import db from '../database';
-import { check, validationResult } from 'express-validator';
-import { REDIRECT_TO_SIGN_IN } from '../../env-config';
+import { 
+    body, 
+    check, 
+    validationResult 
+} from 'express-validator';
+import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
+import crypto from 'crypto';
+import sendEmail from '../services/emailService';
 
 const router = Router();
 
 router.get('/', [
     check('email')
         .notEmpty()
-        .withMessage('EMAIL_REQUIRED: Please provide an email')
+        .withMessage('EMAIL_REQUIRED: Please provide an email.')
         .bail()
         .isEmail()
         .withMessage('INVALID_EMAIL: Please enter a valid email address.'),
@@ -32,22 +42,23 @@ router.get('/', [
     signInURL.searchParams.set('source', source);
 
     const query = `
-        SELECT * FROM auth.users 
+        SELECT id, verification_token FROM auth.users 
         WHERE email = $1
     `;
 
     const result = await db.query(query, [req.query.email]);
+    const user = result.rows[0];
 
-    if (result.rowCount === 0 || result.rows[0].verification_token !== req.query.token) {
+    if (result.rowCount === 0 || user.verification_token !== req.query.token) {
         signInURL.searchParams.append('code', 'error');
-        signInURL.searchParams.append('message', 'Provided verification link is invalid.');
+        signInURL.searchParams.append('message', 'Provided verification link is invalid');
 
         return res.redirect(302, signInURL.toString());
     }
 
-    if (!result.rows[0].verification_token) {
+    if (!user.verification_token) {
         signInURL.searchParams.append('code', 'error');
-        signInURL.searchParams.append('message', 'The email address has already been verified.');
+        signInURL.searchParams.append('message', 'Your email has been already verified');
 
         return res.redirect(302, signInURL.toString());
     }
@@ -61,12 +72,65 @@ router.get('/', [
         WHERE id = $1;
     `;
 
-    await db.query(updateQuery, [result.rows[0].id]);
+    await db.query(updateQuery, [user.id]);
 
     signInURL.searchParams.append('code', 'success');
-    signInURL.searchParams.append('message', 'Email successfully verified.');
+    signInURL.searchParams.append('message', 'Email successfully verified');
 
     return res.redirect(302, signInURL.toString());
+});
+
+router.post('/resend', [
+    body('email')
+        .notEmpty()
+        .withMessage('EMAIL_REQUIRED: Please provide an email.')
+        .bail()
+        .isEmail()
+        .withMessage('INVALID_EMAIL: Please provide a valid email address.')
+], async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(errorMessagesFromValidator(errors));
+    }
+
+    const email = req.body.email;
+
+    const query = `
+        SELECT id, email_confirmed_at FROM auth.users
+        WHERE email = $1
+    `;
+
+    const result = await db.query(query, [email]);
+
+    if (result.rowCount === 0) {
+        return res.status(404).json(errorMessages([{ 
+            code: 'EMAIL_NOT_FOUND', 
+            message: 'Email address not found.' 
+        }]));
+    }
+
+    if (result.rows[0].email_confirmed_at) {
+        return res.status(404).json(errorMessages([{ 
+            code: 'EMAIL_ALREADY_VERIFIED', 
+            message: 'Your email has been already verified.' 
+        }]));
+    }
+
+    const token = crypto.randomBytes(Math.ceil(16 / 2)).toString('hex').slice(0, 16);
+
+    const updateQuery = `
+        UPDATE auth.users
+        SET 
+            verification_token = $1,
+            verification_sent_at = NOW()
+        WHERE id = $2;
+    `;
+
+    db.query(updateQuery, [token, result.rows[0].id]);
+
+    await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify-email?email=' + email + '&token=' + token}`);
+
+    res.json(message(`New verification email has been sent to ${email}`));
 });
 
 export default router;

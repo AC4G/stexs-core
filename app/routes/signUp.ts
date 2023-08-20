@@ -35,7 +35,7 @@ router.post('/', [
         .withMessage('EMAIL_REQUIRED: Please provide an email.')
         .bail()
         .isEmail()
-        .withMessage('INVALID_EMAIL: Please enter a valid email address.'),
+        .withMessage('INVALID_EMAIL: Please provide a valid email address.'),
     body('password')
         .notEmpty()
         .withMessage('PASSWORD_REQUIRED: Please provide an password.')
