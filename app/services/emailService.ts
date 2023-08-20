@@ -10,8 +10,8 @@ import {
 async function sendEmail(
     to: string,
     subject: string,
-    html: string | null = null,
-    text: string | null = null,
+    html: string | undefined = undefined,
+    text: string | undefined = undefined,
 ) {
     const transporter = nodemailer.createTransport({
         host: SMTP_HOST,
