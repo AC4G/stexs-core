@@ -13,7 +13,6 @@ const server = express();
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
 
-// Routes
 server.use('/sign-up', signUpRouter);
 server.use('/sign-in', signInRouter);
 server.use('/sign-out', signOutRouter);
@@ -24,3 +23,5 @@ server.use('/verify-email', verifyEmailRouter);
 server.listen(SERVER_PORT, () => {
     console.log(`Server is listening on port ${SERVER_PORT}`);
 });
+
+export default server;
