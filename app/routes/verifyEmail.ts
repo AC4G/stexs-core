@@ -17,19 +17,26 @@ import {
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
 import crypto from 'crypto';
 import sendEmail from '../services/emailService';
+import { 
+    EMAIL_ALREADY_VERIFIED,
+    EMAIL_NOT_FOUND,
+    EMAIL_REQUIRED, 
+    INVALID_EMAIL, 
+    TOKEN_REQUIRED 
+} from '../constants/errors';
 
 const router = Router();
 
 router.get('/', [
     query('email')
         .notEmpty()
-        .withMessage('EMAIL_REQUIRED: Please provide an email.')
+        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage('INVALID_EMAIL: Please provide a valid email address.'),
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.message),
     query('token')
         .notEmpty()
-        .withMessage('TOKEN_REQUIRED: Please provide the verification token from your email.')
+        .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message)
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -42,14 +49,14 @@ router.get('/', [
     signInURL.searchParams.set('source', source);
 
     const query = `
-        SELECT id, verification_token FROM auth.users 
+        SELECT id, verification_token, email_verified_ FROM auth.users 
         WHERE email = $1
     `;
 
     const result = await db.query(query, [req.query.email]);
     const user = result.rows[0];
 
-    if (user?.verification_token === null) {
+    if (user?.email_verified_at) {
         signInURL.searchParams.append('code', 'error');
         signInURL.searchParams.append('message', 'Your email has been already verified');
 
@@ -83,10 +90,10 @@ router.get('/', [
 router.post('/resend', [
     body('email')
         .notEmpty()
-        .withMessage('EMAIL_REQUIRED: Please provide an email.')
+        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage('INVALID_EMAIL: Please provide a valid email address.')
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.message)
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -104,15 +111,15 @@ router.post('/resend', [
 
     if (result.rowCount === 0) {
         return res.status(404).json(errorMessages([{ 
-            code: 'EMAIL_NOT_FOUND', 
-            message: 'Email address not found.' 
+            code: EMAIL_NOT_FOUND.code, 
+            message: EMAIL_NOT_FOUND.message 
         }]));
     }
 
     if (result.rows[0].email_confirmed_at) {
         return res.status(400).json(errorMessages([{ 
-            code: 'EMAIL_ALREADY_VERIFIED', 
-            message: 'Your email has been already verified.' 
+            code: EMAIL_ALREADY_VERIFIED.code, 
+            message: EMAIL_ALREADY_VERIFIED.message 
         }]));
     }
 

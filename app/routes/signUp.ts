@@ -13,35 +13,45 @@ import {
 import { body, validationResult } from 'express-validator';
 import crypto from 'crypto';
 import { ISSUER } from '../../env-config';
+import { 
+    EMAIL_REQUIRED, 
+    INVALID_EMAIL, 
+    INVALID_INPUT_DATA, 
+    INVALID_PASSWORD, 
+    INVALID_REQUEST, 
+    INVALID_USERNAME, 
+    PASSWORD_REQUIRED, 
+    USERNAME_REQUIRED 
+} from '../constants/errors';
 
 const router = Router();
 
 router.post('/', [
     body('username')
         .notEmpty()
-        .withMessage('USERNAME_REQUIRED: Please provide a username.')
+        .withMessage(USERNAME_REQUIRED.code + ': ' +  USERNAME_REQUIRED.message)
         .bail()
         .isLength({ max: 100 })
-        .withMessage('INVALID_USERNAME: Username can be maximum 100 characters long.')
+        .withMessage(INVALID_USERNAME + ': ' + INVALID_USERNAME.messages[0])
         .custom((value: string) => {
             if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
-                throw new Error('INVALID_USERNAME: Username cannot look like an email address!');
+                throw new Error(INVALID_USERNAME + ': ' + INVALID_USERNAME.messages[1]);
             }
 
             return true;
         }),
     body('email')
         .notEmpty()
-        .withMessage('EMAIL_REQUIRED: Please provide an email.')
+        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage('INVALID_EMAIL: Please provide a valid email address.'),
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.message),
     body('password')
         .notEmpty()
-        .withMessage('PASSWORD_REQUIRED: Please provide an password.')
+        .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]+$/)
-        .withMessage('INVALID_PASSWORD: Your password must contain at least one uppercase letter, one lowercase letter, one number, and one special character!')
+        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message)
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -86,7 +96,7 @@ router.post('/', [
 
             return res.status(400).json(
                 errorMessages([{ 
-                    code: 'INVALID_INPUT_DATA', 
+                    code: INVALID_INPUT_DATA.code, 
                     message: err.hint + '.', 
                     data: { path } 
                 }])
@@ -95,8 +105,8 @@ router.post('/', [
 
         return res.status(400).json( 
             errorMessages([{ 
-                code: 'INVALID_REQUEST', 
-                message: 'Cannot process the request' 
+                code: INVALID_REQUEST.code, 
+                message: INVALID_REQUEST.message
             }])
         );
     }

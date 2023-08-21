@@ -1,6 +1,6 @@
 const mockQuery = jest.fn();
 
-jest.mock('../app/database', () => {
+jest.mock('../../app/database', () => {
     return {
         __esModule: true,
         default: {
@@ -10,8 +10,15 @@ jest.mock('../app/database', () => {
 });
 
 import request from 'supertest';
-import server from '../app/server';
-import { REDIRECT_TO_SIGN_IN } from '../env-config';
+import server from '../../app/server';
+import { REDIRECT_TO_SIGN_IN } from '../../env-config';
+import { 
+  EMAIL_ALREADY_VERIFIED, 
+  EMAIL_NOT_FOUND, 
+  EMAIL_REQUIRED, 
+  INVALID_EMAIL, 
+  TOKEN_REQUIRED 
+} from '../../app/constants/errors';
 
 describe('Email Verification Routes', () => {
   it('should return 400 with missing email', async () => {
@@ -22,8 +29,8 @@ describe('Email Verification Routes', () => {
     expect(response.status).toBe(400);
     expect(response.body.errors).toEqual([
       {
-          code: 'EMAIL_REQUIRED',
-          message: 'Please provide an email.',
+          code: EMAIL_REQUIRED.code,
+          message: EMAIL_REQUIRED.message,
           timestamp: expect.any(String),
           data: {
               path: 'email',
@@ -41,8 +48,8 @@ describe('Email Verification Routes', () => {
     expect(response.status).toBe(400);
     expect(response.body.errors).toEqual([
       {
-          code: 'INVALID_EMAIL',
-          message: 'Please provide a valid email address.',
+          code: INVALID_EMAIL.code,
+          message: INVALID_EMAIL.message,
           timestamp: expect.any(String),
           data: {
               path: 'email',
@@ -60,8 +67,8 @@ describe('Email Verification Routes', () => {
     expect(response.status).toBe(400);
     expect(response.body.errors).toEqual([
       {
-          code: 'TOKEN_REQUIRED',
-          message: 'Please provide the verification token from your email.',
+          code: TOKEN_REQUIRED.code,
+          message: TOKEN_REQUIRED.message,
           timestamp: expect.any(String),
           data: {
               path: 'token',
@@ -155,8 +162,8 @@ describe('Email Verification Routes', () => {
       expect(response.status).toBe(400);
       expect(response.body.errors).toEqual([
         {
-            code: 'EMAIL_REQUIRED',
-            message: 'Please provide an email.',
+            code: EMAIL_REQUIRED.code,
+            message: EMAIL_REQUIRED.message,
             timestamp: expect.any(String),
             data: {
                 path: 'email',
@@ -174,8 +181,8 @@ describe('Email Verification Routes', () => {
     expect(response.status).toBe(400);
     expect(response.body.errors).toEqual([
       {
-          code: 'INVALID_EMAIL',
-          message: 'Please provide a valid email address.',
+          code: INVALID_EMAIL.code,
+          message: INVALID_EMAIL.message,
           timestamp: expect.any(String),
           data: {
               path: 'email',
@@ -198,8 +205,8 @@ describe('Email Verification Routes', () => {
       expect(response.status).toBe(404);
       expect(response.body.errors).toEqual([
         {
-            code: 'EMAIL_NOT_FOUND',
-            message: 'Email address not found.',
+            code: EMAIL_NOT_FOUND.code,
+            message: EMAIL_NOT_FOUND.message,
             timestamp: expect.any(String),
             data: {}
         }
@@ -224,8 +231,8 @@ describe('Email Verification Routes', () => {
     expect(response.status).toBe(400);
     expect(response.body.errors).toEqual([
       {
-          code: 'EMAIL_ALREADY_VERIFIED',
-          message: 'Your email has been already verified.',
+          code: EMAIL_ALREADY_VERIFIED.code,
+          message: EMAIL_ALREADY_VERIFIED.message,
           timestamp: expect.any(String),
           data: {}
       }
@@ -243,15 +250,17 @@ describe('Email Verification Routes', () => {
       rowCount: 1
     });
 
+    const email = 'test@example.com';
+
     const response = await request(server)
       .post('/verify-email/resend')
-      .send({ email: 'test@example.com' });
+      .send({ email });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
       {
           success: true,
-          message: 'New verification email has been sent to test@example.com',
+          message: `New verification email has been sent to ${email}`,
           timestamp: expect.any(String),
           data: {}
       }

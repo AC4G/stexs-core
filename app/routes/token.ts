@@ -12,6 +12,7 @@ import {
     REFRESH_TOKEN_SECRET 
 } from '../../env-config';
 import { expressjwt as jwt, Request } from 'express-jwt';
+import { INVALID_TOKEN } from '../constants/errors';
 
 const router = Router();
 
@@ -43,8 +44,8 @@ router.post('/', [
 
     if (result.rowCount === 0) {
         return res.status(401).send(errorMessages([{
-            code: 'INVALID_TOKEN',
-            message: 'Invalid token provided.'
+            code: INVALID_TOKEN.code,
+            message: INVALID_TOKEN.message
         }]));
     }
 
