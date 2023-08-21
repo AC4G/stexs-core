@@ -49,7 +49,7 @@ router.post('/', [
         }]));
     }
 
-    res.status(200).json(generateAccessToken({ sub: token?.sub }, false));
+    res.status(200).json(generateAccessToken({ sub: token?.sub }));
 });
 
 export default router;
