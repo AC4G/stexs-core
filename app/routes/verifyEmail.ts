@@ -42,14 +42,14 @@ router.get('/', [
     signInURL.searchParams.set('source', source);
 
     const query = `
-        SELECT id, verification_token FROM auth.users 
+        SELECT id, verification_token, email_verified_ FROM auth.users 
         WHERE email = $1
     `;
 
     const result = await db.query(query, [req.query.email]);
     const user = result.rows[0];
 
-    if (user?.verification_token === null) {
+    if (user?.email_verified_at) {
         signInURL.searchParams.append('code', 'error');
         signInURL.searchParams.append('message', 'Your email has been already verified');
 
