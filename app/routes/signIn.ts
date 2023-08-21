@@ -7,16 +7,22 @@ import db from '../database';
 import { body, validationResult } from 'express-validator';
 import generateAccessToken from '../services/jwtService';
 import { errorMessages, errorMessagesFromValidator } from '../services/messageBuilderService';
+import { 
+    EMAIL_NOT_VERIFIED, 
+    IDENTIFIER_REQUIRED, 
+    INVALID_CREDENTIALS, 
+    PASSWORD_REQUIRED 
+} from '../constants/errors';
 
 const router = Router();
 
 router.post('/', [
     body('identifier')
         .notEmpty()
-        .withMessage('IDENTIFIER_REQUIRED: Please provide username or email.'),
+        .withMessage(IDENTIFIER_REQUIRED.code + ': ' + IDENTIFIER_REQUIRED.message),
     body('password')
         .notEmpty()
-        .withMessage('PASSWORD_REQUIRED: Please provide an password.')
+        .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -37,15 +43,15 @@ router.post('/', [
 
     if (result.rowCount === 0) {
         return res.status(400).json(errorMessages([{ 
-            code: 'INVALID_CREDENTIALS', 
-            message: 'Invalid credentials. Please check your username/email and password.' 
+            code: INVALID_CREDENTIALS.code, 
+            message: INVALID_CREDENTIALS.messages[0] 
         }]));
     }
 
     if (result.rows[0].verification_sent_at) {
         return res.status(400).json(errorMessages([{
-            code: 'EMAIL_NOT_VERIFIED',
-            message: 'Please verify your email before proceeding.'
+            code: EMAIL_NOT_VERIFIED.code,
+            message: EMAIL_NOT_VERIFIED.message
         }]));
     }
 
