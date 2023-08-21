@@ -11,7 +11,7 @@ import {
 import db from '../database';
 import { 
     body, 
-    check, 
+    query, 
     validationResult 
 } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
@@ -21,13 +21,13 @@ import sendEmail from '../services/emailService';
 const router = Router();
 
 router.get('/', [
-    check('email')
+    query('email')
         .notEmpty()
         .withMessage('EMAIL_REQUIRED: Please provide an email.')
         .bail()
         .isEmail()
-        .withMessage('INVALID_EMAIL: Please enter a valid email address.'),
-    check('token')
+        .withMessage('INVALID_EMAIL: Please provide a valid email address.'),
+    query('token')
         .notEmpty()
         .withMessage('TOKEN_REQUIRED: Please provide the verification token from your email.')
 ], async (req: Request, res: Response) => {
@@ -49,16 +49,16 @@ router.get('/', [
     const result = await db.query(query, [req.query.email]);
     const user = result.rows[0];
 
-    if (result.rowCount === 0 || user.verification_token !== req.query.token) {
+    if (user?.verification_token === null) {
         signInURL.searchParams.append('code', 'error');
-        signInURL.searchParams.append('message', 'Provided verification link is invalid');
+        signInURL.searchParams.append('message', 'Your email has been already verified');
 
         return res.redirect(302, signInURL.toString());
     }
 
-    if (!user.verification_token) {
+    if (result.rowCount === 0 || user.verification_token !== req.query.token) {
         signInURL.searchParams.append('code', 'error');
-        signInURL.searchParams.append('message', 'Your email has been already verified');
+        signInURL.searchParams.append('message', 'Provided verification link is invalid');
 
         return res.redirect(302, signInURL.toString());
     }
@@ -110,7 +110,7 @@ router.post('/resend', [
     }
 
     if (result.rows[0].email_confirmed_at) {
-        return res.status(404).json(errorMessages([{ 
+        return res.status(400).json(errorMessages([{ 
             code: 'EMAIL_ALREADY_VERIFIED', 
             message: 'Your email has been already verified.' 
         }]));
