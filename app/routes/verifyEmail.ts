@@ -49,7 +49,7 @@ router.get('/', [
     signInURL.searchParams.set('source', source);
 
     const query = `
-        SELECT id, verification_token, email_verified_ FROM auth.users 
+        SELECT id, verification_token, email_verified_at FROM auth.users 
         WHERE email = $1
     `;
 
@@ -75,7 +75,7 @@ router.get('/', [
         SET 
             verification_token = NULL,
             verification_sent_at = NULL,
-            email_confirmed_at = NOW()
+            email_verified_at = NOW()
         WHERE id = $1;
     `;
 
@@ -103,7 +103,7 @@ router.post('/resend', [
     const email = req.body.email;
 
     const query = `
-        SELECT id, email_confirmed_at FROM auth.users
+        SELECT id, email_verified_at FROM auth.users
         WHERE email = $1
     `;
 

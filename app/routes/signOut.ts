@@ -30,6 +30,36 @@ router.post('/', [
 ], async (req: Request, res: Response) => {
     const query = `
         DELETE FROM auth.refresh_tokens
+        WHERE user_id = $1 AND grant_type = 'signIn' AND session_id = $2
+    `;
+    
+    const auth = req.auth;
+
+    const result = await db.query(query, [auth?.sub, auth?.session_id]);
+
+    if (result.rowCount === 0) {
+        return res.status(404).send();
+    }
+
+    res.status(204).send();
+});
+
+router.post('/everywhere', [
+    jwt({ 
+        secret: ACCESS_TOKEN_SECRET, 
+        audience: AUDIENCE,
+        issuer: ISSUER,
+        algorithms: ['HS256']
+    }),
+    function(err: any, req: Request, res: Response, next: NextFunction){
+        return res.status(err.status).json(errorMessages([{ 
+            code: err.code.toUpperCase(), 
+            message: err.message 
+        }]));
+    }
+], async (req: Request, res: Response) => {
+    const query = `
+        DELETE FROM auth.refresh_tokens
         WHERE user_id = $1 AND grant_type = 'signIn'
     `;
 

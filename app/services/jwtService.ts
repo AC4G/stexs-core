@@ -9,17 +9,15 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import db from '../database';
 
-export default function generateAccessToken(additionalPayload: any, deleteRefreshToken: boolean = true, refreshToken: boolean = true) {
+export default function generateAccessToken(additionalPayload: any, grantType: string = 'signIn', refreshToken: boolean = true) {
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + JWT_EXPIRY_LIMIT;
 
-    if (deleteRefreshToken && additionalPayload.grant_type !== 'client_credentials') {
-        const deleteQuery = `
-            DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1 AND grant_type = $2
-        `;
+    let sessionId = null;
 
-        db.query(deleteQuery, [additionalPayload.sub, 'signIn'])
+    if (grantType === 'signIn') {
+        sessionId = uuidv4();
+        additionalPayload.session_id = sessionId;
     }
 
     const accessToken = jwt.sign({
@@ -41,11 +39,11 @@ export default function generateAccessToken(additionalPayload: any, deleteRefres
     const jti = uuidv4();
 
     const insertQuery = `
-        INSERT INTO auth.refresh_tokens (token, user_id, grant_type)
-        VALUES ($1, $2, $3)
+        INSERT INTO auth.refresh_tokens (token, user_id, grant_type, session_id)
+        VALUES ($1, $2, $3, $4)
     `;
 
-    db.query(insertQuery, [jti, additionalPayload.sub, 'signIn']);
+    db.query(insertQuery, [jti, additionalPayload.sub, 'signIn', sessionId]);
 
     return {
         access_token: accessToken,
@@ -57,7 +55,6 @@ export default function generateAccessToken(additionalPayload: any, deleteRefres
             jti
         }, REFRESH_TOKEN_SECRET!),
         token_type: 'bearer',
-        expires: exp,
-
+        expires: exp
     };
 }

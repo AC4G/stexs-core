@@ -21,7 +21,7 @@ import {
 } from '../../app/constants/errors';
 
 describe('Email Verification Routes', () => {
-  it('should return 400 with missing email', async () => {
+  it('should handle email verification with missing email', async () => {
     const response = await request(server)
         .get('/verify-email')
         .query({ token: 'valid-token' });
@@ -40,7 +40,7 @@ describe('Email Verification Routes', () => {
     ]);
   });
 
-  it('should return 400 with invalid email', async () => {
+  it('should handle email verification with invalid email', async () => {
     const response = await request(server)
         .get('/verify-email')
         .query({ token: 'valid-token', email: 'test' });
@@ -59,7 +59,7 @@ describe('Email Verification Routes', () => {
     ]);
   });
 
-  it('should return 400 with missing token', async () => {
+  it('should handle email verification with missing token', async () => {
     const response = await request(server)
         .get('/verify-email')
         .query({ email: 'test@example.com' });
