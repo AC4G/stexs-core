@@ -1,33 +1,11 @@
-import { 
-    Router, 
-    Response, 
-    NextFunction 
-} from 'express';
-import { expressjwt as jwt, Request } from 'express-jwt';
+import { Router, Response } from 'express';
+import { Request } from 'express-jwt';
 import db from '../database';
-import { 
-    ACCESS_TOKEN_SECRET, 
-    AUDIENCE, 
-    ISSUER 
-} from '../../env-config';
-import { errorMessages } from '../services/messageBuilderService';
+import { validateAccessToken } from '../middlewares/jwtMiddleware';
  
 const router = Router();
 
-router.post('/', [
-    jwt({ 
-        secret: ACCESS_TOKEN_SECRET, 
-        audience: AUDIENCE,
-        issuer: ISSUER,
-        algorithms: ['HS256']
-    }),
-    function(err: any, req: Request, res: Response, next: NextFunction){
-        return res.status(err.status).json(errorMessages([{ 
-            code: err.code.toUpperCase(), 
-            message: err.message 
-        }]));
-    }
-], async (req: Request, res: Response) => {
+router.post('/', validateAccessToken(), async (req: Request, res: Response) => {
     const query = `
         DELETE FROM auth.refresh_tokens
         WHERE user_id = $1 AND grant_type = 'signIn' AND session_id = $2
@@ -44,20 +22,7 @@ router.post('/', [
     res.status(204).send();
 });
 
-router.post('/everywhere', [
-    jwt({ 
-        secret: ACCESS_TOKEN_SECRET, 
-        audience: AUDIENCE,
-        issuer: ISSUER,
-        algorithms: ['HS256']
-    }),
-    function(err: any, req: Request, res: Response, next: NextFunction){
-        return res.status(err.status).json(errorMessages([{ 
-            code: err.code.toUpperCase(), 
-            message: err.message 
-        }]));
-    }
-], async (req: Request, res: Response) => {
+router.post('/everywhere', validateAccessToken(), async (req: Request, res: Response) => {
     const query = `
         DELETE FROM auth.refresh_tokens
         WHERE user_id = $1 AND grant_type = 'signIn'
