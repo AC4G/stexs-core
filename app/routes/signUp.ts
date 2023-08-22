@@ -31,11 +31,11 @@ router.post('/', [
         .notEmpty()
         .withMessage(USERNAME_REQUIRED.code + ': ' +  USERNAME_REQUIRED.message)
         .bail()
-        .isLength({ max: 100 })
-        .withMessage(INVALID_USERNAME + ': ' + INVALID_USERNAME.messages[0])
+        .isLength({ min: 1, max: 20 })
+        .withMessage(INVALID_USERNAME.code + ': ' + INVALID_USERNAME.messages[0])
         .custom((value: string) => {
             if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
-                throw new Error(INVALID_USERNAME + ': ' + INVALID_USERNAME.messages[1]);
+              throw new Error(INVALID_USERNAME.code + ': ' + INVALID_USERNAME.messages[1])
             }
 
             return true;
@@ -98,7 +98,10 @@ router.post('/', [
                 errorMessages([{ 
                     code: INVALID_INPUT_DATA.code, 
                     message: err.hint + '.', 
-                    data: { path } 
+                    data: {
+                        path,
+                        location: 'body'
+                    } 
                 }])
             );
         }

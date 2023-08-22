@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "concurrently \"tsc -w\" \"nodemon ./dist/app/server.js\"",
-    "test": "cross-env SERVER_PORT=3003 ts-node ./node_modules/jest/bin/jest.js --no-cache --watchAll"
+    "test": "cross-env SERVER_PORT=3003 NODE_ENV=test ts-node ./node_modules/jest/bin/jest.js --watch"
   },
   "keywords": [],
   "author": "",
