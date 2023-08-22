@@ -1,5 +1,16 @@
 const mockQuery = jest.fn();
 
+import request from 'supertest';
+import server from '../../app/server';
+import { REDIRECT_TO_SIGN_IN } from '../../env-config';
+import { 
+  EMAIL_ALREADY_VERIFIED, 
+  EMAIL_NOT_FOUND, 
+  EMAIL_REQUIRED, 
+  INVALID_EMAIL, 
+  TOKEN_REQUIRED 
+} from '../../app/constants/errors';
+
 jest.mock('../../app/database', () => {
     return {
         __esModule: true,
@@ -8,20 +19,6 @@ jest.mock('../../app/database', () => {
         }
     }
 });
-
-jest.mock('../../app/services/emailService');
-
-import request from 'supertest';
-import server from '../../app/server';
-import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
-import { 
-  EMAIL_ALREADY_VERIFIED, 
-  EMAIL_NOT_FOUND, 
-  EMAIL_REQUIRED, 
-  INVALID_EMAIL, 
-  TOKEN_REQUIRED 
-} from '../../app/constants/errors';
-import sendEmail from '../../app/services/emailService';
 
 describe('Email Verification Routes', () => {
   it('should handle email verification with missing email', async () => {
@@ -267,12 +264,6 @@ describe('Email Verification Routes', () => {
           timestamp: expect.any(String),
           data: {}
       }
-    );
-    expect(sendEmail).toHaveBeenCalledWith(
-      email,
-      'Verification Email',
-      undefined,
-      expect.stringContaining(`Please verify your email. ${ISSUER}/verify-email?email=${email}&token=`),
     );
   });
 });

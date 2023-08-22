@@ -63,3 +63,15 @@ export const EMAIL_ALREADY_VERIFIED = {
     code: 'EMAIL_ALREADY_VERIFIED',
     message: 'Your email has been already verified.'
 };
+export const CREDENTIALS_REQUIRED = {
+    code: 'CREDENTIALS_REQUIRED',
+    messages: [
+        'No authorization token was found'
+    ]
+};
+export const CREDENTIALS_BAD_FORMAT = {
+    code: 'CREDENTIALS_BAD_FORMAT',
+    messages: [
+        'Format is Authorization: Bearer [token]'
+    ]
+};

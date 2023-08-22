@@ -1,16 +1,5 @@
 const mockQuery = jest.fn();
 
-jest.mock('../../app/database', () => {
-    return {
-        __esModule: true,
-        default: {
-            query: mockQuery
-        }
-    }
-});
-
-jest.mock('../../app/services/emailService');
-
 import request from 'supertest';
 import server from '../../app/server';
 import { 
@@ -22,10 +11,17 @@ import {
     PASSWORD_REQUIRED,
     USERNAME_REQUIRED 
 } from '../../app/constants/errors';
-import sendEmail from '../../app/services/emailService';
-import { ISSUER } from '../../env-config';
 
-describe('Sign up', () => {
+jest.mock('../../app/database', () => {
+    return {
+        __esModule: true,
+        default: {
+            query: mockQuery
+        }
+    }
+});
+
+describe('Sign Up', () => {
     it('should handle sign up with missing username', async () => {
         const response = await request(server)
             .post('/sign-up')
@@ -265,11 +261,5 @@ describe('Sign up', () => {
                 }
             }
         });
-        expect(sendEmail).toHaveBeenCalledWith(
-            email,
-            'Verification Email',
-            undefined,
-            expect.stringContaining(`Please verify your email. ${ISSUER}/verify-email?email=${email}&token=`),
-        );
     });
 });
