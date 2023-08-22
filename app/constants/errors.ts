@@ -5,7 +5,7 @@ export const USERNAME_REQUIRED = {
 export const INVALID_USERNAME = {
     code: 'INVALID_USERNAME',
     messages: [
-        'Username can be maximum 100 characters long.',
+        'Username can be minimum 1 and maximum 20 characters long.',
         'Username cannot look like an email address!'
     ]
 };
