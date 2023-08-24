@@ -32,11 +32,13 @@ router.post('/', [
     const { identifier, password } = req.body;
 
     const query = `
-        SELECT u.id, u.verification_sent_at
+        SELECT u.id, u.email_verified_at, p.username
         FROM auth.users u
         LEFT JOIN public.profiles p ON u.id = p.user_id
-        WHERE (u.email = $1 OR p.username = $1)
-        AND u.encrypted_password = extensions.crypt($2, u.encrypted_password);
+        WHERE u.encrypted_password = extensions.crypt($2, u.encrypted_password)
+        AND (
+            (CASE WHEN $1 ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) = $1
+        )
     `;
 
     const result = await db.query(query, [identifier, password]);
@@ -48,7 +50,7 @@ router.post('/', [
         }]));
     }
 
-    if (result.rows[0].verification_sent_at) {
+    if (!result.rows[0].email_verified_at) {
         return res.status(400).json(errorMessages([{
             code: EMAIL_NOT_VERIFIED.code,
             message: EMAIL_NOT_VERIFIED.message

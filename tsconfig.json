@@ -1,5 +1,5 @@
 {
-    "include": ["**/*.ts", "env-config.ts"],
+    "include": ["**/*.ts"],
     "compilerOptions": {
         "outDir": "./dist",
         "module": "CommonJS",
