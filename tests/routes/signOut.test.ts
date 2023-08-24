@@ -5,7 +5,8 @@ import request from 'supertest';
 import server from '../../app/server';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
-    validateAccessToken: () => (req: any, res: any, next: NextFunction) => next()
+    validateAccessToken: () => (req: Request, res: Response, next: NextFunction) => next(),
+    validateRefreshToken: () => (req: Request, res: Response, next: NextFunction) => next(),
 }));
 
 jest.mock('../../app/database', () => {
