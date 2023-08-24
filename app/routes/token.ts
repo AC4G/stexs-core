@@ -1,8 +1,4 @@
-import { 
-    Router,
-    Response, 
-    NextFunction 
-} from 'express';
+import { Router, Response } from 'express';
 import { errorMessages } from '../services/messageBuilderService';
 import db from '../database';
 import generateAccessToken from '../services/jwtService';
