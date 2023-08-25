@@ -15,7 +15,10 @@ export const EMAIL_REQUIRED = {
 };
 export const INVALID_EMAIL = {
     code: 'INVALID_EMAIL',
-    message: 'Please provide a valid email address.'
+    messages: [
+        'Please provide a valid email address.',
+        'Please choose a different email address.'
+    ]
 };
 export const PASSWORD_REQUIRED = {
     code: 'PASSWORD_REQUIRED',
@@ -74,4 +77,20 @@ export const CREDENTIALS_BAD_FORMAT = {
     messages: [
         'Format is Authorization: Bearer [token]'
     ]
+};
+export const USER_NOT_FOUND = {
+    code: 'USER_NOT_FOUND',
+    message: 'User was not been found.'
+};
+export const PASSWORD_CHANGE_FAILED = {
+    code: 'PASSWORD_CHANGE_FAILED',
+    message: 'Password change failed.'
+};
+export const INTERNAL_ERROR = {
+    code: 'INTERNAL_ERROR',
+    message: 'An internal error occorred.'
+};
+export const INVALID_GRANT_TYPE = {
+    code: 'INVALID_GRANT_TYPE',
+    message: 'Provided token does not have the required grant_type.'
 };

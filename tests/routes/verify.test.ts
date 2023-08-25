@@ -23,7 +23,7 @@ jest.mock('../../app/database', () => {
 describe('Email Verification Routes', () => {
   it('should handle email verification with missing email', async () => {
     const response = await request(server)
-        .get('/verify-email')
+        .get('/verify')
         .query({ token: 'valid-token' });
 
     expect(response.status).toBe(400);
@@ -42,14 +42,14 @@ describe('Email Verification Routes', () => {
 
   it('should handle email verification with invalid email', async () => {
     const response = await request(server)
-        .get('/verify-email')
+        .get('/verify')
         .query({ token: 'valid-token', email: 'test' });
 
     expect(response.status).toBe(400);
     expect(response.body.errors).toEqual([
       {
           code: INVALID_EMAIL.code,
-          message: INVALID_EMAIL.message,
+          message: INVALID_EMAIL.messages[0],
           timestamp: expect.any(String),
           data: {
               path: 'email',
@@ -61,7 +61,7 @@ describe('Email Verification Routes', () => {
 
   it('should handle email verification with missing token', async () => {
     const response = await request(server)
-        .get('/verify-email')
+        .get('/verify')
         .query({ email: 'test@example.com' });
 
     expect(response.status).toBe(400);
@@ -91,11 +91,11 @@ describe('Email Verification Routes', () => {
     });
 
     const response = await request(server)
-      .get('/verify-email')
+      .get('/verify')
       .query({ email: 'test@example.com', token: 'invalid-token' });
 
     expect(response.status).toBe(302);
-    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify-email&code=error&message=Provided+verification+link+is+invalid`);
+    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Provided+verification+link+is+invalid`);
   });
 
   it('should handle email verification with non existing email', async () => {
@@ -105,11 +105,11 @@ describe('Email Verification Routes', () => {
     });
 
     const response = await request(server)
-      .get('/verify-email')
+      .get('/verify')
       .query({ email: 'test@example.com', token: 'token' });
 
       expect(response.status).toBe(302);
-      expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify-email&code=error&message=Provided+verification+link+is+invalid`);
+      expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Provided+verification+link+is+invalid`);
   });
 
   it('should handle email verification with verified email', async () => {
@@ -125,11 +125,11 @@ describe('Email Verification Routes', () => {
     });
 
     const response = await request(server)
-      .get('/verify-email')
+      .get('/verify')
       .query({ email: 'test@example.com', token: 'valid-token' });
 
     expect(response.status).toBe(302);
-    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify-email&code=error&message=Your+email+has+been+already+verified`);
+    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Your+email+has+been+already+verified`);
   })
 
   it('should handle email verification with valid token', async () => {
@@ -146,18 +146,18 @@ describe('Email Verification Routes', () => {
     });
 
     const response = await request(server)
-      .get('/verify-email')
+      .get('/verify')
       .query({ email: 'test@example.com', token: 'valid-token' });
 
     expect(response.status).toBe(302);
-    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify-email&code=success&message=Email+successfully+verified`);
+    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=success&message=Email+successfully+verified`);
   });
 
   // resend verification email
 
   it('should handle email resend with empty email', async () => {
     const response = await request(server)
-      .post('/verify-email/resend');
+      .post('/verify/resend');
 
       expect(response.status).toBe(400);
       expect(response.body.errors).toEqual([
@@ -175,14 +175,14 @@ describe('Email Verification Routes', () => {
 
   it('should handle email resend with invalid email', async () => {
     const response = await request(server)
-      .post('/verify-email/resend')
+      .post('/verify/resend')
       .send({ email: 'test' });
 
     expect(response.status).toBe(400);
     expect(response.body.errors).toEqual([
       {
           code: INVALID_EMAIL.code,
-          message: INVALID_EMAIL.message,
+          message: INVALID_EMAIL.messages[0],
           timestamp: expect.any(String),
           data: {
               path: 'email',
@@ -199,7 +199,7 @@ describe('Email Verification Routes', () => {
     });
 
     const response = await request(server) 
-      .post('/verify-email/resend')
+      .post('/verify/resend')
       .send({ email: 'test@example.com' });
 
       expect(response.status).toBe(404);
@@ -225,7 +225,7 @@ describe('Email Verification Routes', () => {
     });
 
     const response = await request(server)
-      .post('/verify-email/resend')
+      .post('/verify/resend')
       .send({ email: 'test@example.com' });
 
     expect(response.status).toBe(400);
@@ -253,7 +253,7 @@ describe('Email Verification Routes', () => {
     const email = 'test@example.com';
 
     const response = await request(server)
-      .post('/verify-email/resend')
+      .post('/verify/resend')
       .send({ email });
 
     expect(response.status).toBe(200);
