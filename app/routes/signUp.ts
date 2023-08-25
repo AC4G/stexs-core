@@ -11,7 +11,6 @@ import {
     errorMessagesFromValidator 
 } from '../services/messageBuilderService';
 import { body, validationResult } from 'express-validator';
-import crypto from 'crypto';
 import { ISSUER } from '../../env-config';
 import { 
     EMAIL_REQUIRED, 
@@ -23,6 +22,7 @@ import {
     PASSWORD_REQUIRED, 
     USERNAME_REQUIRED 
 } from '../constants/errors';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
@@ -45,21 +45,19 @@ router.post('/', [
         .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.message),
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
     body('password')
         .notEmpty()
         .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
         .bail()
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]+$/)
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
         .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message)
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json(errorMessagesFromValidator(errors));
-    }
+    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
 
     const { username, password, email } = req.body;
-    const token = crypto.randomBytes(Math.ceil(16 / 2)).toString('hex').slice(0, 16);
+    const token = uuidv4();
 
     const query = `
         INSERT INTO auth.users (
@@ -88,8 +86,8 @@ router.post('/', [
                 } 
             })
         );
-    } catch (error) {
-        const err = error as { hint: string | null; };
+    } catch (e) {
+        const err = e as { hint: string | null; };
 
         if (err.hint) {
             const path = err.hint.split(' ').pop()!;
@@ -114,7 +112,7 @@ router.post('/', [
         );
     }
 
-    await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify-email?email=' + email + '&token=' + token}`);
+    await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
 });
 
 export default router;

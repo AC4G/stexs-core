@@ -15,7 +15,6 @@ import {
     validationResult 
 } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
-import crypto from 'crypto';
 import sendEmail from '../services/emailService';
 import { 
     EMAIL_ALREADY_VERIFIED,
@@ -24,6 +23,7 @@ import {
     INVALID_EMAIL, 
     TOKEN_REQUIRED 
 } from '../constants/errors';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
@@ -33,18 +33,16 @@ router.get('/', [
         .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.message),
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
     query('token')
         .notEmpty()
         .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message)
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json(errorMessagesFromValidator(errors));
-    }
+    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
 
     const signInURL = new URL(REDIRECT_TO_SIGN_IN);
-    const source = 'verify-email';
+    const source = 'verify';
 
     signInURL.searchParams.set('source', source);
 
@@ -75,7 +73,7 @@ router.get('/', [
         SET 
             verification_token = NULL,
             verification_sent_at = NULL,
-            email_verified_at = NOW()
+            email_verified_at = CURRENT_TIMESTAMP
         WHERE id = $1;
     `;
 
@@ -93,12 +91,10 @@ router.post('/resend', [
         .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.message)
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0])
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json(errorMessagesFromValidator(errors));
-    }
+    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
 
     const email = req.body.email;
 
@@ -109,33 +105,29 @@ router.post('/resend', [
 
     const result = await db.query(query, [email]);
 
-    if (result.rowCount === 0) {
-        return res.status(404).json(errorMessages([{ 
-            code: EMAIL_NOT_FOUND.code, 
-            message: EMAIL_NOT_FOUND.message 
-        }]));
-    }
+    if (result.rowCount === 0) return res.status(404).json(errorMessages([{ 
+        code: EMAIL_NOT_FOUND.code, 
+        message: EMAIL_NOT_FOUND.message 
+    }]));
 
-    if (result.rows[0].email_confirmed_at) {
-        return res.status(400).json(errorMessages([{ 
-            code: EMAIL_ALREADY_VERIFIED.code, 
-            message: EMAIL_ALREADY_VERIFIED.message 
-        }]));
-    }
+    if (result.rows[0].email_confirmed_at) return res.status(400).json(errorMessages([{ 
+        code: EMAIL_ALREADY_VERIFIED.code, 
+        message: EMAIL_ALREADY_VERIFIED.message 
+    }]));
 
-    const token = crypto.randomBytes(Math.ceil(16 / 2)).toString('hex').slice(0, 16);
+    const token = uuidv4();
 
     const updateQuery = `
         UPDATE auth.users
         SET 
             verification_token = $1,
-            verification_sent_at = NOW()
+            verification_sent_at = CURRENT_TIMESTAMP
         WHERE id = $2;
     `;
 
     db.query(updateQuery, [token, result.rows[0].id]);
 
-    await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify-email?email=' + email + '&token=' + token}`);
+    await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
 
     res.json(message(`New verification email has been sent to ${email}`));
 });

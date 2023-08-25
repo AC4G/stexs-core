@@ -5,7 +5,9 @@ import signInRouter from './routes/signIn';
 import signOutRouter from './routes/signOut';
 import tokenRouter from './routes/token';
 import oauth2Router from './routes/oauth2';
-import verifyEmailRouter from './routes/verifyEmail';
+import userRouter from './routes/user';
+import resetPasswordRouter from './routes/resetPassword';
+import verifyRouter from './routes/verify';
 import { NODE_ENV, SERVER_PORT } from '../env-config';
 
 const server = express();
@@ -18,12 +20,11 @@ server.use('/sign-in', signInRouter);
 server.use('/sign-out', signOutRouter);
 server.use('/token', tokenRouter);
 server.use('/oauth2', oauth2Router);
-server.use('/verify-email', verifyEmailRouter);
+server.use('/verify', verifyRouter);
+server.use('/user', userRouter);
 
-if (NODE_ENV !== 'test') {
-    server.listen(SERVER_PORT, () => {
-        console.log(`Server is listening on port ${SERVER_PORT}`);
-    });
-}
+if (NODE_ENV !== 'test') server.listen(SERVER_PORT, () => {
+    console.log(`Server is listening on port ${SERVER_PORT}`);
+});
 
 export default server;

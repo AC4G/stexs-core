@@ -125,7 +125,7 @@ describe('Sign Up', () => {
         expect(response.body.errors).toEqual([
             {
                 code: INVALID_EMAIL.code,
-                message: INVALID_EMAIL.message,
+                message: INVALID_EMAIL.messages[0],
                 timestamp: expect.any(String),
                 data: {
                     path: 'email',

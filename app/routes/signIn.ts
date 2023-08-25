@@ -25,9 +25,7 @@ router.post('/', [
         .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
 ], async (req: Request, res: Response) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json(errorMessagesFromValidator(errors));
-    }
+    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
 
     const { identifier, password } = req.body;
 
@@ -43,19 +41,15 @@ router.post('/', [
 
     const result = await db.query(query, [identifier, password]);
 
-    if (result.rowCount === 0) {
-        return res.status(400).json(errorMessages([{ 
-            code: INVALID_CREDENTIALS.code, 
-            message: INVALID_CREDENTIALS.messages[0] 
-        }]));
-    }
+    if (result.rowCount === 0) return res.status(400).json(errorMessages([{ 
+        code: INVALID_CREDENTIALS.code, 
+        message: INVALID_CREDENTIALS.messages[0] 
+    }]));
 
-    if (!result.rows[0].email_verified_at) {
-        return res.status(400).json(errorMessages([{
-            code: EMAIL_NOT_VERIFIED.code,
-            message: EMAIL_NOT_VERIFIED.message
-        }]));
-    }
+    if (!result.rows[0].email_verified_at) return res.status(400).json(errorMessages([{
+        code: EMAIL_NOT_VERIFIED.code,
+        message: EMAIL_NOT_VERIFIED.message
+    }]));
 
     const body = generateAccessToken({
         sub: result.rows[0].id
