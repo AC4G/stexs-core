@@ -20,6 +20,7 @@ import {
     EMAIL_ALREADY_VERIFIED,
     EMAIL_NOT_FOUND,
     EMAIL_REQUIRED, 
+    INTERNAL_ERROR, 
     INVALID_EMAIL, 
     TOKEN_REQUIRED 
 } from '../constants/errors';
@@ -41,48 +42,68 @@ router.get('/', [
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
 
+    const { email, token } = req.body;
+
     const signInURL = new URL(REDIRECT_TO_SIGN_IN);
     const source = 'verify';
 
     signInURL.searchParams.set('source', source);
 
-    const query = `
-        SELECT id, verification_token, email_verified_at FROM auth.users 
-        WHERE email = $1
+    const selectQuery = `
+        SELECT id, email_verified_at FROM auth.users 
+        WHERE email = $1 AND verification_token = $2
     `;
 
-    const result = await db.query(query, [req.query.email]);
-    const user = result.rows[0];
+    try {
+        const { rowCount, rows: users } = await db.query(selectQuery, [email, token]);
 
-    if (user?.email_verified_at) {
-        signInURL.searchParams.append('code', 'error');
-        signInURL.searchParams.append('message', 'Your email has been already verified');
-
-        return res.redirect(302, signInURL.toString());
+        if (users[0]?.email_verified_at) {
+            signInURL.searchParams.append('code', 'error');
+            signInURL.searchParams.append('message', 'Your email has been already verified');
+    
+            return res.redirect(302, signInURL.toString());
+        }
+    
+        if (rowCount === 0) {
+            signInURL.searchParams.append('code', 'error');
+            signInURL.searchParams.append('message', 'Provided verification link is invalid');
+    
+            return res.redirect(302, signInURL.toString());
+        }
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
     }
 
-    if (result.rowCount === 0 || user.verification_token !== req.query.token) {
-        signInURL.searchParams.append('code', 'error');
-        signInURL.searchParams.append('message', 'Provided verification link is invalid');
-
-        return res.redirect(302, signInURL.toString());
-    }
-
-    const updateQuery = `
+    const query = `
         UPDATE auth.users
         SET 
             verification_token = NULL,
             verification_sent_at = NULL,
             email_verified_at = CURRENT_TIMESTAMP
-        WHERE id = $1;
+        WHERE email = $1;
     `;
 
-    await db.query(updateQuery, [user.id]);
+    try {
+        const { rowCount } = await db.query(query, [email]);
+
+        if (rowCount === 0) return errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]);
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 
     signInURL.searchParams.append('code', 'success');
     signInURL.searchParams.append('message', 'Email successfully verified');
 
-    return res.redirect(302, signInURL.toString());
+    res.redirect(302, signInURL.toString());
 });
 
 router.post('/resend', [
@@ -98,22 +119,30 @@ router.post('/resend', [
 
     const email = req.body.email;
 
-    const query = `
+    const selectQuery = `
         SELECT id, email_verified_at FROM auth.users
         WHERE email = $1
     `;
 
-    const result = await db.query(query, [email]);
+    try {
+        const { rowCount, rows } = await db.query(selectQuery, [email]);
 
-    if (result.rowCount === 0) return res.status(404).json(errorMessages([{ 
-        code: EMAIL_NOT_FOUND.code, 
-        message: EMAIL_NOT_FOUND.message 
-    }]));
+        if (rowCount === 0) return res.status(404).json(errorMessages([{ 
+            code: EMAIL_NOT_FOUND.code, 
+            message: EMAIL_NOT_FOUND.message 
+        }]));
 
-    if (result.rows[0].email_confirmed_at) return res.status(400).json(errorMessages([{ 
-        code: EMAIL_ALREADY_VERIFIED.code, 
-        message: EMAIL_ALREADY_VERIFIED.message 
-    }]));
+        if (rows[0].email_confirmed_at) return res.status(400).json(errorMessages([{ 
+            code: EMAIL_ALREADY_VERIFIED.code, 
+            message: EMAIL_ALREADY_VERIFIED.message 
+        }]));
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
+
 
     const token = uuidv4();
 
@@ -122,12 +151,31 @@ router.post('/resend', [
         SET 
             verification_token = $1,
             verification_sent_at = CURRENT_TIMESTAMP
-        WHERE id = $2;
+        WHERE email = $2;
     `;
 
-    db.query(updateQuery, [token, result.rows[0].id]);
+    try {
+        const { rowCount } = await db.query(updateQuery, [token, email]);
 
-    await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
+        if (rowCount === 0) return errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]);
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
+
+    try{
+        await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 
     res.json(message(`New verification email has been sent to ${email}`));
 });
