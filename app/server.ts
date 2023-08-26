@@ -6,7 +6,7 @@ import signOutRouter from './routes/signOut';
 import tokenRouter from './routes/token';
 import oauth2Router from './routes/oauth2';
 import userRouter from './routes/user';
-import resetPasswordRouter from './routes/resetPassword';
+import recoveryRouter from './routes/recovery';
 import verifyRouter from './routes/verify';
 import { NODE_ENV, SERVER_PORT } from '../env-config';
 
@@ -22,6 +22,7 @@ server.use('/token', tokenRouter);
 server.use('/oauth2', oauth2Router);
 server.use('/verify', verifyRouter);
 server.use('/user', userRouter);
+server.use('/recovery', recoveryRouter);
 
 if (NODE_ENV !== 'test') server.listen(SERVER_PORT, () => {
     console.log(`Server is listening on port ${SERVER_PORT}`);

@@ -7,7 +7,7 @@ import server from '../../app/server';
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
     validateRefreshToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
-    checkAccessTokenForSignInGrantType: jest.fn((req, res, next) => next()),
+    checkTokenForSignInGrantType: jest.fn((req, res, next) => next()),
     transformJwtErrorMessages: jest.fn((err, req, res, next) => next())
 }));
 
