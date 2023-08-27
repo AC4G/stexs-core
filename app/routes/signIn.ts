@@ -10,6 +10,7 @@ import { errorMessages, errorMessagesFromValidator } from '../services/messageBu
 import { 
     EMAIL_NOT_VERIFIED, 
     IDENTIFIER_REQUIRED, 
+    INTERNAL_ERROR, 
     INVALID_CREDENTIALS, 
     PASSWORD_REQUIRED 
 } from '../constants/errors';
@@ -39,20 +40,31 @@ router.post('/', [
         )
     `;
 
-    const result = await db.query(query, [identifier, password]);
+    let id;
 
-    if (result.rowCount === 0) return res.status(400).json(errorMessages([{ 
-        code: INVALID_CREDENTIALS.code, 
-        message: INVALID_CREDENTIALS.messages[0] 
-    }]));
+    try {
+        const result = await db.query(query, [identifier, password]);
 
-    if (!result.rows[0].email_verified_at) return res.status(400).json(errorMessages([{
-        code: EMAIL_NOT_VERIFIED.code,
-        message: EMAIL_NOT_VERIFIED.message
-    }]));
+        if (result.rowCount === 0) return res.status(400).json(errorMessages([{ 
+            code: INVALID_CREDENTIALS.code, 
+            message: INVALID_CREDENTIALS.messages[0] 
+        }]));
+
+        if (!result.rows[0].email_verified_at) return res.status(400).json(errorMessages([{
+            code: EMAIL_NOT_VERIFIED.code,
+            message: EMAIL_NOT_VERIFIED.message
+        }]));
+
+        id = result.rows[0].id;
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 
     const body = generateAccessToken({
-        sub: result.rows[0].id
+        sub: id
     });
 
     res.send(body);

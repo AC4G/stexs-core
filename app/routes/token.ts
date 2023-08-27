@@ -3,7 +3,7 @@ import { errorMessages } from '../services/messageBuilderService';
 import db from '../database';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
-import { INVALID_TOKEN } from '../constants/errors';
+import { INTERNAL_ERROR, INVALID_TOKEN } from '../constants/errors';
 import { 
     checkTokenForSignInGrantType, 
     transformJwtErrorMessages, 
@@ -24,12 +24,19 @@ router.post('/', [
         WHERE user_id = $1 AND grant_type = 'sign_in' AND token = $2
     `;
 
-    const result = await db.query(query, [token?.sub, token?.jti]);
+    try {
+        const result = await db.query(query, [token?.sub, token?.jti]);
 
-    if (result.rowCount === 0) return res.status(401).send(errorMessages([{
-        code: INVALID_TOKEN.code,
-        message: INVALID_TOKEN.message
-    }]));
+        if (result.rowCount === 0) return res.status(401).send(errorMessages([{
+            code: INVALID_TOKEN.code,
+            message: INVALID_TOKEN.message
+        }]));
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 
     res.status(200).json(generateAccessToken({ sub: token?.sub }));
 });
