@@ -80,14 +80,8 @@ describe('Email Verification Routes', () => {
 
   it('should handle email verification with invalid token', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          id: 1,
-          verification_token: 'valid-token',
-          email_verified_at: null
-        }
-      ],
-      rowCount: 1
+      rows: [],
+      rowCount: 0
     });
 
     const response = await request(server)
@@ -117,7 +111,6 @@ describe('Email Verification Routes', () => {
       rows: [
         {
           id: 1,
-          verification_token: null,
           email_verified_at: 'date'
         }
       ],
@@ -133,15 +126,18 @@ describe('Email Verification Routes', () => {
   })
 
   it('should handle email verification with valid token', async () => {
-
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
-          verification_token: 'valid-token',
-          email_verified_at: null
+          email_verified_at: null,
         }
       ],
+      rowCount: 1
+    });
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [],
       rowCount: 1
     });
 
@@ -247,6 +243,11 @@ describe('Email Verification Routes', () => {
           email_confirmed_at: null
         }
       ],
+      rowCount: 1
+    });
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [],
       rowCount: 1
     });
 

@@ -6,6 +6,8 @@ import {
     transformJwtErrorMessages, 
     validateAccessToken 
 } from '../middlewares/jwtMiddleware';
+import { errorMessages } from '../services/messageBuilderService';
+import { INTERNAL_ERROR } from '../constants/errors';
  
 const router = Router();
 
@@ -21,9 +23,16 @@ router.post('/', [
     
     const auth = req.auth;
 
-    const result = await db.query(query, [auth?.sub, auth?.session_id]);
+    try {
+        const result = await db.query(query, [auth?.sub, auth?.session_id]);
 
-    if (result.rowCount === 0) return res.status(404).send();
+        if (result.rowCount === 0) return res.status(404).send();
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 
     res.status(204).send();
 });
@@ -38,9 +47,16 @@ router.post('/everywhere', [
         WHERE user_id = $1 AND grant_type = 'sign_in'
     `;
 
-    const result = await db.query(query, [req.auth?.sub]);
+    try {
+        const result = await db.query(query, [req.auth?.sub]);
 
-    if (result.rowCount === 0) return res.status(404).send();
+        if (result.rowCount === 0) return res.status(404).send();
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 
     res.status(204).send();
 });

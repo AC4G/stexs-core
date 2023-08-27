@@ -14,10 +14,10 @@ import { body, validationResult } from 'express-validator';
 import { ISSUER } from '../../env-config';
 import { 
     EMAIL_REQUIRED, 
+    INTERNAL_ERROR, 
     INVALID_EMAIL, 
     INVALID_INPUT_DATA, 
     INVALID_PASSWORD, 
-    INVALID_REQUEST, 
     INVALID_USERNAME, 
     PASSWORD_REQUIRED, 
     USERNAME_REQUIRED 
@@ -104,15 +104,20 @@ router.post('/', [
             );
         }
 
-        return res.status(400).json( 
-            errorMessages([{ 
-                code: INVALID_REQUEST.code, 
-                message: INVALID_REQUEST.message
-            }])
-        );
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
     }
 
-    await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
+    try {
+        await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 });
 
 export default router;

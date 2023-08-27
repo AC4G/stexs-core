@@ -63,12 +63,10 @@ router.post('/', [
     try {
         const result = await db.query(query, [token, email]);
 
-        if (result.rowCount === 0) {
-            return errorMessages([{
-                code: INTERNAL_ERROR.code,
-                message: INTERNAL_ERROR.message
-            }]);
-        }
+        if (result.rowCount === 0) return errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]);
     } catch (e) {
         return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -118,12 +116,10 @@ router.post('/confirm', [
     try {
         const result = await db.query(selectQuery, [email, token]);
 
-        if (result.rowCount === 0) {
-            return errorMessages([{
-                code: INVALID_TOKEN.code,
-                message: INVALID_TOKEN.message
-            }]);
-        }
+        if (result.rowCount === 0) return errorMessages([{
+            code: INVALID_TOKEN.code,
+            message: INVALID_TOKEN.message
+        }]);
     } catch (e) {
         return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -143,12 +139,10 @@ router.post('/confirm', [
     try {
         const result = await db.query(query, [password, email]);
 
-        if (result.rowCount === 0) {
-            return errorMessages([{
-                code: INTERNAL_ERROR.code,
-                message: INTERNAL_ERROR.message
-            }]);
-        }
+        if (result.rowCount === 0) return errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]);
 
         res.json(message('Password successfully recovered.'));
     } catch (e) {

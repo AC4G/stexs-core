@@ -46,14 +46,21 @@ router.get('/', [
         WHERE id = $1
     `;
 
-    const result = await db.query(query, [userId]);
+    try {
+        const result = await db.query(query, [userId]);
 
-    if (result.rowCount === 0) return res.status(404).json(errorMessages([{
-        code: USER_NOT_FOUND.code,
-        message: USER_NOT_FOUND.message
-    }]));
-
-    res.json(result.rows[0]);
+        if (result.rowCount === 0) return res.status(404).json(errorMessages([{
+            code: USER_NOT_FOUND.code,
+            message: USER_NOT_FOUND.message
+        }]));
+    
+        res.json(result.rows[0]);
+    } catch (e) {
+        res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 });
 
 router.patch('/password', [
@@ -119,12 +126,19 @@ router.post('/email', [
         WHERE email = $1
     `;
 
-    const { rowCount } = await db.query(selectQuery, [newEmail]);
+    try {
+        const { rowCount } = await db.query(selectQuery, [newEmail]);
 
-    if (rowCount !== 0) return res.status(409).json(errorMessages([{
-        code: INVALID_EMAIL.code,
-        message: INVALID_EMAIL.messages[1]
-    }]));
+        if (rowCount !== 0) return res.status(409).json(errorMessages([{
+            code: INVALID_EMAIL.code,
+            message: INVALID_EMAIL.messages[1]
+        }]));
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 
     const userId = req.auth?.sub;
     const token = uuidv4();
@@ -141,22 +155,27 @@ router.post('/email', [
     try{
         const result = await db.query(query, [newEmail, token, userId]);
 
-        if (result.rowCount === 0) {
-            return res.status(500).json(errorMessages([{
-                code: INTERNAL_ERROR.code,
-                message: INTERNAL_ERROR.message
-            }]));
-        }
-
-        await sendEmail(newEmail, 'Email Change Verification', undefined, `Please verify your email change by clicking the link: ${REDIRECT_TO_EMAIL_CHANGE + '?token=' + token}`);
-
-        res.json(message('Email change verification link has been sent to the new email address.'));
+        if (result.rowCount === 0) return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
     } catch (e) {
-        res.status(500).json(errorMessages([{
+        return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
             message: INTERNAL_ERROR.message
         }]));
     }
+
+    try {
+        await sendEmail(newEmail, 'Email Change Verification', undefined, `Please verify your email change by clicking the link: ${REDIRECT_TO_EMAIL_CHANGE + '?token=' + token}`);
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
+
+    res.json(message('Email change verification link has been sent to the new email address.'));
 });
 
 router.post('/email/verify', [
@@ -184,12 +203,19 @@ router.post('/email/verify', [
         WHERE id = $1 AND email_change_token = $2
     `;
 
-    const { rowCount } = await db.query(query, [userId, token]);
+    try {
+        const { rowCount } = await db.query(query, [userId, token]);
 
-    if (rowCount === 0) return res.status(500).json(errorMessages([{
-        code: INTERNAL_ERROR.code,
-        message: INTERNAL_ERROR.message
-    }]));
+        if (rowCount === 0) return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+    }
 
     res.json(message('Email successfully changed.'));
 });
