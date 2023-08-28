@@ -24,9 +24,9 @@ router.post('/', [
     const auth = req.auth;
 
     try {
-        const result = await db.query(query, [auth?.sub, auth?.session_id]);
+        const { rowCount } = await db.query(query, [auth?.sub, auth?.session_id]);
 
-        if (result.rowCount === 0) return res.status(404).send();
+        if (rowCount === 0) return res.status(404).send();
     } catch (e) {
         return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -48,9 +48,9 @@ router.post('/everywhere', [
     `;
 
     try {
-        const result = await db.query(query, [req.auth?.sub]);
+        const { rowCount } = await db.query(query, [req.auth?.sub]);
 
-        if (result.rowCount === 0) return res.status(404).send();
+        if (rowCount === 0) return res.status(404).send();
     } catch (e) {
         return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
