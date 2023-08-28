@@ -89,10 +89,10 @@ router.get('/', [
     try {
         const { rowCount } = await db.query(query, [email]);
 
-        if (rowCount === 0) return errorMessages([{
+        if (rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
             message: INTERNAL_ERROR.message
-        }]);
+        }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -157,10 +157,10 @@ router.post('/resend', [
     try {
         const { rowCount } = await db.query(updateQuery, [token, email]);
 
-        if (rowCount === 0) return errorMessages([{
+        if (rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
             message: INTERNAL_ERROR.message
-        }]);
+        }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,

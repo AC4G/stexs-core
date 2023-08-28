@@ -2,7 +2,12 @@ const mockQuery = jest.fn();
 
 import request from 'supertest';
 import server from '../../app/server';
-import { EMAIL_NOT_VERIFIED, IDENTIFIER_REQUIRED, INVALID_CREDENTIALS, PASSWORD_REQUIRED } from '../../app/constants/errors';
+import { 
+    EMAIL_NOT_VERIFIED, 
+    IDENTIFIER_REQUIRED, 
+    INVALID_CREDENTIALS, 
+    PASSWORD_REQUIRED 
+} from '../../app/constants/errors';
 
 jest.mock('../../app/database', () => {
     return {

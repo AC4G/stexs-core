@@ -43,19 +43,19 @@ router.post('/', [
     let id;
 
     try {
-        const result = await db.query(query, [identifier, password]);
+        const { rowCount, rows } = await db.query(query, [identifier, password]);
 
-        if (result.rowCount === 0) return res.status(400).json(errorMessages([{ 
+        if (rowCount === 0) return res.status(400).json(errorMessages([{ 
             code: INVALID_CREDENTIALS.code, 
             message: INVALID_CREDENTIALS.messages[0] 
         }]));
 
-        if (!result.rows[0].email_verified_at) return res.status(400).json(errorMessages([{
+        if (!rows[0].email_verified_at) return res.status(400).json(errorMessages([{
             code: EMAIL_NOT_VERIFIED.code,
             message: EMAIL_NOT_VERIFIED.message
         }]));
 
-        id = result.rows[0].id;
+        id = rows[0].id;
     } catch (e) {
         return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,

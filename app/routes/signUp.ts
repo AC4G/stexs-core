@@ -72,22 +72,27 @@ router.post('/', [
     `;
 
     try {
-        const result = await db.query(query, [
+        const { rowCount, rows } = await db.query(query, [
             email, 
             password, 
             { username },
             token
         ]);
 
+        if (rowCount === 0) return res.status(500).json(errorMessages([{
+            code: INTERNAL_ERROR.code,
+            message: INTERNAL_ERROR.message
+        }]));
+
         res.status(201).json( 
             message('Sign-up successful. Check your email for an verification link!', { 
                 output: {
-                    userId: result.rows[0].id
+                    userId: rows[0].id
                 } 
             })
         );
     } catch (e) {
-        const err = e as { hint: string | null; };
+        const err = e as { hint: string | null; }; 
 
         if (err.hint) {
             const path = err.hint.split(' ').pop()!;

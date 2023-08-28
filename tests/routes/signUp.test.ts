@@ -198,7 +198,7 @@ describe('Sign Up', () => {
                 message: 'Please choose a different username.',
                 timestamp: expect.any(String),
                 data: {
-                    path: "username",
+                    path: 'username',
                     location: 'body'
                 }
             }
@@ -223,7 +223,7 @@ describe('Sign Up', () => {
                 message: 'Please choose a different email.',
                 timestamp: expect.any(String),
                 data: {
-                    path: "email",
+                    path: 'email',
                     location: 'body'
                 }
             }

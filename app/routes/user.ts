@@ -12,6 +12,8 @@ import {
     INTERNAL_ERROR, 
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
+    INVALID_REQUEST, 
+    INVALID_TOKEN, 
     PASSWORD_CHANGE_FAILED, 
     PASSWORD_REQUIRED, 
     TOKEN_REQUIRED, 
@@ -53,7 +55,7 @@ router.get('/', [
             code: USER_NOT_FOUND.code,
             message: USER_NOT_FOUND.message
         }]));
-    
+
         res.json(result.rows[0]);
     } catch (e) {
         res.status(500).json(errorMessages([{
@@ -63,7 +65,7 @@ router.get('/', [
     }
 });
 
-router.patch('/password', [
+router.post('/password', [
     validateAccessToken(),
     checkTokenForSignInGrantType,
     transformJwtErrorMessages,
@@ -90,12 +92,12 @@ router.patch('/password', [
     try {
         const result = await db.query(query, [password, userId]);
 
-        if (result.rowCount === 1) return res.json(message('Password changed successfully.'));
-
-        res.status(500).json(errorMessages([{
+        if (result.rowCount === 0) return res.status(500).json(errorMessages([{
             code: PASSWORD_CHANGE_FAILED.code,
             message: PASSWORD_CHANGE_FAILED.message
         }]));
+        
+        res.json(message('Password changed successfully.'));
     } catch (e) {
         res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -119,26 +121,6 @@ router.post('/email', [
     if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
 
     const { email: newEmail } = req.body;
-
-    const selectQuery = `
-        SELECT email 
-        FROM auth.users
-        WHERE email = $1
-    `;
-
-    try {
-        const { rowCount } = await db.query(selectQuery, [newEmail]);
-
-        if (rowCount !== 0) return res.status(409).json(errorMessages([{
-            code: INVALID_EMAIL.code,
-            message: INVALID_EMAIL.messages[1]
-        }]));
-    } catch (e) {
-        return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
-        }]));
-    }
 
     const userId = req.auth?.sub;
     const token = uuidv4();
@@ -206,9 +188,9 @@ router.post('/email/verify', [
     try {
         const { rowCount } = await db.query(query, [userId, token]);
 
-        if (rowCount === 0) return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+        if (rowCount === 0) return res.status(400).json(errorMessages([{
+            code: INVALID_TOKEN.code,
+            message: INVALID_TOKEN.message
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
