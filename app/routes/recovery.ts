@@ -119,7 +119,7 @@ router.post('/confirm', [
     const selectQuery = `
         SELECT 1 FROM auth.users
         WHERE email = $1 AND recovery_token = $2
-    `
+    `;
 
     try {
         const { rowCount } = await db.query(selectQuery, [email, token]);
@@ -142,7 +142,7 @@ router.post('/confirm', [
             recovery_token = NULL,
             recovery_sent_at = NULL
         WHERE email = $2
-    `
+    `;
 
     try {
         const { rowCount } = await db.query(query, [password, email]);

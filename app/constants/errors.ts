@@ -94,3 +94,35 @@ export const INVALID_GRANT_TYPE = {
     code: 'INVALID_GRANT_TYPE',
     message: 'Provided token does not have the required grant_type.'
 };
+export const CLIENT_ID_REQUIRED = {
+    code: 'CLIENT_ID_REQUIRED',
+    message: 'Please provide a client id.'
+};
+export const REDIRECT_URL_REQUIRED = {
+    code: 'REDIRECT_URL_REQUIRED',
+    message: 'Please provide a redirect url.'
+};
+export const INVALID_URL = {
+    code: 'INVALID_URL',
+    message: 'Please provide a valid url.'
+};
+export const SCOPES_REQUIRED = {
+    code: 'SCOPES_REQUIRED',
+    message: 'Please provide scopes.'
+};
+export const ARRAY_REQUIRED = {
+    code: 'ARRAY_REQUIRED',
+    message: 'Please provide an array.'
+};
+export const EMPTY_ARRAY = {
+    code: 'EMPTY_ARRAY',
+    message: 'Array cannot be empty.'
+};
+export const CLIENT_NOT_FOUND = {
+    code: 'CLIENT_NOT_FOUND',
+    message: 'Client not found or invalid combination of client_id, redirect_url and scopes.'
+};
+export const CLIENT_ALREADY_CONNECTED = {
+    code: 'CLIENT_ALREADY_CONNECTED',
+    message: 'Given client is already connected with the user.'
+};

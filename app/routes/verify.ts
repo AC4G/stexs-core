@@ -42,7 +42,7 @@ router.get('/', [
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
 
-    const { email, token } = req.body;
+    const { email, token } = req.query;
 
     const signInURL = new URL(REDIRECT_TO_SIGN_IN);
     const source = 'verify';
@@ -63,7 +63,7 @@ router.get('/', [
     
             return res.redirect(302, signInURL.toString());
         }
-    
+
         if (rowCount === 0) {
             signInURL.searchParams.append('code', 'error');
             signInURL.searchParams.append('message', 'Provided verification link is invalid');
