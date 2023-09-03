@@ -109,18 +109,24 @@ router.post('/authorize', [
     }
 
     const query = `
-        INSERT INTO auth.oauth2_authorization_tokens (token, user_id, client_id)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (user_id, client_id)
-        DO UPDATE SET
-            created_at = CURRENT_TIMESTAMP,
-            token = $1;
+        WITH token_insert AS (
+            INSERT INTO auth.oauth2_authorization_tokens (token, user_id, client_id)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id, client_id)
+            DO DELETE
+            RETURNING id
+        )
+        INSERT INTO auth.oauth2_authorization_token_scopes (token_id, scope_id)
+        SELECT ti.id AS token_id, s.id AS scope_id
+        FROM token_insert ti
+        JOIN jsonb_array_elements($4) AS obj ON obj->>'name'::text = s.name::text
+        JOIN public.scopes s ON true;
     `;
 
     const token = uuidv4();
 
     try {
-        const { rowCount } = await db.query(query, [token, userId, client_id]);
+        const { rowCount } = await db.query(query, [token, userId, client_id, scopes]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
