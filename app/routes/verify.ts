@@ -3,17 +3,9 @@ import {
     Request,
     Response
 } from 'express';
-import { 
-    errorMessages, 
-    errorMessagesFromValidator, 
-    message 
-} from '../services/messageBuilderService';
+import { errorMessages, message } from '../services/messageBuilderService';
 import db from '../database';
-import { 
-    body, 
-    query, 
-    validationResult 
-} from 'express-validator';
+import { body, query } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
 import sendEmail from '../services/emailService';
 import { 
@@ -25,6 +17,7 @@ import {
     TOKEN_REQUIRED 
 } from '../constants/errors';
 import { v4 as uuidv4 } from 'uuid';
+import validate from '../middlewares/validatorMiddleware';
 
 const router = Router();
 
@@ -37,11 +30,9 @@ router.get('/', [
         .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
     query('token')
         .notEmpty()
-        .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message)
+        .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message),
+    validate
 ], async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const { email, token } = req.query;
 
     const signInURL = new URL(REDIRECT_TO_SIGN_IN);
@@ -112,11 +103,9 @@ router.post('/resend', [
         .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0])
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+    validate
 ], async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const email = req.body.email;
 
     const selectQuery = `
@@ -142,7 +131,6 @@ router.post('/resend', [
             message: INTERNAL_ERROR.message
         }]));
     }
-
 
     const token = uuidv4();
 

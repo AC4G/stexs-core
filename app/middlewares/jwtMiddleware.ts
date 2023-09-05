@@ -41,10 +41,10 @@ export function checkTokenForSignInGrantType(req: Request, res: Response, next: 
     const err = {
         status: 403,
         code: INVALID_GRANT_TYPE.code,
-        message: INVALID_GRANT_TYPE.message
+        message: INVALID_GRANT_TYPE.messages[0]
     };
 
-    throw new UnauthorizedError('invalid_token', { message: INVALID_GRANT_TYPE.message });
+    throw new UnauthorizedError('invalid_token', { message: INVALID_GRANT_TYPE.messages[0] });
 }
 
 export function transformJwtErrorMessages(err: any, req: Request, res: Response, next: NextFunction) {

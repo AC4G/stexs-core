@@ -4,9 +4,9 @@ import {
     Response 
 } from 'express';
 import db from '../database';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 import generateAccessToken from '../services/jwtService';
-import { errorMessages, errorMessagesFromValidator } from '../services/messageBuilderService';
+import { errorMessages } from '../services/messageBuilderService';
 import { 
     EMAIL_NOT_VERIFIED, 
     IDENTIFIER_REQUIRED, 
@@ -14,6 +14,7 @@ import {
     INVALID_CREDENTIALS, 
     PASSWORD_REQUIRED 
 } from '../constants/errors';
+import validate from '../middlewares/validatorMiddleware';
 
 const router = Router();
 
@@ -23,11 +24,9 @@ router.post('/', [
         .withMessage(IDENTIFIER_REQUIRED.code + ': ' + IDENTIFIER_REQUIRED.message),
     body('password')
         .notEmpty()
-        .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
+        .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message),
+    validate
 ], async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const { identifier, password } = req.body;
 
     const query = `
@@ -63,11 +62,11 @@ router.post('/', [
         }]));
     }
 
-    const body = generateAccessToken({
+    const body = await generateAccessToken({
         sub: id
     });
 
-    res.send(body);
+    res.json(body);
 });
 
 export default router;

@@ -5,12 +5,8 @@ import {
 } from 'express';
 import db from '../database';
 import sendEmail from '../services/emailService';
-import { 
-    message, 
-    errorMessages, 
-    errorMessagesFromValidator 
-} from '../services/messageBuilderService';
-import { body, validationResult } from 'express-validator';
+import { message, errorMessages } from '../services/messageBuilderService';
+import { body } from 'express-validator';
 import { ISSUER } from '../../env-config';
 import { 
     EMAIL_REQUIRED, 
@@ -23,6 +19,7 @@ import {
     USERNAME_REQUIRED 
 } from '../constants/errors';
 import { v4 as uuidv4 } from 'uuid';
+import validate from '../middlewares/validatorMiddleware';
 
 const router = Router();
 
@@ -34,9 +31,7 @@ router.post('/', [
         .isLength({ min: 1, max: 20 })
         .withMessage(INVALID_USERNAME.code + ': ' + INVALID_USERNAME.messages[0])
         .custom((value: string) => {
-            if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
-              throw new Error(INVALID_USERNAME.code + ': ' + INVALID_USERNAME.messages[1])
-            }
+            if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) throw new Error(INVALID_USERNAME.code + ': ' + INVALID_USERNAME.messages[1]);
 
             return true;
         }),
@@ -51,11 +46,9 @@ router.post('/', [
         .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message)
+        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message),
+    validate
 ], async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const { username, password, email } = req.body;
     const token = uuidv4();
 

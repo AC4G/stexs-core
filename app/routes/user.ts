@@ -6,7 +6,7 @@ import {
     checkTokenForSignInGrantType 
 } from '../middlewares/jwtMiddleware';
 import db from '../database';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 import { 
     EMAIL_REQUIRED, 
     INTERNAL_ERROR, 
@@ -18,14 +18,11 @@ import {
     TOKEN_REQUIRED, 
     USER_NOT_FOUND
 } from '../constants/errors';
-import { 
-    errorMessages, 
-    errorMessagesFromValidator,
-    message 
-} from '../services/messageBuilderService';
+import { errorMessages, message } from '../services/messageBuilderService';
 import { v4 as uuidv4 } from 'uuid';
 import sendEmail from '../services/emailService';
 import { REDIRECT_TO_EMAIL_CHANGE } from '../../env-config';
+import validate from '../middlewares/validatorMiddleware';
 
 const router = Router();
 
@@ -73,11 +70,9 @@ router.post('/password', [
         .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message)
+        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message),
+    validate
 ], async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const userId = req.auth?.sub;
     const { password } = req.body;
 
@@ -114,11 +109,9 @@ router.post('/email', [
         .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0])
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+    validate
 ], async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const { email: newEmail } = req.body;
 
     const userId = req.auth?.sub;
@@ -165,11 +158,9 @@ router.post('/email/verify', [
     transformJwtErrorMessages,
     body('token')
         .notEmpty()
-        .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message)
+        .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message),
+    validate
 ], async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const userId = req.auth?.sub;
     const { token } = req.body;
 
