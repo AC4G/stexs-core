@@ -3,26 +3,22 @@ import {
     Request,
     Response
 } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 import { 
     EMAIL_REQUIRED, 
     INTERNAL_ERROR, 
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
     INVALID_REQUEST, 
-    INVALID_TOKEN, 
     PASSWORD_REQUIRED, 
     TOKEN_REQUIRED 
 } from '../constants/errors';
-import { 
-    errorMessages, 
-    errorMessagesFromValidator,
-    message 
-} from '../services/messageBuilderService';
+import { errorMessages, message } from '../services/messageBuilderService';
 import db from '../database';
 import { v4 as uuidv4 } from 'uuid';
 import sendEmail from '../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../env-config';
+import validate from '../middlewares/validatorMiddleware';
 
 const router = Router();
 
@@ -32,11 +28,9 @@ router.post('/', [
         .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0])
+        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+    validate
 ],async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const { email } = req.body;
 
     const selectQuery = `
@@ -109,11 +103,9 @@ router.post('/confirm', [
         .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message)
+        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message),
+    validate
 ],async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errorMessagesFromValidator(errors));
-
     const { email, token, password } = req.body;
 
     const selectQuery = `

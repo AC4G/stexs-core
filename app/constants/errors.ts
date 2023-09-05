@@ -92,11 +92,22 @@ export const INTERNAL_ERROR = {
 };
 export const INVALID_GRANT_TYPE = {
     code: 'INVALID_GRANT_TYPE',
-    message: 'Provided token does not have the required grant_type.'
+    messages: [
+        'Provided token does not have the required grant type.',
+        'Provided grant type is invalid.'
+    ]
+};
+export const GRANT_TYPE_REQUIRED = {
+    code: 'GRANT_TYPE_REQUIRED',
+    message: 'Please provide a grand type.'
 };
 export const CLIENT_ID_REQUIRED = {
     code: 'CLIENT_ID_REQUIRED',
     message: 'Please provide a client id.'
+};
+export const CLIENT_SECRET_REQUIRED = {
+    code: 'CLIENT_SECRET_REQUIRED',
+    message: 'Please provide a client secret.'
 };
 export const REDIRECT_URL_REQUIRED = {
     code: 'REDIRECT_URL_REQUIRED',
@@ -125,4 +136,20 @@ export const CLIENT_NOT_FOUND = {
 export const CLIENT_ALREADY_CONNECTED = {
     code: 'CLIENT_ALREADY_CONNECTED',
     message: 'Given client is already connected with the user.'
+};
+export const CODE_REQUIRED = {
+    code: 'CODE_REQUIRED',
+    message: 'Please provide a code.'
+};
+export const REFRESH_TOKEN_REQUIRED = {
+    code: 'REFRESH_TOKEN_REQUIRED',
+    message: 'Please provide a refresh token.'
+};
+export const INVALID_AUTHORIZATION_CODE = {
+    code: 'INVALID_AUTHORIZATION_CODE',
+    message: 'Authorization code or client credentials are invalid.'
+};
+export const INVALID_CLIENT_ID_FORMAT = {
+    code: 'INVALID_CLIENT_ID_FORMAT',
+    message: 'Client id must be in uuid format.'
 };
