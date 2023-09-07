@@ -33,13 +33,11 @@ router.post('/', [
 ],async (req: Request, res: Response) => {
     const { email } = req.body;
 
-    const selectQuery = `
-        SELECT 1 FROM auth.users
-        WHERE email = $1
-    `;
-
     try {
-        const { rowCount } = await db.query(selectQuery, [email]);
+        const { rowCount } = await db.query(`
+            SELECT 1 FROM auth.users
+            WHERE email = $1::text;
+        `, [email]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
             code: INVALID_EMAIL.code,
@@ -53,17 +51,15 @@ router.post('/', [
     }
 
     const token = uuidv4();
-
-    const query = `
-        UPDATE auth.users
-        SET
-            recovery_toke = $1
-            recovery_sent_at = CURRENT_TIMESTAMP
-        WHERE email = $2
-    `;
     
     try {
-        const { rowCount } = await db.query(query, [token, email]);
+        const { rowCount } = await db.query(`
+            UPDATE auth.users
+            SET
+                recovery_toke = $1::uuid
+                recovery_sent_at = CURRENT_TIMESTAMP
+            WHERE email = $2::text;
+        `, [token, email]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -108,13 +104,11 @@ router.post('/confirm', [
 ],async (req: Request, res: Response) => {
     const { email, token, password } = req.body;
 
-    const selectQuery = `
-        SELECT 1 FROM auth.users
-        WHERE email = $1 AND recovery_token = $2
-    `;
-
     try {
-        const { rowCount } = await db.query(selectQuery, [email, token]);
+        const { rowCount } = await db.query(`
+            SELECT 1 FROM auth.users
+            WHERE email = $1::text AND recovery_token = $2::uuid;
+        `, [email, token]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
             code: INVALID_REQUEST.code,
@@ -127,17 +121,15 @@ router.post('/confirm', [
         }]));
     }
 
-    const query = `
-        UPDATE auth.users
-        SET 
-            encrypted_password = extensions.crypt($1, extensions.gen_salt('bf')),
-            recovery_token = NULL,
-            recovery_sent_at = NULL
-        WHERE email = $2
-    `;
-
     try {
-        const { rowCount } = await db.query(query, [password, email]);
+        const { rowCount } = await db.query(`
+            UPDATE auth.users
+            SET 
+                encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf')),
+                recovery_token = NULL,
+                recovery_sent_at = NULL
+            WHERE email = $2::text;
+        `, [password, email]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,

@@ -40,13 +40,11 @@ router.get('/', [
 
     signInURL.searchParams.set('source', source);
 
-    const selectQuery = `
-        SELECT id, email_verified_at FROM auth.users 
-        WHERE email = $1 AND verification_token = $2
-    `;
-
     try {
-        const { rowCount, rows: users } = await db.query(selectQuery, [email, token]);
+        const { rowCount, rows: users } = await db.query(`
+            SELECT id, email_verified_at FROM auth.users 
+            WHERE email = $1::text AND verification_token = $2::uuid;
+        `, [email, token]);
 
         if (users[0]?.email_verified_at) {
             signInURL.searchParams.append('code', 'error');
@@ -68,17 +66,15 @@ router.get('/', [
         }]));
     }
 
-    const query = `
-        UPDATE auth.users
-        SET 
-            verification_token = NULL,
-            verification_sent_at = NULL,
-            email_verified_at = CURRENT_TIMESTAMP
-        WHERE email = $1;
-    `;
-
     try {
-        const { rowCount } = await db.query(query, [email]);
+        const { rowCount } = await db.query(`
+            UPDATE auth.users
+            SET 
+                verification_token = NULL,
+                verification_sent_at = NULL,
+                email_verified_at = CURRENT_TIMESTAMP
+            WHERE email = $1::text;
+        `, [email]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -108,13 +104,11 @@ router.post('/resend', [
 ], async (req: Request, res: Response) => {
     const email = req.body.email;
 
-    const selectQuery = `
-        SELECT id, email_verified_at FROM auth.users
-        WHERE email = $1
-    `;
-
     try {
-        const { rowCount, rows } = await db.query(selectQuery, [email]);
+        const { rowCount, rows } = await db.query(`
+            SELECT id, email_verified_at FROM auth.users
+            WHERE email = $1::text;
+        `, [email]);
 
         if (rowCount === 0) return res.status(404).json(errorMessages([{ 
             code: EMAIL_NOT_FOUND.code, 
@@ -134,16 +128,14 @@ router.post('/resend', [
 
     const token = uuidv4();
 
-    const updateQuery = `
-        UPDATE auth.users
-        SET 
-            verification_token = $1,
-            verification_sent_at = CURRENT_TIMESTAMP
-        WHERE email = $2;
-    `;
-
     try {
-        const { rowCount } = await db.query(updateQuery, [token, email]);
+        const { rowCount } = await db.query(`
+            UPDATE auth.users
+            SET 
+                verification_token = $1::uuid,
+                verification_sent_at = CURRENT_TIMESTAMP
+            WHERE email = $2::text;
+        `, [token, email]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,

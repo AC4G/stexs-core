@@ -33,19 +33,17 @@ router.get('/', [
 ], async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
 
-    const query = `
-        SELECT 
-            id, 
-            email, 
-            raw_user_meta_data,
-            created_at,
-            updated_at 
-        FROM auth.users
-        WHERE id = $1
-    `;
-
     try {
-        const result = await db.query(query, [userId]);
+        const result = await db.query(`
+            SELECT 
+                id, 
+                email, 
+                raw_user_meta_data,
+                created_at,
+                updated_at 
+            FROM auth.users
+            WHERE id = $1::uuid;
+        `, [userId]);
 
         if (result.rowCount === 0) return res.status(404).json(errorMessages([{
             code: USER_NOT_FOUND.code,
@@ -76,15 +74,13 @@ router.post('/password', [
     const userId = req.auth?.sub;
     const { password } = req.body;
 
-    const query = `
-        UPDATE auth.users
-        SET
-            encrypted_password = extensions.crypt($1, extensions.gen_salt('bf'))
-        WHERE id = $2
-    `;
-
     try {
-        const result = await db.query(query, [password, userId]);
+        const result = await db.query(`
+            UPDATE auth.users
+            SET
+                encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
+            WHERE id = $2::uuid;
+        `, [password, userId]);
 
         if (result.rowCount === 0) return res.status(500).json(errorMessages([{
             code: PASSWORD_CHANGE_FAILED.code,
@@ -117,17 +113,19 @@ router.post('/email', [
     const userId = req.auth?.sub;
     const token = uuidv4();
 
-    const query = `
-        UPDATE auth.users
-        SET 
-            email_change = $1,
-            email_change_sent_at = CURRENT_TIMESTAMP,
-            email_change_token = $2
-        WHERE id = $3
-    `;
-
     try{
-        const result = await db.query(query, [newEmail, token, userId]);
+        const result = await db.query(`
+            UPDATE auth.users
+            SET 
+                email_change = $1::text,
+                email_change_sent_at = CURRENT_TIMESTAMP,
+                email_change_token = $2::uuid
+            WHERE id = $3::uuid;
+        `, [
+            newEmail, 
+            token, 
+            userId
+        ]);
 
         if (result.rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -164,19 +162,17 @@ router.post('/email/verify', [
     const userId = req.auth?.sub;
     const { token } = req.body;
 
-    const query = `
-        UPDATE auth.users
-        SET
-            email = email_change,
-            email_verified_at = CURRENT_TIMESTAMP,
-            email_change = NULL,
-            email_change_sent_at = NULL,
-            email_change_token = NULL
-        WHERE id = $1 AND email_change_token = $2
-    `;
-
     try {
-        const { rowCount } = await db.query(query, [userId, token]);
+        const { rowCount } = await db.query(`
+            UPDATE auth.users
+            SET
+                email = email_change,
+                email_verified_at = CURRENT_TIMESTAMP,
+                email_change = NULL,
+                email_change_sent_at = NULL,
+                email_change_token = NULL
+            WHERE id = $1::uuid AND email_change_token = $2::text;
+        `, [userId, token]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
             code: INVALID_TOKEN.code,

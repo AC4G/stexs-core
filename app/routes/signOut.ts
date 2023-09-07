@@ -15,16 +15,14 @@ router.post('/', [
     validateAccessToken(),
     checkTokenForSignInGrantType,
     transformJwtErrorMessages
-], async (req: Request, res: Response) => {
-    const query = `
-        DELETE FROM auth.refresh_tokens
-        WHERE user_id = $1 AND grant_type = 'sign_in' AND session_id = $2
-    `;
-    
+], async (req: Request, res: Response) => {    
     const auth = req.auth;
 
     try {
-        const { rowCount } = await db.query(query, [auth?.sub, auth?.session_id]);
+        const { rowCount } = await db.query(`
+            DELETE FROM auth.refresh_tokens
+            WHERE user_id = $1::uuid AND grant_type = 'sign_in' AND session_id = $2::uuid;
+        `, [auth?.sub, auth?.session_id]);
 
         if (rowCount === 0) return res.status(404).send();
     } catch (e) {
@@ -42,13 +40,11 @@ router.post('/everywhere', [
     checkTokenForSignInGrantType,
     transformJwtErrorMessages
 ], async (req: Request, res: Response) => {
-    const query = `
-        DELETE FROM auth.refresh_tokens
-        WHERE user_id = $1 AND grant_type = 'sign_in'
-    `;
-
     try {
-        const { rowCount } = await db.query(query, [req.auth?.sub]);
+        const { rowCount } = await db.query(`
+            DELETE FROM auth.refresh_tokens
+            WHERE user_id = $1::uuid AND grant_type = 'sign_in';
+        `, [req.auth?.sub]);
 
         if (rowCount === 0) return res.status(404).send();
     } catch (e) {

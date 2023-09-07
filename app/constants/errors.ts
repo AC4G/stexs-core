@@ -153,3 +153,7 @@ export const INVALID_CLIENT_ID_FORMAT = {
     code: 'INVALID_CLIENT_ID_FORMAT',
     message: 'Client id must be in uuid format.'
 };
+export const INVALID_REFRESH_TOKEN = {
+    code: 'INVALID_REFRESH_TOKEN',
+    message: 'Provided refresh token is invalid.'
+};
