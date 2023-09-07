@@ -1,14 +1,19 @@
-import { NextFunction, Response } from "express";
+import { 
+    NextFunction, 
+    Response, 
+    Request 
+} from 'express';
 import { 
     ACCESS_TOKEN_SECRET, 
     AUDIENCE, 
     ISSUER, 
     REFRESH_TOKEN_SECRET 
-} from "../../env-config";
-import { expressjwt as jwt, Request } from 'express-jwt';
-import { errorMessages } from "../services/messageBuilderService";
-import { INVALID_GRANT_TYPE } from "../constants/errors";
-import { UnauthorizedError } from "express-jwt";
+} from '../../env-config';
+import { expressjwt as jwt, Request as JWTRequest } from 'express-jwt';
+import { errorMessages } from '../services/messageBuilderService';
+import { INVALID_GRANT_TYPE, INVALID_TOKEN } from '../constants/errors';
+import { UnauthorizedError } from 'express-jwt';
+import { verify } from 'jsonwebtoken'; 
 
 export function validateAccessToken() {
     return jwt({ 
@@ -31,7 +36,25 @@ export function validateRefreshToken() {
     });
 }
 
-export function checkTokenForSignInGrantType(req: Request, res: Response, next: NextFunction) {
+export function isRefreshTokenValid(req: any, grantType: string) {
+    const token = req.body.refresh_token;
+
+    verify(token, REFRESH_TOKEN_SECRET, { 
+        audience: AUDIENCE,
+        issuer: ISSUER,
+        algorithms: ['HS256'],
+    }, (e, decoded) => {
+        if (e) throw new Error(INVALID_TOKEN.code + ': ' + INVALID_TOKEN.message);
+
+        if (typeof decoded === 'object' && 'grant_type' in decoded) {
+            if (decoded?.grant_type !== grantType) throw new Error(INVALID_GRANT_TYPE.code + ': ' + INVALID_GRANT_TYPE.messages[0]);
+        }
+
+        req.auth = decoded;
+    });
+}
+
+export function checkTokenForSignInGrantType(req: JWTRequest, res: Response, next: NextFunction) {
     const token = req.auth;
 
     if (token?.grant_type === 'sign_in') {

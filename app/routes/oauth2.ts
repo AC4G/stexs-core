@@ -1,9 +1,10 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import { 
+import {
     checkTokenForSignInGrantType, 
     transformJwtErrorMessages,
-    validateAccessToken 
+    validateAccessToken, 
+    isRefreshTokenValid
 } from '../middlewares/jwtMiddleware';
 import db from '../database';
 import { errorMessages } from '../services/messageBuilderService';
@@ -25,7 +26,7 @@ import {
     REFRESH_TOKEN_REQUIRED, 
     SCOPES_REQUIRED
 } from '../constants/errors';
-import { v4 as uuidv4, validate as validateUUID } from 'uuid';
+import { v4 as uuidv4, validate as validateUUID } from 'uuid'; 
 import validate from '../middlewares/validatorMiddleware';
 import { 
     authorizationCodeController, 
@@ -88,14 +89,17 @@ router.post('/authorize', [
                         AND obj.scope = s.name::text
                 )
             );
-        `, [client_id, redirect_url, JSON.stringify(scopes)]);
+        `, [
+            client_id, 
+            redirect_url, 
+            JSON.stringify(scopes)
+        ]);
         
         if (rowCount === 0) return res.status(404).json(errorMessages([{
             code: CLIENT_NOT_FOUND.code,
             message: CLIENT_NOT_FOUND.message
         }]));
     } catch (e) {
-        console.log({e});
         return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
             message: INTERNAL_ERROR.message
@@ -140,8 +144,12 @@ router.post('/authorize', [
             ON CONFLICT (user_id, client_id)
             DO UPDATE
             SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
-            RETURNING id
-        `, [token, userId, client_id]);
+            RETURNING id;
+        `, [
+            token,
+            userId, 
+            client_id
+        ]);
     
         if (rowCount === 0) return res.status(500).json(errorMessages([{
             code: INTERNAL_ERROR.code,
@@ -172,7 +180,7 @@ router.post('/authorize', [
             INSERT INTO auth.oauth2_authorization_token_scopes (token_id, scope_id)
             SELECT $1::integer, id
             FROM scope_ids
-            ON CONFLICT DO NOTHING
+            ON CONFLICT DO NOTHING;
         `, [tokenId, scopes]);
     } catch (e) {
         return res.status(500).json(errorMessages([{
@@ -229,7 +237,9 @@ router.post('/token', [
             if (req.body?.grant_type !== 'refresh_token') return true;
 
             if (value === undefined || value.length === 0) throw new Error(REFRESH_TOKEN_REQUIRED.code + ': ' + REFRESH_TOKEN_REQUIRED.message);
-        
+
+            if (req.body?.grant_type === 'refresh_token') isRefreshTokenValid(req, 'authorization_code');
+
             return true;
         }),
     validate

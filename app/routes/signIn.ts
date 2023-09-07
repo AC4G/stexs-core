@@ -29,20 +29,18 @@ router.post('/', [
 ], async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
 
-    const query = `
-        SELECT u.id, u.email_verified_at, p.username
-        FROM auth.users u
-        LEFT JOIN public.profiles p ON u.id = p.user_id
-        WHERE u.encrypted_password = extensions.crypt($2, u.encrypted_password)
-        AND (
-            (CASE WHEN $1 ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) = $1
-        )
-    `;
-
     let id;
 
     try {
-        const { rowCount, rows } = await db.query(query, [identifier, password]);
+        const { rowCount, rows } = await db.query(`
+            SELECT u.id, u.email_verified_at, p.username
+            FROM auth.users u
+            LEFT JOIN public.profiles p ON u.id = p.user_id
+            WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
+            AND (
+                (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) = $1
+            );
+        `, [identifier, password]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{ 
             code: INVALID_CREDENTIALS.code, 
@@ -62,11 +60,9 @@ router.post('/', [
         }]));
     }
 
-    const body = await generateAccessToken({
+    res.json(await generateAccessToken({
         sub: id
-    });
-
-    res.json(body);
+    }));
 });
 
 export default router;

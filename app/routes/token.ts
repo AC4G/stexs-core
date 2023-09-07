@@ -19,15 +19,13 @@ router.post('/', [
 ], async (req: Request, res: Response) => {
     const token = req.auth;
 
-    const query = `
-        DELETE FROM auth.refresh_tokens
-        WHERE user_id = $1 AND grant_type = 'sign_in' AND token = $2
-    `;
-
     try {
-        const result = await db.query(query, [token?.sub, token?.jti]);
+        const { rowCount } = await db.query(`
+            DELETE FROM auth.refresh_tokens
+            WHERE user_id = $1::uuid AND grant_type = 'sign_in' AND token = $2::uuid AND session_id = $3::uuid;
+        `, [token?.sub, token?.jti, token?.session_id]);
 
-        if (result.rowCount === 0) return res.status(401).send(errorMessages([{
+        if (rowCount === 0) return res.status(401).send(errorMessages([{
             code: INVALID_TOKEN.code,
             message: INVALID_TOKEN.message
         }]));
@@ -36,9 +34,11 @@ router.post('/', [
             code: INTERNAL_ERROR.code,
             message: INTERNAL_ERROR.message
         }]));
-    }
+    } 
 
-    res.status(200).json(generateAccessToken({ sub: token?.sub }));
+    res.json(await generateAccessToken({ 
+        sub: token?.sub 
+    }));
 });
 
 export default router;

@@ -52,20 +52,18 @@ router.post('/', [
     const { username, password, email } = req.body;
     const token = uuidv4();
 
-    const query = `
-        INSERT INTO auth.users (
-            email, 
-            encrypted_password, 
-            raw_user_meta_data,
-            verification_token,
-            verification_sent_at
-        )
-        VALUES ($1, $2, $3::jsonb, $4, CURRENT_TIMESTAMP)
-        RETURNING id;
-    `;
-
     try {
-        const { rowCount, rows } = await db.query(query, [
+        const { rowCount, rows } = await db.query(`
+            INSERT INTO auth.users (
+                email, 
+                encrypted_password, 
+                raw_user_meta_data,
+                verification_token,
+                verification_sent_at
+            )
+            VALUES ($1::text, $2::text, $3::jsonb, $4::uuid, CURRENT_TIMESTAMP)
+            RETURNING id;
+        `, [
             email, 
             password, 
             { username },
