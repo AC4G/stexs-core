@@ -28,7 +28,7 @@ export default async function generateAccessToken(additionalPayload: any, grantT
         access_token: accessToken,
         token_type: 'bearer',
         expires: exp
-    }
+    };
 
     let jti;
 
