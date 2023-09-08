@@ -157,3 +157,15 @@ export const INVALID_REFRESH_TOKEN = {
     code: 'INVALID_REFRESH_TOKEN',
     message: 'Provided refresh token is invalid.'
 };
+export const INVALID_CLIENT_CREDENTIALS = {
+    code: 'INVALID_CLIENT_CREDENTIALS',
+    message: 'Provided client credentials are invalid.'
+};
+export const NO_CLIENT_SCOPES_SELECTED = {
+    code: 'NO_CLIENT_SCOPES_SELECTED',
+    message: 'No scopes for client credentials grant selected for this client.'
+};
+export const CODE_EXPIRED = {
+    code: 'CODE_EXPIRED',
+    message: 'The provided authorization code has expired.'
+};

@@ -240,13 +240,11 @@ describe('Sign Up', () => {
             rowCount: 1
         });
 
-        const email = 'test@example.com';
-
         const response = await request(server)
             .post('/sign-up')
             .send({
                 username: 'Test123',
-                email,
+                email: 'test@example.com',
                 password: 'Test123.'
         });
 
