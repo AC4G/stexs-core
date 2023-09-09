@@ -24,13 +24,13 @@ const router = Router();
 router.get('/', [
     query('email')
         .notEmpty()
-        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
+        .withMessage(EMAIL_REQUIRED)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+        .withMessage({ code: INVALID_EMAIL.code, message: INVALID_EMAIL.messages[0] }),
     query('token')
         .notEmpty()
-        .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message),
+        .withMessage(TOKEN_REQUIRED),
     validate
 ], async (req: Request, res: Response) => {
     const { email, token } = req.query;
@@ -61,8 +61,7 @@ router.get('/', [
         }
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -77,13 +76,11 @@ router.get('/', [
         `, [email]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -96,10 +93,10 @@ router.get('/', [
 router.post('/resend', [
     body('email')
         .notEmpty()
-        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
+        .withMessage(EMAIL_REQUIRED)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+        .withMessage({ code: INVALID_EMAIL.code, message: INVALID_EMAIL.messages[0] }),
     validate
 ], async (req: Request, res: Response) => {
     const email = req.body.email;
@@ -111,18 +108,15 @@ router.post('/resend', [
         `, [email]);
 
         if (rowCount === 0) return res.status(404).json(errorMessages([{ 
-            code: EMAIL_NOT_FOUND.code, 
-            message: EMAIL_NOT_FOUND.message 
+            info: EMAIL_NOT_FOUND
         }]));
 
         if (rows[0].email_confirmed_at) return res.status(400).json(errorMessages([{ 
-            code: EMAIL_ALREADY_VERIFIED.code, 
-            message: EMAIL_ALREADY_VERIFIED.message 
+            info: EMAIL_ALREADY_VERIFIED
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -138,13 +132,11 @@ router.post('/resend', [
         `, [token, email]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -152,8 +144,7 @@ router.post('/resend', [
         await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 

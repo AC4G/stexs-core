@@ -169,3 +169,11 @@ export const CODE_EXPIRED = {
     code: 'CODE_EXPIRED',
     message: 'The provided authorization code has expired.'
 };
+export const CONNECTION_ALREADY_DELETED = {
+    code: 'CONNECTION_ALREADY_DELETED',
+    message: 'Provided client connection already deleted.'
+}
+export const CONNECTION_ALREADY_REVOKED = {
+    code: 'CONNECTION_ALREADY_REVOKED',
+    message: 'Connection not found or is already revoked for the given refresh token.'
+};

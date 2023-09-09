@@ -10,6 +10,8 @@ import recoveryRouter from './routes/recovery';
 import verifyRouter from './routes/verify';
 import { NODE_ENV, SERVER_PORT } from '../env-config';
 
+process.env.TZ = 'UTC';
+
 const server = express();
 
 server.use(bodyParser.urlencoded({ extended: true }));

@@ -14,20 +14,20 @@ import generateAccessToken from "../services/jwtService";
 import { Request } from "express-jwt";
 
 export async function authorizationCodeController(req: Request, res: Response) {
-    const { code, client_id: clientId, client_secret: clientSecret } = req.body;
+    const { code, client_id, client_secret: clientSecret } = req.body;
 
-    let userId, tokenId, scopes, organization_id; 
+    let userId, tokenId, scopes; 
 
     try {
         const { rowCount, rows } = await db.query(`
             WITH app_info AS (
-                SELECT id, organization_id
+                SELECT id
                 FROM public.oauth2_apps
                 WHERE client_id = $2::uuid
                 AND client_secret = $3::text
             ),
             token_info AS (
-                SELECT aot.id, aot.user_id, aot.created_at, ai.organization_id
+                SELECT aot.id, aot.user_id, aot.created_at
                 FROM auth.oauth2_authorization_tokens AS aot
                 JOIN app_info AS ai ON aot.client_id = ai.id
                 WHERE aot.token = $1::uuid
@@ -43,28 +43,25 @@ export async function authorizationCodeController(req: Request, res: Response) {
             CROSS JOIN token_scopes;
         `, [
             code, 
-            clientId, 
+            client_id, 
             clientSecret
         ]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
-            code: INVALID_AUTHORIZATION_CODE.code,
-            message: INVALID_AUTHORIZATION_CODE.message
+            info: INVALID_AUTHORIZATION_CODE
         }]));
 
         const expiryDate = new Date(rows[0].created_at);
         expiryDate.setMinutes(expiryDate.getMinutes() + 5);
 
         if (expiryDate < new Date()) return res.status(400).json(errorMessages([{
-            code: CODE_EXPIRED.code,
-            message: CODE_EXPIRED.message
+            info: CODE_EXPIRED
         }]));
 
-        ({ id: tokenId, user_id: userId, scopes, organization_id } = rows[0]);
+        ({ id: tokenId, user_id: userId, scopes } = rows[0]);
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -75,8 +72,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
         `, [tokenId]);
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -85,7 +81,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
     const body = await generateAccessToken({
         sub: userId,
         scopes,
-        organization_id
+        client_id
     }, 'authorization_code', refreshToken);
 
     try {
@@ -105,13 +101,12 @@ export async function authorizationCodeController(req: Request, res: Response) {
             FROM app_info;
         `, [
             refreshToken, 
-            clientId, 
+            client_id, 
             userId
         ]);
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -121,12 +116,12 @@ export async function authorizationCodeController(req: Request, res: Response) {
 export async function clientCredentialsController(req: Request, res: Response) {
     const { client_id, client_secret } = req.body;
 
-    let organization_id, scopes;
+    let scopes;
     
     try {
         const { rowCount, rows } = await db.query(`
             WITH app_info AS (
-                SELECT id, organization_id
+                SELECT id
                 FROM public.oauth2_apps
                 WHERE client_id = $1::uuid
                 AND client_secret = $2::text
@@ -138,40 +133,36 @@ export async function clientCredentialsController(req: Request, res: Response) {
                 JOIN public.scopes AS s ON oas.scope_id = s.id
                 WHERE s.type = 'client'
             )
-            SELECT organization_id, scopes
+            SELECT scopes
             FROM app_info
             CROSS JOIN app_scopes;
         `, [client_id, client_secret]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
-            code: INVALID_CLIENT_CREDENTIALS.code,
-            message: INVALID_CLIENT_CREDENTIALS.message
+            info: INVALID_CLIENT_CREDENTIALS
         }]));
 
-        ({ organization_id, scopes } = rows[0]);
+        scopes = rows[0].scopes;
 
         if (!scopes) return res.status(400).json(errorMessages([{
-            code: NO_CLIENT_SCOPES_SELECTED.code,
-            message: NO_CLIENT_SCOPES_SELECTED.message
+            info: NO_CLIENT_SCOPES_SELECTED
         }]));
     } catch (e) {
-        console.log({e})
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
-    const body = generateAccessToken({
-        organization_id,
-        scopes
+    const body = await generateAccessToken({
+        scopes,
+        client_id
     }, 'client_credentials');
 
     res.json(body);
 }
 
 export async function refreshTokenController(req: Request, res: Response) {
-    const { scopes, sub, project_id, jti } = req.auth!;
+    const { scopes, sub, client_id, jti } = req.auth!;
 
     try {
         const { rowCount } = await db.query(`
@@ -181,20 +172,18 @@ export async function refreshTokenController(req: Request, res: Response) {
         `, [jti, sub]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
-            code: INVALID_REFRESH_TOKEN.code,
-            message: INVALID_REFRESH_TOKEN.message
+            info: INVALID_REFRESH_TOKEN
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
     const body = await generateAccessToken({
         sub,
         scopes,
-        project_id
+        client_id
     }, 'authorization_code', null, jti);
 
     res.json(body);

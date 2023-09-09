@@ -15,7 +15,7 @@ import {
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
     validateRefreshToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
-    checkTokenForSignInGrantType: jest.fn((req, res, next) => next()),
+    checkTokenGrantType: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
     transformJwtErrorMessages: jest.fn((err, req, res, next) => next())
 }));
 

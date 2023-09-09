@@ -5,7 +5,7 @@ import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
 import { INTERNAL_ERROR, INVALID_TOKEN } from '../constants/errors';
 import { 
-    checkTokenForSignInGrantType, 
+    checkTokenGrantType, 
     transformJwtErrorMessages, 
     validateRefreshToken 
 } from '../middlewares/jwtMiddleware';
@@ -13,8 +13,8 @@ import {
 const router = Router();
 
 router.post('/', [
-    validateRefreshToken(),
-    checkTokenForSignInGrantType,
+    validateRefreshToken,
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages
 ], async (req: Request, res: Response) => {
     const token = req.auth;
@@ -26,13 +26,11 @@ router.post('/', [
         `, [token?.sub, token?.jti, token?.session_id]);
 
         if (rowCount === 0) return res.status(401).send(errorMessages([{
-            code: INVALID_TOKEN.code,
-            message: INVALID_TOKEN.message
+            info: INVALID_TOKEN
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     } 
 
