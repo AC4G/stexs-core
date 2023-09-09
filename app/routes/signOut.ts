@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
 import db from '../database';
 import { 
-    checkTokenForSignInGrantType, 
+    checkTokenGrantType, 
     transformJwtErrorMessages, 
     validateAccessToken 
 } from '../middlewares/jwtMiddleware';
@@ -13,7 +13,7 @@ const router = Router();
 
 router.post('/', [
     validateAccessToken(),
-    checkTokenForSignInGrantType,
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages
 ], async (req: Request, res: Response) => {    
     const auth = req.auth;
@@ -27,8 +27,7 @@ router.post('/', [
         if (rowCount === 0) return res.status(404).send();
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -37,7 +36,7 @@ router.post('/', [
 
 router.post('/everywhere', [
     validateAccessToken(),
-    checkTokenForSignInGrantType,
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages
 ], async (req: Request, res: Response) => {
     try {
@@ -49,8 +48,7 @@ router.post('/everywhere', [
         if (rowCount === 0) return res.status(404).send();
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 

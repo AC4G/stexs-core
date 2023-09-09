@@ -21,10 +21,10 @@ const router = Router();
 router.post('/', [
     body('identifier')
         .notEmpty()
-        .withMessage(IDENTIFIER_REQUIRED.code + ': ' + IDENTIFIER_REQUIRED.message),
+        .withMessage(IDENTIFIER_REQUIRED),
     body('password')
         .notEmpty()
-        .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message),
+        .withMessage(PASSWORD_REQUIRED),
     validate
 ], async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
@@ -43,20 +43,20 @@ router.post('/', [
         `, [identifier, password]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{ 
-            code: INVALID_CREDENTIALS.code, 
-            message: INVALID_CREDENTIALS.messages[0] 
+            info: {
+                code: INVALID_CREDENTIALS.code, 
+                message: INVALID_CREDENTIALS.messages[0]
+            } 
         }]));
 
         if (!rows[0].email_verified_at) return res.status(400).json(errorMessages([{
-            code: EMAIL_NOT_VERIFIED.code,
-            message: EMAIL_NOT_VERIFIED.message
+            info: EMAIL_NOT_VERIFIED
         }]));
 
         id = rows[0].id;
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 

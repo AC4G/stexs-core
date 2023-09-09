@@ -3,7 +3,7 @@ import { Request } from 'express-jwt';
 import { 
     transformJwtErrorMessages, 
     validateAccessToken, 
-    checkTokenForSignInGrantType 
+    checkTokenGrantType 
 } from '../middlewares/jwtMiddleware';
 import db from '../database';
 import { body } from 'express-validator';
@@ -28,7 +28,7 @@ const router = Router();
 
 router.get('/', [
     validateAccessToken(),
-    checkTokenForSignInGrantType,
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages
 ], async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -46,29 +46,27 @@ router.get('/', [
         `, [userId]);
 
         if (result.rowCount === 0) return res.status(404).json(errorMessages([{
-            code: USER_NOT_FOUND.code,
-            message: USER_NOT_FOUND.message
+            info: USER_NOT_FOUND
         }]));
 
         res.json(result.rows[0]);
     } catch (e) {
         res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 });
 
 router.post('/password', [
     validateAccessToken(),
-    checkTokenForSignInGrantType,
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
     body('password')
         .notEmpty()
-        .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
+        .withMessage(PASSWORD_REQUIRED)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message),
+        .withMessage(INVALID_PASSWORD),
     validate
 ], async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -83,29 +81,27 @@ router.post('/password', [
         `, [password, userId]);
 
         if (result.rowCount === 0) return res.status(500).json(errorMessages([{
-            code: PASSWORD_CHANGE_FAILED.code,
-            message: PASSWORD_CHANGE_FAILED.message
+            info: PASSWORD_CHANGE_FAILED
         }]));
         
         res.json(message('Password changed successfully.'));
     } catch (e) {
         res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 });
 
 router.post('/email', [
     validateAccessToken(), 
-    checkTokenForSignInGrantType,
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
     body('email')
         .notEmpty()
-        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
+        .withMessage(EMAIL_REQUIRED)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+        .withMessage({ code: INVALID_EMAIL.code, message: INVALID_EMAIL.messages[0] }),
     validate
 ], async (req: Request, res: Response) => {
     const { email: newEmail } = req.body;
@@ -128,13 +124,11 @@ router.post('/email', [
         ]);
 
         if (result.rowCount === 0) return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -142,8 +136,7 @@ router.post('/email', [
         await sendEmail(newEmail, 'Email Change Verification', undefined, `Please verify your email change by clicking the link: ${REDIRECT_TO_EMAIL_CHANGE + '?token=' + token}`);
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -152,11 +145,11 @@ router.post('/email', [
 
 router.post('/email/verify', [
     validateAccessToken(), 
-    checkTokenForSignInGrantType,
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
     body('token')
         .notEmpty()
-        .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message),
+        .withMessage(TOKEN_REQUIRED),
     validate
 ], async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -175,13 +168,11 @@ router.post('/email/verify', [
         `, [userId, token]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
-            code: INVALID_TOKEN.code,
-            message: INVALID_TOKEN.message
+            info: INVALID_TOKEN
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 

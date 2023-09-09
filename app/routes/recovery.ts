@@ -25,10 +25,10 @@ const router = Router();
 router.post('/', [
     body('email')
         .notEmpty()
-        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
+        .withMessage(EMAIL_REQUIRED)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+        .withMessage({ code: INVALID_EMAIL.code, message: INVALID_EMAIL.messages[0] }),
     validate
 ],async (req: Request, res: Response) => {
     const { email } = req.body;
@@ -40,13 +40,14 @@ router.post('/', [
         `, [email]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
-            code: INVALID_EMAIL.code,
-            message: INVALID_EMAIL.messages[0]
+            info: {
+                code: INVALID_EMAIL.code,
+                message: INVALID_EMAIL.messages[0]
+            }
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -62,13 +63,11 @@ router.post('/', [
         `, [token, email]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -76,8 +75,7 @@ router.post('/', [
         await sendEmail(email, 'Password Recovery', undefined, `You can change your password by following the link: ${REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token}`);
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -87,19 +85,19 @@ router.post('/', [
 router.post('/confirm', [
     body('email')
         .notEmpty()
-        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
+        .withMessage(EMAIL_REQUIRED)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+        .withMessage({ code: INVALID_EMAIL.code, message: INVALID_EMAIL.messages[0] }),
     body('token')
         .notEmpty()
-        .withMessage(TOKEN_REQUIRED.code + ': ' + TOKEN_REQUIRED.message),
+        .withMessage(TOKEN_REQUIRED),
     body('password')
         .notEmpty()
-        .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
+        .withMessage(PASSWORD_REQUIRED)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message),
+        .withMessage(INVALID_PASSWORD),
     validate
 ],async (req: Request, res: Response) => {
     const { email, token, password } = req.body;
@@ -111,13 +109,11 @@ router.post('/confirm', [
         `, [email, token]);
 
         if (rowCount === 0) return res.status(400).json(errorMessages([{
-            code: INVALID_REQUEST.code,
-            message: INVALID_REQUEST.message
+            info: INVALID_REQUEST
         }]));
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -132,15 +128,13 @@ router.post('/confirm', [
         `, [password, email]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
 
         res.json(message('Password successfully recovered.'));
     } catch (e) {
         res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 });

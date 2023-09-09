@@ -5,7 +5,11 @@ import {
 } from 'express';
 import db from '../database';
 import sendEmail from '../services/emailService';
-import { message, errorMessages } from '../services/messageBuilderService';
+import { 
+    message,
+    errorMessages, 
+    CustomValidationError 
+} from '../services/messageBuilderService';
 import { body } from 'express-validator';
 import { ISSUER } from '../../env-config';
 import { 
@@ -26,27 +30,27 @@ const router = Router();
 router.post('/', [
     body('username')
         .notEmpty()
-        .withMessage(USERNAME_REQUIRED.code + ': ' +  USERNAME_REQUIRED.message)
+        .withMessage(USERNAME_REQUIRED)
         .bail()
         .isLength({ min: 1, max: 20 })
-        .withMessage(INVALID_USERNAME.code + ': ' + INVALID_USERNAME.messages[0])
+        .withMessage({ code: INVALID_USERNAME.code, message: INVALID_USERNAME.messages[0] })
         .custom((value: string) => {
-            if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) throw new Error(INVALID_USERNAME.code + ': ' + INVALID_USERNAME.messages[1]);
+            if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) throw new CustomValidationError({ code: INVALID_USERNAME.code, message: INVALID_USERNAME.messages[1] });
 
             return true;
         }),
     body('email')
         .notEmpty()
-        .withMessage(EMAIL_REQUIRED.code + ': ' + EMAIL_REQUIRED.message)
+        .withMessage(EMAIL_REQUIRED)
         .bail()
         .isEmail()
-        .withMessage(INVALID_EMAIL.code + ': ' + INVALID_EMAIL.messages[0]),
+        .withMessage({ code: INVALID_EMAIL.code, message: INVALID_EMAIL.messages[0] }),
     body('password')
         .notEmpty()
-        .withMessage(PASSWORD_REQUIRED.code + ': ' + PASSWORD_REQUIRED.message)
+        .withMessage(PASSWORD_REQUIRED)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD.code + ': ' + INVALID_PASSWORD.message),
+        .withMessage(INVALID_PASSWORD),
     validate
 ], async (req: Request, res: Response) => {
     const { username, password, email } = req.body;
@@ -71,8 +75,7 @@ router.post('/', [
         ]);
 
         if (rowCount === 0) return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
 
         res.status(201).json( 
@@ -90,8 +93,10 @@ router.post('/', [
 
             return res.status(400).json(
                 errorMessages([{ 
-                    code: INVALID_INPUT_DATA.code, 
-                    message: err.hint + '.', 
+                    info: {
+                        code: INVALID_INPUT_DATA.code, 
+                        message: err.hint + '.', 
+                    },
                     data: {
                         path,
                         location: 'body'
@@ -101,8 +106,7 @@ router.post('/', [
         }
 
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 
@@ -110,8 +114,7 @@ router.post('/', [
         await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
     } catch (e) {
         return res.status(500).json(errorMessages([{
-            code: INTERNAL_ERROR.code,
-            message: INTERNAL_ERROR.message
+            info: INTERNAL_ERROR
         }]));
     }
 });

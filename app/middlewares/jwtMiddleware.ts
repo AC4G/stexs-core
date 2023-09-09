@@ -11,9 +11,27 @@ import {
 } from '../../env-config';
 import { expressjwt as jwt, Request as JWTRequest } from 'express-jwt';
 import { errorMessages } from '../services/messageBuilderService';
-import { INVALID_GRANT_TYPE, INVALID_TOKEN } from '../constants/errors';
-import { UnauthorizedError } from 'express-jwt';
+import { 
+    INVALID_GRANT_TYPE, 
+    INVALID_TOKEN, 
+    REFRESH_TOKEN_REQUIRED 
+} from '../constants/errors';
 import { verify } from 'jsonwebtoken'; 
+
+class JWTError extends Error {
+    code: string;
+    status: number;
+    data?: Record<string, any>;
+
+    constructor(message: string, code: string, status: number, data?: Record<string, any>) {
+        super(message);
+        this.code = code;
+        this.status = status;
+        this.data = data;
+        this.name = this.constructor.name;
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
 
 export function validateAccessToken() {
     return jwt({ 
@@ -24,16 +42,25 @@ export function validateAccessToken() {
     });
 }
 
-export function validateRefreshToken() { 
+export function validateRefreshToken(req: Request, res: Response, next: NextFunction) { 
+    const refreshToken = req.body?.refresh_token;
+
+    if (refreshToken === undefined || refreshToken.length === 0) {
+        const err = new JWTError(REFRESH_TOKEN_REQUIRED.message, REFRESH_TOKEN_REQUIRED.code, 400, {
+            path: 'refresh_token',
+            location: 'body'
+        });
+
+        return next(err);
+    }
+
     return jwt({ 
         secret: REFRESH_TOKEN_SECRET, 
         audience: AUDIENCE,
         issuer: ISSUER,
         algorithms: ['HS256'],
-        getToken: (req: Request) => {
-            return req.body.refresh_token || null;
-        }
-    });
+        getToken: (req) => refreshToken
+    })(req, res, next);
 }
 
 export function isRefreshTokenValid(req: any, grantType: string) {
@@ -54,25 +81,30 @@ export function isRefreshTokenValid(req: any, grantType: string) {
     });
 }
 
-export function checkTokenForSignInGrantType(req: JWTRequest, res: Response, next: NextFunction) {
-    const token = req.auth;
+export function checkTokenGrantType(grantType: string) {
+    return (req: JWTRequest, res: Response, next: NextFunction) => {
+        const token = req.auth;
 
-    if (token?.grant_type === 'sign_in') {
-        return next();
-    }
+        if (token?.grant_type === grantType) {
+            return next();
+        }
 
-    const err = {
-        status: 403,
-        code: INVALID_GRANT_TYPE.code,
-        message: INVALID_GRANT_TYPE.messages[0]
+        const err = {
+            status: 403,
+            code: INVALID_GRANT_TYPE.code,
+            message: INVALID_GRANT_TYPE.messages[0]
+        };
+
+        throw new JWTError(INVALID_GRANT_TYPE.messages[0], INVALID_GRANT_TYPE.code, 403);
     };
-
-    throw new UnauthorizedError('invalid_token', { message: INVALID_GRANT_TYPE.messages[0] });
 }
 
 export function transformJwtErrorMessages(err: any, req: Request, res: Response, next: NextFunction) {
     return res.status(err.status).json(errorMessages([{ 
-        code: err.code.toUpperCase(), 
-        message: err.message 
+        info: {
+            code: err.code.toUpperCase(), 
+            message: err.message
+        },
+        data: err.data || {}
     }]));
 }
