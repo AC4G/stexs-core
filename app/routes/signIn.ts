@@ -15,6 +15,7 @@ import {
     PASSWORD_REQUIRED 
 } from '../constants/errors';
 import validate from '../middlewares/validatorMiddleware';
+import logger from '../loggers/logger';
 
 const router = Router();
 
@@ -42,27 +43,45 @@ router.post('/', [
             );
         `, [identifier, password]);
 
-        if (rowCount === 0) return res.status(400).json(errorMessages([{ 
-            info: {
-                code: INVALID_CREDENTIALS.code, 
-                message: INVALID_CREDENTIALS.messages[0]
-            } 
-        }]));
+        if (rowCount === 0) {
+            logger.warn(`Sign-in failed for user: ${identifier}`);
+            return res.status(400).json(errorMessages([{ 
+                info: {
+                    code: INVALID_CREDENTIALS.code, 
+                    message: INVALID_CREDENTIALS.messages[0]
+                } 
+            }]));
+        }
 
-        if (!rows[0].email_verified_at) return res.status(400).json(errorMessages([{
-            info: EMAIL_NOT_VERIFIED
-        }]));
+        if (!rows[0].email_verified_at) {
+            logger.warn(`Email not verified for user: ${identifier}`);
+            return res.status(400).json(errorMessages([{
+                info: EMAIL_NOT_VERIFIED
+            }]));
+        }
 
         id = rows[0].id;
     } catch (e) {
+        logger.error(`Error during sign in: ${(e instanceof Error) ? e.message : e}`);
+        logger.debug(`Error during sing in for identifier: ${identifier} and password: ${password}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
     }
 
-    res.json(await generateAccessToken({
-        sub: id
-    }));
+    try {
+        const body = await generateAccessToken({
+            sub: id
+        });
+
+        res.json(body);
+
+        logger.info(`Sign-in successful for user: ${identifier}`);
+    } catch (e) {
+        return res.status(500).json(errorMessages([{
+            info: INTERNAL_ERROR
+        }]));
+    }
 });
 
 export default router;

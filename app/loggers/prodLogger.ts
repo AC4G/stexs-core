@@ -12,6 +12,16 @@ export const prodLogger = createLogger({
         new LokiTransport({
             host: LOGGER_URL
         })
+    ],
+    exceptionHandlers: [
+        new LokiTransport({
+            host: LOGGER_URL
+        })
+    ],
+    rejectionHandlers: [
+        new LokiTransport({
+            host: LOGGER_URL
+        })
     ]
 });
  
