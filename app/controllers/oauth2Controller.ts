@@ -1,5 +1,5 @@
-import { Response } from "express";
-import { errorMessages } from "../services/messageBuilderService";
+import { Response } from 'express';
+import { errorMessages } from '../services/messageBuilderService';
 import { 
     CODE_EXPIRED,
     INTERNAL_ERROR, 
@@ -7,11 +7,11 @@ import {
     INVALID_CLIENT_CREDENTIALS, 
     INVALID_REFRESH_TOKEN, 
     NO_CLIENT_SCOPES_SELECTED
-} from "../constants/errors";
-import db from "../database";
-import { v4 as uuidv4 } from "uuid";
-import generateAccessToken from "../services/jwtService";
-import { Request } from "express-jwt";
+} from '../constants/errors';
+import db from '../database';
+import { v4 as uuidv4 } from 'uuid';
+import generateAccessToken from '../services/jwtService';
+import { Request } from 'express-jwt';
 
 export async function authorizationCodeController(req: Request, res: Response) {
     const { code, client_id, client_secret: clientSecret } = req.body;

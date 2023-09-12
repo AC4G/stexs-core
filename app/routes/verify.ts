@@ -60,6 +60,7 @@ router.get('/', [
             return res.redirect(302, signInURL.toString());
         }
     } catch (e) {
+        console.log({e});
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));

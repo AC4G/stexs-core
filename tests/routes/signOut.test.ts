@@ -1,6 +1,6 @@
 const mockQuery = jest.fn();
 
-import { NextFunction } from "express";
+import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../app/server';
 

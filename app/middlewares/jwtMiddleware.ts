@@ -59,7 +59,7 @@ export function validateRefreshToken(req: Request, res: Response, next: NextFunc
         audience: AUDIENCE,
         issuer: ISSUER,
         algorithms: ['HS256'],
-        getToken: (req) => refreshToken
+        getToken: () => refreshToken
     })(req, res, next);
 }
 
@@ -74,7 +74,7 @@ export function isRefreshTokenValid(req: any, grantType: string) {
         if (e) throw new Error(INVALID_TOKEN.code + ': ' + INVALID_TOKEN.message);
 
         if (typeof decoded === 'object' && 'grant_type' in decoded) {
-            if (decoded?.grant_type !== grantType) throw new Error(INVALID_GRANT_TYPE.code + ': ' + INVALID_GRANT_TYPE.messages[0]);
+            if (decoded?.grant_type !== grantType) throw new JWTError(INVALID_GRANT_TYPE.messages[0], INVALID_GRANT_TYPE.code, 403);
         }
 
         req.auth = decoded;
@@ -88,12 +88,6 @@ export function checkTokenGrantType(grantType: string) {
         if (token?.grant_type === grantType) {
             return next();
         }
-
-        const err = {
-            status: 403,
-            code: INVALID_GRANT_TYPE.code,
-            message: INVALID_GRANT_TYPE.messages[0]
-        };
 
         throw new JWTError(INVALID_GRANT_TYPE.messages[0], INVALID_GRANT_TYPE.code, 403);
     };

@@ -24,6 +24,7 @@ import {
 } from '../constants/errors';
 import { v4 as uuidv4 } from 'uuid';
 import validate from '../middlewares/validatorMiddleware';
+import logger from '../loggers/logger';
 
 const router = Router();
 
@@ -74,9 +75,14 @@ router.post('/', [
             token
         ]);
 
-        if (rowCount === 0) return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        if (rowCount === 0) {
+            logger.error('Sign-up: Database insertion failed.');
+            return res.status(500).json(errorMessages([{
+                info: INTERNAL_ERROR
+            }]));
+        }
+
+        logger.info(`Sign-up successful for user: ${username}`);
 
         res.status(201).json( 
             message('Sign-up successful. Check your email for an verification link!', { 
@@ -90,6 +96,8 @@ router.post('/', [
 
         if (err.hint) {
             const path = err.hint.split(' ').pop()!;
+            
+            logger.warn(`Sign-up validation failed for user: ${username}, path: ${path}`);
 
             return res.status(400).json(
                 errorMessages([{ 
@@ -105,6 +113,8 @@ router.post('/', [
             );
         }
 
+        logger.error(`Sign-up error: ${(e instanceof Error) ? e.message : e}`);
+
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -112,8 +122,10 @@ router.post('/', [
 
     try {
         await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
+        logger.info(`Email verification message sent successfully for user: ${username}`);
     } catch (e) {
-        return res.status(500).json(errorMessages([{
+        logger.error(`Sign-up: Email sending failed. Error: ${(e instanceof Error) ? e.message : e}`);
+        res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
     }

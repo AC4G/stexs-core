@@ -1,4 +1,4 @@
-import { Result } from "express-validator";
+import { Result } from 'express-validator';
 
 export function message(
     message: string,

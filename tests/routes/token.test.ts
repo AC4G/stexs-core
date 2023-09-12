@@ -1,6 +1,6 @@
 const mockQuery = jest.fn();
 
-import { NextFunction } from "express";
+import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../app/server';
 import { INVALID_TOKEN } from "../../app/constants/errors";
@@ -29,7 +29,7 @@ describe('Token Route', () => {
         });
 
         const response = await request(server)
-            .post('/token')
+            .post('/token');
 
         expect(response.status).toBe(401);
         expect(response.body.errors).toEqual([
@@ -53,7 +53,7 @@ describe('Token Route', () => {
         });
 
         const response = await request(server)
-            .post('/token')
+            .post('/token');
 
         expect(response.status).toBe(200);
         expect(response.body).toMatchObject({

@@ -1,18 +1,18 @@
 {
-    "include": ["**/*.ts"],
-    "compilerOptions": {
-        "outDir": "./dist",
-        "module": "CommonJS",
-        "target": "ES2019",
-        "strict": true,
-        "allowJs": true,
-        "esModuleInterop": true,
-        "moduleResolution": "node",
-        "forceConsistentCasingInFileNames": true,
-        "baseUrl": ".",
-        "paths": {
-        "~/*": ["./app/*"]
-        },
-        "composite": true
-    }
+  "include": ["**/*.ts"],
+  "compilerOptions": {
+      "outDir": "./build",
+      "module": "CommonJS",
+      "target": "ES2019",
+      "strict": true,
+      "allowJs": true,
+      "esModuleInterop": true,
+      "moduleResolution": "node",
+      "forceConsistentCasingInFileNames": true,
+      "baseUrl": ".",
+      "paths": {
+      "~/*": ["./app/*"]
+      },
+      "composite": true
+  }
 }
