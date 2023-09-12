@@ -19,5 +19,13 @@ export const devLogger = createLogger({
     transports: [
         new transports.Console(),
         new transports.File({ filename: './logs/combined.log' })
+    ],
+    exceptionHandlers: [
+        new transports.Console(),
+        new transports.File({ filename: './logs/exceptions.log' })
+    ],
+    rejectionHandlers: [
+        new transports.Console(),
+        new transports.File({ filename: './logs/rejections.log' })
     ]
 });

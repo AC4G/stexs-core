@@ -35,7 +35,7 @@ server.use((req, res, next) => {
 server.use((req, res, next) => {
     res.on('finish', () => {
         logger.http(`Response Status: ${res.statusCode}`);
-        logger.http(`Response Time: ${res.get('X-Response-Time')}ms`);
+        logger.http(`Response Time: ${res.get('X-Response-Time')}`);
     });
     next();
 });

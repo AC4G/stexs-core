@@ -113,7 +113,8 @@ router.post('/', [
             );
         }
 
-        logger.error(`Sign-up error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error during sign up: ${(e instanceof Error) ? e.message : e}`);
+        logger.debug(`Error druing sign up with this email: ${email}, username: ${username} and password: ${password}. Error: ${(e instanceof Error) ? e.message : e}`);
 
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
