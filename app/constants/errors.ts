@@ -177,3 +177,7 @@ export const CONNECTION_ALREADY_REVOKED = {
     code: 'CONNECTION_ALREADY_REVOKED',
     message: 'Connection not found or is already revoked for the given refresh token.'
 };
+export const ROUTE_NOT_FOUND = {
+    code: 'ROUTE_NOT_FOUND',
+    message: 'Request route doesn\'t exists.'
+};

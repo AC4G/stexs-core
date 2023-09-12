@@ -76,7 +76,6 @@ describe('Sign Up', () => {
                 password: 'Test123.'
         });
 
-        console.log({ err: response.body.errors })
         expect(response.status).toBe(400);
         expect(response.body.errors).toEqual([
             {
