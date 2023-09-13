@@ -26,7 +26,6 @@ server.use(bodyParser.json());
 server.use(responseTime());
 
 server.use((req, res, next) => {
-    logger.info(`Request received: ${req.method} ${req.url} from IP: ${req.ip}`);
     logger.debug(`Request Headers: ${JSON.stringify(req.headers)}`);
     logger.debug(`Request Body: ${JSON.stringify(req.body)}`);
     next();
@@ -34,8 +33,7 @@ server.use((req, res, next) => {
 
 server.use((req, res, next) => {
     res.on('finish', () => {
-        logger.http(`Response Status: ${res.statusCode}`);
-        logger.http(`Response Time: ${res.get('X-Response-Time')}`);
+        logger.info(`method=${req.method} url=${req.originalUrl} status=${res.statusCode} ip=${req.ip} duration=${res.get('X-Response-Time')}`);
     });
     next();
 });

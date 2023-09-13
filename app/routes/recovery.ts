@@ -19,6 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 import sendEmail from '../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../env-config';
 import validate from '../middlewares/validatorMiddleware';
+import logger from '../loggers/logger';
 
 const router = Router();
 
@@ -39,13 +40,23 @@ router.post('/', [
             WHERE email = $1::text;
         `, [email]);
 
-        if (rowCount === 0) return res.status(400).json(errorMessages([{
-            info: {
-                code: INVALID_EMAIL.code,
-                message: INVALID_EMAIL.messages[0]
-            }
-        }]));
+        if (rowCount === 0) {
+            logger.warn(`Invalid email for password recovery: ${email}`);
+            return res.status(400).json(errorMessages([{
+                info: {
+                    code: INVALID_EMAIL.code,
+                    message: INVALID_EMAIL.messages[0]
+                },
+                data: {
+                    path: 'email',
+                    location: 'body'
+                }
+            }]));
+        }
+
+        logger.info(`Email checked for password recovery: ${email}`);
     } catch (e) {
+        logger.error(`Error while checking email for password recovery for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -62,10 +73,16 @@ router.post('/', [
             WHERE email = $2::text;
         `, [token, email]);
 
-        if (rowCount === 0) return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        if (rowCount === 0) {
+            logger.error(`Failed to update recovery token for email: ${email}`);
+            return res.status(500).json(errorMessages([{
+                info: INTERNAL_ERROR
+            }]));
+        }
+
+        logger.info(`Recovery token successfully updated for email: ${email}`);
     } catch (e) {
+        logger.error(`Error while updating recovery token for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -74,10 +91,13 @@ router.post('/', [
     try {
         await sendEmail(email, 'Password Recovery', undefined, `You can change your password by following the link: ${REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token}`);
     } catch (e) {
+        logger.error(`Error while sending recovery email to ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
     }
+
+    logger.info(`Recovery email sent to: ${email}`);
 
     res.json(message('Recovery email was been send.'));
 });
@@ -108,10 +128,16 @@ router.post('/confirm', [
             WHERE email = $1::text AND recovery_token = $2::uuid;
         `, [email, token]);
 
-        if (rowCount === 0) return res.status(400).json(errorMessages([{
-            info: INVALID_REQUEST
-        }]));
+        if (rowCount === 0) {
+            logger.warn(`Invalid request for password recovery confirmation with email: ${email}`);
+            return res.status(400).json(errorMessages([{
+                info: INVALID_REQUEST
+            }]));
+        }
+
+        logger.info(`Password recovery request confirmed for email: ${email}`);
     } catch (e) {
+        logger.error(`Error while checking password recovery confirmation for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -127,12 +153,18 @@ router.post('/confirm', [
             WHERE email = $2::text;
         `, [password, email]);
 
-        if (rowCount === 0) return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        if (rowCount === 0) {
+            logger.error(`Failed to update password for email: ${email}`);
+            return res.status(500).json(errorMessages([{
+                info: INTERNAL_ERROR
+            }]));
+        }
+
+        logger.info(`Password successfully recovered for email: ${email}`);
 
         res.json(message('Password successfully recovered.'));
     } catch (e) {
+        logger.error(`Error while updating password for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));

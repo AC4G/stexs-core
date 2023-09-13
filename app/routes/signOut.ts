@@ -30,8 +30,7 @@ router.post('/', [
             return res.status(404).send();
         }
     } catch (e) {
-        logger.error(`Error during sign out: ${(e instanceof Error) ? e.message : e}`);
-        logger.debug(`Error during sign out for subject: ${auth?.sub} and session: ${auth?.session_id}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error during sign out for user: ${auth?.sub} and session: ${auth?.session_id}. Error:  ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -60,8 +59,7 @@ router.post('/everywhere', [
             return res.status(404).send();
         }
     } catch (e) {
-        logger.error(`Sign-out from all sessions error: ${(e instanceof Error) ? e.message : e}`);
-        logger.debug(`Sign-out from all sessions error for subject: ${sub}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Sign-out from all sessions failed for user: ${sub}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));

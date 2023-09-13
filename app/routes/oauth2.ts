@@ -8,7 +8,11 @@ import {
     checkTokenGrantType
 } from '../middlewares/jwtMiddleware';
 import db from '../database';
-import { CustomValidationError, errorMessages, message } from '../services/messageBuilderService';
+import { 
+    CustomValidationError, 
+    errorMessages, 
+    message 
+} from '../services/messageBuilderService';
 import { body } from 'express-validator';
 import { 
     ARRAY_REQUIRED, 
@@ -36,6 +40,7 @@ import {
     clientCredentialsController, 
     refreshTokenController
 } from '../controllers/oauth2Controller';
+import logger from '../loggers/logger';
 
 const router = Router();
 
@@ -75,6 +80,8 @@ router.post('/authorize', [
     const { client_id, redirect_url, scopes } = req.body;
 
     try {
+        const scopesStringified = JSON.stringify(scopes);
+
         const { rowCount } = await db.query(`
             SELECT 1
             FROM public.oauth2_apps a
@@ -95,13 +102,19 @@ router.post('/authorize', [
         `, [
             client_id, 
             redirect_url, 
-            JSON.stringify(scopes)
+            scopesStringified
         ]);
         
-        if (rowCount === 0) return res.status(404).json(errorMessages([{
-            info: CLIENT_NOT_FOUND
-        }]));
+        if (rowCount === 0) {
+            logger.warn(`Client not found for client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
+            return res.status(404).json(errorMessages([{
+                info: CLIENT_NOT_FOUND
+            }]));
+        }
+
+        logger.info(`Client found with client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
     } catch (e) {
+        logger.error(`Error while authorizing client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -119,10 +132,14 @@ router.post('/authorize', [
             );
         `, [userId, client_id]);
         
-        if (rowCount !== 0) return res.status(400).json(errorMessages([{
-            info: CLIENT_ALREADY_CONNECTED
-        }]));
+        if (rowCount !== 0) {
+            logger.warn(`Client is already connected with user: ${userId}`);
+            return res.status(400).json(errorMessages([{
+                info: CLIENT_ALREADY_CONNECTED
+            }]));
+        }
     } catch (e) {
+        logger.error(`Error while checking client connection for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -150,12 +167,18 @@ router.post('/authorize', [
             client_id
         ]);
     
-        if (rowCount === 0) return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        if (rowCount === 0) {
+            logger.error(`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`);
+            return res.status(500).json(errorMessages([{
+                info: INTERNAL_ERROR
+            }]));
+        }
 
+        logger.info(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
+        
         tokenId = rows[0].id;
     } catch (e) {
+        logger.error(`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -179,7 +202,10 @@ router.post('/authorize', [
             FROM scope_ids
             ON CONFLICT DO NOTHING;
         `, [tokenId, scopes]);
+
+        logger.info(`Authorization token scopes inserted/updated successfully for token: ${tokenId}`);
     } catch (e) {
+        logger.error(`Error while inserting/updating authorization token scopes for token: ${tokenId}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -242,6 +268,8 @@ router.post('/token', [
 ], async (req: Request, res: Response) => {
     const { grant_type } = req.body;
     
+    logger.info(`OAuth2 Token Endpoint accessed with grant type: ${grant_type}`);
+
     switch (grant_type) {
         case 'authorization_code':
             authorizationCodeController(req, res);
@@ -284,10 +312,13 @@ router.get('/connections', [
                 oc.user_id = $1::uuid;
         `, [userId])).rows;
     } catch (e) {
+        logger.error(`Error while fetching connections for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`)
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
     }
+
+    logger.info(`Connections fetched successfully for user: ${userId}`);
 
     res.json(result);
 });
@@ -323,14 +354,20 @@ router.delete('/connection', [
             WHERE rt.id IN (SELECT refresh_token_id FROM oauth2_connection_info);
         `, [clientId, userId]);
 
-        if (rowCount === 0) return res.status(404).json(errorMessages([{
-            info: CONNECTION_ALREADY_DELETED
-        }]));
+        if (rowCount === 0) {
+            logger.warn(`No connection found for deletion for user: ${userId} and client: ${clientId}`);
+            return res.status(404).json(errorMessages([{
+                info: CONNECTION_ALREADY_DELETED
+            }]));
+        }
     } catch (e) {
+        logger.error(`Error while deleting connection for user: ${userId} and client: ${clientId}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
     }
+
+    logger.info(`Connection deleted successfully for user: ${userId} and client: ${clientId}`);
 
     res.send(message('Connection successfully deleted.'));
 });
@@ -348,14 +385,20 @@ router.delete('/revoke', [
             WHERE user_id = $1::uuid AND grant_type = 'authorization_code' AND token = $2::uuid AND session_id IS NULL;
         `, [token?.sub, token?.jti]);
 
-        if (rowCount === 0) return res.status(404).json(errorMessages([{
-            info: CONNECTION_ALREADY_REVOKED
-        }]));
+        if (rowCount === 0) {
+            logger.warn(`No connection found for revocation for user: ${token?.sub}`);
+            return res.status(404).json(errorMessages([{
+                info: CONNECTION_ALREADY_REVOKED
+            }]));
+        }
     } catch (e) {
+        logger.error(`Error while revoking connection for user: ${token?.sub}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
     }
+
+    logger.info(`Connection revoked successfully for user: ${token?.sub}`);
 
     res.json(message('Connection successfully revoked.'));
 });
