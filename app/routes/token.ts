@@ -32,9 +32,10 @@ router.post('/', [
                 info: INVALID_TOKEN
             }]));
         }
+
+        logger.info(`Refresh token successfully processed for user: ${token?.sub} (Revoked)`);
     } catch (e) {
         logger.error(`Error while processing refresh token for user: ${token?.sub}. Error: ${(e instanceof Error) ? e.message : e}`);
-        logger.debug(`Error while processing refresh token for user: ${token?.sub}, jti: ${token?.jti} and session: ${token?.session_id}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -49,7 +50,7 @@ router.post('/', [
 
         logger.info(`New access token generated for user: ${token?.sub}`);
     } catch (e) {
-        return res.status(500).json(errorMessages([{
+        res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
     }

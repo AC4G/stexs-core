@@ -65,8 +65,7 @@ router.get('/', [
             return res.redirect(302, signInURL.toString());
         }
     } catch (e) {
-        logger.error(`Database error during email verification select: ${(e instanceof Error) ? e.message : e}`);
-        logger.debug(`Database error during email verification select with email: ${email} and token: ${token}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error during email verification select for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -89,7 +88,7 @@ router.get('/', [
             }]));
         }
     } catch (e) {
-        logger.error(`Database error while updating email verification for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error while updating email verification for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -134,7 +133,7 @@ router.post('/resend', [
             }]));
         }
     } catch (e) {
-        logger.error(`Error during email lookup for resend: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error during email lookup for resend with email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -153,14 +152,12 @@ router.post('/resend', [
 
         if (rowCount === 0) {
             logger.error(`Verification token update failed during resend for email: ${email}`);
-            logger.debug(`Verifcation token update failed during resend for email: ${email} and token: ${token}`);
             return res.status(500).json(errorMessages([{
                 info: INTERNAL_ERROR
             }]));
         }
     } catch (e) {
-        logger.error(`Verification token update failed during resend for email: ${email}`);
-        logger.debug(`Verifcation token update failed during resend for email: ${email} and token: ${token}`);
+        logger.error(`Verification token update failed during resend for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));

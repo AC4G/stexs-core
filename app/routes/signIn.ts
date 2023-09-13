@@ -62,8 +62,7 @@ router.post('/', [
 
         id = rows[0].id;
     } catch (e) {
-        logger.error(`Error during sign in: ${(e instanceof Error) ? e.message : e}`);
-        logger.debug(`Error during sing in for identifier: ${identifier} and password: ${password}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error during sign in for user: ${identifier}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -78,7 +77,7 @@ router.post('/', [
 
         logger.info(`Sign-in successful for user: ${identifier}`);
     } catch (e) {
-        return res.status(500).json(errorMessages([{
+        res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
     }

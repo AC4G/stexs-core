@@ -17,6 +17,7 @@ import {
     REFRESH_TOKEN_REQUIRED 
 } from '../constants/errors';
 import { verify } from 'jsonwebtoken'; 
+import logger from '../loggers/logger';
 
 class JWTError extends Error {
     code: string;
@@ -94,6 +95,8 @@ export function checkTokenGrantType(grantType: string) {
 }
 
 export function transformJwtErrorMessages(err: any, req: Request, res: Response, next: NextFunction) {
+    logger.warn(`JWT Error: ${err.message}`);
+        
     return res.status(err.status).json(errorMessages([{ 
         info: {
             code: err.code.toUpperCase(), 

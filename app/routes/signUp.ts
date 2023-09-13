@@ -114,7 +114,6 @@ router.post('/', [
         }
 
         logger.error(`Error during sign up: ${(e instanceof Error) ? e.message : e}`);
-        logger.debug(`Error druing sign up with this email: ${email}, username: ${username} and password: ${password}. Error: ${(e instanceof Error) ? e.message : e}`);
 
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
@@ -125,7 +124,7 @@ router.post('/', [
         await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
         logger.info(`Email verification message sent successfully for user: ${username}`);
     } catch (e) {
-        logger.error(`Sign-up: Email sending failed. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Sending verification email failed for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
