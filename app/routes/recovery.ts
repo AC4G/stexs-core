@@ -10,7 +10,9 @@ import {
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
     INVALID_REQUEST, 
+    NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_REQUIRED, 
+    RECOVERY_LINK_EXPIRED, 
     TOKEN_REQUIRED 
 } from '../constants/errors';
 import { errorMessages, message } from '../services/messageBuilderService';
@@ -20,6 +22,7 @@ import sendEmail from '../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../env-config';
 import validate from '../middlewares/validatorMiddleware';
 import logger from '../loggers/logger';
+import isExpired from '../services/isExpired';
 
 const router = Router();
 
@@ -123,8 +126,8 @@ router.post('/confirm', [
     const { email, token, password } = req.body;
 
     try {
-        const { rowCount } = await db.query(`
-            SELECT 1 FROM auth.users
+        const { rowCount, rows } = await db.query(`
+            SELECT recovery_sent_at FROM auth.users
             WHERE email = $1::text AND recovery_token = $2::uuid;
         `, [email, token]);
 
@@ -135,16 +138,35 @@ router.post('/confirm', [
             }]));
         }
 
-        logger.info(`Password recovery request confirmed for email: ${email}`);
-    } catch (e) {
-        logger.error(`Error while checking password recovery confirmation for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
-    }
+        if (isExpired(rows[0].recovery_sent_at, 60)) {
+            logger.warn(`Password recovery token expired for email: ${email}`);
+            return res.status(403).json(errorMessages([{
+                info: RECOVERY_LINK_EXPIRED
+            }]));
+        }
 
-    try {
-        const { rowCount } = await db.query(`
+        logger.info(`Password recovery request confirmed for email: ${email}`);
+
+        const { rows: data } = await db.query(`
+            SELECT 
+                CASE 
+                    WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password 
+                    THEN true 
+                    ELSE false 
+                END AS is_current_password
+            FROM auth.users
+            WHERE email = $2::text;
+        `, [password, email]);
+
+        if (data[0].is_current_password) {
+            logger.warn(`New password matches the current password for email: ${email}`);
+            return res.status(400).json(errorMessages([{ info: NEW_PASSWORD_EQUALS_CURRENT, data: {
+                path: 'password',
+                location: 'body'
+            } }]));
+        }
+    
+        const { rowCount: count } = await db.query(`
             UPDATE auth.users
             SET 
                 encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf')),
@@ -153,7 +175,7 @@ router.post('/confirm', [
             WHERE email = $2::text;
         `, [password, email]);
 
-        if (rowCount === 0) {
+        if (count === 0) {
             logger.error(`Failed to update password for email: ${email}`);
             return res.status(500).json(errorMessages([{
                 info: INTERNAL_ERROR

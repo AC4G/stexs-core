@@ -13,6 +13,7 @@ import {
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
     INVALID_TOKEN, 
+    NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_CHANGE_FAILED, 
     PASSWORD_REQUIRED, 
     TOKEN_REQUIRED
@@ -72,14 +73,40 @@ router.post('/password', [
     const { password } = req.body;
 
     try {
-        const { rowCount } = await db.query(`
+        const { rows, rowCount } = await db.query(`
+            SELECT 
+                CASE 
+                    WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password 
+                    THEN true 
+                    ELSE false 
+                END AS is_current_password
+            FROM auth.users
+            WHERE id = $2::uuid;
+        `, [password, userId]);
+
+        if (rowCount === 0) {
+            logger.error(`Password change failed for user: ${userId}`);
+            return res.status(500).json(errorMessages([{ info: PASSWORD_CHANGE_FAILED }]));
+        }
+
+        const isCurrentPassword = rows[0].is_current_password;
+
+        if (isCurrentPassword) {
+            logger.warn(`New password matches the current password for user: ${userId}`);
+            return res.status(400).json(errorMessages([{ info: NEW_PASSWORD_EQUALS_CURRENT, data: {
+                path: 'password',
+                location: 'body'
+            } }]));
+        }
+
+        const { rowCount: count } = await db.query(`
             UPDATE auth.users
             SET
                 encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
             WHERE id = $2::uuid;
         `, [password, userId]);
 
-        if (rowCount === 0) {
+        if (count === 0) {
             logger.error(`Password change failed for user: ${userId}`);
             return res.status(500).json(errorMessages([{
                 info: PASSWORD_CHANGE_FAILED
@@ -91,9 +118,7 @@ router.post('/password', [
         res.json(message('Password changed successfully.'));
     } catch (e) {
         logger.error(`Error while changing password for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
-        res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 });
 
@@ -183,7 +208,7 @@ router.post('/email/verify', [
         `, [userId, token]);
 
         if (rowCount === 0) {
-            logger.error(`Email verification failed for user: ${userId}`);
+            logger.warn(`Email verification failed for user: ${userId}`);
             return res.status(400).json(errorMessages([{
                 info: INVALID_TOKEN
             }]));
