@@ -28,17 +28,13 @@ router.post('/', [
 
         if (rowCount === 0) {
             logger.warn(`Refresh token invalid or expired for user: ${token?.sub}`);
-            return res.status(401).send(errorMessages([{
-                info: INVALID_TOKEN
-            }]));
+            return res.status(401).send(errorMessages([{ info: INVALID_TOKEN }]));
         }
 
         logger.info(`Refresh token successfully processed for user: ${token?.sub} (Revoked)`);
     } catch (e) {
         logger.error(`Error while processing refresh token for user: ${token?.sub}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     } 
 
     try {
@@ -50,9 +46,7 @@ router.post('/', [
 
         logger.info(`New access token generated for user: ${token?.sub}`);
     } catch (e) {
-        res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 });
 

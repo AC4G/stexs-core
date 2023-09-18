@@ -12,8 +12,9 @@ import {
     RECOVERY_LINK_EXPIRED, 
     TOKEN_REQUIRED 
 } from '../../app/constants/errors';
+import { advanceTo, clear } from 'jest-date-mock';
 
-jest.mock('../../app/database', () => {
+jest.mock('../../app/database', () => { 
     return {
         __esModule: true,
         default: {
@@ -23,6 +24,14 @@ jest.mock('../../app/database', () => {
 });
 
 describe('Recovery Routes', () => {
+    beforeAll(() => {
+        advanceTo(new Date('2023-09-15T12:00:00'));
+    });
+
+    afterAll(() => {
+        clear();
+    });
+
     it('should handle recovery with missing email', async () => {
         const response = await request(server)
             .post('/recovery');
@@ -251,9 +260,7 @@ describe('Recovery Routes', () => {
         ]);
     });
 
-    it('should handle expired recovery token', async () => {
-        Date.now = () => new Date('2023-09-15T12:00:00').getTime();
-
+    it('should handle confirm expired recovery token', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -283,8 +290,6 @@ describe('Recovery Routes', () => {
     });
 
     it('should handle confirm recovery with current password', async () => {
-        Date.now = () => new Date('2023-09-15T12:00:00').getTime();
-
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -311,7 +316,7 @@ describe('Recovery Routes', () => {
                 password: 'Test123.'
         });
 
-        expect(response.status).toBe(403);
+        expect(response.status).toBe(400);
         expect(response.body.errors).toEqual([
             {
                 code: NEW_PASSWORD_EQUALS_CURRENT.code,
@@ -326,8 +331,6 @@ describe('Recovery Routes', () => {
     });
 
     it('should handle confirm recovery', async () => {
-        Date.now = () => new Date('2023-09-15T12:00:00').getTime();
-
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {

@@ -10,6 +10,7 @@ import {
   INVALID_EMAIL, 
   TOKEN_REQUIRED 
 } from '../../app/constants/errors';
+import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('../../app/database', () => {
     return {
@@ -21,6 +22,14 @@ jest.mock('../../app/database', () => {
 }); 
 
 describe('Email Verification Routes', () => {
+  beforeAll(() => {
+    advanceTo(new Date('2023-09-15T12:00:00'));
+  });
+
+  afterAll(() => {
+    clear();
+  });
+
   it('should handle email verification with missing email', async () => {
     const response = await request(server)
         .get('/verify')
@@ -107,8 +116,6 @@ describe('Email Verification Routes', () => {
   });
 
   it('should handle email verification with verified email', async () => {
-    Date.now = () => new Date('2023-09-15T12:00:00').getTime();
-
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -128,8 +135,6 @@ describe('Email Verification Routes', () => {
   })
 
   it('should handle email verification with expired link', async () => {
-    Date.now = () => new Date('2023-09-15T12:00:00').getTime();
-
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -150,8 +155,6 @@ describe('Email Verification Routes', () => {
   });
 
   it('should handle email verification with valid token', async () => {
-    Date.now = () => new Date('2023-09-15T12:00:00').getTime();
-
     mockQuery.mockResolvedValueOnce({
       rows: [
         {

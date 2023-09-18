@@ -107,17 +107,13 @@ router.post('/authorize', [
         
         if (rowCount === 0) {
             logger.warn(`Client not found for client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
-            return res.status(404).json(errorMessages([{
-                info: CLIENT_NOT_FOUND
-            }]));
+            return res.status(404).json(errorMessages([{ info: CLIENT_NOT_FOUND }]));
         }
 
         logger.info(`Client found with client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
     } catch (e) {
         logger.error(`Error while authorizing client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     const userId = req.auth?.sub;
@@ -134,15 +130,11 @@ router.post('/authorize', [
         
         if (rowCount !== 0) {
             logger.warn(`Client is already connected with user: ${userId}`);
-            return res.status(400).json(errorMessages([{
-                info: CLIENT_ALREADY_CONNECTED
-            }]));
+            return res.status(400).json(errorMessages([{ info: CLIENT_ALREADY_CONNECTED }]));
         }
     } catch (e) {
         logger.error(`Error while checking client connection for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     const token = uuidv4();
@@ -169,9 +161,7 @@ router.post('/authorize', [
     
         if (rowCount === 0) {
             logger.error(`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`);
-            return res.status(500).json(errorMessages([{
-                info: INTERNAL_ERROR
-            }]));
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         logger.info(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
@@ -179,9 +169,7 @@ router.post('/authorize', [
         tokenId = rows[0].id;
     } catch (e) {
         logger.error(`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
@@ -206,14 +194,10 @@ router.post('/authorize', [
         logger.info(`Authorization token scopes inserted/updated successfully for token: ${tokenId}`);
     } catch (e) {
         logger.error(`Error while inserting/updating authorization token scopes for token: ${tokenId}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    res.json({
-        code: token
-    });
+    res.json({ code: token });
 });
 
 router.post('/token', [
@@ -292,7 +276,7 @@ router.get('/connections', [
     let result;
 
     try {
-        result = (await db.query(`
+        const { rows } = await db.query(`
             SELECT
                 jsonb_build_object(
                     'id', o.id,
@@ -310,12 +294,12 @@ router.get('/connections', [
                 public.organizations AS o ON oa.organization_id = o.id
             WHERE
                 oc.user_id = $1::uuid;
-        `, [userId])).rows;
+        `, [userId]);
+
+        result = rows;
     } catch (e) {
         logger.error(`Error while fetching connections for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`)
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     logger.info(`Connections fetched successfully for user: ${userId}`);
@@ -356,15 +340,11 @@ router.delete('/connection', [
 
         if (rowCount === 0) {
             logger.warn(`No connection found for deletion for user: ${userId} and client: ${clientId}`);
-            return res.status(404).json(errorMessages([{
-                info: CONNECTION_ALREADY_DELETED
-            }]));
+            return res.status(404).json(errorMessages([{ info: CONNECTION_ALREADY_DELETED }]));
         }
     } catch (e) {
         logger.error(`Error while deleting connection for user: ${userId} and client: ${clientId}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     logger.info(`Connection deleted successfully for user: ${userId} and client: ${clientId}`);
@@ -387,15 +367,11 @@ router.delete('/revoke', [
 
         if (rowCount === 0) {
             logger.warn(`No connection found for revocation for user: ${token?.sub}`);
-            return res.status(404).json(errorMessages([{
-                info: CONNECTION_ALREADY_REVOKED
-            }]));
+            return res.status(404).json(errorMessages([{ info: CONNECTION_ALREADY_REVOKED }]));
         }
     } catch (e) {
         logger.error(`Error while revoking connection for user: ${token?.sub}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     logger.info(`Connection revoked successfully for user: ${token?.sub}`);

@@ -55,17 +55,13 @@ router.post('/', [
 
         if (!rows[0].email_verified_at) {
             logger.warn(`Email not verified for user: ${identifier}`);
-            return res.status(400).json(errorMessages([{
-                info: EMAIL_NOT_VERIFIED
-            }]));
+            return res.status(400).json(errorMessages([{ info: EMAIL_NOT_VERIFIED }]));
         }
 
         id = rows[0].id;
     } catch (e) {
         logger.error(`Error during sign in for user: ${identifier}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
@@ -77,9 +73,7 @@ router.post('/', [
 
         logger.info(`Sign-in successful for user: ${identifier}`);
     } catch (e) {
-        res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 });
 
