@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
 import logger from '../loggers/logger';
+import isExpired from '../services/isExpired';
 
 export async function authorizationCodeController(req: Request, res: Response) {
     const { code, client_id, client_secret: clientSecret } = req.body;
@@ -55,11 +56,8 @@ export async function authorizationCodeController(req: Request, res: Response) {
             }]));
         }
 
-        const expiryDate = new Date(rows[0].created_at);
-        expiryDate.setMinutes(expiryDate.getMinutes() + 5);
-
-        if (expiryDate < new Date()) {
-            logger.warn(`Authorization code expired for client: ${client_id} and code: ${code} at ${expiryDate}`);
+        if (isExpired(rows[0].created_at, 5)) {
+            logger.warn(`Authorization code expired for client: ${client_id} and code: ${code}`);
             return res.status(400).json(errorMessages([{
                 info: CODE_EXPIRED
             }]));

@@ -8,6 +8,7 @@ import {
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
     INVALID_TOKEN, 
+    NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_REQUIRED, 
     TOKEN_REQUIRED
 } from "../../app/constants/errors";
@@ -93,7 +94,44 @@ describe('User Routes', () => {
         ]);
     });
 
+    it('should handle password with current password', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    is_current_password: true
+                }
+            ],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/user/password')
+            .send({ password: 'Test123.' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toEqual([
+            {
+                code: NEW_PASSWORD_EQUALS_CURRENT.code,
+                message: NEW_PASSWORD_EQUALS_CURRENT.message,
+                timestamp: expect.any(String),
+                data: {
+                    path: 'password',
+                    location: 'body'
+                }
+            }
+        ]);
+    });
+
     it('should handle password change', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    is_current_password: false
+                }
+            ],
+            rowCount: 1
+        });
+
         mockQuery.mockResolvedValueOnce({
             rows: [],
             rowCount: 1

@@ -14,11 +14,12 @@ import {
     EMAIL_REQUIRED, 
     INTERNAL_ERROR, 
     INVALID_EMAIL, 
-    TOKEN_REQUIRED 
+    TOKEN_REQUIRED
 } from '../constants/errors';
 import { v4 as uuidv4 } from 'uuid';
 import validate from '../middlewares/validatorMiddleware';
 import logger from '../loggers/logger';
+import isExpired from '../services/isExpired';
 
 const router = Router();
 
@@ -43,13 +44,13 @@ router.get('/', [
 
     try {
         const { rowCount, rows: users } = await db.query(`
-            SELECT id, email_verified_at FROM auth.users 
+            SELECT id, email_verified_at, verification_sent_at FROM auth.users 
             WHERE email = $1::text AND verification_token = $2::uuid;
         `, [email, token]);
 
         if (users[0]?.email_verified_at) {
             signInURL.searchParams.append('code', 'error');
-            signInURL.searchParams.append('message', 'Your email has been already verified');
+            signInURL.searchParams.append('message', 'Your email has been already verified.');
     
             logger.warn(`Email already verified for email: ${email}`);
 
@@ -58,21 +59,23 @@ router.get('/', [
 
         if (rowCount === 0) {
             signInURL.searchParams.append('code', 'error');
-            signInURL.searchParams.append('message', 'Provided verification link is invalid');
+            signInURL.searchParams.append('message', 'Provided verification link is invalid.');
     
             logger.warn(`Invalid verification link for email: ${email}`);
 
             return res.redirect(302, signInURL.toString());
         }
-    } catch (e) {
-        logger.error(`Error during email verification select for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
-    }
 
-    try {
-        const { rowCount } = await db.query(`
+        if (isExpired(users[0].verification_sent_at, 60 * 24)) {
+            signInURL.searchParams.append('code', 'error');
+            signInURL.searchParams.append('message', 'Verification link expired. Please request a new verification link.');
+
+            logger.warn(`Verification token expired for email: ${email}`);
+
+            return res.redirect(302, signInURL.toString());
+        }
+
+        const { rowCount: count } = await db.query(`
             UPDATE auth.users
             SET 
                 verification_token = NULL,
@@ -81,14 +84,14 @@ router.get('/', [
             WHERE email = $1::text;
         `, [email]);
 
-        if (rowCount === 0) {
+        if (count === 0) {
             logger.error(`User not found for email: ${email}`);
             return res.status(500).json(errorMessages([{
                 info: INTERNAL_ERROR
             }]));
         }
     } catch (e) {
-        logger.error(`Error while updating email verification for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error while email verification for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));
@@ -97,7 +100,7 @@ router.get('/', [
     logger.info(`Email successfully verified for email: ${email}`);
 
     signInURL.searchParams.append('code', 'success');
-    signInURL.searchParams.append('message', 'Email successfully verified');
+    signInURL.searchParams.append('message', 'Email successfully verified.');
 
     res.redirect(302, signInURL.toString());
 });
@@ -166,7 +169,7 @@ router.post('/resend', [
     try{
         await sendEmail(email, 'Verification Email', undefined, `Please verify your email. ${ISSUER + '/verify?email=' + email + '&token=' + token}`);
     } catch (e) {
-        logger.error(`Error sending verification email for resend to ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error sending verification email to ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{
             info: INTERNAL_ERROR
         }]));

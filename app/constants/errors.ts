@@ -172,7 +172,7 @@ export const CODE_EXPIRED = {
 export const CONNECTION_ALREADY_DELETED = {
     code: 'CONNECTION_ALREADY_DELETED',
     message: 'Provided client connection already deleted.'
-}
+};
 export const CONNECTION_ALREADY_REVOKED = {
     code: 'CONNECTION_ALREADY_REVOKED',
     message: 'Connection not found or is already revoked for the given refresh token.'
@@ -180,4 +180,12 @@ export const CONNECTION_ALREADY_REVOKED = {
 export const ROUTE_NOT_FOUND = {
     code: 'ROUTE_NOT_FOUND',
     message: 'Request route doesn\'t exists.'
+};
+export const NEW_PASSWORD_EQUALS_CURRENT = {
+    code: 'NEW_PASSWORD_EQUALS_CURRENT',
+    message: 'New password cann\'t be the same as the current password.'
+};
+export const RECOVERY_LINK_EXPIRED = {
+    code: 'RECOVERY_LINK_EXPIRED',
+    message: 'Recovery link expired. Please request a new recovery link.'
 };

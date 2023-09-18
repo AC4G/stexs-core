@@ -7,7 +7,9 @@ import {
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
     INVALID_REQUEST, 
+    NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_REQUIRED, 
+    RECOVERY_LINK_EXPIRED, 
     TOKEN_REQUIRED 
 } from '../../app/constants/errors';
 
@@ -74,7 +76,10 @@ describe('Recovery Routes', () => {
                 code: INVALID_EMAIL.code,
                 message: INVALID_EMAIL.messages[0],
                 timestamp: expect.any(String),
-                data: {}
+                data: {
+                    path: 'email',
+                    location: 'body'
+                }
             }
         ]);
     });
@@ -246,9 +251,98 @@ describe('Recovery Routes', () => {
         ]);
     });
 
-    it('should handle confirm recovery', async () => {
+    it('should handle expired recovery token', async () => {
+        Date.now = () => new Date('2023-09-15T12:00:00').getTime();
+
         mockQuery.mockResolvedValueOnce({
-            rows: [],
+            rows: [
+                {
+                    recovery_sent_at: new Date('2023-09-15T10:00:00').toISOString()
+                }
+            ],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/recovery/confirm')
+            .send({ 
+                email: 'test@example.com',
+                token: 'token',
+                password: 'Test123.'
+        });
+
+        expect(response.status).toBe(403);
+        expect(response.body.errors).toEqual([
+            {
+                code: RECOVERY_LINK_EXPIRED.code,
+                message: RECOVERY_LINK_EXPIRED.message,
+                timestamp: expect.any(String),
+                data: {}
+            }
+        ]);
+    });
+
+    it('should handle confirm recovery with current password', async () => {
+        Date.now = () => new Date('2023-09-15T12:00:00').getTime();
+
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    recovery_sent_at: new Date('2023-09-15T12:00:00').toISOString()
+                }
+            ],
+            rowCount: 1
+        });
+
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    is_current_password: true
+                }
+            ],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/recovery/confirm')
+            .send({ 
+                email: 'test@example.com',
+                token: 'token',
+                password: 'Test123.'
+        });
+
+        expect(response.status).toBe(403);
+        expect(response.body.errors).toEqual([
+            {
+                code: NEW_PASSWORD_EQUALS_CURRENT.code,
+                message: NEW_PASSWORD_EQUALS_CURRENT.message,
+                timestamp: expect.any(String),
+                data: {
+                    path: 'password',
+                    location: 'body'
+                }
+            }
+        ]);
+    });
+
+    it('should handle confirm recovery', async () => {
+        Date.now = () => new Date('2023-09-15T12:00:00').getTime();
+
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    recovery_sent_at: new Date('2023-09-15T12:00:00').toISOString()
+                }
+            ],
+            rowCount: 1
+        });
+
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    is_current_password: false
+                }
+            ],
             rowCount: 1
         });
 

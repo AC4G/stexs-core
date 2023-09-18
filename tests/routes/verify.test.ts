@@ -18,7 +18,7 @@ jest.mock('../../app/database', () => {
             query: mockQuery
         }
     }
-});
+}); 
 
 describe('Email Verification Routes', () => {
   it('should handle email verification with missing email', async () => {
@@ -89,7 +89,7 @@ describe('Email Verification Routes', () => {
       .query({ email: 'test@example.com', token: 'invalid-token' });
 
     expect(response.status).toBe(302);
-    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Provided+verification+link+is+invalid`);
+    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Provided+verification+link+is+invalid.`);
   });
 
   it('should handle email verification with non existing email', async () => {
@@ -103,10 +103,12 @@ describe('Email Verification Routes', () => {
       .query({ email: 'test@example.com', token: 'token' });
 
       expect(response.status).toBe(302);
-      expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Provided+verification+link+is+invalid`);
+      expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Provided+verification+link+is+invalid.`);
   });
 
   it('should handle email verification with verified email', async () => {
+    Date.now = () => new Date('2023-09-15T12:00:00').getTime();
+
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -122,15 +124,40 @@ describe('Email Verification Routes', () => {
       .query({ email: 'test@example.com', token: 'valid-token' });
 
     expect(response.status).toBe(302);
-    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Your+email+has+been+already+verified`);
+    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Your+email+has+been+already+verified.`);
   })
 
-  it('should handle email verification with valid token', async () => {
+  it('should handle email verification with expired link', async () => {
+    Date.now = () => new Date('2023-09-15T12:00:00').getTime();
+
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
           email_verified_at: null,
+          verification_sent_at: new Date('2023-09-14T11:00:00').toDateString()
+        }
+      ],
+      rowCount: 1
+    });
+
+    const response = await request(server)
+      .get('/verify')
+      .query({ email: 'test@example.com', token: 'valid-token' });
+
+      expect(response.status).toBe(302);
+      expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=error&message=Verification+link+expired.+Please+request+a+new+verification+link.`);
+  });
+
+  it('should handle email verification with valid token', async () => {
+    Date.now = () => new Date('2023-09-15T12:00:00').getTime();
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 1,
+          email_verified_at: null,
+          verification_sent_at: new Date('2023-09-15T11:00:00').toDateString()
         }
       ],
       rowCount: 1
@@ -146,7 +173,7 @@ describe('Email Verification Routes', () => {
       .query({ email: 'test@example.com', token: 'valid-token' });
 
     expect(response.status).toBe(302);
-    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=success&message=Email+successfully+verified`);
+    expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=success&message=Email+successfully+verified.`);
   });
 
   // resend verification email

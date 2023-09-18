@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "concurrently \"tsc -w\" \"nodemon ./build/app/server.js\"",
-    "test": "cross-env NODE_ENV=test ts-node ./node_modules/jest/bin/jest.js --watch --verbose --detectOpenHandles"
+    "test": "cross-env ENV=test ts-node ./node_modules/jest/bin/jest.js --watch --verbose --detectOpenHandles",
+    "cleanup": "rm -f ./logs/combined.log"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "nodemon": "^3.0.1",
     "pg": "^8.11.2",
     "response-time": "^2.3.2",
+    "speakeasy": "^2.0.0",
     "uuid": "^9.0.0",
     "winston": "^3.10.0",
     "winston-loki": "^6.0.7"
