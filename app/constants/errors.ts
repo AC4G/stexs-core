@@ -189,3 +189,7 @@ export const RECOVERY_LINK_EXPIRED = {
     code: 'RECOVERY_LINK_EXPIRED',
     message: 'Recovery link expired. Please request a new recovery link.'
 };
+export const EMAIL_CHANGE_LINK_EXPIRED = {
+    code: 'EMAIL_CHANGE_LINK_EXPIRED',
+    message: 'Email change link expired. Please go through the same process of changing your email again.'
+}

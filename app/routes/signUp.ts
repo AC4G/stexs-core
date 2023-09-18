@@ -77,9 +77,7 @@ router.post('/', [
 
         if (rowCount === 0) {
             logger.error('Sign-up: Database insertion failed.');
-            return res.status(500).json(errorMessages([{
-                info: INTERNAL_ERROR
-            }]));
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         logger.info(`Sign-up successful for user: ${username}`);
@@ -115,9 +113,7 @@ router.post('/', [
 
         logger.error(`Error during sign up: ${(e instanceof Error) ? e.message : e}`);
 
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
@@ -125,9 +121,7 @@ router.post('/', [
         logger.info(`Email verification message sent successfully for user: ${username}`);
     } catch (e) {
         logger.error(`Sending verification email failed for email: ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
-        res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 });
 

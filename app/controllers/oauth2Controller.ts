@@ -51,16 +51,12 @@ export async function authorizationCodeController(req: Request, res: Response) {
 
         if (rowCount === 0) {
             logger.warn(`Invalid authorization code for client: ${client_id} and code: ${code}`);
-            return res.status(400).json(errorMessages([{
-                info: INVALID_AUTHORIZATION_CODE
-            }]));
+            return res.status(400).json(errorMessages([{ info: INVALID_AUTHORIZATION_CODE }]));
         }
 
         if (isExpired(rows[0].created_at, 5)) {
             logger.warn(`Authorization code expired for client: ${client_id} and code: ${code}`);
-            return res.status(400).json(errorMessages([{
-                info: CODE_EXPIRED
-            }]));
+            return res.status(400).json(errorMessages([{ info: CODE_EXPIRED }]));
         }
 
         ({ id: tokenId, user_id: userId, scopes } = rows[0]);
@@ -68,9 +64,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
         logger.info(`Authorization code validated successfully for user: ${userId} and client: ${client_id}`);
     } catch (e) {
         logger.error(`Error while processing authorization code for client: ${client_id} and code: ${code}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
@@ -80,9 +74,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
         `, [tokenId]);
     } catch (e) {
         logger.error(`Error while deleting authorization code for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     const refreshToken = uuidv4();
@@ -97,9 +89,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 
         logger.info(`Access token generated successfully for user: ${userId} and client: ${client_id}`);
     } catch (e) {
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
@@ -124,9 +114,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
         ]);
     } catch (e) {
         logger.error(`Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
-        res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     logger.info(`Connection successfully created for user: ${userId} and client: ${client_id}`);
@@ -161,26 +149,20 @@ export async function clientCredentialsController(req: Request, res: Response) {
 
         if (rowCount === 0) {
             logger.warn(`Invalid client credentials for client: ${client_id}`);
-            return res.status(400).json(errorMessages([{
-                info: INVALID_CLIENT_CREDENTIALS
-            }]));
+            return res.status(400).json(errorMessages([{ info: INVALID_CLIENT_CREDENTIALS }]));
         }
 
         scopes = rows[0].scopes;
 
         if (!scopes) {
             logger.warn(`No client scopes selected for client: ${client_id}`);
-            return res.status(400).json(errorMessages([{
-                info: NO_CLIENT_SCOPES_SELECTED
-            }]));
+            return res.status(400).json(errorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]));
         }
 
         logger.info(`Client credentials validated successfully for client: ${client_id}`);
     } catch (e) {
         logger.error(`Error while processing client credentials for client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
@@ -193,9 +175,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
 
         res.json(body);
     } catch (e) {
-        res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 }
 
@@ -211,17 +191,13 @@ export async function refreshTokenController(req: Request, res: Response) {
 
         if (rowCount === 0) {
             logger.warn(`Invalid refresh token for user: ${sub} and client: ${client_id}`);
-            return res.status(400).json(errorMessages([{
-                info: INVALID_REFRESH_TOKEN
-            }]));
+            return res.status(400).json(errorMessages([{ info: INVALID_REFRESH_TOKEN }]));
         }
 
         logger.info(`Refresh token validated successfully for user: ${sub} and client: ${client_id}`);
     } catch (e) {
         logger.error(`Error while processing refresh token for user: ${sub} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
@@ -235,8 +211,6 @@ export async function refreshTokenController(req: Request, res: Response) {
 
         res.json(body);
     } catch (e) {
-        res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 }

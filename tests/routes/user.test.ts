@@ -4,6 +4,7 @@ import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../app/server';
 import { 
+    EMAIL_CHANGE_LINK_EXPIRED,
     EMAIL_REQUIRED,
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
@@ -12,6 +13,7 @@ import {
     PASSWORD_REQUIRED, 
     TOKEN_REQUIRED
 } from "../../app/constants/errors";
+import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
@@ -30,6 +32,14 @@ jest.mock('../../app/database', () => {
 });
 
 describe('User Routes', () => {
+    beforeAll(() => {
+        advanceTo(new Date('2023-09-15T12:00:00'));
+    });
+
+    afterAll(() => {
+        clear();
+    });
+
     it('should handle get user data', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
@@ -224,6 +234,31 @@ describe('User Routes', () => {
         ]);
     });
 
+    it('should handle email change verification with expired token', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    email_change_sent_at: new Date('2023-09-14T10:00:00').toISOString()
+                }
+            ],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/user/email/verify')
+            .send({ token: 'token' });
+
+        expect(response.status).toBe(403);
+        expect(response.body.errors).toEqual([
+            {
+                code: EMAIL_CHANGE_LINK_EXPIRED.code,
+                message: EMAIL_CHANGE_LINK_EXPIRED.message,
+                timestamp: expect.any(String),
+                data: {}
+            }
+        ]);
+    });
+
     it('should handle email change verification with invalid token', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [],
@@ -245,7 +280,41 @@ describe('User Routes', () => {
         ]);
     });
 
+    it('should handle email change with expired verification token', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    email_change_sent_at: new Date('2023-09-14T11:00:00').toISOString()
+                }
+            ],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/user/email/verify')
+            .send({ token: 'expired-token' });
+
+        expect(response.status).toBe(403);
+        expect(response.body.errors).toEqual([
+            {
+                code: EMAIL_CHANGE_LINK_EXPIRED.code,
+                message: EMAIL_CHANGE_LINK_EXPIRED.message,
+                timestamp: expect.any(String),
+                data: {}
+            }
+        ]);
+    })
+
     it('should handle email change verification', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    email_change_sent_at: new Date('2023-09-15T11:00:00').toISOString()
+                }
+            ],
+            rowCount: 1
+        });
+
         mockQuery.mockResolvedValueOnce({
             rows: [],
             rowCount: 1

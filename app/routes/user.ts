@@ -8,6 +8,7 @@ import {
 import db from '../database';
 import { body } from 'express-validator';
 import { 
+    EMAIL_CHANGE_LINK_EXPIRED,
     EMAIL_REQUIRED, 
     INTERNAL_ERROR, 
     INVALID_EMAIL, 
@@ -24,6 +25,7 @@ import sendEmail from '../services/emailService';
 import { REDIRECT_TO_EMAIL_CHANGE } from '../../env-config';
 import validate from '../middlewares/validatorMiddleware';
 import logger from '../loggers/logger';
+import isExpired from '../services/isExpired';
 
 const router = Router();
 
@@ -51,9 +53,7 @@ router.get('/', [
         res.json(rows[0]);
     } catch (e) {
         logger.error(`Error while fetching user data for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
-        res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 });
 
@@ -93,10 +93,13 @@ router.post('/password', [
 
         if (isCurrentPassword) {
             logger.warn(`New password matches the current password for user: ${userId}`);
-            return res.status(400).json(errorMessages([{ info: NEW_PASSWORD_EQUALS_CURRENT, data: {
-                path: 'password',
-                location: 'body'
-            } }]));
+            return res.status(400).json(errorMessages([{ 
+                info: NEW_PASSWORD_EQUALS_CURRENT, 
+                data: {
+                    path: 'password',
+                    location: 'body'
+                } 
+            }]));
         }
 
         const { rowCount: count } = await db.query(`
@@ -108,9 +111,7 @@ router.post('/password', [
 
         if (count === 0) {
             logger.error(`Password change failed for user: ${userId}`);
-            return res.status(500).json(errorMessages([{
-                info: PASSWORD_CHANGE_FAILED
-            }]));
+            return res.status(500).json(errorMessages([{ info: PASSWORD_CHANGE_FAILED }]));
         }
         
         logger.info(`Password change successful for user: ${userId}`);
@@ -155,27 +156,21 @@ router.post('/email', [
 
         if (rowCount === 0) {
             logger.error(`Email change failed for user: ${userId}`);
-            return res.status(500).json(errorMessages([{
-                info: INTERNAL_ERROR
-            }]));
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         logger.info(`Email change initiated for user: ${userId}`);
     } catch (e) {
         logger.error(`Error during email change initiation for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
         
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
         await sendEmail(newEmail, 'Email Change Verification', undefined, `Please verify your email change by clicking the link: ${REDIRECT_TO_EMAIL_CHANGE + '?token=' + token}`);
     } catch (e) {
         logger.error(`Error sending email change verification link to email: ${newEmail}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     logger.info(`Email change verification link sent to ${newEmail}`);
@@ -196,7 +191,25 @@ router.post('/email/verify', [
     const { token } = req.body;
 
     try {
-        const { rowCount } = await db.query(`
+        const { rowCount, rows } = await db.query(`
+            SELECT email_change_sent_at 
+            FROM auth.users
+            WHERE id = $1::uuid AND email_change_token = $2::text
+        `, [userId, token]);
+
+        if (rowCount === 0) {
+            logger.warn(`Email verification failed for user: ${userId}`);
+            return res.status(400).json(errorMessages([{
+                info: INVALID_TOKEN
+            }]));
+        }
+
+        if (isExpired(rows[0].email_change_sent_at, 60 * 24)) {
+            logger.warn(`Email change link expired for user: ${userId}`);
+            return res.status(403).json(errorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
+        }
+
+        const { rowCount: count } = await db.query(`
             UPDATE auth.users
             SET
                 email = email_change,
@@ -207,17 +220,13 @@ router.post('/email/verify', [
             WHERE id = $1::uuid AND email_change_token = $2::text;
         `, [userId, token]);
 
-        if (rowCount === 0) {
-            logger.warn(`Email verification failed for user: ${userId}`);
-            return res.status(400).json(errorMessages([{
-                info: INVALID_TOKEN
-            }]));
+        if (count === 0) {
+            logger.error(`Email verification failed for user: ${userId}`);
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
     } catch (e) {
         logger.error(`Error during email verification for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{
-            info: INTERNAL_ERROR
-        }]));
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     logger.info(`Email successfully verified and changed for user: ${userId}`);
