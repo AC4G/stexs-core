@@ -22,7 +22,7 @@ import sendEmail from '../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../env-config';
 import validate from '../middlewares/validatorMiddleware';
 import logger from '../loggers/logger';
-import isExpired from '../services/isExpired';
+import isExpired from '../services/isExpiredService';
 
 const router = Router();
 

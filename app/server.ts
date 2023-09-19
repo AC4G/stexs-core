@@ -8,6 +8,7 @@ import oauth2Router from './routes/oauth2';
 import userRouter from './routes/user';
 import recoveryRouter from './routes/recovery';
 import verifyRouter from './routes/verify';
+import twofaRouter from './routes/2fa';
 import { ENV, SERVER_PORT } from '../env-config';
 import logger from './loggers/logger';
 import responseTime from 'response-time';
@@ -46,6 +47,7 @@ server.use('/oauth2', oauth2Router);
 server.use('/verify', verifyRouter);
 server.use('/user', userRouter);
 server.use('/recovery', recoveryRouter);
+server.use('/2fa', twofaRouter);
 
 server.use((req, res, next) => {
     logger.warn(`Route not found: ${req.method} ${req.path}`);

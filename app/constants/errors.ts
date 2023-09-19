@@ -149,10 +149,6 @@ export const INVALID_AUTHORIZATION_CODE = {
     code: 'INVALID_AUTHORIZATION_CODE',
     message: 'Authorization code or client credentials are invalid.'
 };
-export const INVALID_CLIENT_ID_FORMAT = {
-    code: 'INVALID_CLIENT_ID_FORMAT',
-    message: 'Client id must be in uuid format.'
-};
 export const INVALID_REFRESH_TOKEN = {
     code: 'INVALID_REFRESH_TOKEN',
     message: 'Provided refresh token is invalid.'
@@ -167,7 +163,7 @@ export const NO_CLIENT_SCOPES_SELECTED = {
 };
 export const CODE_EXPIRED = {
     code: 'CODE_EXPIRED',
-    message: 'The provided authorization code has expired.'
+    message: 'The provided code has expired.'
 };
 export const CONNECTION_ALREADY_DELETED = {
     code: 'CONNECTION_ALREADY_DELETED',
@@ -179,7 +175,7 @@ export const CONNECTION_ALREADY_REVOKED = {
 };
 export const ROUTE_NOT_FOUND = {
     code: 'ROUTE_NOT_FOUND',
-    message: 'Request route doesn\'t exists.'
+    message: 'Requested route doesn\'t exists.'
 };
 export const NEW_PASSWORD_EQUALS_CURRENT = {
     code: 'NEW_PASSWORD_EQUALS_CURRENT',
@@ -192,4 +188,29 @@ export const RECOVERY_LINK_EXPIRED = {
 export const EMAIL_CHANGE_LINK_EXPIRED = {
     code: 'EMAIL_CHANGE_LINK_EXPIRED',
     message: 'Email change link expired. Please go through the same process of changing your email again.'
+};
+export const UUID_REQUIRED = {
+    code: 'UUID_REQUIRED',
+    message: 'Please provide a uuid.'
+};
+export const INVALID_UUID = {
+    code: 'INVALID_UUID',
+    message: 'Please provide a valid uuid.'
+};
+export const TYPE_REQUIRED = {
+    code: 'TYPE_REQUIRED',
+    message: 'Please provide a type.'
+};
+export const INVALID_TYPE = {
+    code: 'INVALID_TYPE',
+    message: 'Provided type is invalid.'
+};
+export const UNSUPPORTED_TYPE = {
+    code: 'UNSUPPORTED_TYPE',
+    message: 'Provided type isn\'t supported.'
+};
+export const INVALID_CODE = {
+    code: 'INVALID_CODE',
+    message: 'Provided code is invalid.'
 }
+;
