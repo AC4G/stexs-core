@@ -25,10 +25,10 @@ import {
     CONNECTION_ALREADY_REVOKED, 
     EMPTY_ARRAY, 
     GRANT_TYPE_REQUIRED, 
-    INTERNAL_ERROR, 
-    INVALID_CLIENT_ID_FORMAT, 
+    INTERNAL_ERROR,
     INVALID_GRANT_TYPE, 
     INVALID_URL, 
+    INVALID_UUID, 
     REDIRECT_URL_REQUIRED, 
     REFRESH_TOKEN_REQUIRED, 
     SCOPES_REQUIRED
@@ -53,7 +53,7 @@ router.post('/authorize', [
         .withMessage(CLIENT_ID_REQUIRED)
         .bail()
         .custom(value => {
-            if (!validateUUID(value)) throw new CustomValidationError(INVALID_CLIENT_ID_FORMAT);
+            if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
 
             return true;
         }),
@@ -206,7 +206,11 @@ router.post('/token', [
         .withMessage(GRANT_TYPE_REQUIRED)
         .bail()
         .custom((value) => {
-            const possibleGrantTypes = ['client_credentials', 'authorization_code', 'refresh_token'];
+            const possibleGrantTypes = [
+                'client_credentials', 
+                'authorization_code', 
+                'refresh_token'
+            ];
 
             if (!possibleGrantTypes.includes(value)) throw new CustomValidationError({ code: INVALID_GRANT_TYPE.code, message: INVALID_GRANT_TYPE.messages[1] });
 
@@ -218,7 +222,7 @@ router.post('/token', [
 
             if (value === undefined || value.length === 0) throw new CustomValidationError(CLIENT_ID_REQUIRED);
 
-            if (!validateUUID(value)) throw new CustomValidationError(INVALID_CLIENT_ID_FORMAT);
+            if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
             
             return true;
         }),
@@ -316,7 +320,7 @@ router.delete('/connection', [
         .withMessage(CLIENT_ID_REQUIRED)
         .bail()
         .custom(value => {
-            if (!validateUUID(value)) throw new CustomValidationError(INVALID_CLIENT_ID_FORMAT);
+            if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
 
             return true;
         }),

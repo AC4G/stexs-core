@@ -19,7 +19,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import validate from '../middlewares/validatorMiddleware';
 import logger from '../loggers/logger';
-import isExpired from '../services/isExpired';
+import isExpired from '../services/isExpiredService';
 
 const router = Router();
 

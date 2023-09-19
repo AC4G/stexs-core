@@ -7,7 +7,8 @@ import {
     ACCESS_TOKEN_SECRET, 
     AUDIENCE, 
     ISSUER, 
-    REFRESH_TOKEN_SECRET 
+    REFRESH_TOKEN_SECRET, 
+    SIGN_IN_CONFIRM_TOKEN_SECRET
 } from '../../env-config';
 import { expressjwt as jwt, Request as JWTRequest } from 'express-jwt';
 import { errorMessages } from '../services/messageBuilderService';
@@ -62,6 +63,18 @@ export function validateRefreshToken(req: Request, res: Response, next: NextFunc
         algorithms: ['HS256'],
         getToken: () => refreshToken
     })(req, res, next);
+}
+
+export function validateSignInConfirmToken() {
+    return jwt({
+        secret: SIGN_IN_CONFIRM_TOKEN_SECRET,
+        audience: AUDIENCE,
+        issuer: ISSUER,
+        algorithms: ['HS256'],
+        getToken: (req) => {
+            return req.body.token;
+        }
+    });
 }
 
 export function isRefreshTokenValid(req: any, grantType: string) {

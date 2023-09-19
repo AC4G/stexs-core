@@ -2,13 +2,35 @@ import jwt from 'jsonwebtoken';
 import { 
     ACCESS_TOKEN_SECRET, 
     REFRESH_TOKEN_SECRET,
+    SIGN_IN_CONFIRM_TOKEN_SECRET,
     ISSUER,
     AUDIENCE,
-    JWT_EXPIRY_LIMIT
+    JWT_EXPIRY_LIMIT,
+    JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT
 } from '../../env-config';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../database';
 import logger from '../loggers/logger';
+
+export function generateSignInConfirmToken(sub: string, types: [string]) {
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT;
+
+    const payload = {
+        iss: ISSUER,
+        aud: AUDIENCE,
+        sub,
+        types,
+        grant_type: 'sign_in_confirm',
+        iat,
+        exp
+    };
+
+    return {
+        token: jwt.sign(payload, SIGN_IN_CONFIRM_TOKEN_SECRET),
+        expires: exp
+    };
+}
 
 export default async function generateAccessToken(additionalPayload: any, grantType: string = 'sign_in', refreshToken: string | null = null, oldRefreshToken: string | null = null) {
     const iat = Math.floor(Date.now() / 1000);
