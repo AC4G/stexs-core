@@ -29,6 +29,7 @@ import {
     validateSignInConfirmToken 
 } from '../middlewares/jwtMiddleware';
 import isExpired from '../services/isExpiredService';
+import { getTOTPForVerification } from '../services/totpService';
 
 const router = Router();
 
@@ -84,6 +85,22 @@ router.post('/', [
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
+    if (types.length === 0) {
+        try {
+            const body = await generateAccessToken({ 
+                sub: uuid
+            });
+    
+            res.json(body);
+    
+            logger.info(`New access token generated for user: ${uuid}`);
+        } catch (e) {
+            res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
+    
+        logger.info(`Sign-in successful for user: ${uuid}`);
+    }
+
     const { token, expires } = generateSignInConfirmToken(uuid, types);
 
     logger.info(`Sign-in initialized for user: ${identifier}`);
@@ -115,70 +132,95 @@ router.post('/confirm', [
         }),
     validate
 ], async (req: JWTRequest, res: Response) => {
-    const sub = req.auth?.sub!;
+    const userId = req.auth?.sub!;
     const supportedTypes = req.auth?.types;
     const { type, code } = req.body;
 
     if (!supportedTypes.includes(type)) {
-        logger.warn(`Unsupported 2FA type provided for user: ${sub}`);
+        logger.warn(`Unsupported 2FA type provided for user: ${userId}`);
         return res.status(400).json(errorMessages([{ info: UNSUPPORTED_TYPE }]));
     }
 
-    switch (type) {
-        case 'email': 
-            try {
-                const { rowCount, rows } = await db.query(`
-                    SELECT code, code_sent_at
-                    FROM auth.twofa
-                    WHERE user_id = $1::uuid;
-                `, [sub]);
+    if (type === 'email') {
+        try {
+            const { rowCount, rows } = await db.query(`
+                SELECT code, code_sent_at
+                FROM auth.twofa
+                WHERE user_id = $1::uuid;
+            `, [userId]);
 
-                if (rowCount === 0) {
-                    logger.error(`User not found for 2FA procedure for user: ${sub}`);
-                    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-                }
-
-                if (isExpired(rows[0].code_sent_at, 5)) {
-                    logger.warn(`2FA code expired for user: ${sub}`);
-                    return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
-                }
-
-                if (code !== rows[0].code) {
-                    logger.warn(`Invalid 2FA code provided for user: ${sub}`);
-                    return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
-                }
-
-                const { rowCount: count } = await db.query(`
-                    UPDATE auth.twofa
-                    SET
-                        code = NULL,
-                        code_sent_at = NULL
-                    WHERE user_id = $1::uuid;
-                `, [sub]);
-
-                if (count === 0) logger.error(`No rows updated in 2FA code reset for user: ${sub}`);
-            } catch (e) {
-                logger.error(`Error during 2FA confirmation for user: ${sub}. Error: ${(e instanceof Error) ? e.message : e}`);
+            if (rowCount === 0) {
+                logger.error(`Failed to fetch 2FA email code and timestamp for user: ${userId}`);
                 return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
             }
-            break;
-        case 'totp': 
-            
+
+            if (code !== rows[0].code) {
+                logger.warn(`Invalid 2FA code provided for user: ${userId}`);
+                return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
+            }
+
+            if (isExpired(rows[0].code_sent_at, 5)) {
+                logger.warn(`2FA code expired for user: ${userId}`);
+                return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
+            }
+
+            logger.info(`Sign in confirmation successful with 2FA email for user: ${userId}`);
+
+            const { rowCount: count } = await db.query(`
+                UPDATE auth.twofa
+                SET
+                    code = NULL,
+                    code_sent_at = NULL
+                WHERE user_id = $1::uuid;
+            `, [userId]);
+
+            if (count === 0) logger.error(`No rows updated in 2FA code reset for user: ${userId}`);
+        } catch (e) {
+            logger.error(`Error during 2FA email confirmation for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
+    }
+
+    if (type === 'totp') {
+        try {
+            const { rowCount, rows } = await db.query(`
+                SELECT totp_secret 
+                FROM auth.twofa
+                WHERE user_id = $1::uuid;
+            `, [userId]);
+
+            if (rowCount === 0) {
+                logger.error(`Failed to fetch 2FA TOTP secret for user: ${userId}`);
+                return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+            }
+
+            const totp = getTOTPForVerification(rows[0].totp_secret);
+
+            if (totp.validate({ token: code, window: 1 })) {
+                logger.warn(`Invalid code provided for 2FA TOTP confirmation for user: ${userId}`);
+                return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
+            }
+
+            logger.info(`Sign in confirmation successful with 2FA TOTP for user: ${userId}`);
+        }  catch (e) {
+            logger.error(`Error during 2FA TOTP confirmation for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
     }
  
     try {
         const body = await generateAccessToken({ 
-            sub
+            sub: userId
         });
 
         res.json(body);
 
-        logger.info(`New access token generated for user: ${sub}`);
+        logger.info(`New access token generated for user: ${userId}`);
     } catch (e) {
         res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Sign-in successful for user: ${sub}`);
+    logger.info(`Sign-in successful for user: ${userId}`);
 });
 
 export default router;
