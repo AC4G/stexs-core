@@ -21,3 +21,7 @@ export const REDIRECT_TO_SIGN_IN: string = process.env.REDIRECT_TO_SIGN_IN!;
 export const REDIRECT_TO_EMAIL_CHANGE: string = process.env.REDIRECT_TO_EMAIL_CHANGE!;
 export const REDIRECT_TO_RECOVERY: string = process.env.REDIRECT_TO_RECOVERY!;
 export const LOGGER_URL: string = process.env.LOGGER_URL!;
+export const SERVICE_NAME: string = process.env.SERVICE_NAME!;
+export const TOTP_ALGORITHM: string = process.env.TOTP_ALGORITHM!;
+export const TOTP_DIGITS: number = parseInt(process.env.TOTP_DIGITS!);
+export const TOTP_PERIOD: number = parseInt(process.env.TOTP_PERIOD!);

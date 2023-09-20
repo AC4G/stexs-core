@@ -212,5 +212,16 @@ export const UNSUPPORTED_TYPE = {
 export const INVALID_CODE = {
     code: 'INVALID_CODE',
     message: 'Provided code is invalid.'
-}
-;
+};
+export const TOTP_ALREADY_ENABLED = {
+    code: 'TOTP_ALREADY_ENABLED',
+    message: 'TOTP 2FA is already enabled.'
+};
+export const TOTP_ALREADY_DISABLED = {
+    code: 'TOTP_ALREADY_DISABLED',
+    message: 'TOTP 2FA is already disabled.'
+};
+export const TOTP_ALREADY_VERIFIED = {
+    code: 'TOTP_ALREADY_VERIFIED',
+    message: 'TOTP 2FA is already verified.'
+};
