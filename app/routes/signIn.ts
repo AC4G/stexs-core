@@ -18,6 +18,7 @@ import {
     INVALID_CREDENTIALS, 
     INVALID_TYPE, 
     PASSWORD_REQUIRED,
+    TOKEN_REQUIRED,
     TYPE_REQUIRED,
     UNSUPPORTED_TYPE
 } from '../constants/errors';
@@ -113,9 +114,6 @@ router.post('/', [
 });
 
 router.post('/confirm', [
-    validateSignInConfirmToken(),
-    checkTokenGrantType('sign_in_confirm'),
-    transformJwtErrorMessages,
     body('code')
         .notEmpty()
         .withMessage(CODE_REQUIRED),
@@ -130,7 +128,13 @@ router.post('/confirm', [
             
             return true;
         }),
-    validate
+    body('token')
+        .notEmpty()
+        .withMessage(TOKEN_REQUIRED),
+    validate,
+    validateSignInConfirmToken(),
+    checkTokenGrantType('sign_in_confirm'),
+    transformJwtErrorMessages,
 ], async (req: JWTRequest, res: Response) => {
     const userId = req.auth?.sub!;
     const supportedTypes = req.auth?.types;

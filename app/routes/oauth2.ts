@@ -357,6 +357,10 @@ router.delete('/connection', [
 });
 
 router.delete('/revoke', [
+    body('refresh_token')
+        .notEmpty()
+        .withMessage(REFRESH_TOKEN_REQUIRED),
+    validate,
     validateRefreshToken,
     checkTokenGrantType('authorization_code'),
     transformJwtErrorMessages

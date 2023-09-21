@@ -25,9 +25,9 @@ class JWTError extends Error {
     status: number;
     data?: Record<string, any>;
 
-    constructor(message: string, code: string, status: number, data?: Record<string, any>) {
-        super(message);
-        this.code = code;
+    constructor(info: { message: string, code: string }, status: number, data?: Record<string, any>) {
+        super(info.message);
+        this.code = info.code;
         this.status = status;
         this.data = data;
         this.name = this.constructor.name;
@@ -45,23 +45,12 @@ export function validateAccessToken() {
 }
 
 export function validateRefreshToken(req: Request, res: Response, next: NextFunction) { 
-    const refreshToken = req.body?.refresh_token;
-
-    if (refreshToken === undefined || refreshToken.length === 0) {
-        const err = new JWTError(REFRESH_TOKEN_REQUIRED.message, REFRESH_TOKEN_REQUIRED.code, 400, {
-            path: 'refresh_token',
-            location: 'body'
-        });
-
-        return next(err);
-    }
-
     return jwt({ 
         secret: REFRESH_TOKEN_SECRET, 
         audience: AUDIENCE,
         issuer: ISSUER,
         algorithms: ['HS256'],
-        getToken: () => refreshToken
+        getToken: (req) => req.body.refresh_token
     })(req, res, next);
 }
 
@@ -77,18 +66,57 @@ export function validateSignInConfirmToken() {
     });
 }
 
+export function validateSignInConfirmOrAccessToken(req: any, res: Response, next: NextFunction) {
+    const token = req.body.token;
+    let grantType = null;
+
+    verify(token, ACCESS_TOKEN_SECRET, {
+        audience: AUDIENCE,
+        issuer: ISSUER,
+        algorithms: ['HS256']
+    }, (e, decoded) => {
+        if (e) return;
+
+        if (typeof decoded === 'object' && 'grant_type' in decoded) {
+            if (decoded?.grant_type !== 'sign_in') throw new JWTError({ message: INVALID_GRANT_TYPE.messages[0], code: INVALID_GRANT_TYPE.code }, 403);
+        }
+
+        req.auth = decoded;
+        grantType = 'access';
+    });
+
+    verify(token, SIGN_IN_CONFIRM_TOKEN_SECRET, {
+        audience: AUDIENCE,
+        issuer: ISSUER,
+        algorithms: ['HS256'],
+    }, (e, decoded) => {
+        if (e) return;
+
+        if (typeof decoded === 'object' && 'grant_type' in decoded) {
+            if (decoded?.grant_type !== 'sign_in_confirm') throw new JWTError({ message: INVALID_GRANT_TYPE.messages[0], code: INVALID_GRANT_TYPE.code }, 403);
+        }
+
+        req.auth = decoded;
+        grantType = 'sign_in_confirm'
+    });
+
+    if (grantType === null) throw new JWTError(INVALID_TOKEN, 403);
+
+    return next();
+}
+
 export function isRefreshTokenValid(req: any, grantType: string) {
     const token = req.body.refresh_token;
 
     verify(token, REFRESH_TOKEN_SECRET, { 
         audience: AUDIENCE,
         issuer: ISSUER,
-        algorithms: ['HS256'],
+        algorithms: ['HS256']
     }, (e, decoded) => {
-        if (e) throw new Error(INVALID_TOKEN.code + ': ' + INVALID_TOKEN.message);
+        if (e) throw new JWTError(INVALID_TOKEN, 403);
 
         if (typeof decoded === 'object' && 'grant_type' in decoded) {
-            if (decoded?.grant_type !== grantType) throw new JWTError(INVALID_GRANT_TYPE.messages[0], INVALID_GRANT_TYPE.code, 403);
+            if (decoded?.grant_type !== grantType) throw new JWTError({ message: INVALID_GRANT_TYPE.messages[0], code: INVALID_GRANT_TYPE.code }, 403);
         }
 
         req.auth = decoded;
@@ -103,7 +131,7 @@ export function checkTokenGrantType(grantType: string) {
             return next();
         }
 
-        throw new JWTError(INVALID_GRANT_TYPE.messages[0], INVALID_GRANT_TYPE.code, 403);
+        throw new JWTError({ message: INVALID_GRANT_TYPE.messages[0], code: INVALID_GRANT_TYPE.code }, 403);
     };
 }
 
