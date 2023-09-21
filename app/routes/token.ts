@@ -3,17 +3,27 @@ import { errorMessages } from '../services/messageBuilderService';
 import db from '../database';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
-import { INTERNAL_ERROR, INVALID_TOKEN } from '../constants/errors';
+import { 
+    INTERNAL_ERROR, 
+    INVALID_TOKEN,
+    REFRESH_TOKEN_REQUIRED 
+} from '../constants/errors';
 import { 
     checkTokenGrantType, 
     transformJwtErrorMessages, 
     validateRefreshToken 
 } from '../middlewares/jwtMiddleware';
 import logger from '../loggers/logger';
+import { body } from 'express-validator';
+import validate from '../middlewares/validatorMiddleware';
 
 const router = Router();
 
 router.post('/', [
+    body('refresh_token')
+        .notEmpty()
+        .withMessage(REFRESH_TOKEN_REQUIRED),
+    validate,
     validateRefreshToken,
     checkTokenGrantType('sign_in'),
     transformJwtErrorMessages

@@ -225,3 +225,11 @@ export const TOTP_ALREADY_VERIFIED = {
     code: 'TOTP_ALREADY_VERIFIED',
     message: 'TOTP 2FA is already verified.'
 };
+export const TWOFA_EMAIL_ALREADY_ENABLED = {
+    code: 'TWOFA_EMAIL_ALREADY_ENABLED',
+    message: 'Email 2FA is already enabled.' 
+};
+export const TWOFA_EMAIL_ALREADY_DISABLED = {
+    code: 'TWOFA_EMAIL_ALREADY_DISABLED',
+    message: 'Email 2FA is already disabled.' 
+};

@@ -3,8 +3,8 @@ import { Request } from 'express-jwt';
 import { 
     checkTokenGrantType, 
     transformJwtErrorMessages,
-    validateAccessToken, 
-    validateSignInConfirmToken
+    validateAccessToken,
+    validateSignInConfirmOrAccessToken
 } from '../middlewares/jwtMiddleware';
 import db from '../database';
 import generateCode from '../services/codeGeneratorService';
@@ -20,14 +20,15 @@ import {
     INTERNAL_ERROR, 
     INVALID_CODE, 
     INVALID_TYPE, 
+    TOKEN_REQUIRED, 
     TOTP_ALREADY_ENABLED, 
-    TWOFA_EMAIL_ALREADY_ENABLED, 
+    TWOFA_EMAIL_ALREADY_DISABLED,
     TYPE_REQUIRED 
 } from '../constants/errors';
 import sendEmail from '../services/emailService';
 import { body } from 'express-validator';
 import validate from '../middlewares/validatorMiddleware';
-import { verifyEmail, verifyTOTP } from '../controllers/2faController';
+import { verifyTOTP } from '../controllers/2faController';
 import { getTOTPForSettup, getTOTPForVerification } from '../services/totpService';
 import isExpired from '../services/isExpiredService';
 
@@ -194,66 +195,6 @@ router.post('/totp/disable', [
 router.post('/email', [
     validateAccessToken(),
     checkTokenGrantType('sign_in'),
-    transformJwtErrorMessages
-], async (req: Request, res: Response) => {
-    const userId = req.auth?.sub;
-    const code = generateCode(8);
-    let email;
-
-    try {
-        const { rowCount, rows } = await db.query(`
-            SELECT
-                t.email AS email_status,
-                u.email
-            FROM auth.users AS u
-            LEFT JOIN auth.twofa AS t ON u.id = t.user_id
-            WHERE u.id = $1::uuid;
-        `, [userId]);
-
-        if (rowCount === 0) {
-            logger.error(`Failed to fetch 2FA email status and email for user: ${userId}`);
-            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }
-
-        if (rows[0].email_status) {
-            logger.warn(`2FA email is already enabled for user: ${userId}`);
-            return res.status(400).json(errorMessages([{ info: TWOFA_EMAIL_ALREADY_ENABLED }]));
-        }
-
-        const { rowCount: count } = await db.query(`
-            UPDATE auth.twofa
-            SET
-                code = $2::text,
-                code_sent_at = CURRENT_TIMESTAMP
-            WHERE user_id = $1::uuid;
-        `, [userId, code]);
-
-        if (count === 0) {
-            logger.error(`Failed to update 2FA email code and timestamp for user: ${userId}`);
-            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }
-
-        email = rows[0].email;
-    } catch (e) {
-        logger.error(`Error while fetching or updating 2FA email properties for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
-
-    try {
-        await sendEmail(email, `2FA activation code ${code}`, undefined, `Use this code ${code} to enable email 2FA`);
-    } catch (e) {
-        logger.error(`Error while sending 2FA activation code email to ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
-        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
-
-    logger.info(`2FA activation code successfully sent to email: ${email}`);
-
-    res.json(message('2FA activation code successfully send to users email.'));
-});
-
-router.post('/email/disable', [
-    validateAccessToken(),
-    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
     body('code')
         .notEmpty()
@@ -276,6 +217,68 @@ router.post('/email/disable', [
         }
 
         if (code !== rows[0].code) {
+            logger.warn(`Invalid 2FA activation code provided for user: ${userId}`);
+            return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
+        }
+
+        if (isExpired(rows[0].code_sent_at, 5)) {
+            logger.warn(`2FA activation code expired for user: ${userId}`);
+            return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
+        }
+
+        const { rowCount: count } = await db.query(`
+            UPDATE auth.twofa
+            SET
+                email = TRUE,
+                code = NULL,
+                code_sent_at = NULL
+            WHERE user_id = $1::uuid;
+        `, [userId]);
+
+        if (count === 0) {
+            logger.error(`Failed to update 2FA email status, code and timestamp for user: ${userId}`);
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
+    } catch (e) {
+        logger.error(`Error during 2FA email activation for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    }
+
+    logger.info(`Successfully enabled 2FA email for user: ${userId}`);
+
+    res.json(message('Email 2FA successfully enabled.'));
+});
+
+router.post('/email/disable', [
+    validateAccessToken(),
+    checkTokenGrantType('sign_in'),
+    transformJwtErrorMessages,
+    body('code')
+        .notEmpty()
+        .withMessage(CODE_REQUIRED),
+    validate
+], async (req: Request, res: Response) => {
+    const userId = req.auth?.sub;
+    const { code } = req.body;
+
+    try {
+        const { rowCount, rows } = await db.query(`
+            SELECT email, code, code_sent_at
+            FROM auth.twofa
+            WHERE user_id = $1::uuid;
+        `, [userId]);
+
+        if (rowCount === 0) {
+            logger.error(`Failed to fetch 2FA email code and timestamp for user: ${userId}`);
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
+
+        if (rows[0].email) {
+            logger.warn(`2FA email is already disabled for user: ${userId}`);
+            return res.status(400).json(errorMessages([{ info: TWOFA_EMAIL_ALREADY_DISABLED }]));
+        }
+
+        if (code !== rows[0].code) {
             logger.warn(`Invalid 2FA code provided for user: ${userId}`);
             return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
         }
@@ -288,7 +291,7 @@ router.post('/email/disable', [
         const { rowCount: count } = await db.query(`
             UPDATE auth.twofa
             SET
-                email = TRUE,
+                email = FALSE,
                 code = NULL,
                 code_sent_at = NULL
             WHERE user_id = $1::uuid;
@@ -317,7 +320,7 @@ router.post('/verify', [
         .withMessage(TYPE_REQUIRED)
         .bail()
         .custom(value => {
-            const supportedTypes = ['totp', 'email'];
+            const supportedTypes = ['totp'];
 
             if (!supportedTypes.includes(value)) throw new CustomValidationError(INVALID_TYPE);
             
@@ -333,15 +336,14 @@ router.post('/verify', [
     if (type === 'totp') {
         await verifyTOTP(req, res);
     }
-
-    if (type === 'email') {
-        await verifyEmail(req, res);
-    }
 });
 
 router.post('/email/send-code', [
-    validateSignInConfirmToken(),
-    checkTokenGrantType('sign_in_confirm'),
+    body('token')
+        .notEmpty()
+        .withMessage(TOKEN_REQUIRED),
+    validate,
+    validateSignInConfirmOrAccessToken,
     transformJwtErrorMessages
 ], async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -370,14 +372,14 @@ router.post('/email/send-code', [
 
         email = rows[0].email;
     } catch (e) {
-        logger.error(`Error while updating and fetching email for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error while updating and fetching 2FA code for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     try {
-        await sendEmail(email, `2FA code ${code}`, undefined, `Use this code ${code} to sign into your account`);
+        await sendEmail(email, `2FA code ${code}`, undefined, `Your 2FA code: ${code}`);
     } catch (e) {
-        logger.error(`Error while sending 2FA code email to ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error while sending 2FA code to ${email}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
