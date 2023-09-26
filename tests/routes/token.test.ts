@@ -8,7 +8,9 @@ import { INVALID_TOKEN } from "../../app/constants/errors";
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
     validateRefreshToken: (req: Request, res: Response, next: NextFunction) => next(),
+    validateSignInConfirmOrAccessToken: (req: Request, res: Response, next: NextFunction) => next(),
     checkTokenGrantType: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
+    validateSignInConfirmToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
     transformJwtErrorMessages: jest.fn((err, req, res, next) => next())
 }));
 
@@ -29,7 +31,8 @@ describe('Token Route', () => {
         });
 
         const response = await request(server)
-            .post('/token');
+            .post('/token')
+            .send({ refresh_token: 'token' });
 
         expect(response.status).toBe(401);
         expect(response.body.errors).toEqual([
@@ -53,7 +56,8 @@ describe('Token Route', () => {
         });
 
         const response = await request(server)
-            .post('/token');
+            .post('/token')
+            .send({ refresh_token: 'token' });
 
         expect(response.status).toBe(200);
         expect(response.body).toMatchObject({
