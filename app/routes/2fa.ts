@@ -23,7 +23,7 @@ import {
     TOKEN_REQUIRED, 
     TOTP_ALREADY_ENABLED, 
     TWOFA_EMAIL_ALREADY_DISABLED,
-    TYPE_REQUIRED 
+    TYPE_REQUIRED
 } from '../constants/errors';
 import sendEmail from '../services/emailService';
 import { body } from 'express-validator';
@@ -206,7 +206,7 @@ router.post('/email', [
 
     try {
         const { rowCount, rows } = await db.query(`
-            SELECT code, code_sent_at
+            SELECT email_code, email_code_sent_at
             FROM auth.twofa
             WHERE user_id = $1::uuid;
         `, [userId]);
@@ -230,8 +230,8 @@ router.post('/email', [
             UPDATE auth.twofa
             SET
                 email = TRUE,
-                code = NULL,
-                code_sent_at = NULL
+                email_code = NULL,
+                email_code_sent_at = NULL
             WHERE user_id = $1::uuid;
         `, [userId]);
 
@@ -263,7 +263,7 @@ router.post('/email/disable', [
 
     try {
         const { rowCount, rows } = await db.query(`
-            SELECT email, code, code_sent_at
+            SELECT email, email_code, email_code_sent_at
             FROM auth.twofa
             WHERE user_id = $1::uuid;
         `, [userId]);
@@ -292,8 +292,8 @@ router.post('/email/disable', [
             UPDATE auth.twofa
             SET
                 email = FALSE,
-                code = NULL,
-                code_sent_at = NULL
+                email_code = NULL,
+                email_code_sent_at = NULL
             WHERE user_id = $1::uuid;
         `, [userId]);
 
@@ -355,8 +355,8 @@ router.post('/email/send-code', [
             WITH updated_twofa AS (
                 UPDATE auth.twofa
                 SET
-                    code = $1::text,
-                    code_sent_at = CURRENT_TIMESTAMP
+                    email_code = $1::text,
+                    email_code_sent_at = CURRENT_TIMESTAMP
                 WHERE user_id = $2::uuid
                 RETURNING user_id
             )
@@ -386,6 +386,6 @@ router.post('/email/send-code', [
     logger.info(`2FA code successfully sent to email: ${email}`);
 
     res.json(message('2FA code successfully send to users email.'));
-})
+});
 
 export default router;

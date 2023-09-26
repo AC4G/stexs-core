@@ -60,7 +60,7 @@ router.post('/', [
             LEFT JOIN auth.twofa ON u.id = twofa.user_id
             WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
             AND (
-                (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) = $1::text
+                (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
             );
         `, [identifier, password]);
 
@@ -92,14 +92,16 @@ router.post('/', [
                 sub: uuid
             });
     
-            res.json(body);
-    
             logger.info(`New access token generated for user: ${uuid}`);
+
+            res.json(body);
         } catch (e) {
-            res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
     
         logger.info(`Sign-in successful for user: ${uuid}`);
+        
+        return;
     }
 
     const { token, expires } = generateSignInConfirmToken(uuid, types);
@@ -148,7 +150,7 @@ router.post('/confirm', [
     if (type === 'email') {
         try {
             const { rowCount, rows } = await db.query(`
-                SELECT code, code_sent_at
+                SELECT email_code, email_code_sent_at
                 FROM auth.twofa
                 WHERE user_id = $1::uuid;
             `, [userId]);
@@ -173,8 +175,8 @@ router.post('/confirm', [
             const { rowCount: count } = await db.query(`
                 UPDATE auth.twofa
                 SET
-                    code = NULL,
-                    code_sent_at = NULL
+                    email_code = NULL,
+                    email_code_sent_at = NULL
                 WHERE user_id = $1::uuid;
             `, [userId]);
 

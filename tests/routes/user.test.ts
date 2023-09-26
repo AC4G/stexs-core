@@ -17,8 +17,10 @@ import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
-    validateRefreshToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
+    validateRefreshToken: (req: Request, res: Response, next: NextFunction) => next(),
+    validateSignInConfirmOrAccessToken: (req: Request, res: Response, next: NextFunction) => next(),
     checkTokenGrantType: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
+    validateSignInConfirmToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
     transformJwtErrorMessages: jest.fn((err, req, res, next) => next())
 }));
 

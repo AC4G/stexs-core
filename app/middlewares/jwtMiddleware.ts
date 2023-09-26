@@ -12,11 +12,7 @@ import {
 } from '../../env-config';
 import { expressjwt as jwt, Request as JWTRequest } from 'express-jwt';
 import { errorMessages } from '../services/messageBuilderService';
-import { 
-    INVALID_GRANT_TYPE, 
-    INVALID_TOKEN, 
-    REFRESH_TOKEN_REQUIRED 
-} from '../constants/errors';
+import { INVALID_GRANT_TYPE, INVALID_TOKEN } from '../constants/errors';
 import { verify } from 'jsonwebtoken'; 
 import logger from '../loggers/logger';
 
