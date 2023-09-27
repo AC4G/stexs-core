@@ -293,7 +293,7 @@ describe('Recovery Routes', () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
-                    recovery_sent_at: new Date('2023-09-15T12:00:00').toISOString()
+                    recovery_sent_at: '2023-09-15T12:00:00'
                 }
             ],
             rowCount: 1
@@ -334,7 +334,7 @@ describe('Recovery Routes', () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
-                    recovery_sent_at: new Date('2023-09-15T12:00:00').toISOString()
+                    recovery_sent_at: '2023-09-15T12:00:00'
                 }
             ],
             rowCount: 1

@@ -26,7 +26,7 @@ describe('Sign Up', () => {
         const response = await request(server)
             .post('/sign-up')
             .send({
-                email: 'text@example.com',
+                email: 'test@example.com',
                 password: 'Test123.'
         });
 
@@ -49,7 +49,7 @@ describe('Sign Up', () => {
             .post('/sign-up')
             .send({
                 username: 'ZaZlZeBu1mFOqDuultl1P',
-                email: 'text@example.com',
+                email: 'test@example.com',
                 password: 'Test123.'
         });
 
@@ -72,7 +72,7 @@ describe('Sign Up', () => {
             .post('/sign-up')
             .send({
                 username: 'test@example.com',
-                email: 'text@example.com',
+                email: 'test@example.com',
                 password: 'Test123.'
         });
 

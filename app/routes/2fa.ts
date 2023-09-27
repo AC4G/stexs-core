@@ -21,8 +21,10 @@ import {
     INVALID_CODE, 
     INVALID_TYPE, 
     TOKEN_REQUIRED, 
+    TOTP_ALREADY_DISABLED, 
     TOTP_ALREADY_ENABLED, 
     TWOFA_EMAIL_ALREADY_DISABLED,
+    TWOFA_EMAIL_ALREADY_ENABLED,
     TYPE_REQUIRED
 } from '../constants/errors';
 import sendEmail from '../services/emailService';
@@ -152,7 +154,7 @@ router.post('/totp/disable', [
 
         if (!rows[0].totp) {
             logger.warn(`2FA TOTP is already disabled for user: ${userId}`);
-            return res.status(400).json(errorMessages([{ info: TOTP_ALREADY_ENABLED }]));
+            return res.status(400).json(errorMessages([{ info: TOTP_ALREADY_DISABLED }]));
         }
 
         secret = rows[0].totp_secret;
@@ -163,7 +165,7 @@ router.post('/totp/disable', [
 
     const totp = getTOTPForVerification(secret);
 
-    if (totp.validate({ token: code, window: 1 })) {
+    if (totp.validate({ token: code, window: 1 }) === null) {
         logger.warn(`Invalid code provided for 2FA TOTP for user: ${userId}`);
         return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
     }
@@ -206,7 +208,7 @@ router.post('/email', [
 
     try {
         const { rowCount, rows } = await db.query(`
-            SELECT email_code, email_code_sent_at
+            SELECT email, email_code, email_code_sent_at
             FROM auth.twofa
             WHERE user_id = $1::uuid;
         `, [userId]);
@@ -216,12 +218,18 @@ router.post('/email', [
             return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
-        if (code !== rows[0].code) {
+        if (rows[0].email) {
+            logger.warn(`2FA email is already enabled for user: ${userId}`);
+            return res.status(400).json(errorMessages([{ info: TWOFA_EMAIL_ALREADY_ENABLED }]));
+
+        }
+
+        if (code !== rows[0].email_code) {
             logger.warn(`Invalid 2FA activation code provided for user: ${userId}`);
             return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
         }
 
-        if (isExpired(rows[0].code_sent_at, 5)) {
+        if (isExpired(rows[0].email_code_sent_at, 5)) {
             logger.warn(`2FA activation code expired for user: ${userId}`);
             return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
         }
@@ -273,17 +281,17 @@ router.post('/email/disable', [
             return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
-        if (rows[0].email) {
+        if (!rows[0].email) {
             logger.warn(`2FA email is already disabled for user: ${userId}`);
             return res.status(400).json(errorMessages([{ info: TWOFA_EMAIL_ALREADY_DISABLED }]));
         }
 
-        if (code !== rows[0].code) {
+        if (code !== rows[0].email_code) {
             logger.warn(`Invalid 2FA code provided for user: ${userId}`);
             return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
         }
 
-        if (isExpired(rows[0].code_sent_at, 5)) {
+        if (isExpired(rows[0].email_code_sent_at, 5)) {
             logger.warn(`2FA code expired for user: ${userId}`);
             return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
         }
@@ -339,10 +347,6 @@ router.post('/verify', [
 });
 
 router.post('/email/send-code', [
-    body('token')
-        .notEmpty()
-        .withMessage(TOKEN_REQUIRED),
-    validate,
     validateSignInConfirmOrAccessToken,
     transformJwtErrorMessages
 ], async (req: Request, res: Response) => {
