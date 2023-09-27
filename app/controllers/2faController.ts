@@ -40,7 +40,7 @@ export async function verifyTOTP(req: Request, res: Response) {
 
     const totp = getTOTPForVerification(secret);
 
-    if (totp.validate({ token: code, window: 1 })) {
+    if (totp.validate({ token: code, window: 1 }) === null) {
         logger.warn(`Invalid code provided for 2FA TOTP verification for user: ${userId}`);
         return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
     }

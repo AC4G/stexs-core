@@ -140,7 +140,7 @@ describe('Email Verification Routes', () => {
         {
           id: 1,
           email_verified_at: null,
-          verification_sent_at: new Date('2023-09-14T11:00:00').toDateString()
+          verification_sent_at: '2023-09-14T11:00:00'
         }
       ],
       rowCount: 1
@@ -160,7 +160,7 @@ describe('Email Verification Routes', () => {
         {
           id: 1,
           email_verified_at: null,
-          verification_sent_at: new Date('2023-09-15T11:00:00').toDateString()
+          verification_sent_at: '2023-09-15T11:00:00'
         }
       ],
       rowCount: 1

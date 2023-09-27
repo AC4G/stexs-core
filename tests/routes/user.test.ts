@@ -240,7 +240,7 @@ describe('User Routes', () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
-                    email_change_sent_at: new Date('2023-09-14T10:00:00').toISOString()
+                    email_change_sent_at: '2023-09-14T10:00:00'
                 }
             ],
             rowCount: 1
@@ -286,7 +286,7 @@ describe('User Routes', () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
-                    email_change_sent_at: new Date('2023-09-14T11:00:00').toISOString()
+                    email_change_sent_at: '2023-09-14T11:00:00'
                 }
             ],
             rowCount: 1
@@ -311,7 +311,7 @@ describe('User Routes', () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
-                    email_change_sent_at: new Date('2023-09-15T11:00:00').toISOString()
+                    email_change_sent_at: '2023-09-15T11:00:00'
                 }
             ],
             rowCount: 1

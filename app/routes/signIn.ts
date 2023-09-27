@@ -160,12 +160,12 @@ router.post('/confirm', [
                 return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
             }
 
-            if (code !== rows[0].code) {
+            if (code !== rows[0].email_code) {
                 logger.warn(`Invalid 2FA code provided for user: ${userId}`);
                 return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
             }
 
-            if (isExpired(rows[0].code_sent_at, 5)) {
+            if (isExpired(rows[0].email_code_sent_at, 5)) {
                 logger.warn(`2FA code expired for user: ${userId}`);
                 return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
             }
