@@ -12,7 +12,12 @@ import {
 } from '../../env-config';
 import { expressjwt as jwt, Request as JWTRequest } from 'express-jwt';
 import { errorMessages } from '../services/messageBuilderService';
-import { CREDENTIALS_BAD_FORMAT, CREDENTIALS_REQUIRED, INVALID_GRANT_TYPE, INVALID_TOKEN } from '../constants/errors';
+import { 
+    CREDENTIALS_BAD_FORMAT, 
+    CREDENTIALS_REQUIRED, 
+    INVALID_GRANT_TYPE, 
+    INVALID_TOKEN 
+} from '../constants/errors';
 import { verify } from 'jsonwebtoken'; 
 import logger from '../loggers/logger';
 
@@ -115,24 +120,6 @@ export function validateSignInConfirmOrAccessToken(req: any, res: Response, next
     if (grantType === null) throw new JWTError(INVALID_TOKEN, 403);
 
     return next();
-}
-
-export function isRefreshTokenValid(req: any, grantType: string) {
-    const token = req.body.refresh_token;
-
-    verify(token, REFRESH_TOKEN_SECRET, { 
-        audience: AUDIENCE,
-        issuer: ISSUER,
-        algorithms: ['HS256']
-    }, (e, decoded) => {
-        if (e) throw new JWTError(INVALID_TOKEN, 403);
-
-        if (typeof decoded === 'object' && 'grant_type' in decoded) {
-            if (decoded?.grant_type !== grantType) throw new JWTError({ message: INVALID_GRANT_TYPE.messages[0], code: INVALID_GRANT_TYPE.code }, 403);
-        }
-
-        req.auth = decoded;
-    });
 }
 
 export function checkTokenGrantType(grantType: string) {

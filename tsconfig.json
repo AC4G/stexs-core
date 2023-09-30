@@ -9,6 +9,7 @@
       "esModuleInterop": true,
       "moduleResolution": "node",
       "forceConsistentCasingInFileNames": true,
+      "allowSyntheticDefaultImports": true,
       "baseUrl": ".",
       "paths": {
       "~/*": ["./app/*"]
