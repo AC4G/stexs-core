@@ -143,7 +143,7 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.body).toMatchObject({
+        expect(response.body).toEqual({
             access_token: expect.stringMatching(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/),
             refresh_token: expect.stringMatching(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/),
             token_type: 'bearer',
@@ -171,7 +171,7 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.body).toMatchObject({
+        expect(response.body).toEqual({
             token: expect.stringMatching(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/),
             types: ['email'],
             expires: expect.any(Number)
@@ -198,7 +198,7 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.body).toMatchObject({
+        expect(response.body).toEqual({
             token: expect.stringMatching(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/),
             types: ['totp'],
             expires: expect.any(Number)

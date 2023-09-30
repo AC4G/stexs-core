@@ -3,7 +3,6 @@ import { Request } from 'express-jwt';
 import {
     transformJwtErrorMessages,
     validateAccessToken, 
-    isRefreshTokenValid,
     validateRefreshToken,
     checkTokenGrantType
 } from '../middlewares/jwtMiddleware';
@@ -27,6 +26,7 @@ import {
     GRANT_TYPE_REQUIRED, 
     INTERNAL_ERROR,
     INVALID_GRANT_TYPE, 
+    INVALID_TOKEN, 
     INVALID_URL, 
     INVALID_UUID, 
     REDIRECT_URL_REQUIRED, 
@@ -41,9 +41,11 @@ import {
     refreshTokenController
 } from '../controllers/oauth2Controller';
 import logger from '../loggers/logger';
+import { verify } from 'jsonwebtoken';
+import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
 
 const router = Router();
-
+ 
 router.post('/authorize', [
     validateAccessToken(),
     checkTokenGrantType('sign_in'),
@@ -200,25 +202,25 @@ router.post('/authorize', [
     res.json({ code: token });
 });
 
+const possibleGrantTypes = [
+    'client_credentials', 
+    'authorization_code', 
+    'refresh_token'
+];
+
 router.post('/token', [
     body('grant_type')
         .notEmpty()
         .withMessage(GRANT_TYPE_REQUIRED)
         .bail()
         .custom((value) => {
-            const possibleGrantTypes = [
-                'client_credentials', 
-                'authorization_code', 
-                'refresh_token'
-            ];
-
             if (!possibleGrantTypes.includes(value)) throw new CustomValidationError({ code: INVALID_GRANT_TYPE.code, message: INVALID_GRANT_TYPE.messages[1] });
 
             return true;
         }),
     body('client_id')
         .custom((value, { req }) => {
-            if (req.body?.grant_type === 'refresh_token' || req.body?.grant_type === undefined) return true;
+            if (!possibleGrantTypes.includes(req.body?.grant_type) || req.body?.grant_type === 'refresh_token' || req.body?.grant_type === undefined) return true;
 
             if (value === undefined || value.length === 0) throw new CustomValidationError(CLIENT_ID_REQUIRED);
 
@@ -228,7 +230,7 @@ router.post('/token', [
         }),
     body('client_secret')
         .custom((value, { req }) => {
-            if (req.body?.grant_type === 'refresh_token' || req.body?.grant_type === undefined) return true;
+            if (!possibleGrantTypes.includes(req.body?.grant_type) || req.body?.grant_type === 'refresh_token' || req.body?.grant_type === undefined) return true;
 
             if (value === undefined || value.length === 0) throw new CustomValidationError(CLIENT_SECRET_REQUIRED);
 
@@ -236,7 +238,7 @@ router.post('/token', [
          }),
     body('code')
         .custom((value, { req }) => {
-            if (req.body?.grant_type !== 'authorization_code') return true;
+            if (req.body?.grant_type !== 'authorization_code' || req.body?.grant_type === undefined) return true;
 
             if (value === undefined || value.length === 0) throw new CustomValidationError(CODE_REQUIRED);
 
@@ -244,11 +246,27 @@ router.post('/token', [
         }),
     body('refresh_token')
         .custom((value, { req }) => {
-            if (req.body?.grant_type !== 'refresh_token') return true;
+            if (req.body?.grant_type !== 'refresh_token' || req.body?.grant_type === undefined) return true;
 
             if (value === undefined || value.length === 0) throw new CustomValidationError(REFRESH_TOKEN_REQUIRED);
 
-            if (req.body?.grant_type === 'refresh_token') isRefreshTokenValid(req, 'authorization_code');
+            if (req.body?.grant_type === 'refresh_token') {
+                const token = req.body.refresh_token;
+
+                verify(token, REFRESH_TOKEN_SECRET, { 
+                    audience: AUDIENCE,
+                    issuer: ISSUER,
+                    algorithms: ['HS256']
+                }, (e, decoded) => {
+                    if (e) throw new CustomValidationError(INVALID_TOKEN);
+
+                    if (typeof decoded === 'object' && 'grant_type' in decoded) {
+                        if (decoded?.grant_type !== 'authorization_code') throw new CustomValidationError({ message: INVALID_GRANT_TYPE.messages[0], code: INVALID_GRANT_TYPE.code });
+                    }
+
+                    req.auth = decoded;
+                });                
+            }
 
             return true;
         }),

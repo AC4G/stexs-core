@@ -68,10 +68,15 @@ export async function authorizationCodeController(req: Request, res: Response) {
     }
 
     try {
-        await db.query(`
+        const { rowCount } = await db.query(`
             DELETE FROM auth.oauth2_authorization_tokens
             WHERE id = $1::integer;
         `, [tokenId]);
+
+        if (rowCount === 0) {
+            logger.error(`Failed to delete authorization code for user: ${userId} and client: ${client_id}`);
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
     } catch (e) {
         logger.error(`Error while deleting authorization code for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
@@ -93,7 +98,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
     }
 
     try {
-        await db.query(`
+        const { rowCount } = await db.query(`
             WITH app_info AS (
                 SELECT id
                 FROM public.oauth2_apps
@@ -112,7 +117,13 @@ export async function authorizationCodeController(req: Request, res: Response) {
             client_id, 
             userId
         ]);
+
+        if (rowCount === 0) {
+            logger.error(`Failed to insert connection for user: ${userId} and client: ${client_id}`);
+            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
     } catch (e) {
+        console.log({e});
         logger.error(`Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
         res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
@@ -154,7 +165,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
 
         scopes = rows[0].scopes;
 
-        if (!scopes) {
+        if (!scopes || scopes.length === 0) {
             logger.warn(`No client scopes selected for client: ${client_id}`);
             return res.status(400).json(errorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]));
         }
