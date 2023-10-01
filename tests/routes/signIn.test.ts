@@ -13,6 +13,7 @@ import {
     TYPE_REQUIRED
 } from '../../app/constants/errors';
 import { NextFunction } from 'express';
+import { testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
@@ -33,23 +34,23 @@ jest.mock('../../app/database', () => {
 });
 
 describe('Sign In Route', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     it('should handle sign in without identifier', async () => {
         const response = await request(server)
             .post('/sign-in')
             .send({ password: 'Test123.' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: IDENTIFIER_REQUIRED.code,
-                message: IDENTIFIER_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'identifier',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: IDENTIFIER_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'identifier'
+            } 
+        }]));
     });
 
     it('should handle sign in without password', async () => {
@@ -58,17 +59,13 @@ describe('Sign In Route', () => {
             .send({ identifier: 'test' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: PASSWORD_REQUIRED.code,
-                message: PASSWORD_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: PASSWORD_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle sign in with invalid credentials', async () => {
@@ -85,14 +82,10 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_CREDENTIALS.code,
-                message: INVALID_CREDENTIALS.messages[0],
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: {
+            code: INVALID_CREDENTIALS.code,
+            message: INVALID_CREDENTIALS.messages[0]
+        } }]));
     });
 
     it('should handle sign in without verified email', async () => {
@@ -113,14 +106,7 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: EMAIL_NOT_VERIFIED.code,
-                message: EMAIL_NOT_VERIFIED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_NOT_VERIFIED }]));
     });
 
     it('should handle sign in without 2fa', async () => {
@@ -214,17 +200,13 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: CODE_REQUIRED.code,
-                message: CODE_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'code'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: CODE_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'code'
+            } 
+        }]));
     });
 
     it('should handle sign in confirm without type', async () => {
@@ -236,17 +218,13 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: TYPE_REQUIRED.code,
-                message: TYPE_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'type'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: TYPE_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'type'
+            } 
+        }]));
     });
 
     it('should handle sign in confirm without token', async () => {
@@ -258,17 +236,13 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: TOKEN_REQUIRED.code,
-                message: TOKEN_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'token'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: TOKEN_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'token'
+            } 
+        }]));
     });
 
     it('should handle sign in confirm with unsupported type', async () => {
@@ -281,16 +255,12 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_TYPE.code,
-                message: INVALID_TYPE.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'type'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_TYPE, 
+            data: {
+                location: 'body',
+                path: 'type'
+            } 
+        }]));
     });
 });

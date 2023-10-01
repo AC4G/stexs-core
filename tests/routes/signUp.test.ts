@@ -11,6 +11,7 @@ import {
     PASSWORD_REQUIRED,
     USERNAME_REQUIRED 
 } from '../../app/constants/errors';
+import { message, testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/database', () => {
     return {
@@ -22,6 +23,10 @@ jest.mock('../../app/database', () => {
 });
 
 describe('Sign Up', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     it('should handle sign up with missing username', async () => {
         const response = await request(server)
             .post('/sign-up')
@@ -31,17 +36,13 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: USERNAME_REQUIRED.code,
-                message: USERNAME_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'username',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: USERNAME_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'username'
+            } 
+        }]));
     });
 
     it('should handle sign up with username longer then 20 characters', async () => {
@@ -54,17 +55,16 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_USERNAME.code,
-                message: INVALID_USERNAME.messages[0],
-                timestamp: expect.any(String),
-                data: {
-                    path: 'username',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: INVALID_USERNAME.messages[0]
+            }, 
+            data: {
+                location: 'body',
+                path: 'username'
+            } 
+        }]));
     });
 
     it('should handle sign up with username as email', async () => {
@@ -77,17 +77,16 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_USERNAME.code,
-                message: INVALID_USERNAME.messages[1],
-                timestamp: expect.any(String),
-                data: {
-                    path: 'username',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: INVALID_USERNAME.messages[1]
+            }, 
+            data: {
+                location: 'body',
+                path: 'username'
+            } 
+        }]));
     });
     
     it('should handle sign up with missing email', async () => {
@@ -99,17 +98,13 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: EMAIL_REQUIRED.code,
-                message: EMAIL_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: EMAIL_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
     
     it('should handle sign up with invalid email', async () => {
@@ -122,17 +117,16 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_EMAIL.code,
-                message: INVALID_EMAIL.messages[0],
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: INVALID_EMAIL.messages[0]
+            }, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle sign up with missing password', async () => {
@@ -144,17 +138,13 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: PASSWORD_REQUIRED.code,
-                message: PASSWORD_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: PASSWORD_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle sign up with invalid password according to regex specification', async () => {
@@ -167,17 +157,13 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_PASSWORD.code,
-                message: INVALID_PASSWORD.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_PASSWORD, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle sign up with already existing username', async () => {
@@ -192,17 +178,16 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_INPUT_DATA.code,
-                message: 'Please choose a different username.',
-                timestamp: expect.any(String),
-                data: {
-                    path: 'username',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: 'Please choose a different username.'
+            }, 
+            data: {
+                location: 'body',
+                path: 'username'
+            } 
+        }]));
     });
 
     it('should handle sign up with already existing email', async () => {
@@ -217,17 +202,16 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_INPUT_DATA.code,
-                message: 'Please choose a different email.',
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: 'Please choose a different email.'
+            }, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle sign up', async () => {
@@ -249,15 +233,10 @@ describe('Sign Up', () => {
         });
 
         expect(response.status).toBe(201);
-        expect(response.body).toEqual({
-            success: true,
-            message: 'Sign-up successful. Check your email for an verification link!',
-            timestamp: expect.any(String),
-            data: {
-                output: {
-                    userId: 1
-                }
+        expect(response.body).toEqual(message('Sign-up successful. Check your email for an verification link!', {
+            output: {
+                userId: 1
             }
-        });
+        }).onTest());
     });
 });

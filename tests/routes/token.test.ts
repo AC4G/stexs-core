@@ -4,6 +4,7 @@ import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../app/server';
 import { INVALID_TOKEN } from "../../app/constants/errors";
+import { testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
@@ -24,6 +25,10 @@ jest.mock('../../app/database', () => {
 });
 
 describe('Token Route', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     it('should handle refresh with already signed out session', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [],
@@ -35,14 +40,7 @@ describe('Token Route', () => {
             .send({ refresh_token: 'token' });
 
         expect(response.status).toBe(401);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_TOKEN.code,
-                message: INVALID_TOKEN.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_TOKEN }]));
     });
 
     it('should handle refresh', async () => {

@@ -123,7 +123,6 @@ export async function authorizationCodeController(req: Request, res: Response) {
             return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
     } catch (e) {
-        console.log({e});
         logger.error(`Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${(e instanceof Error) ? e.message : e}`);
         res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }

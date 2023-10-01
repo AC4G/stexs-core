@@ -14,6 +14,7 @@ import {
     TOKEN_REQUIRED
 } from "../../app/constants/errors";
 import { advanceTo, clear } from 'jest-date-mock';
+import { message, testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
@@ -34,6 +35,10 @@ jest.mock('../../app/database', () => {
 });
 
 describe('User Routes', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     beforeAll(() => {
         advanceTo(new Date('2023-09-15T12:00:00'));
     });
@@ -74,17 +79,13 @@ describe('User Routes', () => {
             .post('/user/password');
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: PASSWORD_REQUIRED.code,
-                message: PASSWORD_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: PASSWORD_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle password change with invalid password according to regex specification', async () => {
@@ -93,17 +94,13 @@ describe('User Routes', () => {
             .send({ password: 'test123' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_PASSWORD.code,
-                message: INVALID_PASSWORD.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_PASSWORD, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle password with current password', async () => {
@@ -121,17 +118,13 @@ describe('User Routes', () => {
             .send({ password: 'Test123.' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: NEW_PASSWORD_EQUALS_CURRENT.code,
-                message: NEW_PASSWORD_EQUALS_CURRENT.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: NEW_PASSWORD_EQUALS_CURRENT, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle password change', async () => {
@@ -154,12 +147,7 @@ describe('User Routes', () => {
             .send({ password: 'Test123.' });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            success: true,
-            message: 'Password changed successfully.',
-            timestamp: expect.any(String),
-            data: {}
-        });
+        expect(response.body).toEqual(message('Password changed successfully.').onTest());
     });
 
     it('should handle email change with missing email', async () => {
@@ -167,17 +155,13 @@ describe('User Routes', () => {
             .post('/user/email');
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: EMAIL_REQUIRED.code,
-                message: EMAIL_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: EMAIL_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle email change with invalid email', async () => {
@@ -186,17 +170,16 @@ describe('User Routes', () => {
             .send({ email: 'test' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_EMAIL.code,
-                message: INVALID_EMAIL.messages[0],
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: INVALID_EMAIL.messages[0]
+            }, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle email change', async () => {
@@ -210,12 +193,7 @@ describe('User Routes', () => {
             .send({ email: 'test@example.com' });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            success: true,
-            message: 'Email change verification link has been sent to the new email address.',
-            timestamp: expect.any(String),
-            data: {}
-        });
+        expect(response.body).toEqual(message('Email change verification link has been sent to the new email address.').onTest());
     });
 
     it('should handle email change verification with missing token', async () => {
@@ -223,17 +201,13 @@ describe('User Routes', () => {
             .post('/user/email/verify');
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: TOKEN_REQUIRED.code,
-                message: TOKEN_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'token',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: TOKEN_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'token'
+            } 
+        }]));
     });
 
     it('should handle email change verification with expired token', async () => {
@@ -251,14 +225,7 @@ describe('User Routes', () => {
             .send({ token: 'token' });
 
         expect(response.status).toBe(403);
-        expect(response.body.errors).toEqual([
-            {
-                code: EMAIL_CHANGE_LINK_EXPIRED.code,
-                message: EMAIL_CHANGE_LINK_EXPIRED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
     });
 
     it('should handle email change verification with invalid token', async () => {
@@ -272,14 +239,7 @@ describe('User Routes', () => {
             .send({ token: 'token' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_TOKEN.code,
-                message: INVALID_TOKEN.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_TOKEN }]));
     });
 
     it('should handle email change with expired verification token', async () => {
@@ -297,14 +257,7 @@ describe('User Routes', () => {
             .send({ token: 'expired-token' });
 
         expect(response.status).toBe(403);
-        expect(response.body.errors).toEqual([
-            {
-                code: EMAIL_CHANGE_LINK_EXPIRED.code,
-                message: EMAIL_CHANGE_LINK_EXPIRED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
     })
 
     it('should handle email change verification', async () => {
@@ -327,11 +280,6 @@ describe('User Routes', () => {
             .send({ token: 'token' });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            success: true,
-            message: 'Email successfully changed.',
-            timestamp: expect.any(String),
-            data: {}
-        });
+        expect(response.body).toEqual(message('Email successfully changed.').onTest());
     });
 });

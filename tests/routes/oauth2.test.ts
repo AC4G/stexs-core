@@ -10,6 +10,7 @@ import {
     INVALID_UUID, 
     REFRESH_TOKEN_REQUIRED
 } from '../../app/constants/errors';
+import { message, testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
@@ -30,6 +31,10 @@ jest.mock('../../app/database', () => {
 });
 
 describe('OAuth2 Routes', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     it('should handle connections', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
@@ -59,8 +64,6 @@ describe('OAuth2 Routes', () => {
 
         const response = await request(server)
             .get('/oauth2/connections');
-
-        console.log({ body: response.body })
         
         expect(response.status).toBe(200);
         expect(response.body).toEqual([
@@ -92,17 +95,13 @@ describe('OAuth2 Routes', () => {
             .delete('/oauth2/connection');
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: CLIENT_ID_REQUIRED.code,
-                message: CLIENT_ID_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'client_id'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: CLIENT_ID_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'client_id'
+            } 
+        }]));
     });
 
     it('should handle delete connection with client id not as uuid', async () => {
@@ -111,17 +110,13 @@ describe('OAuth2 Routes', () => {
             .send({ client_id: 'not-uuid' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_UUID.code,
-                message: INVALID_UUID.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'client_id'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_UUID, 
+            data: {
+                location: 'body',
+                path: 'client_id'
+            } 
+        }]));
     });
 
     it('should handle delete connection without a connection with given client id', async () => {
@@ -135,14 +130,7 @@ describe('OAuth2 Routes', () => {
             .send({ client_id: '2abb2007-8cc2-4880-a9e1-8d0e385ef6e7' });
 
         expect(response.status).toBe(404);
-        expect(response.body.errors).toEqual([
-            {
-                code: CONNECTION_ALREADY_DELETED.code,
-                message: CONNECTION_ALREADY_DELETED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: CONNECTION_ALREADY_DELETED }]));
     });
 
     it('should handle delete connection', async () => {
@@ -156,12 +144,7 @@ describe('OAuth2 Routes', () => {
             .send({ client_id: '2abb2007-8cc2-4880-a9e1-8d0e385ef6e7' });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            success: true,
-            message: 'Connection successfully deleted.',
-            timestamp: expect.any(String),
-            data: {}
-        }); 
+        expect(response.body).toEqual(message('Connection successfully deleted.').onTest());
     });
 
     it('should handle connection revoking without refresh token', async () => {
@@ -169,17 +152,13 @@ describe('OAuth2 Routes', () => {
             .delete('/oauth2/revoke');
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: REFRESH_TOKEN_REQUIRED.code,
-                message: REFRESH_TOKEN_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'refresh_token'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: REFRESH_TOKEN_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'refresh_token'
+            } 
+        }]));
     });
 
     it('should handle connection revoking with already revoked connection', async () => {
@@ -193,17 +172,10 @@ describe('OAuth2 Routes', () => {
             .send({ refresh_token: 'valid-token' });
 
         expect(response.status).toBe(404);
-        expect(response.body.errors).toEqual([
-            {
-                code: CONNECTION_ALREADY_REVOKED.code,
-                message: CONNECTION_ALREADY_REVOKED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: CONNECTION_ALREADY_REVOKED }]));
     });
 
-    it('should handle connection revoking', async () => {
+    it('should successfully revoke a connection with a valid refresh token', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [],
             rowCount: 1
@@ -214,11 +186,6 @@ describe('OAuth2 Routes', () => {
             .send({ refresh_token: 'valid-token' });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            success: true,
-            message: 'Connection successfully revoked.',
-            timestamp: expect.any(String),
-            data: {}
-        });
+        expect(response.body).toEqual(message('Connection successfully revoked.').onTest());
     });
 });
