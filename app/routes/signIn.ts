@@ -31,6 +31,7 @@ import {
 } from '../middlewares/jwtMiddleware';
 import isExpired from '../services/isExpiredService';
 import { getTOTPForVerification } from '../services/totpService';
+import { securityRateLimit, signInRateLimit } from '../middlewares/rateLimitMiddleware';
 
 const router = Router();
 
@@ -41,7 +42,8 @@ router.post('/', [
     body('password')
         .notEmpty()
         .withMessage(PASSWORD_REQUIRED),
-    validate
+    validate,
+    signInRateLimit
 ], async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
 
@@ -137,6 +139,7 @@ router.post('/confirm', [
     validateSignInConfirmToken(),
     checkTokenGrantType('sign_in_confirm'),
     transformJwtErrorMessages,
+    securityRateLimit
 ], async (req: JWTRequest, res: Response) => {
     const userId = req.auth?.sub!;
     const supportedTypes = req.auth?.types;

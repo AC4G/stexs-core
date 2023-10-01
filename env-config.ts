@@ -5,6 +5,7 @@ config();
 export const ENV: string = process.env.ENV!;
 export const SERVER_PORT: number = parseInt(process.env.SERVER_PORT!);
 export const PG_URL: string = process.env.PG_URL!;
+export const RD_URL: string = process.env.RD_URL!;
 export const SMTP_HOST: string = process.env.SMTP_HOST!;
 export const SMTP_PORT: number = parseInt(process.env.SMTP_PORT!);
 export const SMTP_USER: string = process.env.SMTP_USER!;
