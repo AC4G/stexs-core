@@ -19,6 +19,7 @@ import {
     ISSUER, 
     REFRESH_TOKEN_SECRET 
 } from '../../env-config';
+import { testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/database', () => { 
     return {
@@ -30,6 +31,10 @@ jest.mock('../../app/database', () => {
 });
 
 describe('OAuth2 Token', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     beforeAll(() => {
         advanceTo(new Date('2023-09-15T12:00:00'));
     });
@@ -57,17 +62,8 @@ describe('OAuth2 Token', () => {
                 refresh_token: refreshToken
             });
 
-        console.log({ response: response.body })
-
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_REFRESH_TOKEN.code,
-                message: INVALID_REFRESH_TOKEN.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_REFRESH_TOKEN }]));
     });
 
     it('should handle token route with grant type client credentials without client secret and client id', async () => {
@@ -76,26 +72,22 @@ describe('OAuth2 Token', () => {
             .send({ grant_type: 'client_credentials' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: CLIENT_ID_REQUIRED.code,
-                message: CLIENT_ID_REQUIRED.message,
-                timestamp: expect.any(String),
+        expect(response.body).toEqual(testErrorMessages([
+            { 
+                info: CLIENT_ID_REQUIRED, 
                 data: {
                     location: 'body',
                     path: 'client_id'
-                }
+                } 
             },
             {
-                code: CLIENT_SECRET_REQUIRED.code,
-                message: CLIENT_SECRET_REQUIRED.message,
-                timestamp: expect.any(String),
+                info: CLIENT_SECRET_REQUIRED,
                 data: {
                     location: 'body',
                     path: 'client_secret'
                 }
             }
-        ]);
+        ]));
     });
 
     it('should handle token route with grant type client credentials with invalid credentials', async () => {
@@ -113,14 +105,7 @@ describe('OAuth2 Token', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_CLIENT_CREDENTIALS.code,
-                message: INVALID_CLIENT_CREDENTIALS.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CLIENT_CREDENTIALS }]));
     });
 
     it('should handle token route with grant type client credentials with no scopes selected', async () => {
@@ -143,14 +128,7 @@ describe('OAuth2 Token', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: NO_CLIENT_SCOPES_SELECTED.code,
-                message: NO_CLIENT_SCOPES_SELECTED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]));
     });
 
     it('should handle token route with grant type as client credentials', async () => {
@@ -191,17 +169,13 @@ describe('OAuth2 Token', () => {
             .send({ grant_type: 'refresh_token' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: REFRESH_TOKEN_REQUIRED.code,
-                message: REFRESH_TOKEN_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'refresh_token'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: REFRESH_TOKEN_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'refresh_token'
+            } 
+        }]));
     });
 
     it('should handle token route with grant type refresh token with invalid refresh token', async () => {
@@ -219,17 +193,13 @@ describe('OAuth2 Token', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_TOKEN.code,
-                message: INVALID_TOKEN.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'refresh_token'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_TOKEN, 
+            data: {
+                location: 'body',
+                path: 'refresh_token'
+            } 
+        }]));
     });
 
     it('should handle token route with grant type refresh token with invalid grant type inside refresh token', async () => {
@@ -247,17 +217,16 @@ describe('OAuth2 Token', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_GRANT_TYPE.code,
-                message: INVALID_GRANT_TYPE.messages[0],
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'refresh_token'
-                }
-            }
-        ]);
+                message: INVALID_GRANT_TYPE.messages[0]
+            }, 
+            data: {
+                location: 'body',
+                path: 'refresh_token'
+            } 
+        }]));
     });
 
     it('should handle token route with grant type refresh token', async () => {

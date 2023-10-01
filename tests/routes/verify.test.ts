@@ -11,6 +11,7 @@ import {
   TOKEN_REQUIRED 
 } from '../../app/constants/errors';
 import { advanceTo, clear } from 'jest-date-mock';
+import { message, testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/database', () => {
     return {
@@ -22,6 +23,10 @@ jest.mock('../../app/database', () => {
 }); 
 
 describe('Email Verification Routes', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   beforeAll(() => {
     advanceTo(new Date('2023-09-15T12:00:00'));
   });
@@ -36,17 +41,13 @@ describe('Email Verification Routes', () => {
         .query({ token: 'valid-token' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
-      {
-          code: EMAIL_REQUIRED.code,
-          message: EMAIL_REQUIRED.message,
-          timestamp: expect.any(String),
-          data: {
-              path: 'email',
-              location: 'query'
-          }
-      }
-    ]);
+    expect(response.body).toEqual(testErrorMessages([{ 
+      info: EMAIL_REQUIRED, 
+      data: {
+          location: 'query',
+          path: 'email'
+      } 
+    }]));
   });
 
   it('should handle email verification with invalid email', async () => {
@@ -55,17 +56,16 @@ describe('Email Verification Routes', () => {
         .query({ token: 'valid-token', email: 'test' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
-      {
-          code: INVALID_EMAIL.code,
-          message: INVALID_EMAIL.messages[0],
-          timestamp: expect.any(String),
-          data: {
-              path: 'email',
-              location: 'query'
-          }
-      }
-    ]);
+    expect(response.body).toEqual(testErrorMessages([{ 
+      info: {
+        code: INVALID_EMAIL.code,
+        message: INVALID_EMAIL.messages[0]
+      }, 
+      data: {
+          location: 'query',
+          path: 'email'
+      } 
+    }]));
   });
 
   it('should handle email verification with missing token', async () => {
@@ -74,17 +74,13 @@ describe('Email Verification Routes', () => {
         .query({ email: 'test@example.com' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
-      {
-          code: TOKEN_REQUIRED.code,
-          message: TOKEN_REQUIRED.message,
-          timestamp: expect.any(String),
-          data: {
-              path: 'token',
-              location: 'query'
-          }
-      }
-    ]);
+    expect(response.body).toEqual(testErrorMessages([{ 
+      info: TOKEN_REQUIRED, 
+      data: {
+          location: 'query',
+          path: 'token'
+      } 
+    }]));
   });
 
   it('should handle email verification with invalid token', async () => {
@@ -179,24 +175,18 @@ describe('Email Verification Routes', () => {
     expect(response.headers['location']).toContain(`${REDIRECT_TO_SIGN_IN}?source=verify&code=success&message=Email+successfully+verified.`);
   });
 
-  // resend verification email
-
   it('should handle email resend with empty email', async () => {
     const response = await request(server)
       .post('/verify/resend');
 
-      expect(response.status).toBe(400);
-      expect(response.body.errors).toEqual([
-        {
-            code: EMAIL_REQUIRED.code,
-            message: EMAIL_REQUIRED.message,
-            timestamp: expect.any(String),
-            data: {
-                path: 'email',
-                location: 'body'
-            }
-        }
-      ]);
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual(testErrorMessages([{ 
+      info: EMAIL_REQUIRED, 
+      data: {
+          location: 'body',
+          path: 'email'
+      } 
+    }]));
   });
 
   it('should handle email resend with invalid email', async () => {
@@ -205,17 +195,16 @@ describe('Email Verification Routes', () => {
       .send({ email: 'test' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
-      {
-          code: INVALID_EMAIL.code,
-          message: INVALID_EMAIL.messages[0],
-          timestamp: expect.any(String),
-          data: {
-              path: 'email',
-              location: 'body'
-          }
-      }
-    ]);
+    expect(response.body).toEqual(testErrorMessages([{ 
+      info: {
+        code: INVALID_EMAIL.code,
+        message: INVALID_EMAIL.messages[0]
+      }, 
+      data: {
+          location: 'body',
+          path: 'email'
+      } 
+    }]));
   })
 
   it('should handle email resend with non existing email', async () => {
@@ -229,14 +218,7 @@ describe('Email Verification Routes', () => {
       .send({ email: 'test@example.com' });
 
       expect(response.status).toBe(404);
-      expect(response.body.errors).toEqual([
-        {
-            code: EMAIL_NOT_FOUND.code,
-            message: EMAIL_NOT_FOUND.message,
-            timestamp: expect.any(String),
-            data: {}
-        }
-      ]);
+      expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_NOT_FOUND }]));
   });
 
   it('should handle email resend with already verified email', async () => {
@@ -255,14 +237,7 @@ describe('Email Verification Routes', () => {
       .send({ email: 'test@example.com' });
 
     expect(response.status).toBe(400);
-    expect(response.body.errors).toEqual([
-      {
-          code: EMAIL_ALREADY_VERIFIED.code,
-          message: EMAIL_ALREADY_VERIFIED.message,
-          timestamp: expect.any(String),
-          data: {}
-      }
-    ]);
+    expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_ALREADY_VERIFIED }]));
   });
 
   it('should handle email resend with valid email', async () => {
@@ -288,13 +263,6 @@ describe('Email Verification Routes', () => {
       .send({ email });
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(
-      {
-          success: true,
-          message: `New verification email has been sent to ${email}`,
-          timestamp: expect.any(String),
-          data: {}
-      }
-    );
+    expect(response.body).toEqual(message(`New verification email has been sent to ${email}`).onTest());
   });
 });

@@ -13,6 +13,7 @@ import {
     TOKEN_REQUIRED 
 } from '../../app/constants/errors';
 import { advanceTo, clear } from 'jest-date-mock';
+import { message, testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/database', () => { 
     return {
@@ -24,6 +25,10 @@ jest.mock('../../app/database', () => {
 });
 
 describe('Recovery Routes', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     beforeAll(() => {
         advanceTo(new Date('2023-09-15T12:00:00'));
     });
@@ -37,17 +42,13 @@ describe('Recovery Routes', () => {
             .post('/recovery');
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: EMAIL_REQUIRED.code,
-                message: EMAIL_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: EMAIL_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle recovery with invalid email', async () => {
@@ -56,17 +57,16 @@ describe('Recovery Routes', () => {
             .send({ email: 'test' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_EMAIL.code,
-                message: INVALID_EMAIL.messages[0],
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: INVALID_EMAIL.messages[0]
+            }, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle recovery with non existing email', async () => {
@@ -80,17 +80,16 @@ describe('Recovery Routes', () => {
             .send({ email: 'test@example.com' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_EMAIL.code,
-                message: INVALID_EMAIL.messages[0],
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: INVALID_EMAIL.messages[0]
+            }, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle recovery', async () => {
@@ -113,15 +112,8 @@ describe('Recovery Routes', () => {
             .send({ email: 'test@example.com' });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            success: true,
-            message: 'Recovery email was been send.',
-            timestamp: expect.any(String),
-            data: {}
-        });
+        expect(response.body).toEqual(message('Recovery email was been send.').onTest());
     });
-
-    //confirm recovery
 
     it('should handle confirm recovery with missing email', async () => {
         const response = await request(server)
@@ -132,17 +124,13 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: EMAIL_REQUIRED.code,
-                message: EMAIL_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: EMAIL_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle confirm recovery with invalid email', async () => {
@@ -155,17 +143,16 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
                 code: INVALID_EMAIL.code,
-                message: INVALID_EMAIL.messages[0],
-                timestamp: expect.any(String),
-                data: {
-                    path: 'email',
-                    location: 'body'
-                }
-            }
-        ]);
+                message: INVALID_EMAIL.messages[0]
+            }, 
+            data: {
+                location: 'body',
+                path: 'email'
+            } 
+        }]));
     });
 
     it('should handle confirm recovery with missing token', async () => {
@@ -177,17 +164,13 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: TOKEN_REQUIRED.code,
-                message: TOKEN_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'token',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: TOKEN_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'token'
+            } 
+        }]));
     });
 
     it('should handle confirm recovery with missing password', async () => {
@@ -199,17 +182,13 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: PASSWORD_REQUIRED.code,
-                message: PASSWORD_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: PASSWORD_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle confirm recovery with invalid password according to regex specification', async () => {
@@ -222,17 +201,13 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_PASSWORD.code,
-                message: INVALID_PASSWORD.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_PASSWORD, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle confirm recovery with invalid data', async () => {
@@ -250,14 +225,7 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_REQUEST.code,
-                message: INVALID_REQUEST.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_REQUEST }]));
     });
 
     it('should handle confirm expired recovery token', async () => {
@@ -279,14 +247,7 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(403);
-        expect(response.body.errors).toEqual([
-            {
-                code: RECOVERY_LINK_EXPIRED.code,
-                message: RECOVERY_LINK_EXPIRED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: RECOVERY_LINK_EXPIRED }]));
     });
 
     it('should handle confirm recovery with current password', async () => {
@@ -317,17 +278,13 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: NEW_PASSWORD_EQUALS_CURRENT.code,
-                message: NEW_PASSWORD_EQUALS_CURRENT.message,
-                timestamp: expect.any(String),
-                data: {
-                    path: 'password',
-                    location: 'body'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: NEW_PASSWORD_EQUALS_CURRENT, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
     });
 
     it('should handle confirm recovery', async () => {
@@ -363,11 +320,6 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            success: true,
-            message: 'Password successfully recovered.',
-            timestamp: expect.any(String),
-            data: {}
-        });
+        expect(response.body).toEqual(message('Password successfully recovered.').onTest());
     })
 });

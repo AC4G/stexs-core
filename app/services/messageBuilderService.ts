@@ -5,16 +5,28 @@ export function message(
     data: Record<string, any> = {},
     success: boolean = true
 ) {
-    return {
+    const baseMessage = {
         success,
         message,
         timestamp: new Date().toISOString(),
         data: {
-            ...data
-        }
-    }
+            ...data,
+        },
+    };
+  
+    const onTest = () => {
+        return {
+            ...baseMessage,
+            timestamp: expect.any(String),
+        };
+    };
+  
+    return {
+        ...baseMessage,
+        onTest,
+    };
 }
-
+  
 interface Error {
     info: {
         code: string;
@@ -40,6 +52,19 @@ export function errorMessages(errors: Error[]): { errors: ErrorResponse[] } {
             code: error.info.code,
             message: error.info.message,
             timestamp: new Date().toISOString(),
+            data: {
+                ...error.data
+            }
+        }))
+    };
+}
+
+export function testErrorMessages(errors: Error[]): { errors: ErrorResponse[] } {
+    return {
+        errors: errors.map(error => ({
+            code: error.info.code,
+            message: error.info.message,
+            timestamp: expect.any(String),
             data: {
                 ...error.data
             }

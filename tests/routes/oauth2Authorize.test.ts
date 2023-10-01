@@ -21,6 +21,7 @@ import {
     REDIRECT_URL_REQUIRED, 
     SCOPES_REQUIRED 
 } from '../../app/constants/errors';
+import { testErrorMessages } from '../../app/services/messageBuilderService';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),
@@ -41,6 +42,10 @@ jest.mock('../../app/database', () => {
 });
 
 describe('OAuth2 Authorize', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     beforeAll(() => {
         advanceTo(new Date('2023-09-15T12:00:00'));
     });
@@ -58,17 +63,13 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: CLIENT_ID_REQUIRED.code,
-                message: CLIENT_ID_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'client_id'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: CLIENT_ID_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'client_id'
+            } 
+        }]));
     });
 
     it('should handle authorize with invalid uuid', async () => {
@@ -81,17 +82,13 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_UUID.code,
-                message: INVALID_UUID.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'client_id'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_UUID, 
+            data: {
+                location: 'body',
+                path: 'client_id'
+            } 
+        }]));
     });
 
     it('should handle authorize without redirect url', async () => {
@@ -103,17 +100,13 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: REDIRECT_URL_REQUIRED.code,
-                message: REDIRECT_URL_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'redirect_url'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: REDIRECT_URL_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'redirect_url'
+            } 
+        }]));
     });
 
     it('should handle authorize with redirect url as not url', async () => {
@@ -126,17 +119,13 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_URL.code,
-                message: INVALID_URL.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'redirect_url'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_URL, 
+            data: {
+                location: 'body',
+                path: 'redirect_url'
+            } 
+        }]));
     });
 
     it('should handle authorize without scopes', async () => {
@@ -148,17 +137,13 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: SCOPES_REQUIRED.code,
-                message: SCOPES_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'scopes'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info:  SCOPES_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'scopes'
+            } 
+        }]));
     });
 
     it('should handle authorize with scopes as string', async () => {
@@ -171,17 +156,13 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: ARRAY_REQUIRED.code,
-                message: ARRAY_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'scopes'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info:  ARRAY_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'scopes'
+            } 
+        }]));
     });
 
     it('should handle authorize with empty scopes array', async () => {
@@ -194,17 +175,13 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: EMPTY_ARRAY.code,
-                message: EMPTY_ARRAY.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'scopes'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info:  EMPTY_ARRAY, 
+            data: {
+                location: 'body',
+                path: 'scopes'
+            } 
+        }]));
     });
 
     it('should handle authorize with invalid client id', async () => {
@@ -222,14 +199,7 @@ describe('OAuth2 Authorize', () => {
             });
         
         expect(response.status).toBe(404);
-        expect(response.body.errors).toEqual([
-            {
-                code: CLIENT_NOT_FOUND.code,
-                message: CLIENT_NOT_FOUND.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: CLIENT_NOT_FOUND }]));
     });
 
     it('should handle authorize with already connected client', async () => {
@@ -252,14 +222,7 @@ describe('OAuth2 Authorize', () => {
             });
         
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: CLIENT_ALREADY_CONNECTED.code,
-                message: CLIENT_ALREADY_CONNECTED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: CLIENT_ALREADY_CONNECTED }]));
     });
 
     it('should handle authorize', async () => {
@@ -306,17 +269,13 @@ describe('OAuth2 Authorize', () => {
             .post('/oauth2/token');
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: GRANT_TYPE_REQUIRED.code,
-                message: GRANT_TYPE_REQUIRED.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'grant_type'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info:  GRANT_TYPE_REQUIRED, 
+            data: {
+                location: 'body',
+                path: 'grant_type'
+            } 
+        }]));
     });
 
     it('should handle token route with invalid grant type', async () => {
@@ -325,17 +284,16 @@ describe('OAuth2 Authorize', () => {
             .send({ grant_type: 'password' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info:  {
                 code: INVALID_GRANT_TYPE.code,
-                message: INVALID_GRANT_TYPE.messages[1],
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'grant_type'
-                }
-            }
-        ]);
+                message: INVALID_GRANT_TYPE.messages[1]
+            }, 
+            data: {
+                location: 'body',
+                path: 'grant_type'
+            } 
+        }]));
     });
 
     it('should handle token route with authorization code without client id, client secret and code', async () => {
@@ -344,35 +302,29 @@ describe('OAuth2 Authorize', () => {
             .send({ grant_type: 'authorization_code' });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: CLIENT_ID_REQUIRED.code,
-                message: CLIENT_ID_REQUIRED.message,
-                timestamp: expect.any(String),
+        expect(response.body).toEqual(testErrorMessages([
+            { 
+                info:  CLIENT_ID_REQUIRED, 
                 data: {
                     location: 'body',
                     path: 'client_id'
-                }
+                } 
             },
-            {
-                code: CLIENT_SECRET_REQUIRED.code,
-                message: CLIENT_SECRET_REQUIRED.message,
-                timestamp: expect.any(String),
+            { 
+                info:  CLIENT_SECRET_REQUIRED, 
                 data: {
                     location: 'body',
                     path: 'client_secret'
-                }
+                } 
             },
-            {
-                code: CODE_REQUIRED.code,
-                message: CODE_REQUIRED.message,
-                timestamp: expect.any(String),
+            { 
+                info:  CODE_REQUIRED, 
                 data: {
                     location: 'body',
                     path: 'code'
-                }
+                } 
             }
-        ]);
+        ]));
     });
 
     it('should handle token route with authorization code with invalid client id format', async () => {
@@ -386,17 +338,13 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_UUID.code,
-                message: INVALID_UUID.message,
-                timestamp: expect.any(String),
-                data: {
-                    location: 'body',
-                    path: 'client_id'
-                }
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info:  INVALID_UUID, 
+            data: {
+                location: 'body',
+                path: 'client_id'
+            } 
+        }]));
     });
 
     it('should handle token route with authorization code with invalid authorization code', async () => {
@@ -415,14 +363,7 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: INVALID_AUTHORIZATION_CODE.code,
-                message: INVALID_AUTHORIZATION_CODE.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_AUTHORIZATION_CODE }]));
     });
 
     it('should handle token route with authorization code with expired authorization code', async () => {
@@ -448,14 +389,7 @@ describe('OAuth2 Authorize', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.errors).toEqual([
-            {
-                code: CODE_EXPIRED.code,
-                message: CODE_EXPIRED.message,
-                timestamp: expect.any(String),
-                data: {}
-            }
-        ]);
+        expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
     });
 
     it('should handle token route with authorization code', async () => {
