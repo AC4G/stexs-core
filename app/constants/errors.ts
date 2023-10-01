@@ -229,3 +229,7 @@ export const TWOFA_EMAIL_ALREADY_DISABLED = {
     code: 'TWOFA_EMAIL_ALREADY_DISABLED',
     message: 'Email 2FA is already disabled.' 
 };
+export const RATE_LIMIT_EXCEEDED = {
+    code: 'RATE_LIMIT_EXCEEDED',
+    message: 'Rate limit exceeded. Please try again later.'
+};

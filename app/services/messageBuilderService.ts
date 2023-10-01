@@ -33,7 +33,7 @@ interface Error {
         message: string;
     }
     data?: {
-        [key: string]: string;
+        [key: string]: any;
     };
 }
 
@@ -41,7 +41,7 @@ interface ErrorResponse {
     code: string;
     message: string;
     data?: {
-        [key: string]: string;
+        [key: string]: any;
     };
     timestamp: string;
 }
