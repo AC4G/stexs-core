@@ -9,6 +9,7 @@ import {
     INTERNAL_ERROR, 
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
+    INVALID_PASSWORD_LENGTH, 
     INVALID_REQUEST, 
     NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_REQUIRED, 
@@ -112,7 +113,10 @@ router.post('/confirm', [
         .withMessage(PASSWORD_REQUIRED)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD),
+        .withMessage(INVALID_PASSWORD)
+        .bail()
+        .isLength({ min: 10 })
+        .withMessage(INVALID_PASSWORD_LENGTH),
     validate
 ],async (req: Request, res: Response) => {
     const { email, token, password } = req.body;

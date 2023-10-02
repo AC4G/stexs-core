@@ -18,30 +18,30 @@ export async function verifyTOTP(req: Request, res: Response) {
     try {
         const { rowCount, rows } = await db.query(`
             SELECT totp_secret, totp_verified_at
-            FROM auth.twofa
+            FROM auth.mfa
             WHERE user_id = $1::uuid;
         `, [userId]);
 
         if (rowCount === 0) {
-            logger.error(`Failed to fetch 2FA TOTP secret and timestamp for user: ${userId}`);
+            logger.error(`Failed to fetch MFA TOTP secret and timestamp for user: ${userId}`);
             return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         if (rows[0].totp_verified_at) {
-            logger.warn(`2FA TOTP is already verified for user: ${userId}`);
+            logger.warn(`MFA TOTP is already verified for user: ${userId}`);
             return res.status(400).json(errorMessages([{ info: TOTP_ALREADY_VERIFIED }]));
         }
 
         secret = rows[0].totp_secret;
     } catch (e) {
-        logger.error(`Error while fetching 2FA TOTP secret and timestamp for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error while fetching MFA TOTP secret and timestamp for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     const totp = getTOTPForVerification(secret);
 
     if (totp.validate({ token: code, window: 1 }) === null) {
-        logger.warn(`Invalid code provided for 2FA TOTP verification for user: ${userId}`);
+        logger.warn(`Invalid code provided for MFA TOTP verification for user: ${userId}`);
         return res.status(403).json(errorMessages([{ 
             info: INVALID_CODE,
             data: {
@@ -53,7 +53,7 @@ export async function verifyTOTP(req: Request, res: Response) {
 
     try {
         const { rowCount } = await db.query(`
-            UPDATE auth.twofa
+            UPDATE auth.mfa
             SET
                 totp = TRUE,
                 totp_verified_at = CURRENT_TIMESTAMP
@@ -61,15 +61,15 @@ export async function verifyTOTP(req: Request, res: Response) {
         `, [userId]);
 
         if (rowCount === 0) {
-            logger.error(`Failed to update 2FA TOTP status and timestamp for user: ${userId}`);
+            logger.error(`Failed to update MFA TOTP status and timestamp for user: ${userId}`);
             return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
     } catch (e) {
-        logger.error(`Error while updating 2FA TOTP status and timestamp for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
+        logger.error(`Error while updating MFA TOTP status and timestamp for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Successfully enabled 2FA TOTP for user: ${userId}`);
+    logger.info(`Successfully enabled MFA TOTP for user: ${userId}`);
 
-    res.json(message('TOTP 2FA successfully enabled.'));
+    res.json(message('TOTP MFA successfully enabled.'));
 }

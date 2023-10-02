@@ -52,12 +52,12 @@ router.post('/', [
         const { rowCount, rows } = await db.query(`
             SELECT u.id, u.email_verified_at,
                     ARRAY_REMOVE(ARRAY[
-                            CASE WHEN twofa.email = TRUE THEN 'email' END,
-                            CASE WHEN twofa.totp = TRUE THEN 'totp' END
+                            CASE WHEN mfa.email = TRUE THEN 'email' END,
+                            CASE WHEN mfa.totp = TRUE THEN 'totp' END
                     ], NULL) AS types
             FROM auth.users u
             LEFT JOIN public.profiles p ON u.id = p.user_id
-            LEFT JOIN auth.twofa ON u.id = twofa.user_id
+            LEFT JOIN auth.mfa ON u.id = mfa.user_id
             WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
             AND (
                 (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
@@ -150,7 +150,7 @@ router.post('/confirm', [
     const { type, code } = req.body;
 
     if (!supportedTypes.includes(type)) {
-        logger.warn(`Unsupported 2FA type provided for user: ${userId}`);
+        logger.warn(`Unsupported MFA type provided for user: ${userId}`);
         return res.status(400).json(errorMessages([{ 
             info: UNSUPPORTED_TYPE,
             data: {
@@ -164,28 +164,28 @@ router.post('/confirm', [
         try {
             const { rowCount, rows } = await db.query(`
                 SELECT email_code, email_code_sent_at
-                FROM auth.twofa
+                FROM auth.mfa
                 WHERE user_id = $1::uuid;
             `, [userId]);
 
             if (rowCount === 0) {
-                logger.error(`Failed to fetch 2FA email code and timestamp for user: ${userId}`);
+                logger.error(`Failed to fetch MFA email code and timestamp for user: ${userId}`);
                 return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
             }
 
             if (code !== rows[0].email_code) {
-                logger.warn(`Invalid 2FA code provided for user: ${userId}`);
+                logger.warn(`Invalid MFA code provided for user: ${userId}`);
                 return res.status(403).json(errorMessages([{ 
                     info: INVALID_CODE,
                     data: {
                         location: 'body',
-                        path: 'doe'
+                        path: 'code'
                     } 
                 }]));
             }
 
             if (isExpired(rows[0].email_code_sent_at, 5)) {
-                logger.warn(`2FA code expired for user: ${userId}`);
+                logger.warn(`MFA code expired for user: ${userId}`);
                 return res.status(403).json(errorMessages([{ 
                     info: CODE_EXPIRED,
                     data: {
@@ -195,19 +195,19 @@ router.post('/confirm', [
                 }]));
             }
 
-            logger.info(`Sign in confirmation successful with 2FA email for user: ${userId}`);
+            logger.info(`Sign in confirmation successful with MFA email for user: ${userId}`);
 
             const { rowCount: count } = await db.query(`
-                UPDATE auth.twofa
+                UPDATE auth.mfa
                 SET
                     email_code = NULL,
                     email_code_sent_at = NULL
                 WHERE user_id = $1::uuid;
             `, [userId]);
 
-            if (count === 0) logger.error(`No rows updated in 2FA code reset for user: ${userId}`);
+            if (count === 0) logger.error(`No rows updated in MFA code reset for user: ${userId}`);
         } catch (e) {
-            logger.error(`Error during 2FA email confirmation for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
+            logger.error(`Error during MFA email confirmation for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
             return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
     }
@@ -216,19 +216,19 @@ router.post('/confirm', [
         try {
             const { rowCount, rows } = await db.query(`
                 SELECT totp_secret 
-                FROM auth.twofa
+                FROM auth.mfa
                 WHERE user_id = $1::uuid;
             `, [userId]);
 
             if (rowCount === 0) {
-                logger.error(`Failed to fetch 2FA TOTP secret for user: ${userId}`);
+                logger.error(`Failed to fetch MFA TOTP secret for user: ${userId}`);
                 return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
             }
 
             const totp = getTOTPForVerification(rows[0].totp_secret);
 
             if (totp.validate({ token: code, window: 1 })) {
-                logger.warn(`Invalid code provided for 2FA TOTP confirmation for user: ${userId}`);
+                logger.warn(`Invalid code provided for MFA TOTP confirmation for user: ${userId}`);
                 return res.status(403).json(errorMessages([{ 
                     info: INVALID_CODE,
                     data: {
@@ -238,9 +238,9 @@ router.post('/confirm', [
                 }]));
             }
 
-            logger.info(`Sign in confirmation successful with 2FA TOTP for user: ${userId}`);
+            logger.info(`Sign in confirmation successful with MFA TOTP for user: ${userId}`);
         }  catch (e) {
-            logger.error(`Error during 2FA TOTP confirmation for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
+            logger.error(`Error during MFA TOTP confirmation for user: ${userId}. Error: ${(e instanceof Error) ? e.message : e}`);
             return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
     }

@@ -6,7 +6,8 @@ export const INVALID_USERNAME = {
     code: 'INVALID_USERNAME',
     messages: [
         'Username can be minimum 1 and maximum 20 characters long.',
-        'Username cannot look like an email address!'
+        'Username cannot look like an email address!',
+        'Please enter a valid username using QWERTY characters.'
     ]
 };
 export const EMAIL_REQUIRED = {
@@ -28,6 +29,10 @@ export const INVALID_PASSWORD = {
     code: 'INVALID_PASSWORD',
     message: 'Your password must contain at least one uppercase letter, one lowercase letter, one number, and one special character!'
 };
+export const INVALID_PASSWORD_LENGTH = {
+    code: 'INVALID_PASSWORD_LENGTH',
+    message: 'Please choose a password that is at least 10 characters long.'
+}
 export const INVALID_INPUT_DATA = {
     code: 'INVALID_INPUT_DATA',
     message: 'Provided data are invalid.'
@@ -211,23 +216,23 @@ export const INVALID_CODE = {
 };
 export const TOTP_ALREADY_ENABLED = {
     code: 'TOTP_ALREADY_ENABLED',
-    message: 'TOTP 2FA is already enabled.'
+    message: 'TOTP MFA is already enabled.'
 };
 export const TOTP_ALREADY_DISABLED = {
     code: 'TOTP_ALREADY_DISABLED',
-    message: 'TOTP 2FA is already disabled.'
+    message: 'TOTP MFA is already disabled.'
 };
 export const TOTP_ALREADY_VERIFIED = {
     code: 'TOTP_ALREADY_VERIFIED',
-    message: 'TOTP 2FA is already verified.'
+    message: 'TOTP MFA is already verified.'
 };
-export const TWOFA_EMAIL_ALREADY_ENABLED = {
-    code: 'TWOFA_EMAIL_ALREADY_ENABLED',
-    message: 'Email 2FA is already enabled.' 
+export const MFA_EMAIL_ALREADY_ENABLED = {
+    code: 'MFA_EMAIL_ALREADY_ENABLED',
+    message: 'Email MFA is already enabled.' 
 };
-export const TWOFA_EMAIL_ALREADY_DISABLED = {
-    code: 'TWOFA_EMAIL_ALREADY_DISABLED',
-    message: 'Email 2FA is already disabled.' 
+export const MFA_EMAIL_ALREADY_DISABLED = {
+    code: 'MFA_EMAIL_ALREADY_DISABLED',
+    message: 'Email MFA is already disabled.' 
 };
 export const RATE_LIMIT_EXCEEDED = {
     code: 'RATE_LIMIT_EXCEEDED',

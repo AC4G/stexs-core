@@ -6,6 +6,7 @@ import {
     EMAIL_REQUIRED, 
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
+    INVALID_PASSWORD_LENGTH, 
     INVALID_REQUEST, 
     NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_REQUIRED, 
@@ -120,7 +121,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 token: 'token',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -139,7 +140,7 @@ describe('Recovery Routes', () => {
             .send({ 
                 email: 'test',
                 token: 'token',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -160,7 +161,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 email: 'test@example.com',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -210,6 +211,25 @@ describe('Recovery Routes', () => {
         }]));
     });
 
+    it('should handle confirm recovery with password having less then 10 characters', async () => {
+        const response = await request(server)
+            .post('/recovery/confirm')
+            .send({ 
+                email: 'test@example.com',
+                token: 'token',
+                password: 'Test123.'
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_PASSWORD_LENGTH, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
+    });
+
     it('should handle confirm recovery with invalid data', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [],
@@ -221,7 +241,7 @@ describe('Recovery Routes', () => {
             .send({ 
                 email: 'test@example.com',
                 token: 'token',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -252,7 +272,7 @@ describe('Recovery Routes', () => {
             .send({ 
                 email: 'test@example.com',
                 token: 'token',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(403);
@@ -289,7 +309,7 @@ describe('Recovery Routes', () => {
             .send({ 
                 email: 'test@example.com',
                 token: 'token',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -331,10 +351,10 @@ describe('Recovery Routes', () => {
             .send({ 
                 email: 'test@example.com',
                 token: 'token',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual(message('Password successfully recovered.').onTest());
-    })
+    });
 });

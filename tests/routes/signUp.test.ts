@@ -7,6 +7,7 @@ import {
     INVALID_EMAIL,
     INVALID_INPUT_DATA,
     INVALID_PASSWORD,
+    INVALID_PASSWORD_LENGTH,
     INVALID_USERNAME,
     PASSWORD_REQUIRED,
     USERNAME_REQUIRED 
@@ -32,7 +33,7 @@ describe('Sign Up', () => {
             .post('/sign-up')
             .send({
                 email: 'test@example.com',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -51,7 +52,7 @@ describe('Sign Up', () => {
             .send({
                 username: 'ZaZlZeBu1mFOqDuultl1P',
                 email: 'test@example.com',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -73,7 +74,7 @@ describe('Sign Up', () => {
             .send({
                 username: 'test@example.com',
                 email: 'test@example.com',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -89,12 +90,34 @@ describe('Sign Up', () => {
         }]));
     });
     
+    it('should handle sing up with username using non QWERTY characters', async () => {
+        const response = await request(server)
+            .post('/sign-up')
+            .send({
+                username: 'тт123',
+                email: 'test@example.com',
+                password: 'Test12345.'
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
+                code: INVALID_USERNAME.code,
+                message: INVALID_USERNAME.messages[2]
+            }, 
+            data: {
+                location: 'body',
+                path: 'username'
+            } 
+        }]));
+    });
+
     it('should handle sign up with missing email', async () => {
         const response = await request(server)
             .post('/sign-up')
             .send({
                 username: 'Test123',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -113,7 +136,7 @@ describe('Sign Up', () => {
             .send({
                 username: 'Test123',
                 email: 'test@example',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -153,12 +176,31 @@ describe('Sign Up', () => {
             .send({
                 username: 'Test123',
                 email: 'test@example.com',
-                password: 'test123'
+                password: 'test123456'
         });
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ 
             info: INVALID_PASSWORD, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
+    });
+
+    it('should handle sign up with less then 10 characters', async () => {
+        const response = await request(server)
+            .post('/sign-up')
+            .send({
+                username: 'Test123',
+                email: 'test@example.com',
+                password: 'Test123.'
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_PASSWORD_LENGTH, 
             data: {
                 location: 'body',
                 path: 'password'
@@ -174,7 +216,7 @@ describe('Sign Up', () => {
             .send({
                 username: 'Test123',
                 email: 'test@example.com',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -198,7 +240,7 @@ describe('Sign Up', () => {
             .send({
                 username: 'Test123',
                 email: 'test@example.com',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(400);
@@ -229,7 +271,7 @@ describe('Sign Up', () => {
             .send({
                 username: 'Test123',
                 email: 'test@example.com',
-                password: 'Test123.'
+                password: 'Test12345.'
         });
 
         expect(response.status).toBe(201);

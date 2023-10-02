@@ -11,8 +11,8 @@ import {
     TOTP_ALREADY_DISABLED, 
     TOTP_ALREADY_ENABLED, 
     TOTP_ALREADY_VERIFIED, 
-    TWOFA_EMAIL_ALREADY_DISABLED, 
-    TWOFA_EMAIL_ALREADY_ENABLED,
+    MFA_EMAIL_ALREADY_DISABLED, 
+    MFA_EMAIL_ALREADY_ENABLED,
     TYPE_REQUIRED
 } from '../../app/constants/errors';
 import { 
@@ -43,7 +43,7 @@ jest.mock('../../app/database', () => {
     }
 });
 
-describe('2FA Routes', () => {
+describe('MFA Routes', () => {
     afterEach(() => {
         jest.clearAllMocks();
     });
@@ -56,7 +56,7 @@ describe('2FA Routes', () => {
         clear();
     });
 
-    it('should handle 2FA status', async () => {
+    it('should handle MFA status', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -68,7 +68,7 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .get('/2fa');
+            .get('/mfa');
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual(
@@ -79,7 +79,7 @@ describe('2FA Routes', () => {
         );
     });
 
-    it('should handle 2FA TOTP enable with TOTP already enabled', async () => {
+    it('should handle MFA TOTP enable with TOTP already enabled', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -91,13 +91,13 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/totp');
+            .post('/mfa/totp');
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ info: TOTP_ALREADY_ENABLED }]));
     });
 
-    it('should handle 2FA TOTP enable', async () => {
+    it('should handle MFA TOTP enable', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -114,7 +114,7 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/totp');
+            .post('/mfa/totp');
 
         const otpAuthUriPattern = `otpauth:\/\/totp\/${SERVICE_NAME}:test%40example\.com\\?issuer=${SERVICE_NAME}&secret=[A-Z0-9]{32}&algorithm=${TOTP_ALGORITHM}&digits=${TOTP_DIGITS}&period=${TOTP_PERIOD}$`;
 
@@ -125,9 +125,9 @@ describe('2FA Routes', () => {
         }); 
     });
 
-    it('should handle 2FA TOTP disable without code', async () => {
+    it('should handle MFA TOTP disable without code', async () => {
         const response = await request(server)
-            .post('/2fa/totp/disable');
+            .post('/mfa/totp/disable');
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ 
@@ -139,7 +139,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA TOTP disable with invalid already disabled TOTP', async () => {
+    it('should handle MFA TOTP disable with invalid already disabled TOTP', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -151,14 +151,14 @@ describe('2FA Routes', () => {
         });
         
         const response = await request(server)
-            .post('/2fa/totp/disable')
+            .post('/mfa/totp/disable')
             .send({ code: 'code'});
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ info: TOTP_ALREADY_DISABLED }]));
     });
 
-    it('should handle 2FA TOTP disable with invalid code', async () => {
+    it('should handle MFA TOTP disable with invalid code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -170,7 +170,7 @@ describe('2FA Routes', () => {
         });
         
         const response = await request(server)
-            .post('/2fa/totp/disable')
+            .post('/mfa/totp/disable')
             .send({ code: '34456T'});
 
         expect(response.status).toBe(403);
@@ -183,7 +183,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA TOTP disable', async () => {
+    it('should handle MFA TOTP disable', async () => {
         const code = getTOTPForVerification('VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ').generate();
 
         mockQuery.mockResolvedValueOnce({
@@ -202,16 +202,16 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/totp/disable')
+            .post('/mfa/totp/disable')
             .send({ code });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual(message('TOTP 2FA successfully disabled.').onTest());
+        expect(response.body).toEqual(message('TOTP MFA successfully disabled.').onTest());
     });
 
-    it('should handle 2FA email enable without code', async () => {
+    it('should handle MFA email enable without code', async () => {
         const response = await request(server)
-            .post('/2fa/email');
+            .post('/mfa/email');
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ 
@@ -223,7 +223,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA email enable with already enabled 2FA email', async () => {
+    it('should handle MFA email enable with already enabled MFA email', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -236,14 +236,14 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/email')
+            .post('/mfa/email')
             .send({ code: 'code' });
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual(testErrorMessages([{ info: TWOFA_EMAIL_ALREADY_ENABLED }]));
+        expect(response.body).toEqual(testErrorMessages([{ info: MFA_EMAIL_ALREADY_ENABLED }]));
     });
 
-    it('should handle 2FA email enable with invalid code', async () => {
+    it('should handle MFA email enable with invalid code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -256,7 +256,7 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/email')
+            .post('/mfa/email')
             .send({ code: 'invalid-code' });
 
         expect(response.status).toBe(403);
@@ -269,7 +269,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA email enable with expired code', async () => {
+    it('should handle MFA email enable with expired code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -282,7 +282,7 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/email')
+            .post('/mfa/email')
             .send({ code: 'code' });
 
         expect(response.status).toBe(403);
@@ -295,7 +295,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA email enable', async () => {
+    it('should handle MFA email enable', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -313,16 +313,16 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/email')
+            .post('/mfa/email')
             .send({ code: 'code' });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual(message('Email 2FA successfully enabled.').onTest());
+        expect(response.body).toEqual(message('Email MFA successfully enabled.').onTest());
     });
 
-    it('should handle 2FA email disable without code', async () => {
+    it('should handle MFA email disable without code', async () => {
         const response = await request(server)
-            .post('/2fa/email/disable');
+            .post('/mfa/email/disable');
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ 
@@ -334,7 +334,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA email disable with already disabled 2FA email', async () => {
+    it('should handle MFA email disable with already disabled MFA email', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -347,14 +347,14 @@ describe('2FA Routes', () => {
         });
         
         const response = await request(server)
-            .post('/2fa/email/disable')
+            .post('/mfa/email/disable')
             .send({ code: 'code' });
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual(testErrorMessages([{ info: TWOFA_EMAIL_ALREADY_DISABLED }]));
+        expect(response.body).toEqual(testErrorMessages([{ info: MFA_EMAIL_ALREADY_DISABLED }]));
     });
 
-    it('should handle 2FA email disable with invalid code', async () => {
+    it('should handle MFA email disable with invalid code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -367,7 +367,7 @@ describe('2FA Routes', () => {
         });
         
         const response = await request(server)
-            .post('/2fa/email/disable')
+            .post('/mfa/email/disable')
             .send({ code: 'invalid-code' });
 
         expect(response.status).toBe(403);
@@ -380,7 +380,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA email disable expired code', async () => {
+    it('should handle MFA email disable expired code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -393,7 +393,7 @@ describe('2FA Routes', () => {
         });
         
         const response = await request(server)
-            .post('/2fa/email/disable')
+            .post('/mfa/email/disable')
             .send({ code: 'code' });
 
         expect(response.status).toBe(403);
@@ -406,7 +406,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA email disable', async () => {
+    it('should handle MFA email disable', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -424,16 +424,16 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/email/disable')
+            .post('/mfa/email/disable')
             .send({ code: 'code' });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual(message('Email 2FA successfully disabled.').onTest());
+        expect(response.body).toEqual(message('Email MFA successfully disabled.').onTest());
     });
 
-    it('should handle 2FA verify without type', async() => {
+    it('should handle MFA verify without type', async() => {
         const response = await request(server)
-            .post('/2fa/verify')
+            .post('/mfa/verify')
             .send({ code: 'code' });
 
         expect(response.status).toBe(400);
@@ -446,9 +446,9 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA verify with unsupported type', async () => {
+    it('should handle MFA verify with unsupported type', async () => {
         const response = await request(server)
-            .post('/2fa/verify')
+            .post('/mfa/verify')
             .send({ 
                 code: 'code',
                 type: 'sms' 
@@ -464,9 +464,9 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA verify without code', async () => {
+    it('should handle MFA verify without code', async () => {
         const response = await request(server)
-            .post('/2fa/verify')
+            .post('/mfa/verify')
             .send({ type: 'totp' });
 
         expect(response.status).toBe(400);
@@ -479,7 +479,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA verify TOTP with already verified TOTP', async () => {
+    it('should handle MFA verify TOTP with already verified TOTP', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -491,7 +491,7 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/verify')
+            .post('/mfa/verify')
             .send({ 
                 code: '45928T',
                 type: 'totp' 
@@ -501,7 +501,7 @@ describe('2FA Routes', () => {
         expect(response.body).toEqual(testErrorMessages([{ info: TOTP_ALREADY_VERIFIED }]));
     });
 
-    it('should handle 2FA verify TOTP with invalid code', async () => {
+    it('should handle MFA verify TOTP with invalid code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
@@ -513,7 +513,7 @@ describe('2FA Routes', () => {
         });
 
         const response = await request(server)
-            .post('/2fa/verify')
+            .post('/mfa/verify')
             .send({ 
                 code: '45928T',
                 type: 'totp' 
@@ -529,7 +529,7 @@ describe('2FA Routes', () => {
         }]));
     });
 
-    it('should handle 2FA verify TOTP', async () => {
+    it('should handle MFA verify TOTP', async () => {
         const code = getTOTPForVerification('VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ').generate();
 
         mockQuery.mockResolvedValueOnce({
@@ -549,13 +549,13 @@ describe('2FA Routes', () => {
 
 
         const response = await request(server)
-            .post('/2fa/verify')
+            .post('/mfa/verify')
             .send({ 
                 code,
                 type: 'totp' 
             });
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual(message('TOTP 2FA successfully enabled.').onTest());
+        expect(response.body).toEqual(message('TOTP MFA successfully enabled.').onTest());
     });
 }); 

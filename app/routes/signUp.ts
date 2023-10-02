@@ -18,6 +18,7 @@ import {
     INVALID_EMAIL, 
     INVALID_INPUT_DATA, 
     INVALID_PASSWORD, 
+    INVALID_PASSWORD_LENGTH, 
     INVALID_USERNAME, 
     PASSWORD_REQUIRED, 
     USERNAME_REQUIRED 
@@ -36,6 +37,11 @@ router.post('/', [
         .isLength({ min: 1, max: 20 })
         .withMessage({ code: INVALID_USERNAME.code, message: INVALID_USERNAME.messages[0] })
         .custom((value: string) => {
+            if(!/^[A-Za-z0-9!@#$%^&*()_+=\-[\]{}|;:'",.<>/?`~\\ ]+$/.test(value)) throw new CustomValidationError({ code: INVALID_USERNAME.code, message: INVALID_USERNAME.messages[2] });
+
+            return true;
+        })
+        .custom((value: string) => {
             if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) throw new CustomValidationError({ code: INVALID_USERNAME.code, message: INVALID_USERNAME.messages[1] });
 
             return true;
@@ -51,7 +57,10 @@ router.post('/', [
         .withMessage(PASSWORD_REQUIRED)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD),
+        .withMessage(INVALID_PASSWORD)
+        .bail()
+        .isLength({ min: 10 })
+        .withMessage(INVALID_PASSWORD_LENGTH),
     validate
 ], async (req: Request, res: Response) => {
     const { username, password, email } = req.body;
