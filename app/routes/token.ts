@@ -38,7 +38,13 @@ router.post('/', [
 
         if (rowCount === 0) {
             logger.warn(`Refresh token invalid or expired for user: ${token?.sub}`);
-            return res.status(401).send(errorMessages([{ info: INVALID_TOKEN }]));
+            return res.status(401).send(errorMessages([{ 
+                info: INVALID_TOKEN,
+                data: {
+                    location: 'body',
+                    path: 'refresh_token'
+                }
+            }]));
         }
 
         logger.info(`Refresh token successfully processed for user: ${token?.sub} (Revoked)`);

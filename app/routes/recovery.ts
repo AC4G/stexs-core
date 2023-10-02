@@ -125,12 +125,27 @@ router.post('/confirm', [
 
         if (rowCount === 0) {
             logger.warn(`Invalid request for password recovery confirmation with email: ${email}`);
-            return res.status(400).json(errorMessages([{ info: INVALID_REQUEST }]));
+            return res.status(400).json(errorMessages([{ 
+                info: INVALID_REQUEST,
+                data: {
+                    location: 'body',
+                    paths: [
+                        'email',
+                        'token'
+                    ]
+                }
+            }]));
         }
 
         if (isExpired(rows[0].recovery_sent_at, 60)) {
             logger.warn(`Password recovery token expired for email: ${email}`);
-            return res.status(403).json(errorMessages([{ info: RECOVERY_LINK_EXPIRED }]));
+            return res.status(403).json(errorMessages([{ 
+                info: RECOVERY_LINK_EXPIRED,
+                data: {
+                    location: 'body',
+                    path: 'token'
+                }
+            }]));
         }
 
         logger.info(`Password recovery request confirmed for email: ${email}`);

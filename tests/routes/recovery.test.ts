@@ -225,7 +225,16 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_REQUEST }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_REQUEST,
+            data: {
+                location: 'body',
+                paths: [
+                    'email',
+                    'token'
+                ]
+            }
+        }]));
     });
 
     it('should handle confirm expired recovery token', async () => {
@@ -247,7 +256,13 @@ describe('Recovery Routes', () => {
         });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: RECOVERY_LINK_EXPIRED }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: RECOVERY_LINK_EXPIRED,
+            data: {
+                location: 'body',
+                path: 'token'
+            }
+        }]));
     });
 
     it('should handle confirm recovery with current password', async () => {

@@ -199,9 +199,7 @@ router.post('/email/verify', [
 
         if (rowCount === 0) {
             logger.warn(`Email verification failed for user: ${userId}`);
-            return res.status(400).json(errorMessages([{
-                info: INVALID_TOKEN
-            }]));
+            return res.status(400).json(errorMessages([{ info: INVALID_TOKEN }]));
         }
 
         if (isExpired(rows[0].email_change_sent_at, 60 * 24)) {

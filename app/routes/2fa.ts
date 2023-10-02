@@ -20,7 +20,6 @@ import {
     INTERNAL_ERROR, 
     INVALID_CODE, 
     INVALID_TYPE, 
-    TOKEN_REQUIRED, 
     TOTP_ALREADY_DISABLED, 
     TOTP_ALREADY_ENABLED, 
     TWOFA_EMAIL_ALREADY_DISABLED,
@@ -167,7 +166,13 @@ router.post('/totp/disable', [
 
     if (totp.validate({ token: code, window: 1 }) === null) {
         logger.warn(`Invalid code provided for 2FA TOTP for user: ${userId}`);
-        return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
+        return res.status(403).json(errorMessages([{ 
+            info: INVALID_CODE,
+            data: {
+                location: 'body',
+                path: 'code'
+            }
+        }]));
     }
 
     try {
@@ -226,12 +231,24 @@ router.post('/email', [
 
         if (code !== rows[0].email_code) {
             logger.warn(`Invalid 2FA activation code provided for user: ${userId}`);
-            return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
+            return res.status(403).json(errorMessages([{ 
+                info: INVALID_CODE,
+                data: {
+                    location: 'body',
+                    path: 'code'
+                }
+            }]));
         }
 
         if (isExpired(rows[0].email_code_sent_at, 5)) {
             logger.warn(`2FA activation code expired for user: ${userId}`);
-            return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
+            return res.status(403).json(errorMessages([{ 
+                info: CODE_EXPIRED,
+                data: {
+                    location: 'body',
+                    path: 'code'
+                }
+            }]));
         }
 
         const { rowCount: count } = await db.query(`
@@ -288,12 +305,24 @@ router.post('/email/disable', [
 
         if (code !== rows[0].email_code) {
             logger.warn(`Invalid 2FA code provided for user: ${userId}`);
-            return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
+            return res.status(403).json(errorMessages([{ 
+                info: INVALID_CODE,
+                data: {
+                    location: 'body',
+                    path: 'code'
+                }
+            }]));
         }
 
         if (isExpired(rows[0].email_code_sent_at, 5)) {
             logger.warn(`2FA code expired for user: ${userId}`);
-            return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
+            return res.status(403).json(errorMessages([{ 
+                info: CODE_EXPIRED,
+                data: {
+                    location: 'body',
+                    path: 'code'
+                }
+            }]));
         }
 
         const { rowCount: count } = await db.query(`

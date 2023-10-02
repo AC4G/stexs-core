@@ -51,12 +51,24 @@ export async function authorizationCodeController(req: Request, res: Response) {
 
         if (rowCount === 0) {
             logger.warn(`Invalid authorization code for client: ${client_id} and code: ${code}`);
-            return res.status(400).json(errorMessages([{ info: INVALID_AUTHORIZATION_CODE }]));
+            return res.status(400).json(errorMessages([{ 
+                info: INVALID_AUTHORIZATION_CODE,
+                data: {
+                    location: 'body',
+                    path: 'code'
+                }
+            }]));
         }
 
         if (isExpired(rows[0].created_at, 5)) {
             logger.warn(`Authorization code expired for client: ${client_id} and code: ${code}`);
-            return res.status(400).json(errorMessages([{ info: CODE_EXPIRED }]));
+            return res.status(400).json(errorMessages([{ 
+                info: CODE_EXPIRED,
+                data: {
+                    location: 'body',
+                    path: 'code'
+                }
+            }]));
         }
 
         ({ id: tokenId, user_id: userId, scopes } = rows[0]);
@@ -159,7 +171,16 @@ export async function clientCredentialsController(req: Request, res: Response) {
 
         if (rowCount === 0) {
             logger.warn(`Invalid client credentials for client: ${client_id}`);
-            return res.status(400).json(errorMessages([{ info: INVALID_CLIENT_CREDENTIALS }]));
+            return res.status(400).json(errorMessages([{ 
+                info: INVALID_CLIENT_CREDENTIALS,
+                data: {
+                    location: 'body',
+                    paths: [
+                        'client_id',
+                        'client_secret'
+                    ]
+                }
+            }]));
         }
 
         scopes = rows[0].scopes;
@@ -201,7 +222,13 @@ export async function refreshTokenController(req: Request, res: Response) {
 
         if (rowCount === 0) {
             logger.warn(`Invalid refresh token for user: ${sub} and client: ${client_id}`);
-            return res.status(400).json(errorMessages([{ info: INVALID_REFRESH_TOKEN }]));
+            return res.status(400).json(errorMessages([{ 
+                info: INVALID_REFRESH_TOKEN,
+                data: {
+                    location: 'body',
+                    path: 'refresh_token'
+                }
+            }]));
         }
 
         logger.info(`Refresh token validated successfully for user: ${sub} and client: ${client_id}`);
