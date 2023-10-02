@@ -211,23 +211,23 @@ export const INVALID_CODE = {
 };
 export const TOTP_ALREADY_ENABLED = {
     code: 'TOTP_ALREADY_ENABLED',
-    message: 'TOTP 2FA is already enabled.'
+    message: 'TOTP MFA is already enabled.'
 };
 export const TOTP_ALREADY_DISABLED = {
     code: 'TOTP_ALREADY_DISABLED',
-    message: 'TOTP 2FA is already disabled.'
+    message: 'TOTP MFA is already disabled.'
 };
 export const TOTP_ALREADY_VERIFIED = {
     code: 'TOTP_ALREADY_VERIFIED',
-    message: 'TOTP 2FA is already verified.'
+    message: 'TOTP MFA is already verified.'
 };
-export const TWOFA_EMAIL_ALREADY_ENABLED = {
-    code: 'TWOFA_EMAIL_ALREADY_ENABLED',
-    message: 'Email 2FA is already enabled.' 
+export const MFA_EMAIL_ALREADY_ENABLED = {
+    code: 'MFA_EMAIL_ALREADY_ENABLED',
+    message: 'Email MFA is already enabled.' 
 };
-export const TWOFA_EMAIL_ALREADY_DISABLED = {
-    code: 'TWOFA_EMAIL_ALREADY_DISABLED',
-    message: 'Email 2FA is already disabled.' 
+export const MFA_EMAIL_ALREADY_DISABLED = {
+    code: 'MFA_EMAIL_ALREADY_DISABLED',
+    message: 'Email MFA is already disabled.' 
 };
 export const RATE_LIMIT_EXCEEDED = {
     code: 'RATE_LIMIT_EXCEEDED',
