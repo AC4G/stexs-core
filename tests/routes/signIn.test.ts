@@ -14,6 +14,12 @@ import {
 } from '../../app/constants/errors';
 import { NextFunction } from 'express';
 import { testErrorMessages } from '../../app/services/messageBuilderService';
+import { sign } from 'jsonwebtoken';
+import { 
+    AUDIENCE, 
+    ISSUER, 
+    SIGN_IN_CONFIRM_TOKEN_SECRET 
+} from '../../env-config';
 
 jest.mock('../../app/middlewares/jwtMiddleware', () => ({
     validateAccessToken: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()),

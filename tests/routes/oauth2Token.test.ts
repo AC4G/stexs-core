@@ -49,7 +49,7 @@ describe('OAuth2 Token', () => {
     });
 
     it('should handle token route with grant type refresh token with not stored refresh token', async () => {             
-        const refreshToken = sign({grant_type: "authorization_code"}, REFRESH_TOKEN_SECRET, {
+        const refreshToken = sign({ grant_type: 'authorization_code' }, REFRESH_TOKEN_SECRET, {
             audience: AUDIENCE,
             issuer: ISSUER,
             algorithm: 'HS256' 
@@ -385,7 +385,7 @@ describe('OAuth2 Token', () => {
     });
 
     it('should handle token route with grant type refresh token with invalid refresh token', async () => {
-        const refreshToken = sign({ grant_type: "authorization_code" }, 'invalid-secret', {
+        const refreshToken = sign({ grant_type: 'authorization_code' }, 'invalid-secret', {
             audience: AUDIENCE,
             issuer: ISSUER,
             algorithm: 'HS256' 
@@ -409,7 +409,7 @@ describe('OAuth2 Token', () => {
     });
 
     it('should handle token route with grant type refresh token with invalid grant type inside refresh token', async () => {
-        const refreshToken = sign({grant_type: "sign_in"}, REFRESH_TOKEN_SECRET, {
+        const refreshToken = sign({ grant_type: 'sign_in' }, REFRESH_TOKEN_SECRET, {
             audience: AUDIENCE,
             issuer: ISSUER,
             algorithm: 'HS256' 
@@ -436,7 +436,7 @@ describe('OAuth2 Token', () => {
     });
 
     it('should handle token route with grant type refresh token', async () => {
-        const refreshToken = sign({grant_type: "authorization_code"}, REFRESH_TOKEN_SECRET, {
+        const refreshToken = sign({ grant_type: 'authorization_code' }, REFRESH_TOKEN_SECRET, {
             audience: AUDIENCE,
             issuer: ISSUER,
             algorithm: 'HS256' 

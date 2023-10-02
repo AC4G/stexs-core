@@ -8,6 +8,7 @@ import {
     EMAIL_REQUIRED,
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
+    INVALID_PASSWORD_LENGTH, 
     INVALID_TOKEN, 
     NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_REQUIRED, 
@@ -45,6 +46,79 @@ describe('User Routes', () => {
 
     afterAll(() => {
         clear();
+    });
+
+    it('should handle email change verification with expired token', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    email_change_sent_at: '2023-09-14T10:00:00'
+                }
+            ],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/user/email/verify')
+            .send({ token: 'token' });
+
+        expect(response.status).toBe(403);
+        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
+    });
+
+    it('should handle email change verification with invalid token', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [],
+            rowCount: 0
+        });
+
+        const response = await request(server)
+            .post('/user/email/verify')
+            .send({ token: 'token' });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_TOKEN }]));
+    });
+
+    it('should handle email change with expired verification token', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    email_change_sent_at: '2023-09-14T11:00:00'
+                }
+            ],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/user/email/verify')
+            .send({ token: 'expired-token' });
+
+        expect(response.status).toBe(403);
+        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
+    });
+
+    it('should handle email change verification', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    email_change_sent_at: '2023-09-15T11:00:00'
+                }
+            ],
+            rowCount: 1
+        });
+
+        mockQuery.mockResolvedValueOnce({
+            rows: [],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/user/email/verify')
+            .send({ token: 'token' });
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(message('Email successfully changed.').onTest());
     });
 
     it('should handle get user data', async () => {
@@ -91,7 +165,7 @@ describe('User Routes', () => {
     it('should handle password change with invalid password according to regex specification', async () => {
         const response = await request(server)
             .post('/user/password')
-            .send({ password: 'test123' });
+            .send({ password: 'test123456' });
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ 
@@ -115,7 +189,7 @@ describe('User Routes', () => {
 
         const response = await request(server)
             .post('/user/password')
-            .send({ password: 'Test123.' });
+            .send({ password: 'Test12345.' });
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ 
@@ -144,11 +218,35 @@ describe('User Routes', () => {
 
         const response = await request(server)
             .post('/user/password')
-            .send({ password: 'Test123.' });
+            .send({ password: 'Test12345.' });
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual(message('Password changed successfully.').onTest());
     });
+
+    it('should handle password change with password having less then 10 characters', async () => {
+        mockQuery.mockResolvedValueOnce({
+            rows: [
+                {
+                    is_current_password: true
+                }
+            ],
+            rowCount: 1
+        });
+
+        const response = await request(server)
+            .post('/user/password')
+            .send({ password: 'Test123.' });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_PASSWORD_LENGTH, 
+            data: {
+                location: 'body',
+                path: 'password'
+            } 
+        }]));
+    })
 
     it('should handle email change with missing email', async () => {
         const response = await request(server)
@@ -208,78 +306,5 @@ describe('User Routes', () => {
                 path: 'token'
             } 
         }]));
-    });
-
-    it('should handle email change verification with expired token', async () => {
-        mockQuery.mockResolvedValueOnce({
-            rows: [
-                {
-                    email_change_sent_at: '2023-09-14T10:00:00'
-                }
-            ],
-            rowCount: 1
-        });
-
-        const response = await request(server)
-            .post('/user/email/verify')
-            .send({ token: 'token' });
-
-        expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
-    });
-
-    it('should handle email change verification with invalid token', async () => {
-        mockQuery.mockResolvedValueOnce({
-            rows: [],
-            rowCount: 0
-        });
-
-        const response = await request(server)
-            .post('/user/email/verify')
-            .send({ token: 'token' });
-
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_TOKEN }]));
-    });
-
-    it('should handle email change with expired verification token', async () => {
-        mockQuery.mockResolvedValueOnce({
-            rows: [
-                {
-                    email_change_sent_at: '2023-09-14T11:00:00'
-                }
-            ],
-            rowCount: 1
-        });
-
-        const response = await request(server)
-            .post('/user/email/verify')
-            .send({ token: 'expired-token' });
-
-        expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
-    })
-
-    it('should handle email change verification', async () => {
-        mockQuery.mockResolvedValueOnce({
-            rows: [
-                {
-                    email_change_sent_at: '2023-09-15T11:00:00'
-                }
-            ],
-            rowCount: 1
-        });
-
-        mockQuery.mockResolvedValueOnce({
-            rows: [],
-            rowCount: 1
-        });
-
-        const response = await request(server)
-            .post('/user/email/verify')
-            .send({ token: 'token' });
-
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual(message('Email successfully changed.').onTest());
     });
 });

@@ -13,6 +13,7 @@ import {
     INTERNAL_ERROR, 
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
+    INVALID_PASSWORD_LENGTH, 
     INVALID_TOKEN, 
     NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_CHANGE_FAILED, 
@@ -66,7 +67,10 @@ router.post('/password', [
         .withMessage(PASSWORD_REQUIRED)
         .bail()
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`])[A-Za-z\d@$!%*?&.><,\/?'";:\[\]{}=+\-_)('*^%$#@!~`]+$/)
-        .withMessage(INVALID_PASSWORD),
+        .withMessage(INVALID_PASSWORD)
+        .bail()
+        .isLength({ min: 10 })
+        .withMessage(INVALID_PASSWORD_LENGTH),
     validate
 ], async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
