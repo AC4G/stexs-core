@@ -42,7 +42,11 @@ import {
 } from '../controllers/oauth2Controller';
 import logger from '../loggers/logger';
 import { verify } from 'jsonwebtoken';
-import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
+import { 
+    AUDIENCE, 
+    ISSUER,
+    REFRESH_TOKEN_SECRET 
+} from '../../env-config';
 
 const router = Router();
  
@@ -109,7 +113,17 @@ router.post('/authorize', [
         
         if (rowCount === 0) {
             logger.warn(`Client not found for client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
-            return res.status(404).json(errorMessages([{ info: CLIENT_NOT_FOUND }]));
+            return res.status(404).json(errorMessages([{ 
+                info: CLIENT_NOT_FOUND,
+                data: {
+                    location: 'body',
+                    paths: [
+                        'client_id',
+                        'redirect_url',
+                        'scopes'
+                    ]
+                }
+            }]));
         }
 
         logger.info(`Client found with client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);

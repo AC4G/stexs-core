@@ -82,10 +82,19 @@ describe('Sign In Route', () => {
         });
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual(testErrorMessages([{ info: {
-            code: INVALID_CREDENTIALS.code,
-            message: INVALID_CREDENTIALS.messages[0]
-        } }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: {
+                code: INVALID_CREDENTIALS.code,
+                message: INVALID_CREDENTIALS.messages[0]
+            },
+            data: {
+                location: 'body',
+                paths: [
+                    'identifier',
+                    'password'
+                ]
+            }
+        }]));
     });
 
     it('should handle sign in without verified email', async () => {

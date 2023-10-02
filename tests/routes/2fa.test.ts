@@ -174,7 +174,13 @@ describe('2FA Routes', () => {
             .send({ code: '34456T'});
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_CODE,
+            data: {
+                location: 'body',
+                path: 'code'
+            }
+        }]));
     });
 
     it('should handle 2FA TOTP disable', async () => {
@@ -254,7 +260,13 @@ describe('2FA Routes', () => {
             .send({ code: 'invalid-code' });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_CODE,
+            data: {
+                location: 'body',
+                path: 'code'
+            }
+        }]));
     });
 
     it('should handle 2FA email enable with expired code', async () => {
@@ -274,7 +286,13 @@ describe('2FA Routes', () => {
             .send({ code: 'code' });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: CODE_EXPIRED,
+            data: {
+                location: 'body',
+                path: 'code'
+            }
+        }]));
     });
 
     it('should handle 2FA email enable', async () => {
@@ -353,7 +371,13 @@ describe('2FA Routes', () => {
             .send({ code: 'invalid-code' });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_CODE,
+            data: {
+                location: 'body',
+                path: 'code'
+            }
+        }]));
     });
 
     it('should handle 2FA email disable expired code', async () => {
@@ -373,7 +397,13 @@ describe('2FA Routes', () => {
             .send({ code: 'code' });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: CODE_EXPIRED,
+            data: {
+                location: 'body',
+                path: 'code'
+            }
+        }]));
     });
 
     it('should handle 2FA email disable', async () => {
@@ -490,7 +520,13 @@ describe('2FA Routes', () => {
             });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_CODE,
+            data: {
+                location: 'body',
+                path: 'code'
+            }
+        }]));
     });
 
     it('should handle 2FA verify TOTP', async () => {

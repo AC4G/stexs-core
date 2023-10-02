@@ -1,7 +1,7 @@
 import { 
     Router, 
     Request, 
-    Response 
+    Response
 } from 'express';
 import { Request as JWTRequest } from 'express-jwt';
 import db from '../database';
@@ -31,7 +31,6 @@ import {
 } from '../middlewares/jwtMiddleware';
 import isExpired from '../services/isExpiredService';
 import { getTOTPForVerification } from '../services/totpService';
-import { securityRateLimit, signInRateLimit } from '../middlewares/rateLimitMiddleware';
 
 const router = Router();
 
@@ -42,8 +41,7 @@ router.post('/', [
     body('password')
         .notEmpty()
         .withMessage(PASSWORD_REQUIRED),
-    validate,
-    signInRateLimit
+    validate
 ], async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
 
@@ -67,12 +65,19 @@ router.post('/', [
         `, [identifier, password]);
 
         if (rowCount === 0) {
-            logger.warn(`Sign-in failed for user: ${identifier}`);
+            logger.warn(`Invalid credentials for sign in for user: ${identifier}`);
             return res.status(400).json(errorMessages([{ 
                 info: {
                     code: INVALID_CREDENTIALS.code, 
                     message: INVALID_CREDENTIALS.messages[0]
-                } 
+                },
+                data: {
+                    location: 'body',
+                    paths: [
+                        'identifier',
+                        'password'
+                    ]
+                }
             }]));
         }
 
@@ -138,8 +143,7 @@ router.post('/confirm', [
     validate,
     validateSignInConfirmToken(),
     checkTokenGrantType('sign_in_confirm'),
-    transformJwtErrorMessages,
-    securityRateLimit
+    transformJwtErrorMessages
 ], async (req: JWTRequest, res: Response) => {
     const userId = req.auth?.sub!;
     const supportedTypes = req.auth?.types;
@@ -147,7 +151,13 @@ router.post('/confirm', [
 
     if (!supportedTypes.includes(type)) {
         logger.warn(`Unsupported 2FA type provided for user: ${userId}`);
-        return res.status(400).json(errorMessages([{ info: UNSUPPORTED_TYPE }]));
+        return res.status(400).json(errorMessages([{ 
+            info: UNSUPPORTED_TYPE,
+            data: {
+                location: 'body',
+                path: 'token'
+            }
+        }]));
     }
 
     if (type === 'email') {
@@ -165,12 +175,24 @@ router.post('/confirm', [
 
             if (code !== rows[0].email_code) {
                 logger.warn(`Invalid 2FA code provided for user: ${userId}`);
-                return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
+                return res.status(403).json(errorMessages([{ 
+                    info: INVALID_CODE,
+                    data: {
+                        location: 'body',
+                        path: 'doe'
+                    } 
+                }]));
             }
 
             if (isExpired(rows[0].email_code_sent_at, 5)) {
                 logger.warn(`2FA code expired for user: ${userId}`);
-                return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
+                return res.status(403).json(errorMessages([{ 
+                    info: CODE_EXPIRED,
+                    data: {
+                        location: 'body',
+                        path: 'code'
+                    }
+                }]));
             }
 
             logger.info(`Sign in confirmation successful with 2FA email for user: ${userId}`);
@@ -207,7 +229,13 @@ router.post('/confirm', [
 
             if (totp.validate({ token: code, window: 1 })) {
                 logger.warn(`Invalid code provided for 2FA TOTP confirmation for user: ${userId}`);
-                return res.status(403).json(errorMessages([{ info: INVALID_CODE }]));
+                return res.status(403).json(errorMessages([{ 
+                    info: INVALID_CODE,
+                    data: {
+                        location: 'body',
+                        path: 'code'
+                    }
+                }]));
             }
 
             logger.info(`Sign in confirmation successful with 2FA TOTP for user: ${userId}`);

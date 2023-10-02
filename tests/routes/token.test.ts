@@ -40,7 +40,13 @@ describe('Token Route', () => {
             .send({ refresh_token: 'token' });
 
         expect(response.status).toBe(401);
-        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_TOKEN }]));
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_TOKEN,
+            data: {
+                location: 'body',
+                path: 'refresh_token'
+            }
+        }]));
     });
 
     it('should handle refresh', async () => {
