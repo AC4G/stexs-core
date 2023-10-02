@@ -18,7 +18,7 @@ export async function verifyTOTP(req: Request, res: Response) {
     try {
         const { rowCount, rows } = await db.query(`
             SELECT totp_secret, totp_verified_at
-            FROM auth.twofa
+            FROM auth.mfa
             WHERE user_id = $1::uuid;
         `, [userId]);
 
@@ -53,7 +53,7 @@ export async function verifyTOTP(req: Request, res: Response) {
 
     try {
         const { rowCount } = await db.query(`
-            UPDATE auth.twofa
+            UPDATE auth.mfa
             SET
                 totp = TRUE,
                 totp_verified_at = CURRENT_TIMESTAMP
