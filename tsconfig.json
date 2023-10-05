@@ -1,5 +1,8 @@
 {
-  "include": ["**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.json"
+  ],
   "compilerOptions": {
       "outDir": "./build",
       "module": "CommonJS",
@@ -8,6 +11,7 @@
       "allowJs": true,
       "esModuleInterop": true,
       "moduleResolution": "node",
+      "resolveJsonModule": true,
       "forceConsistentCasingInFileNames": true,
       "allowSyntheticDefaultImports": true,
       "baseUrl": ".",
