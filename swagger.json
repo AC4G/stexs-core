@@ -1,0 +1,226 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "description": "Authorization API for STEXS",
+        "title": "Authorization API",
+        "version": "1.0.0"
+    },
+    "host": "localhost",
+    "basePath": "/auth/api/v1/",
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "components": {
+        "schemas": {
+            "SuccessfulSignInResponse": {
+                "type": "object",
+                "properties": {
+                    "access_token": {
+                        "type": "string",
+                        "description": "Token for accessing or modifing own resources"
+                    },
+                    "refresh_token": {
+                        "type": "string",
+                        "description": "Token for requesting new access token without requiring identifier and password"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "description": "Type of the access token"
+                    },
+                    "expires": {
+                        "type": "integer",
+                        "description": "Expiration Timestamp for access token in ISO format"
+                    }
+                },
+                "example": {
+                    "access_token": "jwt-token",
+                    "refresh_token": "jwt-token",
+                    "token_type": "bearer",
+                    "expires": 1696457106
+                }
+            }
+        },
+        "securitySchemes": {
+            "Auth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Bearer Token"
+            }
+        }
+    },
+    "paths": {
+        "/": {
+            "get": {
+                "tags": [
+                    "Introspection"
+                ],
+                "summary": "OpenAPI description (this document)",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/sign-in": {
+            "post": {
+                "summary": "Sign in or initialize sign in",
+                "tags": [
+                    "Sign In"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "identifier": {
+                                        "type": "string",
+                                        "description": "Email or username from your account"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "description": "Password for your account"
+                                    }
+                                },
+                                "example": {
+                                    "identifier": "example@example.com",
+                                    "password": "Test12345."
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Signed in or sign in initialized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string",
+                                                    "description": "Sign in confirm jwt token"
+                                                },
+                                                "types": {
+                                                    "type": "array",
+                                                    "description": "Supported MFA types for for this account"
+                                                },
+                                                "expires": {
+                                                    "type": "integer",
+                                                    "description": "Expiration Timestamp for sign in confirm token in ISO format"
+                                                }
+                                            },
+                                            "examples": {
+                                                "token": "jwt-token",
+                                                "types": [
+                                                    "email",
+                                                    "totp"
+                                                ],
+                                                "expires": 1696454014
+                                            }
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/SuccessfulSignInResponse"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sign-in/confirm": {
+            "post": {
+                "summary": "Confirm sign in with MFA methods",
+                "tags": ["Sign In"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "description": "Confirm code depending which MFA type you choose"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "description": "MFA type which the account supports"
+                                    },
+                                    "token": {
+                                        "type": "string",
+                                        "description": "Sign in confirm jwt token from /sign-in"
+                                    }
+                                },
+                                "example": {
+                                    "code": "534929",
+                                    "type": "email",
+                                    "token": "jwt-token"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Signed in with MFA",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "$ref": "#/components/schemas/SuccessfulSignInResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sign-out": {
+            "post": {
+                "summary": "Sign out from one session",
+                "tags": ["Sign Out"],
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful sign out from the current session"
+                    }
+                }
+            }
+        },
+        "/sign-out/everywhere": {
+            "post": {
+                "summary": "Sign out from all sessions",
+                "tags": ["Sign Out"],
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful sign out from all sessions"
+                    }
+                }
+            }
+        }
+    }
+}
