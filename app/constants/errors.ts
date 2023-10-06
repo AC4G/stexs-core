@@ -7,7 +7,7 @@ export const INVALID_USERNAME = {
     messages: [
         'Username can be minimum 1 and maximum 20 characters long.',
         'Username cannot look like an email address!',
-        'Please enter a valid username using QWERTY characters.'
+        'Please enter a valid username using Latin characters.'
     ]
 };
 export const EMAIL_REQUIRED = {

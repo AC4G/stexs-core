@@ -18,7 +18,6 @@ export const AUDIENCE: string = process.env.AUDIENCE!;
 export const JWT_EXPIRY_LIMIT: number = parseInt(process.env.JWT_EXPIRY_LIMIT!);
 export const JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT: number = parseInt(process.env.JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT!);
 export const REDIRECT_TO_SIGN_IN: string = process.env.REDIRECT_TO_SIGN_IN!;
-export const REDIRECT_TO_EMAIL_CHANGE: string = process.env.REDIRECT_TO_EMAIL_CHANGE!;
 export const REDIRECT_TO_RECOVERY: string = process.env.REDIRECT_TO_RECOVERY!;
 export const LOGGER_URL: string = process.env.LOGGER_URL!;
 export const SERVICE_NAME: string = process.env.SERVICE_NAME!;

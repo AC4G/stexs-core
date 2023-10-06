@@ -122,7 +122,7 @@ router.post('/totp', [
 
     res.json({
         secret,
-        otpAuthUri
+        otp_auth_uri: otpAuthUri
     });
 });
 

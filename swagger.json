@@ -15,24 +15,25 @@
     ],
     "components": {
         "schemas": {
-            "SuccessfulSignInResponse": {
+            "AccessTokenResponse": {
                 "type": "object",
                 "properties": {
                     "access_token": {
                         "type": "string",
-                        "description": "Token for accessing or modifing own resources"
+                        "description": "A token that grants access to the user's resources."
                     },
                     "refresh_token": {
                         "type": "string",
-                        "description": "Token for requesting new access token without requiring identifier and password"
+                        "description": "A token used to request a new access token without requiring the user's identifier and password."
                     },
                     "token_type": {
                         "type": "string",
-                        "description": "Type of the access token"
+                        "description": "The type of the access token (e.g., 'bearer')."
                     },
                     "expires": {
                         "type": "integer",
-                        "description": "Expiration Timestamp for access token in ISO format"
+                        "format": "unix",
+                        "description": "The expiration timestamp of the access token."
                     }
                 },
                 "example": {
@@ -40,6 +41,34 @@
                     "refresh_token": "jwt-token",
                     "token_type": "bearer",
                     "expires": 1696457106
+                }
+            },
+            "SuccessResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "description": "A boolean indicator of the operation's success."
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "A human-readable message describing the result of the operation."
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format":"ISO 8601",
+                        "description": "The timestamp when the message was generated."
+                    },
+                    "data": {
+                        "type": "object",
+                        "description": "Additional relevant data returned with the response."
+                    }
+                },
+                "example": {
+                    "success": true,
+                    "message": "Success message",
+                    "timestamp": "2023-10-05T14:21:52.793Z",
+                    "data": {}
                 }
             }
         },
@@ -58,20 +87,21 @@
                 "tags": [
                     "Introspection"
                 ],
-                "summary": "OpenAPI description (this document)",
+                "summary": "Retrieve the OpenAPI Description (This Document)",
                 "produces": [
                     "application/json"
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Request Successful"
                     }
                 }
             }
         },
         "/sign-in": {
             "post": {
-                "summary": "Sign in or initialize sign in",
+                "summary": "Sign In or Initialize Sign-In",
+                "description": "Allows users to sign in or initialize the sign-in process.",
                 "tags": [
                     "Sign In"
                 ],
@@ -84,16 +114,12 @@
                                 "properties": {
                                     "identifier": {
                                         "type": "string",
-                                        "description": "Email or username from your account"
+                                        "description": "The email address or username associated with the account."
                                     },
                                     "password": {
                                         "type": "string",
-                                        "description": "Password for your account"
+                                        "description": "The password used for authentication and account access."
                                     }
-                                },
-                                "example": {
-                                    "identifier": "example@example.com",
-                                    "password": "Test12345."
                                 }
                             }
                         }
@@ -101,7 +127,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Signed in or sign in initialized",
+                        "description": "Successfully signed in or sign-in process initialized.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -111,28 +137,21 @@
                                             "properties": {
                                                 "token": {
                                                     "type": "string",
-                                                    "description": "Sign in confirm jwt token"
+                                                    "description": "A JSON Web Token (JWT) used to confirm the sign-in."
                                                 },
                                                 "types": {
                                                     "type": "array",
-                                                    "description": "Supported MFA types for for this account"
+                                                    "description": "An array of supported Multi-Factor Authentication (MFA) types for the account."
                                                 },
                                                 "expires": {
                                                     "type": "integer",
-                                                    "description": "Expiration Timestamp for sign in confirm token in ISO format"
+                                                    "format": "unix",
+                                                    "description": "The timestamp indicating the expiration time of the sign-in confirmation token."
                                                 }
-                                            },
-                                            "examples": {
-                                                "token": "jwt-token",
-                                                "types": [
-                                                    "email",
-                                                    "totp"
-                                                ],
-                                                "expires": 1696454014
                                             }
                                         },
                                         {
-                                            "$ref": "#/components/schemas/SuccessfulSignInResponse"
+                                            "$ref": "#/components/schemas/AccessTokenResponse"
                                         }
                                     ]
                                 }
@@ -144,7 +163,8 @@
         },
         "/sign-in/confirm": {
             "post": {
-                "summary": "Confirm sign in with MFA methods",
+                "summary": "Confirm Sign-In with Multi-Factor Authentication (MFA)",
+                "description": "Confirms the user's sign-in using Multi-Factor Authentication (MFA) methods.",
                 "tags": ["Sign In"],
                 "requestBody": {
                     "required": true,
@@ -155,21 +175,17 @@
                                 "properties": {
                                     "code": {
                                         "type": "string",
-                                        "description": "Confirm code depending which MFA type you choose"
+                                        "description": "A confirmation code that depends on the chosen Multi-Factor Authentication (MFA) type."
                                     },
                                     "type": {
                                         "type": "string",
-                                        "description": "MFA type which the account supports"
+                                        "description": "The Multi-Factor Authentication (MFA) type supported by the account."
                                     },
                                     "token": {
                                         "type": "string",
-                                        "description": "Sign in confirm jwt token from /sign-in"
+                                        "format": "JWT",
+                                        "description": "A JSON Web Token (JWT) used for confirming the sign-in from the /sign-in endpoint."
                                     }
-                                },
-                                "example": {
-                                    "code": "534929",
-                                    "type": "email",
-                                    "token": "jwt-token"
                                 }
                             }
                         }
@@ -177,12 +193,11 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Signed in with MFA",
+                        "description": "Successfully signed in with Multi-Factor Authentication (MFA).",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "$ref": "#/components/schemas/SuccessfulSignInResponse"
+                                    "$ref": "#/components/schemas/AccessTokenResponse"
                                 }
                             }
                         }
@@ -192,7 +207,8 @@
         },
         "/sign-out": {
             "post": {
-                "summary": "Sign out from one session",
+                "summary": "Sign Out from the Current Session",
+                "description": "Logs the user out from the current session.",
                 "tags": ["Sign Out"],
                 "security": [
                     {
@@ -201,14 +217,15 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": "Successful sign out from the current session"
+                        "description": "Successfully signed out from the current session"
                     }
                 }
             }
         },
         "/sign-out/everywhere": {
             "post": {
-                "summary": "Sign out from all sessions",
+                "summary": "Sign Out from All Sessions",
+                "description": "Logs the user out from all active sessions.",
                 "tags": ["Sign Out"],
                 "security": [
                     {
@@ -217,7 +234,688 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": "Successful sign out from all sessions"
+                        "description": "Successfully signed out from all sessions"
+                    }
+                }
+            }
+        },
+        "/sign-up": {
+            "post": {
+                "summary": "Create a New Account",
+                "tags": ["Sign Up"],
+                "description": "Register a new user account with the following required information.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "description": "A unique username for the user, consisting of 1 to 20 Latin characters, and should not resemble an email address."
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "description": "The user's email address. Must be a valid email format (e.g., 'user@example.com')."
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "description": "A secure password that must meet the following criteria: - At least 10 characters long - Contains at least one uppercase letter - Contains at least one lowercase letter - Contains at least one special character - Contains at least one number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Account Successfully Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/verify": {
+            "post": {
+                "summary": "Verify Email Address",
+                "tags": ["Verify Email"],
+                "description": "Allows users to verify their email address after signing up. This endpoint is used to confirm the validity of the provided email address and activate the user's account.",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "format": "email",
+                        "in": "query",
+                        "description": "The email address to be verified.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "description": "The verification token sent to the user's email address.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to Sign In",
+                        "headers": {
+                            "Location": {
+                                "description": "The URL to redirect to for sign-in with verification status.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/verify/resend": {
+            "post": {
+                "summary": "Request Resend of Verification Email",
+                "tags": ["Verify Email"],
+                "description": "Allows users to request the resend of a verification email. Use this endpoint to send another email verification link to the user's registered email address in case the original verification email was not received or expired.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "description": "The user's registered email address for which the verification email should be resent."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Verification Email Requested",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/token": {
+            "post": {
+                "summary": "Refresh Access Token",
+                "tags": ["Token"],
+                "description": "Allows users to refresh their access token by exchanging a valid refresh token. Use this endpoint to obtain a new access token and refresh token pair, which can be used to continue accessing protected resources without the need for reauthentication.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "refresh_token": {
+                                        "type": "string",
+                                        "format": "JWT",
+                                        "description": "The user's valid refresh token to exchange for a new pair of access and refresh tokens."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token Refresh Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessTokenResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/recovery": {
+            "post": {
+                "summary": "Initiate Password Recovery",
+                "tags": ["Recovery"],
+                "description": "Allows users to initiate the process of recovering their password. Use this endpoint to request a password reset link sent to the user's registered email address. This link will enable the user to create a new password.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "description": "The user's registered email address for initiating password recovery."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password Recovery Requested",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref":"#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/recovery/confirm": {
+            "post": {
+                "summary": "Confirm Password Recovery",
+                "tags": ["Recovery"],
+                "description": "Allows users to confirm and complete the password recovery process. Use this endpoint to validate the email, token, and set a new password for the user's account.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "description": "The user's registered email address associated with the password recovery process."
+                                    },
+                                    "token": {
+                                        "type": "string",
+                                        "description": "The unique token provided in the password recovery email."
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "description": "The new password to be set for the user's account."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password Recovery Confirmed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref":"#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "summary": "Retrieve User Data",
+                "tags": ["User"],
+                "description": "Allows authenticated users to retrieve their own user data. This endpoint provides access to essential user information, including email, raw user metadata, creation timestamp, update timestamp, and user ID.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User Data Retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "description": "A unique UUID identifier for the user's account."
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "format": "email",
+                                            "description": "The user's registered email address."
+                                        },
+                                        "raw_user_meta_data": {
+                                            "type": "object",
+                                            "description": "Raw user metadata associated with the user's account."
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "ISO 8601",
+                                            "description": "Timestamp indicating when the user's account was created."
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "ISO 8601",
+                                            "description": "Timestamp indicating when the user's account was last updated."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/password": {
+            "post": {
+                "summary": "Change Password",
+                "tags": ["User"],
+                "description": "Allows authenticated users to change their account password. Use this endpoint to securely update the user's password.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "password": {
+                                        "type": "string",
+                                        "description": "The new password to be set for the user's account."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password Change Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/email": {
+            "post": {
+                "summary": "Initialize Email Change",
+                "tags": ["User"],
+                "description": "Allows authenticated users to initialize a change to their registered email address. Use this endpoint to start the process of updating the email associated with the user's account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "description": "The new email address to be associated with the user's account."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Email Change Initialization Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/email/verify": {
+            "post": {
+                "summary": "Verify Email Change",
+                "tags": ["User"],
+                "description": "Allows authenticated users to verify their email change by providing the verification code sent to their new email address. Use this endpoint to confirm the change of the email associated with the user's account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "description": "The verification code sent to the user's new email address for email change confirmation."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Email Change Verification Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mfa": {
+            "get": {
+                "summary": "Check MFA Status",
+                "tags": ["Multi-Factor Authentication (MFA)"],
+                "description": "Allows authenticated users to check the status of their Multi-Factor Authentication (MFA) flows. This endpoint provides information on whether MFA methods like email and TOTP (Time-Based One-Time Password) are enabled or disabled for the user's account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "MFA Status Retrieval Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "email": {
+                                            "type": "boolean",
+                                            "description": "Indicates whether email-based MFA is enabled for the user's account."
+                                        },
+                                        "totp": {
+                                            "type": "boolean",
+                                            "description": "Indicates whether TOTP (Time-Based One-Time Password) MFA is enabled for the user's account."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mfa/totp": {
+            "post": {
+                "summary": "Initialize Time-Based One-Time Password (TOTP) for MFA",
+                "tags": ["Multi-Factor Authentication (MFA)"],
+                "description": "Allows authenticated users to initialize the Time-Based One-Time Password (TOTP) method for Multi-Factor Authentication (MFA). TOTP provides an additional layer of security by generating a one-time code that users must enter during sign-in.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "TOTP Initialization Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "secret": {
+                                            "type": "string",
+                                            "description": "The secret key for generating Time-Based One-Time Passwords (TOTP). Store this secret securely."
+                                        },
+                                        "otp_auth_uri": {
+                                            "type": "string",
+                                            "description": "A URI that can be used to configure authenticator apps (e.g., Google Authenticator) for TOTP. This URI includes the secret key and other necessary information."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mfa/totp/disable": {
+            "post": {
+                "summary": "Disable TOTP Multi-Factor Authentication",
+                "tags": ["Multi-Factor Authentication (MFA)"],
+                "description": "Allows users to disable Time-Based One-Time Password (TOTP) as a Multi-Factor Authentication (MFA) method. This action will remove TOTP as an active MFA option for the user's account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "description": "The confirmation code required to disable TOTP. This code is generated by the user's authenticator app."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "TOTP Multi-Factor Authentication Disabled Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mfa/email": {
+            "post": {
+                "summary": "Enable Email MFA",
+                "tags": ["Multi-Factor Authentication (MFA)"],
+                "description": "Allows users to enable Email MFA for enhanced account security. To activate Email MFA, users must provide a confirmation code sent to their registered email address. Successful validation enables Email MFA, adding an extra layer of protection to their account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "description": "The confirmation code sent to the user's registered email address."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Email MFA Enable Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mfa/email/disable": {
+            "post": {
+                "summary": "Disable Email MFA",
+                "tags": ["Multi-Factor Authentication (MFA)"],
+                "description": "Allows users to disable Email MFA for their account. To complete this process, users must provide a confirmation code sent to their registered email address. Disabling Email MFA removes the additional security layer from their account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "description": "The confirmation code sent to the user's registered email address."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Email MFA Disable Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mfa/verify": {
+            "post": {
+                "summary": "Verify MFA",
+                "tags": ["Multi-Factor Authentication (MFA)"],
+                "description": "Allows users to verify the setup of MFA for their account. Users need to provide the type of MFA used and the verification code to confirm the setup of MFA for their account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "description": "The type of MFA being verified (e.g., 'totp')."
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "description": "The verification code for the specified MFA type."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "MFA Setup Verification Successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mfa/email/send-code": {
+            "post": {
+                "summary": "Send MFA Email Verification Code",
+                "tags": ["Multi-Factor Authentication (MFA)"],
+                "description": "Allows users, whether fully signed in or who have already initialized the sign-in process, to send an email verification code for MFA. Users can use this endpoint to request an email verification code.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "token": {
+                                        "type": "string",
+                                        "format": "JWT",
+                                        "description": "A JSON Web Token (JWT) provided to users who have initialized the sign-in process."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "MFA Email Verification Code Sent Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
                     }
                 }
             }

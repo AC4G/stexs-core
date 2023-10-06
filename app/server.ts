@@ -16,7 +16,7 @@ import responseTime from 'response-time';
 import { errorMessages } from './services/messageBuilderService';
 import { ROUTE_NOT_FOUND } from './constants/errors';
 
-var cors = require('cors');
+let cors = require('cors');
 
 process.on('uncaughtException', (err) => {
     logger.error(`Uncaught Exception: ${err.message}`);

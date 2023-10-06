@@ -4,15 +4,15 @@ import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../app/server';
 import { 
-    EMAIL_CHANGE_LINK_EXPIRED,
+    CODE_EXPIRED,
+    CODE_REQUIRED,
     EMAIL_REQUIRED,
+    INVALID_CODE,
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
     INVALID_PASSWORD_LENGTH, 
-    INVALID_TOKEN, 
     NEW_PASSWORD_EQUALS_CURRENT, 
-    PASSWORD_REQUIRED, 
-    TOKEN_REQUIRED
+    PASSWORD_REQUIRED
 } from "../../app/constants/errors";
 import { advanceTo, clear } from 'jest-date-mock';
 import { message, testErrorMessages } from '../../app/services/messageBuilderService';
@@ -48,11 +48,11 @@ describe('User Routes', () => {
         clear();
     });
 
-    it('should handle email change verification with expired token', async () => {
+    it('should handle email change verification with expired code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
-                    email_change_sent_at: '2023-09-14T10:00:00'
+                    email_change_sent_at: '2023-09-15T10:00:00'
                 }
             ],
             rowCount: 1
@@ -60,13 +60,13 @@ describe('User Routes', () => {
 
         const response = await request(server)
             .post('/user/email/verify')
-            .send({ token: 'token' });
+            .send({ code: 'code' });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
+        expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
     });
 
-    it('should handle email change verification with invalid token', async () => {
+    it('should handle email change verification with invalid code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [],
             rowCount: 0
@@ -74,17 +74,17 @@ describe('User Routes', () => {
 
         const response = await request(server)
             .post('/user/email/verify')
-            .send({ token: 'token' });
+            .send({ code: 'code' });
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_TOKEN }]));
+        expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
     });
 
-    it('should handle email change with expired verification token', async () => {
+    it('should handle email change with expired verification code', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
-                    email_change_sent_at: '2023-09-14T11:00:00'
+                    email_change_sent_at: '2023-09-15T10:59:00'
                 }
             ],
             rowCount: 1
@@ -92,17 +92,17 @@ describe('User Routes', () => {
 
         const response = await request(server)
             .post('/user/email/verify')
-            .send({ token: 'expired-token' });
+            .send({ code: 'expired-code' });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
+        expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
     });
 
     it('should handle email change verification', async () => {
         mockQuery.mockResolvedValueOnce({
             rows: [
                 {
-                    email_change_sent_at: '2023-09-15T11:00:00'
+                    email_change_sent_at: '2023-09-15T12:00:00'
                 }
             ],
             rowCount: 1
@@ -115,7 +115,7 @@ describe('User Routes', () => {
 
         const response = await request(server)
             .post('/user/email/verify')
-            .send({ token: 'token' });
+            .send({ code: 'code' });
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual(message('Email successfully changed.').onTest());
@@ -294,16 +294,16 @@ describe('User Routes', () => {
         expect(response.body).toEqual(message('Email change verification link has been sent to the new email address.').onTest());
     });
 
-    it('should handle email change verification with missing token', async () => {
+    it('should handle email change verification with missing code', async () => {
         const response = await request(server)
             .post('/user/email/verify');
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(testErrorMessages([{ 
-            info: TOKEN_REQUIRED, 
+            info: CODE_REQUIRED, 
             data: {
                 location: 'body',
-                path: 'token'
+                path: 'code'
             } 
         }]));
     });

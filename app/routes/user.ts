@@ -8,25 +8,24 @@ import {
 import db from '../database';
 import { body } from 'express-validator';
 import { 
-    EMAIL_CHANGE_LINK_EXPIRED,
+    CODE_EXPIRED,
+    CODE_REQUIRED,
     EMAIL_REQUIRED, 
     INTERNAL_ERROR, 
+    INVALID_CODE, 
     INVALID_EMAIL, 
     INVALID_PASSWORD, 
     INVALID_PASSWORD_LENGTH, 
-    INVALID_TOKEN, 
     NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_CHANGE_FAILED, 
-    PASSWORD_REQUIRED, 
-    TOKEN_REQUIRED
+    PASSWORD_REQUIRED
 } from '../constants/errors';
 import { errorMessages, message } from '../services/messageBuilderService';
-import { v4 as uuidv4 } from 'uuid';
 import sendEmail from '../services/emailService';
-import { REDIRECT_TO_EMAIL_CHANGE } from '../../env-config';
 import validate from '../middlewares/validatorMiddleware';
 import logger from '../loggers/logger';
 import isExpired from '../services/isExpiredService';
+import generateCode from '../services/codeGeneratorService';
 
 const router = Router();
 
@@ -142,7 +141,7 @@ router.post('/email', [
     const { email: newEmail } = req.body;
 
     const userId = req.auth?.sub;
-    const token = uuidv4();
+    const code = generateCode(8);
 
     try{
         const { rowCount } = await db.query(`
@@ -150,11 +149,11 @@ router.post('/email', [
             SET 
                 email_change = $1::text,
                 email_change_sent_at = CURRENT_TIMESTAMP,
-                email_change_token = $2::uuid
+                email_change_code = $2::uuid
             WHERE id = $3::uuid;
         `, [
             newEmail, 
-            token, 
+            code, 
             userId
         ]);
 
@@ -171,7 +170,7 @@ router.post('/email', [
     }
 
     try {
-        await sendEmail(newEmail, 'Email Change Verification', undefined, `Please verify your email change by clicking the link: ${REDIRECT_TO_EMAIL_CHANGE + '?token=' + token}`);
+        await sendEmail(newEmail, 'Email Change Verification', undefined, `Please verify your email change by using the following code: ${code}`);
     } catch (e) {
         logger.error(`Error sending email change verification link to email: ${newEmail}. Error: ${(e instanceof Error) ? e.message : e}`);
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
@@ -186,29 +185,29 @@ router.post('/email/verify', [
     validateAccessToken(), 
     checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
-    body('token')
+    body('code')
         .notEmpty()
-        .withMessage(TOKEN_REQUIRED),
+        .withMessage(CODE_REQUIRED),
     validate
 ], async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
-    const { token } = req.body;
+    const { code } = req.body;
 
     try {
         const { rowCount, rows } = await db.query(`
             SELECT email_change_sent_at 
             FROM auth.users
-            WHERE id = $1::uuid AND email_change_token = $2::text
-        `, [userId, token]);
+            WHERE id = $1::uuid AND email_change_code = $2::text
+        `, [userId, code]);
 
         if (rowCount === 0) {
-            logger.warn(`Email verification failed for user: ${userId}`);
-            return res.status(400).json(errorMessages([{ info: INVALID_TOKEN }]));
+            logger.warn(`Invalid email verification code for user: ${userId}`);
+            return res.status(400).json(errorMessages([{ info: INVALID_CODE }]));
         }
 
-        if (isExpired(rows[0].email_change_sent_at, 60 * 24)) {
-            logger.warn(`Email change link expired for user: ${userId}`);
-            return res.status(403).json(errorMessages([{ info: EMAIL_CHANGE_LINK_EXPIRED }]));
+        if (isExpired(rows[0].email_change_sent_at, 60)) {
+            logger.warn(`Email change code expired for user: ${userId}`);
+            return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
         }
 
         const { rowCount: count } = await db.query(`
@@ -218,9 +217,9 @@ router.post('/email/verify', [
                 email_verified_at = CURRENT_TIMESTAMP,
                 email_change = NULL,
                 email_change_sent_at = NULL,
-                email_change_token = NULL
-            WHERE id = $1::uuid AND email_change_token = $2::text;
-        `, [userId, token]);
+                email_change_code = NULL
+            WHERE id = $1::uuid AND email_change_code = $2::text;
+        `, [userId, code]);
 
         if (count === 0) {
             logger.error(`Email verification failed for user: ${userId}`);
