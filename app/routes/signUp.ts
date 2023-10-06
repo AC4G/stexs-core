@@ -91,13 +91,7 @@ router.post('/', [
 
         logger.info(`Sign-up successful for user: ${username}`);
 
-        res.status(201).json( 
-            message('Sign-up successful. Check your email for an verification link!', { 
-                output: {
-                    userId: rows[0].id
-                } 
-            })
-        );
+        res.status(201).json(message('Sign-up successful. Check your email for an verification link!'));
     } catch (e) {
         const err = e as { hint: string | null; }; 
 

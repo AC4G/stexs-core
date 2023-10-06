@@ -121,7 +121,7 @@ describe('MFA Routes', () => {
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
             secret: expect.stringMatching(/^.{32}$/),
-            otpAuthUri: expect.stringMatching(new RegExp(otpAuthUriPattern))
+            otp_auth_uri: expect.stringMatching(new RegExp(otpAuthUriPattern))
         }); 
     });
 
