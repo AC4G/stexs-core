@@ -7,7 +7,7 @@
   "scripts": {
     "start": "concurrently \"tsc -w\" \"nodemon ./build/app/server.js\"",
     "test": "cross-env ENV=test ts-node ./node_modules/jest/bin/jest.js --watch --verbose --detectOpenHandles",
-    "cleanup": "rm -f ./logs/combined.log"
+    "cleanup": "rm -f ./logs/*"
   },
   "keywords": [],
   "author": "",

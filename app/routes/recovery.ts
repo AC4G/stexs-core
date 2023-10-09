@@ -11,14 +11,15 @@ import {
     INVALID_PASSWORD, 
     INVALID_PASSWORD_LENGTH, 
     INVALID_REQUEST, 
+    INVALID_UUID, 
     NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_REQUIRED, 
     RECOVERY_LINK_EXPIRED, 
     TOKEN_REQUIRED 
 } from '../constants/errors';
-import { errorMessages, message } from '../services/messageBuilderService';
+import { CustomValidationError, errorMessages, message } from '../services/messageBuilderService';
 import db from '../database';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import sendEmail from '../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../env-config';
 import validate from '../middlewares/validatorMiddleware';
@@ -96,7 +97,7 @@ router.post('/', [
     logger.info(`Recovery email sent to: ${email}`);
 
     res.json(message('Recovery email was been send.'));
-});
+}); 
 
 router.post('/confirm', [
     body('email')
@@ -107,7 +108,13 @@ router.post('/confirm', [
         .withMessage({ code: INVALID_EMAIL.code, message: INVALID_EMAIL.messages[0] }),
     body('token')
         .notEmpty()
-        .withMessage(TOKEN_REQUIRED),
+        .withMessage(TOKEN_REQUIRED)
+        .bail()
+        .custom(value => {
+            if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
+
+            return true;
+        }),
     body('password')
         .notEmpty()
         .withMessage(PASSWORD_REQUIRED)
