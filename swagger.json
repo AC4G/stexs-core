@@ -20,10 +20,12 @@
                 "properties": {
                     "access_token": {
                         "type": "string",
+                        "format": "JWT",
                         "description": "A token that grants access to the user's resources."
                     },
                     "refresh_token": {
                         "type": "string",
+                        "format": "JWT",
                         "description": "A token used to request a new access token without requiring the user's identifier and password."
                     },
                     "token_type": {
@@ -32,7 +34,7 @@
                     },
                     "expires": {
                         "type": "integer",
-                        "format": "unix",
+                        "format": "UNIX",
                         "description": "The expiration timestamp of the access token."
                     }
                 },
@@ -120,7 +122,11 @@
                                         "type": "string",
                                         "description": "The password used for authentication and account access."
                                     }
-                                }
+                                },
+                                "required": [
+                                    "identifier",
+                                    "password"
+                                ]
                             }
                         }
                     }
@@ -137,15 +143,19 @@
                                             "properties": {
                                                 "token": {
                                                     "type": "string",
+                                                    "format": "JWT",
                                                     "description": "A JSON Web Token (JWT) used to confirm the sign-in."
                                                 },
                                                 "types": {
                                                     "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
                                                     "description": "An array of supported Multi-Factor Authentication (MFA) types for the account."
                                                 },
                                                 "expires": {
                                                     "type": "integer",
-                                                    "format": "unix",
+                                                    "format": "UNIX",
                                                     "description": "The timestamp indicating the expiration time of the sign-in confirmation token."
                                                 }
                                             }
@@ -186,7 +196,12 @@
                                         "format": "JWT",
                                         "description": "A JSON Web Token (JWT) used for confirming the sign-in from the /sign-in endpoint."
                                     }
-                                }
+                                },
+                                "required": [
+                                    "code",
+                                    "type",
+                                    "token"
+                                ]
                             }
                         }
                     }
@@ -264,7 +279,12 @@
                                         "type": "string",
                                         "description": "A secure password that must meet the following criteria: - At least 10 characters long - Contains at least one uppercase letter - Contains at least one lowercase letter - Contains at least one special character - Contains at least one number"
                                     }
-                                }
+                                },
+                                "required": [
+                                    "username",
+                                    "email",
+                                    "password"
+                                ]
                             }
                         }
                     }
@@ -341,7 +361,8 @@
                                         "format": "email",
                                         "description": "The user's registered email address for which the verification email should be resent."
                                     }
-                                }
+                                },
+                                "required": ["email"]
                             }
                         }
                     }
@@ -377,7 +398,8 @@
                                         "format": "JWT",
                                         "description": "The user's valid refresh token to exchange for a new pair of access and refresh tokens."
                                     }
-                                }
+                                },
+                                "required": ["refresh_token"]
                             }
                         }
                     }
@@ -413,7 +435,8 @@
                                         "format": "email",
                                         "description": "The user's registered email address for initiating password recovery."
                                     }
-                                }
+                                },
+                                "required": ["email"]
                             }
                         }
                     }
@@ -451,13 +474,19 @@
                                     },
                                     "token": {
                                         "type": "string",
+                                        "format": "UUID",
                                         "description": "The unique token provided in the password recovery email."
                                     },
                                     "password": {
                                         "type": "string",
                                         "description": "The new password to be set for the user's account."
                                     }
-                                }
+                                },
+                                "required": [
+                                    "email",
+                                    "token",
+                                    "password"
+                                ]
                             }
                         }
                     }
@@ -496,7 +525,7 @@
                                     "properties": {
                                         "id": {
                                             "type": "string",
-                                            "format": "uuid",
+                                            "format": "UUID",
                                             "description": "A unique UUID identifier for the user's account."
                                         },
                                         "email": {
@@ -547,7 +576,8 @@
                                         "type": "string",
                                         "description": "The new password to be set for the user's account."
                                     }
-                                }
+                                },
+                                "required": ["password"]
                             }
                         }
                     }
@@ -588,7 +618,8 @@
                                         "format": "email",
                                         "description": "The new email address to be associated with the user's account."
                                     }
-                                }
+                                },
+                                "required": ["email"]
                             }
                         }
                     }
@@ -628,7 +659,8 @@
                                         "type": "string",
                                         "description": "The verification code sent to the user's new email address for email change confirmation."
                                     }
-                                }
+                                },
+                                "required": ["code"]
                             }
                         }
                     }
@@ -736,7 +768,8 @@
                                         "type": "string",
                                         "description": "The confirmation code required to disable TOTP. This code is generated by the user's authenticator app."
                                     }
-                                }
+                                },
+                                "required": ["code"]
                             }
                         }
                     }
@@ -776,7 +809,8 @@
                                         "type": "string",
                                         "description": "The confirmation code sent to the user's registered email address."
                                     }
-                                }
+                                },
+                                "required": ["code"]
                             }
                         }
                     }
@@ -816,7 +850,8 @@
                                         "type": "string",
                                         "description": "The confirmation code sent to the user's registered email address."
                                     }
-                                }
+                                },
+                                "required": ["code"]
                             }
                         }
                     }
@@ -854,13 +889,20 @@
                                 "properties": {
                                     "type": {
                                         "type": "string",
-                                        "description": "The type of MFA being verified (e.g., 'totp')."
+                                        "description": "The type of MFA being verified.",
+                                        "enum": [
+                                            "totp"
+                                        ]
                                     },
                                     "code": {
                                         "type": "string",
                                         "description": "The verification code for the specified MFA type."
                                     }
-                                }
+                                },
+                                "required": [
+                                    "type",
+                                    "code"
+                                ]
                             }
                         }
                     }
@@ -901,7 +943,8 @@
                                         "format": "JWT",
                                         "description": "A JSON Web Token (JWT) provided to users who have initialized the sign-in process."
                                     }
-                                }
+                                },
+                                "required": ["token"]
                             }
                         }
                     }
@@ -909,6 +952,356 @@
                 "responses": {
                     "200": {
                         "description": "MFA Email Verification Code Sent Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth2/authorize": {
+            "post": {
+                "summary": "Authorize Client for OAuth2",
+                "tags": ["OAuth2"],
+                "description": "This endpoint is used to authorize a client application for OAuth2. It allows users to grant permission to the client to access their resources by providing client ID, redirect URL, and requested scopes.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "client_id": {
+                                        "type": "string",
+                                        "format": "UUID",
+                                        "description": "The unique identifier of the client application."
+                                    },
+                                    "redirect_url": {
+                                        "type": "string",
+                                        "format": "URL",
+                                        "description": "The URL where the user will be redirected after authorization."
+                                    },
+                                    "scopes": {
+                                        "type": "array",
+                                        "description": "An array of scopes specifying the level of access requested by the client."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Authorization",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "string",
+                                            "format": "UUID",
+                                            "description": "Authorization code generated for the client."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth2/token": {
+            "post": {
+                "summary": "OAuth2 Token",
+                "tags": ["OAuth2"],
+                "description": "This endpoint is used to obtain OAuth2 tokens for different grant types, such as 'authorization_code', 'client_credentials', and 'refresh_token'. The response may vary based on the selected grant type.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "grant_type": {
+                                        "type": "string",
+                                        "description": "The type of grant being used (e.g., 'authorization_code', 'client_credentials', 'refresh_token').",
+                                        "enum": [
+                                            "authorization_code", 
+                                            "client_credentials", 
+                                            "refresh_token"
+                                        ]
+                                    },
+                                        "client_id": {
+                                        "type": "string",
+                                        "format": "UUID",
+                                        "description": "The unique identifier of the client application. Not required for 'refresh_token' grant."
+                                    },
+                                        "client_secret": {
+                                        "type": "string",
+                                        "description": "The client's secret key. Not required for 'refresh_token' grant."
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "format": "JWT",
+                                        "description": "The authorization code (required for 'authorization_code' grant)."
+                                    },
+                                    "refresh_token": {
+                                        "type": "string",
+                                        "format": "JWT",
+                                        "description": "The refresh token (required for 'refresh_token' grant)."
+                                    }
+                                },
+                                "required": ["grant_type"]
+                            },
+                            "examples": {
+                                "authorization_code": {
+                                    "value": {
+                                        "grant_type": "authorization_code",
+                                        "client_id": "your_client_id",
+                                        "client_secret": "your_client_secret",
+                                        "code": "your_authorization_code"
+                                    }
+                                },
+                                "client_credentials": {
+                                    "value": {
+                                        "grant_type": "client_credentials",
+                                        "client_id": "your_client_id",
+                                        "client_secret": "your_client_secret"
+                                    }
+                                },
+                                "refresh_token": {
+                                    "value": {
+                                        "grant_type": "refresh_token",
+                                        "refresh_token": "your_refresh_token"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful OAuth2 Token Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "access_token": {
+                                            "type": "string",
+                                            "format": "JWT",
+                                            "description": "The access token."
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "description": "The type of token (e.g., 'bearer')."
+                                        },
+                                        "expires": {
+                                            "type": "integer",
+                                            "format": "UNIX",
+                                            "description": "The duration in seconds for which the token is valid."
+                                        },
+                                        "refresh_token": {
+                                            "type": "string",
+                                            "format": "JWT",
+                                            "description": "The refresh token (optional)."
+                                        }
+                                    },
+                                    "required": ["access_token", "token_type", "expires"]
+                                },
+                                "examples": {
+                                    "authorization_code": {
+                                        "value": {
+                                            "access_token": "your_access_token_auth_code",
+                                            "token_type": "bearer",
+                                            "expires": 3600,
+                                            "refresh_token": "your_refresh_token_auth_code"
+                                        }
+                                    },
+                                    "client_credentials": {
+                                        "value": {
+                                            "access_token": "your_access_token_client_creds",
+                                            "token_type": "bearer",
+                                            "expires": 3600
+                                        }
+                                    },
+                                    "refresh_token": {
+                                        "value": {
+                                            "access_token": "your_access_token_refresh_token",
+                                            "token_type": "bearer",
+                                            "expires": 3600,
+                                            "refresh_token": "your_refresh_token_refresh_token"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth2/connections": {
+            "get": {
+                "summary": "Get OAuth2 Connections",
+                "tags": ["OAuth2"],
+                "description": "This endpoint allows users to retrieve OAuth2 connections associated with their account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OAuth2 Connections Retrieved Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "organization": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "description": "The unique identifier of the organization."
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "description": "The name of the organization."
+                                                    },
+                                                    "display_name": {
+                                                        "type": "string",
+                                                        "description": "The display name of the organization."
+                                                    }
+                                                }
+                                            },
+                                            "description": {
+                                                "type": "string",
+                                                "description": "The description of the OAuth2 application."
+                                            },
+                                            "homepage_url": {
+                                                "type": "string",
+                                                "format": "URL",
+                                                "description": "The homepage URL of the OAuth2 application."
+                                            },
+                                            "client_id": {
+                                                "type": "string",
+                                                "format": "UUID",
+                                                "description": "The client ID of the OAuth2 application."
+                                            }
+                                        }
+                                    },
+                                    "examples": [
+                                        [
+                                            {
+                                                "organization": {
+                                                    "id": 1,
+                                                    "name": "Organization 1",
+                                                    "display_name": "Org 1"
+                                                },
+                                                "description": "OAuth2 Connection 1",
+                                                "homepage_url": "https://example.com/app1",
+                                                "client_id": "client_id_1"
+                                                },
+                                                {
+                                                "organization": {
+                                                    "id": 2,
+                                                    "name": "Organization 2",
+                                                    "display_name": "Org 2"
+                                                },
+                                                "description": "OAuth2 Connection 2",
+                                                "homepage_url": "https://example.com/app2",
+                                                "client_id": "client_id_2"
+                                            }
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth2/connection": {
+            "delete": {
+                "summary": "Delete OAuth2 Connection",
+                "tags": ["OAuth2"],
+                "description": "This endpoint allows authenticated users to delete an OAuth2 connection associated with their account.",
+                "security": [
+                    {
+                        "Auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "client_id": {
+                                        "type": "string",
+                                        "format": "UUID",
+                                        "description": "The client ID of the OAuth2 application to be deleted."
+                                    }
+                                },
+                                "required": ["client_id"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OAuth2 Connection Deleted Successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth2/revoke": {
+            "delete": {
+                "summary": "Revoke OAuth2 Connection",
+                "tags": ["OAuth2"],
+                "description": "This endpoint allows clients to revoke an OAuth2 connection associated with an 'authorization_code' grant type using a refresh token. When a connection is revoked, access to the associated account data is terminated.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "refresh_token": {
+                                        "type": "string",
+                                        "format": "JWT",
+                                        "description": "The refresh token used to revoke the OAuth2 connection associated with an 'authorization_code' grant type."
+                                    }
+                                },
+                                "required": ["refresh_token"]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OAuth2 Connection Revoked Successfully",
                         "content": {
                             "application/json": {
                                 "schema": {

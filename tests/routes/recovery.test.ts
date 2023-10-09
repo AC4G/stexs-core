@@ -8,6 +8,7 @@ import {
     INVALID_PASSWORD, 
     INVALID_PASSWORD_LENGTH, 
     INVALID_REQUEST, 
+    INVALID_UUID, 
     NEW_PASSWORD_EQUALS_CURRENT, 
     PASSWORD_REQUIRED, 
     RECOVERY_LINK_EXPIRED, 
@@ -120,7 +121,7 @@ describe('Recovery Routes', () => {
         const response = await request(server)
             .post('/recovery/confirm')
             .send({ 
-                token: 'token',
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
                 password: 'Test12345.'
         });
 
@@ -139,7 +140,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 email: 'test',
-                token: 'token',
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
                 password: 'Test12345.'
         });
 
@@ -174,12 +175,31 @@ describe('Recovery Routes', () => {
         }]));
     });
 
+    it('should handle confirm recovery with token not in uuid format', async () => {
+        const response = await request(server)
+            .post('/recovery/confirm')
+            .send({ 
+                email: 'test@example.com',
+                token: 'token',
+                password: 'Test12345.',
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(testErrorMessages([{ 
+            info: INVALID_UUID, 
+            data: {
+                location: 'body',
+                path: 'token'
+            } 
+        }]));
+    });
+
     it('should handle confirm recovery with missing password', async () => {
         const response = await request(server)
             .post('/recovery/confirm')
             .send({ 
                 email: 'test@example.com',
-                token: 'token'
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2'
         });
 
         expect(response.status).toBe(400);
@@ -197,7 +217,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 email: 'test@example.com',
-                token: 'token',
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
                 password: 'test123'
         });
 
@@ -216,7 +236,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 email: 'test@example.com',
-                token: 'token',
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
                 password: 'Test123.'
         });
 
@@ -240,7 +260,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 email: 'test@example.com',
-                token: 'token',
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
                 password: 'Test12345.'
         });
 
@@ -271,7 +291,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 email: 'test@example.com',
-                token: 'token',
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
                 password: 'Test12345.'
         });
 
@@ -308,7 +328,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 email: 'test@example.com',
-                token: 'token',
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
                 password: 'Test12345.'
         });
 
@@ -350,7 +370,7 @@ describe('Recovery Routes', () => {
             .post('/recovery/confirm')
             .send({ 
                 email: 'test@example.com',
-                token: 'token',
+                token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
                 password: 'Test12345.'
         });
 
