@@ -1,0 +1,19 @@
+{
+  "include": [
+    "**/*.ts",
+    "**/*.json"
+  ],
+  "compilerOptions": {
+      "module": "CommonJS",
+      "target": "ES2022",
+      "strict": true,
+      "allowJs": true,
+      "esModuleInterop": true,
+      "moduleResolution": "node",
+      "resolveJsonModule": true,
+      "forceConsistentCasingInFileNames": true,
+      "allowSyntheticDefaultImports": true,
+      "baseUrl": ".",
+      "composite": true
+  }
+}
