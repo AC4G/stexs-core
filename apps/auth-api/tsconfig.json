@@ -1,0 +1,25 @@
+{
+  "include": [
+    "**/*.ts",
+    "**/*.json"
+  ],
+  "compilerOptions": {
+      "module": "CommonJS",
+      "target": "ES2022",
+      "strict": true,
+      "allowJs": true,
+      "esModuleInterop": true,
+      "moduleResolution": "node",
+      "resolveJsonModule": true,
+      "forceConsistentCasingInFileNames": true,
+      "allowSyntheticDefaultImports": true,
+      "baseUrl": ".",
+      "outDir": "./dist",
+      "paths": {
+      "~/*": ["./app/*"]
+      },
+      "composite": true,
+      "typeRoots": ["types", "node_modules/@types", "node_modules/types"]
+  },
+  "exclude": ["node_modules/**/*", "**/dist/**/*"]
+}
