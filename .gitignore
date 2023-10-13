@@ -2,13 +2,14 @@
 # Node
 ###########
 
-node_modules
+**/node_modules
+**/package-lock.json
 
 ###########
 # ENV
 ###########
 
-.env
+**/.env
 
 ###########
 # Build
@@ -16,9 +17,16 @@ node_modules
 
 **/build
 **/dist
-**/target
-**/obj
-**/bin
+**/.next
+
+###########
+# Logs
+###########
+
+**/logs
 
 
 **/.cache
+
+**/.turbo
+
