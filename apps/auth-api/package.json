@@ -1,7 +1,6 @@
 {
     "name": "auth-api",
     "version": "1.0.0",
-    "description": "",
     "main": "./app/server.ts",
     "type": "commonjs",
     "scripts": {
@@ -10,9 +9,6 @@
         "lint": "eslint .",
         "cleanup": "rm -f ./logs/*"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
     "dependencies": {
         "body-parser": "^1.20.2",
         "concurrently": "^8.2.1",
