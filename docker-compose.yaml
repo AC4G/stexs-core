@@ -1,0 +1,72 @@
+version: '3.7'
+
+services:
+  auth-api:
+    build: 
+      context: .
+      dockerfile: ./apps/auth-api/Dockerfile
+    restart: on-failure
+    ports:
+      - 3001:3001
+    container_name: auth-api
+    networks:
+      - stexs
+    depends_on: 
+      - db
+
+  
+  rest:
+    image: postgrest/postgrest:latest
+    restart: on-failure
+    ports:
+      - 3000:3000
+    environment:
+      PGRST_DB_URI: ${PG_URL}
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS}
+      PGRST_JWT_SECRET: ${ACCESS_TOKEN_SECRET}
+      PGRST_JWT_AUD: ${AUDIENCE}
+    container_name: rest
+    networks:
+      - stexs
+    depends_on:
+      - db
+
+
+  db: 
+    image: postgres:16-alpine3.17
+    ports: 
+      - 5432:5432
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    volumes:
+      - ./docker/db/data:/var/lib/postgresql/data
+    container_name: db
+    networks:
+      - stexs
+
+  
+  haproxy:
+    image: haproxy:latest 
+    ports:
+      - 443:443
+    restart: on-failure
+    volumes:
+      - ./docker/haproxy:/etc/haproxy
+    environment:
+      - JWT_SECRET=${ACCESS_TOKEN_SECRET}
+    container_name: haproxy
+    command: ["haproxy", "-f", "/etc/haproxy/haproxy.cfg"]
+    networks:
+      - stexs
+    depends_on:
+      - auth-api
+      - rest
+
+  
+networks:
+  stexs:
+    external: true
+      

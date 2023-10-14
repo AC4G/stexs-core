@@ -15,6 +15,7 @@ import logger from "./loggers/logger";
 import responseTime from "response-time";
 import { errorMessages } from "./services/messageBuilderService";
 import { ROUTE_NOT_FOUND } from "./constants/errors";
+import cors from "cors";
 
 process.on("uncaughtException", (err) => {
   logger.error(`Uncaught Exception: ${err.message}`);
@@ -25,6 +26,7 @@ const server = express();
 
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
+server.use(cors());
 server.use(responseTime());
 
 server.use((req, res, next) => {

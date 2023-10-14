@@ -8,9 +8,9 @@
     "test": "dotenv -- turbo run test",
     "lint": "turbo run lint",
     "dev": "dotenv -- turbo run dev",
+    "clean": "turbo run clean",
+    "clean:logs": "turbo run clean:logs",
     "type-check": "turbo run type-check",
-    "dev:auth-api": "dotenv -- turbo run dev --filter=auth-api",
-    "test:auth-api": "turbo run test --filter=auth-api",
     "test:watch": "turbo run test:watch"
   },
   "workspaces": [

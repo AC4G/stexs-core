@@ -25,8 +25,14 @@
 
 **/logs
 
+###########
+# Docker
+###########
+
+docker/db/data
+docker/haproxy/certs
+
 
 **/.cache
 
 **/.turbo
-
