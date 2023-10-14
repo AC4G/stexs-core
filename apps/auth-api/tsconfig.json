@@ -5,21 +5,26 @@
   ],
   "compilerOptions": {
       "module": "CommonJS",
-      "target": "ES2022",
-      "strict": true,
-      "allowJs": true,
+      "target": "ES2021",
+      "composite": false,
+      "declaration": true,
+      "declarationMap": true,
       "esModuleInterop": true,
-      "moduleResolution": "node",
-      "resolveJsonModule": true,
       "forceConsistentCasingInFileNames": true,
-      "allowSyntheticDefaultImports": true,
+      "inlineSources": false,
+      "isolatedModules": true,
+      "moduleResolution": "node",
+      "noUnusedLocals": false,
+      "noUnusedParameters": false,
+      "preserveWatchOutput": true,
+      "resolveJsonModule": true,
+      "skipLibCheck": true,
+      "strict": true,
       "baseUrl": ".",
       "outDir": "./dist",
       "paths": {
       "~/*": ["./app/*"]
-      },
-      "composite": true,
-      "typeRoots": ["types", "node_modules/@types", "node_modules/types"]
+      }
   },
   "exclude": ["node_modules/**/*", "**/dist/**/*"]
 }

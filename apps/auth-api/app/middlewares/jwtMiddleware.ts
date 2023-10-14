@@ -20,12 +20,12 @@ import logger from "../loggers/logger";
 class JWTError extends Error {
   code: string;
   status: number;
-  data?: Record<string, object>;
+  data?: Record<string, any>;
 
   constructor(
     info: { code: string; message: string },
     status: number,
-    data?: Record<string, object>,
+    data?: Record<string, any>,
   ) {
     super(info.message);
     this.code = info.code;
@@ -77,7 +77,7 @@ export function validateSignInConfirmOrAccessToken(
   next: NextFunction,
 ) {
   const token = req.body.token;
-  let grantType = null;
+  let grantType = null; 
 
   verify(
     token,
@@ -176,6 +176,7 @@ export function transformJwtErrorMessages(
   err: JWTError,
   req: Request,
   res: Response,
+  next: NextFunction
 ) {
   logger.warn(`JWT Error: ${err.message}`);
 
