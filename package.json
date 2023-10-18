@@ -5,12 +5,15 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "build": "turbo run build",
-    "test": "dotenv -- turbo run test",
+    "build:main": "turbo run build:main",
+    "build:module": "turbo run build:module",
     "lint": "turbo run lint",
     "dev": "dotenv -- turbo run dev",
     "clean": "turbo run clean",
     "clean:logs": "turbo run clean:logs",
     "type-check": "turbo run type-check",
+    "test": "dotenv -- turbo run test",
+    "test:coverage": "turbo run test:coverage",
     "test:watch": "turbo run test:watch"
   },
   "workspaces": [
@@ -24,6 +27,7 @@
     "turbo": "^1.10.15"
   },
   "dependencies": {
+    "@turbo/gen": "^1.10.15",
     "autoprefixer": "^10.4.16",
     "dotenv-cli": "^7.3.0"
   },

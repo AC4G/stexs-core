@@ -1,38 +1,19 @@
-###########
-# Node
-###########
-
 **/node_modules
 **/package-lock.json
 
-###########
-# ENV
-###########
-
 **/.env
-
-###########
-# Build
-###########
 
 **/build
 **/dist
 **/.next
 
-###########
-# Logs
-###########
-
 **/logs
-
-###########
-# Docker
-###########
 
 docker/db/data
 docker/haproxy/certs
 
 
 **/.cache
-
 **/.turbo
+
+**/coverage

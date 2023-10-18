@@ -1,11 +1,12 @@
 {
   "include": [
     "**/*.ts",
-    "**/*.json"
+    "**/*.json",
+    "jest.config.ts"  
   ],
   "compilerOptions": {
       "module": "CommonJS",
-      "target": "ES2021",
+      "target": "ES2022",
       "composite": false,
       "declaration": true,
       "declarationMap": true,
@@ -26,5 +27,5 @@
       "~/*": ["./app/*"]
       }
   },
-  "exclude": ["node_modules/**/*", "**/dist/**/*"]
+  "exclude": ["node_modules", "dist"]
 }

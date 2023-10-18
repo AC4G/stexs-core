@@ -57,6 +57,6 @@ GRANT ALL ON public.inventories to anon;
 GRANT ALL ON public.friends to anon;
 GRANT ALL ON public.blocked to anon;
 GRANT ALL ON public.organization_members to anon;
-GRANT ALL ON pulbic.project_members to anon;
+GRANT ALL ON public.project_members to anon;
 
 GRANT USAGE, SELECT ON SEQUENCE public.items_id_seq TO anon;
