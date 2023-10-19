@@ -13,7 +13,7 @@ export class StexsAuthClient {
         this.fetch = fetch; 
     }
 
-    async signIn(identifier: string, password: string): Response {
+    async signIn(identifier: string, password: string): Promise<Response> {
         return await this._baseSignIn({
             path: 'sign-in',
             method: 'POST',
@@ -24,7 +24,7 @@ export class StexsAuthClient {
         });
     }
 
-    async signInConfirm(type: string, code: string): Response {
+    async signInConfirm(type: string, code: string): Promise<Response> {
         const token = localStorage.getItem({ path: 'sign_in_token' });
 
         if (!token) {
@@ -46,11 +46,11 @@ export class StexsAuthClient {
         path: string,
         method: string,
         body: object
-    }): Response {
+    }): Promise<Response> {
         const response = await this._request(requestParameter);
 
         if (response.status === 200) {
-            const body = response.json();
+            const body = (response.clone()).json();
 
             if (body.token) {
                 localStorage.setItem('sign_in_token', body.token);
@@ -61,7 +61,7 @@ export class StexsAuthClient {
             if (body.access_token && body.refresh_token) {
                 localStorage.setItem('access_token', body.access_token);
                 localStorage.setItem('refresh_token', body.refresh_token);
-                localStorage.setItem('access_token_expires', body.expires);
+                localStorage.setItem('access_token_expiry', body.expires);
 
                 this.authHeaders = {
                     ...this.authHeaders,
@@ -128,8 +128,8 @@ export class StexsAuthClient {
         });
     }
 
-    private _triggerEvent(eventType: string, eventData: any): void {
-        this.eventEmitter.emit(eventType, eventData);
+    private _triggerEvent(eventType: string): void {
+        this.eventEmitter.emit(eventType);
     }
 
     private async _request({
