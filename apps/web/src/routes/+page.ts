@@ -1,11 +1,10 @@
 import { StexsClient } from 'stexs-client';
 
 /** @type {import('./$types').PageLoad} */
-export async function load({ params }) {
-    const stexsClient = new StexsClient();
+export async function load({ fetch, params }) {
+    const stexsClient = new StexsClient(fetch);
 
     return {
-        profiles: (await stexsClient.from('profiles').select('*')).data,
-        auth: await stexsClient.auth.signIn('AC4G', 'Test12345.')
+        profiles: (await stexsClient.from('profiles').select('*')).data
     }
 }
