@@ -40,7 +40,7 @@ server.use((req, res, next) => {
     logger.info(
       `method=${req.method} url=${req.originalUrl} status=${
         res.statusCode
-      } ip=${req.ip} duration=${res.get("X-Response-Time")}`,
+      } ip=${req.ip} duration=${res.get("X-Response-Time")}`
     );
   });
   next();
