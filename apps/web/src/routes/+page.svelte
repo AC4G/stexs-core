@@ -18,7 +18,7 @@
         return;
       }
 
-      const response = await stexsClient.auth.signInConfirm("email", mfaCode); // Replace "email" with the actual type you want to use
+      const response = await stexsClient.auth.signInConfirm("email", mfaCode);
       console.log("Sign In Confirm Response:", response);
     } catch (error) {
       console.error("Sign In Confirm Error:", error);
@@ -34,29 +34,23 @@
     }
   };
 
-  const getLocalStorageData = () => {
-    if (typeof window !== "undefined") {
-      const localStorageData = localStorage.getItem("yourLocalStorageKey");
-      return localStorageData ? JSON.parse(localStorageData) : null;
+  const getProfiles = async () => {
+    try {
+      const response = await stexsClient.from("profiles").select();
+      console.log("Profiles Response:", response);
+    } catch (error) {
+      console.error("Profiles Error:", error);
     }
-    return null;
   };
-
-  const localStorageData = getLocalStorageData();
 </script>
 
 <section>
   <h1>Welcome</h1>
 
-  {#if localStorageData}
-    <p>Local Storage Data:</p>
-    <pre>{JSON.stringify(localStorageData, null, 2)}</pre>
-  {/if}
-
   <input type="text" bind:value={mfaCode} placeholder="Enter MFA Code" />
 
-  <!-- Sign In and Confirm Sign In buttons -->
   <button on:click={handleSignIn}>Sign In</button>
   <button on:click={handleSignInConfirm}>Confirm Sign In</button>
   <button on:click={handleSignOut}>Sign Out</button>
+  <button on:click={getProfiles}>Get Profiles</button>
 </section>

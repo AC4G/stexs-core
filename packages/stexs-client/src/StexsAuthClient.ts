@@ -20,7 +20,7 @@ export class StexsAuthClient {
             return;
         }
 
-        const session = JSON.parse(localStorage.getItem('session'));
+        const session: Session = this._getSession();
 
         if (session && session.access_token) {
             this._setAccessTokenToAuthHeaders(session.access_token);
@@ -134,7 +134,7 @@ export class StexsAuthClient {
     }
 
     private async _baseSignOut(path: string): void {
-        const session: Session = JSON.parse(localStorage.getItem('session'));
+        const session: Session = this._getSession();
 
         if (session?.access_token) {
             await this._request({ path });
@@ -147,6 +147,10 @@ export class StexsAuthClient {
 
     async getUser(): Promise<Response> {
         return await this._request({ path: 'user' });
+    }
+
+    getSession(): Session {
+        return this._getSession();
     }
 
     onAuthStateChange(callback: (event: string, eventData?: any) => void) {
@@ -183,7 +187,7 @@ export class StexsAuthClient {
         const refreshThresholdMs = 10000; 
 
         while (true) {
-            const session = JSON.parse(localStorage.getItem('session'));
+            const session: Session = this._getSession();
             const expiresInMs = session.expires * 1000 - Date.now();
 
             if (session && session.expires) {    
@@ -191,9 +195,9 @@ export class StexsAuthClient {
                     const delayMs = expiresInMs - refreshThresholdMs;
     
                     setTimeout(async () => {
-                        const updatedSession = JSON.parse(localStorage.getItem('session'));
+                        const session: Session = this._getSession();
     
-                        if (updatedSession) {
+                        if (session) {
                             await this._refreshAccessToken();
                         } 
                     }, delayMs);
@@ -209,7 +213,7 @@ export class StexsAuthClient {
     }
 
     private async _refreshAccessToken(): Promise<boolean> {
-        const session = JSON.parse(localStorage.getItem('session'));
+        const session: Session = this._getSession();
 
         if (!session || !session.refresh_token) {
             return false;
@@ -252,6 +256,10 @@ export class StexsAuthClient {
         this._triggerEvent('TOKEN_REFRESHED', accessToken);
 
         return true;
+    }
+
+    private _getSession(): Session {
+        return JSON.parse(localStorage.getItem('session') as Session);
     }
 
     private async _request({
