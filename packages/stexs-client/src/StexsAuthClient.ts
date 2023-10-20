@@ -64,7 +64,7 @@ export class StexsAuthClient {
                     autoRefresh
                 });
 
-                this._triggerEvent('SIGN_IN_INITIALIZED');
+                this._triggerEvent('SIGN_IN_INIT');
             }
 
             if (body.access_token && body.refresh_token) {
@@ -112,21 +112,25 @@ export class StexsAuthClient {
         return await this._request({ path: 'user' });
     }
 
-    onAuthStateChange(callback: (event: string) => void) {
+    async triggerTokenRefresh(): Promise<boolean> {
+        return await this._refreshAccessToken();
+    }
+
+    onAuthStateChange(callback: (event: string, eventData?: any) => void) {
         this.eventEmitter.on('SIGNED_IN', () => {
             callback('SIGNED_IN');
         });
 
-        this.eventEmitter.on('SIGN_IN_INITIALIZED', () => {
-            callback('SIGN_IN_INITIALIZED');
+        this.eventEmitter.on('SIGN_IN_INIT', () => {
+            callback('SIGN_IN_INIT');
         });
     
         this.eventEmitter.on('SIGNED_OUT', () => {
             callback('SIGNED_OUT');
         });
 
-        this.eventEmitter.on('TOKEN_REFRESHED', () => {
-            callback('TOKEN_REFRESHED');
+        this.eventEmitter.on('TOKEN_REFRESHED', eventData => {
+            callback('TOKEN_REFRESHED', eventData);
         });
 
         this.eventEmitter.on('USER_UPDATED', () => {
@@ -138,8 +142,50 @@ export class StexsAuthClient {
         });
     }
 
-    private _triggerEvent(eventType: string): void {
-        this.eventEmitter.emit(eventType);
+    private _triggerEvent(eventType: string, eventData?: any): void {
+        this.eventEmitter.emit(eventType, eventData);
+    }
+
+    private async _refreshAccessToken(): Promise<boolean> {
+        const session = localStorage.getItem('session');
+
+        if (!session || !session.refresh_token) {
+            return false;
+        }
+
+        if (session.refresh.count === 24) {
+            this.signOut();
+            return false;
+        }
+
+        const response = await this._request({
+            path: 'token',
+            method: 'POST',
+            body: {
+                refresh_token: session.refresh_token
+            }
+        });
+
+        if (response.status !== 200) {
+            this.signOut();
+            return false;
+        }
+
+        const body = response.json();
+        const refresh = { ...session.refresh };
+
+        if (refresh.enabled === false) {
+            refresh.count++;
+        }
+
+        localStorage.setItem('session', {
+            ...body,
+            refresh
+        });
+
+        this._triggerEvent('TOKEN_REFRESHED', body.access_token);
+
+        return true;
     }
 
     private async _request({
@@ -154,7 +200,7 @@ export class StexsAuthClient {
         headers?: Record<string, string>;
     }): Promise<Response> {
         try {
-            return await this.fetch(`${this.authUrl}/${path}`, {
+            const response = await this.fetch(`${this.authUrl}/${path}`, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
@@ -163,8 +209,20 @@ export class StexsAuthClient {
                 },
                 body: JSON.stringify(body)
             });
+
+            if (response.status !== 403 && response.status !== 401) {
+                return response;
+            }
+
+            const refreshSuccess = await this._refreshAccessToken();
+
+            if (refreshSuccess) {
+                return await this._request({ path, method, body, headers });
+            }
+
+            throw new Error('Token refresh failed');
         } catch (e) {
-            throw new Error(`Request failed: ${e.message}`);
+            throw e;
         }
     }
 
