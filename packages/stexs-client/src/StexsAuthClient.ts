@@ -11,6 +11,22 @@ export class StexsAuthClient {
     constructor(fetch: typeof fetch, authUrl: string) {
         this.authUrl = authUrl;     
         this.fetch = fetch;
+
+        this._initialize();
+    }
+
+    private _initialize() {
+        if (typeof window === "undefined") {
+            return;
+        }
+
+        const session = JSON.parse(localStorage.getItem('session'));
+
+        if (session && session.access_token) {
+            this._setAccessTokenToAuthHeaders(session.access_token);
+        }
+
+        this._scheduleTokenRefresh();
     }
 
     async signIn(identifier: string, password: string, autoRefresh: boolean = false): Promise<Response> {
@@ -25,17 +41,17 @@ export class StexsAuthClient {
     }
 
     async signInConfirm(type: string, code: string): Promise<Response> {
-        const signInInitData = localStorage.getItem('sign_in_init');
+        const { token, expires, autoRefresh } = JSON.parse(localStorage.getItem('sign_in_init'));
 
-        if (!signInInitData?.token) {
+        if (!token) {
             throw new Error('Sign in token was not been found.');
         }
 
-        if (Number(expiry) < Date.now() / 1000) {
+        if (Number(expires) < Date.now() / 1000) {
             throw new Error('Sign in token has expired.');
         }
 
-        localStorage.removeItem('sing_in_init');
+        localStorage.removeItem('sign_in_init');
 
         return await this._baseSignIn({
             path: 'sign-in/confirm',
@@ -45,7 +61,7 @@ export class StexsAuthClient {
                 type,
                 token
             }
-        }, signInInitData.autoRefresh);
+        }, autoRefresh);
     }
 
     private async _baseSignIn(requestParameter: {
@@ -56,26 +72,30 @@ export class StexsAuthClient {
         const response = await this._request(requestParameter);
 
         if (response.status === 200) {
-            const body = (response.clone()).json();
+            const clonedResponse = response.clone();
+            const body = await clonedResponse.json();
 
             if (body.token) {
-                localStorage.setItem('sign_in_init', {
+                localStorage.setItem('sign_in_init', JSON.stringify({
                     ...body,
                     autoRefresh
-                });
+                }));
+
+                if (body.types.length === 1 && body.types[0] === 'email') {
+                    await this.requestMFAEmailCode();
+                }
 
                 this._triggerEvent('SIGN_IN_INIT');
             }
 
             if (body.access_token && body.refresh_token) {
-
-                localStorage.setItem('session', {
+                localStorage.setItem('session', JSON.stringify({
                     ...body,
                     refresh: {
                         enabled: autoRefresh,
                         count: 0 // Counts up to 24 if auto refresh is disabled
                     }
-                });
+                }));
 
                 this._setAccessTokenToAuthHeaders(body.access_token);
 
@@ -84,6 +104,25 @@ export class StexsAuthClient {
         }
 
         return response;
+    }
+
+    async requestMFAEmailCode(): Promise<Response> {
+        const signInInitData = JSON.parse(localStorage.getItem('sign_in_init'));
+
+        if (signInInitData) {
+            return await this._request({
+                path: 'mfa/email/send-code',
+                method: 'POST',
+                body: {
+                    token: signInInitData.token
+                }
+            });
+        }
+
+        return await this._request({
+            path: 'mfa/email/send-code',
+            method: 'POST'
+        });
     }
 
     async signOut(): void {
@@ -95,25 +134,19 @@ export class StexsAuthClient {
     }
 
     private async _baseSignOut(path: string): void {
-        const session: Session = localStorage.getItem('session');
+        const session: Session = JSON.parse(localStorage.getItem('session'));
 
-        if (!session?.access_token) {
-            return;
+        if (session?.access_token) {
+            await this._request({ path });
         }
 
-        await this._request({ path });
-
-        localStorage.removeItem('session');
+        localStorage.clear();
 
         this._triggerEvent('SIGNED_OUT');
     }
 
     async getUser(): Promise<Response> {
         return await this._request({ path: 'user' });
-    }
-
-    async triggerTokenRefresh(): Promise<boolean> {
-        return await this._refreshAccessToken();
     }
 
     onAuthStateChange(callback: (event: string, eventData?: any) => void) {
@@ -146,8 +179,37 @@ export class StexsAuthClient {
         this.eventEmitter.emit(eventType, eventData);
     }
 
+    private async _scheduleTokenRefresh() {
+        const refreshThresholdMs = 10000; 
+
+        while (true) {
+            const session = JSON.parse(localStorage.getItem('session'));
+            const expiresInMs = session.expires * 1000 - Date.now();
+
+            if (session && session.expires) {    
+                if (expiresInMs > refreshThresholdMs) {
+                    const delayMs = expiresInMs - refreshThresholdMs;
+    
+                    setTimeout(async () => {
+                        const updatedSession = JSON.parse(localStorage.getItem('session'));
+    
+                        if (updatedSession) {
+                            await this._refreshAccessToken();
+                        } 
+                    }, delayMs);
+                }
+                
+                if (expiresInMs < refreshThresholdMs) {
+                    await this._refreshAccessToken();
+                }
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 55 * 60 * 1000 ));
+        }
+    }
+
     private async _refreshAccessToken(): Promise<boolean> {
-        const session = localStorage.getItem('session');
+        const session = JSON.parse(localStorage.getItem('session'));
 
         if (!session || !session.refresh_token) {
             return false;
@@ -171,19 +233,23 @@ export class StexsAuthClient {
             return false;
         }
 
-        const body = response.json();
+        const body = await response.json();
         const refresh = { ...session.refresh };
 
         if (refresh.enabled === false) {
             refresh.count++;
         }
 
-        localStorage.setItem('session', {
+        localStorage.setItem('session', JSON.stringify({
             ...body,
             refresh
-        });
+        }));
 
-        this._triggerEvent('TOKEN_REFRESHED', body.access_token);
+        const accessToken = body.access_token;
+
+        this._setAccessTokenToAuthHeaders(accessToken);
+
+        this._triggerEvent('TOKEN_REFRESHED', accessToken);
 
         return true;
     }
@@ -200,7 +266,7 @@ export class StexsAuthClient {
         headers?: Record<string, string>;
     }): Promise<Response> {
         try {
-            const response = await this.fetch(`${this.authUrl}/${path}`, {
+            return await this.fetch(`${this.authUrl}/${path}`, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
@@ -209,18 +275,6 @@ export class StexsAuthClient {
                 },
                 body: JSON.stringify(body)
             });
-
-            if (response.status !== 403 && response.status !== 401) {
-                return response;
-            }
-
-            const refreshSuccess = await this._refreshAccessToken();
-
-            if (refreshSuccess) {
-                return await this._request({ path, method, body, headers });
-            }
-
-            throw new Error('Token refresh failed');
         } catch (e) {
             throw e;
         }
