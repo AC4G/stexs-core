@@ -11,9 +11,13 @@ export class StexsAuthClient {
     mfa;
     oauth;
 
-    constructor(fetch: typeof fetch, authUrl: string) {
+    constructor(fetch: typeof fetch, authUrl: string, headers: Record<string, string>) {
         this.authUrl = authUrl;     
         this.fetch = fetch;
+
+        this.authHeaders = {
+            ...headers
+        };
 
         this.mfa = {
             factorStatus: this._factorStatus.bind(this),
@@ -26,7 +30,7 @@ export class StexsAuthClient {
             authorize: this._authorize.bind(this),
             getConnections: this._getConnections.bind(this),
             deleteConnection: this._deleteConnection.bind(this)
-        }
+        };
 
         this._initialize();
     }
@@ -78,16 +82,22 @@ export class StexsAuthClient {
      * @throws {Error} Throws an error if the sign-in token is not found or has expired.
      */
     async signInConfirm(type: string, code: string): Promise<Response> {
-        const { token, expires, continuousAutoRefresh } = JSON.parse(localStorage.getItem('sign_in_init'));
-
-        if (!token) {
-            throw new Error('Sign in token was not been found.');
+        const signInInitData = JSON.parse(localStorage.getItem('sign_in_init'));
+    
+        if (!signInInitData) {
+            throw new Error('Sign in initialization data not found.');
         }
-
+    
+        const { token, expires, continuousAutoRefresh } = signInInitData;
+    
+        if (!token) {
+            throw new Error('Sign in token was not found.');
+        }
+    
         if (Number(expires) < Date.now() / 1000) {
             throw new Error('Sign in token has expired.');
         }
-
+    
         const response = await this._baseSignIn({
             path: 'sign-in/confirm',
             method: 'POST',
@@ -97,11 +107,11 @@ export class StexsAuthClient {
                 token
             }
         }, continuousAutoRefresh);
-
+    
         if (response.ok) {
             localStorage.removeItem('sign_in_init');
         }
-
+    
         return response;
     }
 
@@ -130,7 +140,7 @@ export class StexsAuthClient {
                 }));
 
                 if (body.types.length === 1 && body.types[0] === 'email') {
-                    await this.requestMFAEmailCode();
+                    await this._requestEmailCode();
                 }
 
                 this._triggerEvent('SIGN_IN_INIT');
@@ -201,6 +211,8 @@ export class StexsAuthClient {
         }
 
         localStorage.clear();
+
+        delete this.authHeaders['Authorization'];
 
         this._triggerEvent('SIGNED_OUT');
     }
@@ -568,15 +580,20 @@ export class StexsAuthClient {
         headers?: Record<string, string>;
     }): Promise<Response> {
         try {
-            return await this.fetch(`${this.authUrl}/${path}`, {
+            const options: RequestInit = {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
                     ...this.authHeaders,
                     ...headers
-                },
-                body: JSON.stringify(body)
-            });
+                }
+            };
+
+            if (method !== 'GET' && body !== null) {
+                options.body = JSON.stringify(body);
+            }
+
+            return await this.fetch(`${this.authUrl}/${path}`, options);
         } catch (e) {
             throw e;
         }

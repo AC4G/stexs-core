@@ -42,6 +42,15 @@
       console.error("Profiles Error:", error);
     }
   };
+
+  const getUser = async () => {
+    try {
+      const response = await stexsClient.auth.getUser();
+      console.log({ response });
+    } catch (e) {
+      console.log({ e });
+    }
+  };
 </script>
 
 <section>
@@ -53,4 +62,5 @@
   <button on:click={handleSignInConfirm}>Confirm Sign In</button>
   <button on:click={handleSignOut}>Sign Out</button>
   <button on:click={getProfiles}>Get Profiles</button>
+  <button on:click={getUser}>Get Signed In User Data</button>
 </section>
