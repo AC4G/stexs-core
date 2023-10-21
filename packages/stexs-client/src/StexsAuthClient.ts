@@ -8,9 +8,25 @@ export class StexsAuthClient {
 
     private eventEmitter: EventEmitter = new EventEmitter();
 
+    mfa;
+    oauth;
+
     constructor(fetch: typeof fetch, authUrl: string) {
         this.authUrl = authUrl;     
         this.fetch = fetch;
+
+        this.mfa = {
+            factorStatus: this._factorStatus.bind(this),
+            enable: this._enable.bind(this),
+            disable: this._disable.bind(this),
+            verify: this._verify.bind(this),
+            requestEmailCode: this._requestEmailCode.bind(this)
+        };
+        this.oauth = {
+            authorize: this._authorize.bind(this),
+            getConnections: this._getConnections.bind(this),
+            deleteConnection: this._deleteConnection.bind(this)
+        }
 
         this._initialize();
     }
@@ -29,7 +45,18 @@ export class StexsAuthClient {
         this._scheduleTokenRefresh();
     }
 
-    async signIn(identifier: string, password: string, autoRefresh: boolean = false): Promise<Response> {
+    /**
+     * Initiates the user sign-in process with the provided identifier and password.
+     *
+     * If Multi-Factor Authentication (MFA) is disabled for the user, they will be signed in directly.
+     * If MFA is enabled, the user will need to go through sign in confirmation.
+     *
+     * @param {string} identifier - The user's identifier (e.g., username or email).
+     * @param {string} password - The user's password.
+     * @param {boolean} continuousAutoRefresh - Set to true for continuous access token refresh.
+     * @returns {Promise<Response>} A Promise that resolves with the sign-in response data.
+     */
+    async signIn(identifier: string, password: string, continuousAutoRefresh: boolean = false): Promise<Response> {
         return await this._baseSignIn({
             path: 'sign-in',
             method: 'POST',
@@ -37,11 +64,21 @@ export class StexsAuthClient {
                 identifier,
                 password
             }
-        }, autoRefresh);
+        }, continuousAutoRefresh);
     }
 
+    /**
+     * Confirms the user's Multi-Factor Authentication (MFA) sign-in with the provided type and MFA code.
+     *
+     * This function confirms the user's MFA sign-in by providing the MFA code and type.
+     *
+     * @param {string} type - The type of MFA confirmation (e.g., email).
+     * @param {string} code - The Multi-Factor Authentication (MFA) code.
+     * @returns {Promise<Response>} A Promise that resolves with the confirmation response data.
+     * @throws {Error} Throws an error if the sign-in token is not found or has expired.
+     */
     async signInConfirm(type: string, code: string): Promise<Response> {
-        const { token, expires, autoRefresh } = JSON.parse(localStorage.getItem('sign_in_init'));
+        const { token, expires, continuousAutoRefresh } = JSON.parse(localStorage.getItem('sign_in_init'));
 
         if (!token) {
             throw new Error('Sign in token was not been found.');
@@ -51,9 +88,7 @@ export class StexsAuthClient {
             throw new Error('Sign in token has expired.');
         }
 
-        localStorage.removeItem('sign_in_init');
-
-        return await this._baseSignIn({
+        const response = await this._baseSignIn({
             path: 'sign-in/confirm',
             method: 'POST',
             body: {
@@ -61,24 +96,37 @@ export class StexsAuthClient {
                 type,
                 token
             }
-        }, autoRefresh);
+        }, continuousAutoRefresh);
+
+        if (response.ok) {
+            localStorage.removeItem('sign_in_init');
+        }
+
+        return response;
     }
 
+    /**
+     * Performs the base logic for the sign-in process.
+     *
+     * @param {Object} requestParameter - The request parameters, including path, method, and request body.
+     * @param {boolean} continuousAutoRefresh - Set to true for continuous access token refresh.
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
     private async _baseSignIn(requestParameter: {
         path: string,
         method: string,
         body: object
-    }, autoRefresh : boolean): Promise<Response> {
+    }, continuousAutoRefresh : boolean): Promise<Response> {
         const response = await this._request(requestParameter);
 
-        if (response.status === 200) {
+        if (response.ok) {
             const clonedResponse = response.clone();
             const body = await clonedResponse.json();
 
             if (body.token) {
                 localStorage.setItem('sign_in_init', JSON.stringify({
                     ...body,
-                    autoRefresh
+                    continuousAutoRefresh
                 }));
 
                 if (body.types.length === 1 && body.types[0] === 'email') {
@@ -92,7 +140,7 @@ export class StexsAuthClient {
                 localStorage.setItem('session', JSON.stringify({
                     ...body,
                     refresh: {
-                        enabled: autoRefresh,
+                        enabled: continuousAutoRefresh,
                         count: 0 // Counts up to 24 if auto refresh is disabled
                     }
                 }));
@@ -106,7 +154,224 @@ export class StexsAuthClient {
         return response;
     }
 
-    async requestMFAEmailCode(): Promise<Response> {
+    /**
+     * Initiates the user signup process with the provided username, email, and password.
+     *
+     * @param {string} username - The username for the new account.
+     * @param {string} email - The email address for the new account.
+     * @param {string} password - The password for the new account.
+     * @returns {Promise<Request>} A Promise that resolves with the signup request data.
+     */
+    async signUp(username: string, email: string, password: string): Promise<Request> {
+        return await this._request({
+            path: 'sign-up',
+            method: 'POST',
+            body: {
+                username,
+                email,
+                password
+            }
+        });
+    }
+
+    /**
+     * Signs the user out from the current session.
+     */
+    async signOut(): void {
+        await this._baseSignOut('sign-out');
+    }
+
+    /**
+     * Signs the user out from all active sessions.
+     */
+    async signOutFromAllSessions(): void {
+        await this._baseSignOut('sign-out/everywhere');
+    }
+
+    /**
+     * Signs the user out based on the provided path, with optional session check and data clearing.
+     *
+     * @param {string} path - The path specifying the sign-out action.
+     */
+    private async _baseSignOut(path: string): void {
+        const session: Session = this._getSession();
+
+        if (session?.access_token) {
+            await this._request({ path });
+        }
+
+        localStorage.clear();
+
+        this._triggerEvent('SIGNED_OUT');
+    }
+
+    /**
+     * Resends the email verification link to the provided email address.
+     *
+     * @param {string} email - The email address for which the verification link is to be resent.
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
+    async verifyResend(email: string): Promise<Response> {
+        return await this._request({
+            path: 'verify/resend',
+            method: 'POST',
+            body: { email }
+        });
+    }
+
+    /**
+     * Initiates the password recovery process.
+     *
+     * @param {string} email - The user's email address for account recovery.
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
+    async recovery(email: string): Promise<Response> {
+        return await this._request({
+            path: 'recovery',
+            method: 'POST',
+            body: { email }
+        });
+    }
+
+    /**
+     * Confirms the password recovery process by providing the necessary information.
+     *
+     * @param {string} email - The email address associated with the account.
+     * @param {string} token - The recovery token received via email.
+     * @param {string} password - The new password to set for the account.
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
+    async recoveryConfirm(email: string, token: string, password: string): Promise<Response> {
+        return await this._request({
+            path: 'recovery/confirm',
+            method: 'POST',
+            body: {
+                email,
+                token,
+                password
+            }
+        });
+    }
+
+    /**
+     * Retrieves data from the authenticated user.
+     *
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
+    async getUser(): Promise<Response> {
+        return await this._request({ path: 'user' });
+    }
+
+    /**
+     * Updates the password of the authenticated user.
+     *
+     * @param {string} password - The new password to set.
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
+    async updatePassword(password: string): Promise<Response> {
+        return await this._request({
+            path: 'user/password',
+            method: 'POST',
+            body: { password }
+        });
+    }
+
+    /**
+     * Initiates the process of changing the email for the authenticated user.
+     *
+     * @param {string} email - The new email address to be set.
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
+    async changeEmail(email: string): Promise<Response> {
+        return await this._request({
+            path: 'user/email',
+            method: 'POST',
+            body: { email }
+        });
+    }
+
+    /**
+     * Verifies the requested email change for the authenticated user.
+     *
+     * @param {string} code - The verification code sent to the new email address.
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
+    async verifyEmailChange(code: string): Promise<Response> {
+        return await this._request({
+            path: 'user/email/verify',
+            method: 'POST',
+            body: { code }
+        });
+    }
+
+    /**
+     * Retrieves the Multi-Factor Authentication (MFA) status for the authenticated user.
+     *
+     * @returns {Promise<Response>} A Promise that resolves with the MFA status data.
+     */
+    private async _factorStatus(): Promise<Response> {
+        return await this._request({
+            path: 'mfa',
+        });
+    }
+
+    /**
+     * Enables Multi-Factor Authentication (MFA) for the authenticated user.
+     *
+     * @param {('totp' | 'email')} type - The MFA type to enable ('totp' for Time-based One-Time Password, 'email' for email-based MFA).
+     * @param {string | null} code - The MFA verification code (required for 'email' MFA).
+     * @returns {Promise<Response>} A Promise that resolves with the enablement response.
+     */
+    private async _enable(type: 'totp' | 'email', code: string | null = null) {
+        return await this._request({
+            path: `mfa/${type}`,
+            method: 'POST',
+            body: type === 'email' ? { code } : {}
+        });
+    }
+
+    /**
+     * Disables Multi-Factor Authentication (MFA) for the authenticated user.
+     *
+     * @param {('totp' | 'email')} type - The MFA type to disable ('totp' for Time-based One-Time Password, 'email' for email-based MFA).
+     * @param {string} code - The MFA verification code required to disable MFA.
+     * @returns {Promise<Response>} A Promise that resolves with the disabling response.
+     */
+    private async _disable(type: 'totp' | 'email', code: string): Promise<Response> {
+        return await this._request({
+            path: `mfa/${type}/disable`,
+            method: 'POST',
+            body: { code }
+        });
+    }
+
+    /**
+     * Verifies the Multi-Factor Authentication (MFA) process for an initialized enable or disable action.
+     *
+     * Currently, only Time-based One-Time Password (TOTP) is supported.
+     * 
+     * Note: As new MFA methods may be implemented in the future, the required parameters for this function may change.
+     *
+     * @param {string} code - The MFA verification code.
+     * @returns {Promise<Response>} A Promise that resolves with the verification response.
+     */
+    private async _verify(code: string): Promise<Response> {
+        return await this._request({
+            path: 'mfa/verify',
+            method: 'POST',
+            body: {
+                type: 'totp',
+                code
+            }
+        });
+    }
+
+    /**
+     * Requests a new Multi-Factor Authentication (MFA) email verification code for authenticated and users in sign confirm process.
+     *
+     * @returns {Promise<Response>} A Promise that resolves with the response data.
+     */
+    private async _requestEmailCode(): Promise<Response> {
         const signInInitData = JSON.parse(localStorage.getItem('sign_in_init'));
 
         if (signInInitData) {
@@ -125,35 +390,63 @@ export class StexsAuthClient {
         });
     }
 
-    async signOut(): void {
-        await this._baseSignOut('sign-out');
+    /**
+     * Initiates an OAuth2 authorization request to obtain consent from the authenticated user.
+     *
+     * @param {string} client_id - The client identifier.
+     * @param {string} redirect_url - The URL to redirect after approval.
+     * @param {Array} scopes - An array of requested scopes.
+     * @returns {Promise<Response>} A Promise that resolves with the authorization response.
+     */
+    private async _authorize(client_id: string, redirect_url: string, scopes: Array): Promise<Response> {
+        return await this._request({
+            path: 'oauth2/authorize',
+            method: 'POST',
+            body: {
+                client_id,
+                redirect_url,
+                scopes
+            }
+        });
     }
 
-    async signOutFromAllSessions(): void {
-        await this._baseSignOut('sign-out/everywhere');
+    /**
+     * Retrieves the OAuth2 connections associated with the authenticated user.
+     *
+     * @returns {Promise<Response>} A Promise that resolves with the connections response.
+     */
+    private async _getConnections(): Promise<Response> {
+        return await this._request({
+            path: 'oauth2/connections'
+        });
     }
 
-    private async _baseSignOut(path: string): void {
-        const session: Session = this._getSession();
-
-        if (session?.access_token) {
-            await this._request({ path });
-        }
-
-        localStorage.clear();
-
-        this._triggerEvent('SIGNED_OUT');
+    /**
+     * Deletes an OAuth2 connection associated with the authenticated user and linked to a client.
+     *
+     * @param {string} client_id - The client identifier of the connection to be deleted.
+     * @returns {Promise<Response>} A Promise that resolves with the deletion response.
+     */
+    private async _deleteConnection(client_id: string): Promise<Response> {
+        return await this._request({
+            path: 'oauth2/connection',
+            method: 'DELETE',
+            body: {
+                client_id
+            }
+        });
     }
 
-    async getUser(): Promise<Response> {
-        return await this._request({ path: 'user' });
-    }
-
+    /**
+     * Retrieves a user session from local storage.
+     *
+     * @returns {Session} The user session obtained from local storage.
+     */
     getSession(): Session {
         return this._getSession();
     }
 
-    onAuthStateChange(callback: (event: string, eventData?: any) => void) {
+    onAuthStateChange(callback: (event: string) => void) {
         this.eventEmitter.on('SIGNED_IN', () => {
             callback('SIGNED_IN');
         });
@@ -166,8 +459,8 @@ export class StexsAuthClient {
             callback('SIGNED_OUT');
         });
 
-        this.eventEmitter.on('TOKEN_REFRESHED', eventData => {
-            callback('TOKEN_REFRESHED', eventData);
+        this.eventEmitter.on('TOKEN_REFRESHED', () => {
+            callback('TOKEN_REFRESHED');
         });
 
         this.eventEmitter.on('USER_UPDATED', () => {
@@ -179,8 +472,8 @@ export class StexsAuthClient {
         });
     }
 
-    private _triggerEvent(eventType: string, eventData?: any): void {
-        this.eventEmitter.emit(eventType, eventData);
+    private _triggerEvent(eventType: string): void {
+        this.eventEmitter.emit(eventType);
     }
 
     private async _scheduleTokenRefresh() {
@@ -188,9 +481,10 @@ export class StexsAuthClient {
 
         while (true) {
             const session: Session = this._getSession();
-            const expiresInMs = session.expires * 1000 - Date.now();
 
             if (session && session.expires) {    
+                const expiresInMs = session.expires * 1000 - Date.now();
+
                 if (expiresInMs > refreshThresholdMs) {
                     const delayMs = expiresInMs - refreshThresholdMs;
     
@@ -232,7 +526,7 @@ export class StexsAuthClient {
             }
         });
 
-        if (response.status !== 200) {
+        if (!response.ok) {
             this.signOut();
             return false;
         }
