@@ -9,6 +9,7 @@ export class StexsAuthClient {
     private eventEmitter: EventEmitter = new EventEmitter();
 
     mfa;
+    oauth;
 
     constructor(fetch: typeof fetch, authUrl: string) {
         this.authUrl = authUrl;     
@@ -20,6 +21,11 @@ export class StexsAuthClient {
             disable: this._disable.bind(this),
             verify: this._verify.bind(this),
             requestEmailCode: this._requestEmailCode.bind(this)
+        };
+        this.oauth = {
+            authorize: this._authorize.bind(this),
+            getConnections: this._getConnections.bind(this),
+            deleteConnection: this._deleteConnection.bind(this)
         }
 
         this._initialize();
@@ -381,6 +387,53 @@ export class StexsAuthClient {
         return await this._request({
             path: 'mfa/email/send-code',
             method: 'POST'
+        });
+    }
+
+    /**
+     * Initiates an OAuth2 authorization request to obtain consent from the authenticated user.
+     *
+     * @param {string} client_id - The client identifier.
+     * @param {string} redirect_url - The URL to redirect after approval.
+     * @param {Array} scopes - An array of requested scopes.
+     * @returns {Promise<Response>} A Promise that resolves with the authorization response.
+     */
+    private async _authorize(client_id: string, redirect_url: string, scopes: Array): Promise<Response> {
+        return await this._request({
+            path: 'oauth2/authorize',
+            method: 'POST',
+            body: {
+                client_id,
+                redirect_url,
+                scopes
+            }
+        });
+    }
+
+    /**
+     * Retrieves the OAuth2 connections associated with the authenticated user.
+     *
+     * @returns {Promise<Response>} A Promise that resolves with the connections response.
+     */
+    private async _getConnections(): Promise<Response> {
+        return await this._request({
+            path: 'oauth2/connections'
+        });
+    }
+
+    /**
+     * Deletes an OAuth2 connection associated with the authenticated user and linked to a client.
+     *
+     * @param {string} client_id - The client identifier of the connection to be deleted.
+     * @returns {Promise<Response>} A Promise that resolves with the deletion response.
+     */
+    private async _deleteConnection(client_id: string): Promise<Response> {
+        return await this._request({
+            path: 'oauth2/connection',
+            method: 'DELETE',
+            body: {
+                client_id
+            }
         });
     }
 
