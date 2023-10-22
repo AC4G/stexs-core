@@ -1,9 +1,9 @@
-import { Router, Request, Response } from "express";
-import { errorMessages, message } from "../services/messageBuilderService";
-import db from "../database";
-import { body, query } from "express-validator";
-import { ISSUER, REDIRECT_TO_SIGN_IN } from "../../env-config";
-import sendEmail from "../services/emailService";
+import { Router, Request, Response } from 'express';
+import { errorMessages, message } from '../services/messageBuilderService';
+import db from '../database';
+import { body, query } from 'express-validator';
+import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
+import sendEmail from '../services/emailService';
 import {
   EMAIL_ALREADY_VERIFIED,
   EMAIL_NOT_FOUND,
@@ -11,18 +11,18 @@ import {
   INTERNAL_ERROR,
   INVALID_EMAIL,
   TOKEN_REQUIRED,
-} from "../constants/errors";
-import { v4 as uuidv4 } from "uuid";
-import validate from "../middlewares/validatorMiddleware";
-import logger from "../loggers/logger";
-import isExpired from "../services/isExpiredService";
+} from '../constants/errors';
+import { v4 as uuidv4 } from 'uuid';
+import validate from '../middlewares/validatorMiddleware';
+import logger from '../loggers/logger';
+import isExpired from '../services/isExpiredService';
 
 const router = Router();
 
 router.get(
-  "/",
+  '/',
   [
-    query("email")
+    query('email')
       .notEmpty()
       .withMessage(EMAIL_REQUIRED)
       .bail()
@@ -31,16 +31,16 @@ router.get(
         code: INVALID_EMAIL.code,
         message: INVALID_EMAIL.messages[0],
       }),
-    query("token").notEmpty().withMessage(TOKEN_REQUIRED),
+    query('token').notEmpty().withMessage(TOKEN_REQUIRED),
     validate,
   ],
   async (req: Request, res: Response) => {
     const { email, token } = req.query;
 
     const signInURL = new URL(REDIRECT_TO_SIGN_IN);
-    const source = "verify";
+    const source = 'verify';
 
-    signInURL.searchParams.set("source", source);
+    signInURL.searchParams.set('source', source);
 
     try {
       const { rowCount, rows: users } = await db.query(
@@ -52,10 +52,10 @@ router.get(
       );
 
       if (users[0]?.email_verified_at) {
-        signInURL.searchParams.append("code", "error");
+        signInURL.searchParams.append('code', 'error');
         signInURL.searchParams.append(
-          "message",
-          "Your email has been already verified.",
+          'message',
+          'Your email has been already verified.',
         );
 
         logger.warn(`Email already verified for email: ${email}`);
@@ -64,10 +64,10 @@ router.get(
       }
 
       if (rowCount === 0) {
-        signInURL.searchParams.append("code", "error");
+        signInURL.searchParams.append('code', 'error');
         signInURL.searchParams.append(
-          "message",
-          "Provided verification link is invalid.",
+          'message',
+          'Provided verification link is invalid.',
         );
 
         logger.warn(`Invalid verification link for email: ${email}`);
@@ -76,10 +76,10 @@ router.get(
       }
 
       if (isExpired(users[0].verification_sent_at, 60 * 24)) {
-        signInURL.searchParams.append("code", "error");
+        signInURL.searchParams.append('code', 'error');
         signInURL.searchParams.append(
-          "message",
-          "Verification link expired. Please request a new verification link.",
+          'message',
+          'Verification link expired. Please request a new verification link.',
         );
 
         logger.warn(`Verification token expired for email: ${email}`);
@@ -114,17 +114,17 @@ router.get(
 
     logger.info(`Email successfully verified for email: ${email}`);
 
-    signInURL.searchParams.append("code", "success");
-    signInURL.searchParams.append("message", "Email successfully verified.");
+    signInURL.searchParams.append('code', 'success');
+    signInURL.searchParams.append('message', 'Email successfully verified.');
 
     res.redirect(302, signInURL.toString());
   },
 );
 
 router.post(
-  "/resend",
+  '/resend',
   [
-    body("email")
+    body('email')
       .notEmpty()
       .withMessage(EMAIL_REQUIRED)
       .bail()
@@ -199,10 +199,10 @@ router.post(
     try {
       await sendEmail(
         email,
-        "Verification Email",
+        'Verification Email',
         undefined,
         `Please verify your email. ${
-          ISSUER + "/verify?email=" + email + "&token=" + token
+          ISSUER + '/verify?email=' + email + '&token=' + token
         }`,
       );
     } catch (e) {

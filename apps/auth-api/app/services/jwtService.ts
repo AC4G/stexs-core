@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
 import {
   ACCESS_TOKEN_SECRET,
   REFRESH_TOKEN_SECRET,
@@ -7,10 +7,10 @@ import {
   AUDIENCE,
   JWT_EXPIRY_LIMIT,
   JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT,
-} from "../../env-config";
-import { v4 as uuidv4 } from "uuid";
-import db from "../database";
-import logger from "../loggers/logger";
+} from '../../env-config';
+import { v4 as uuidv4 } from 'uuid';
+import db from '../database';
+import logger from '../loggers/logger';
 
 export function generateSignInConfirmToken(sub: string, types: [string]) {
   const iat = Math.floor(Date.now() / 1000);
@@ -21,7 +21,7 @@ export function generateSignInConfirmToken(sub: string, types: [string]) {
     aud: AUDIENCE,
     sub,
     types,
-    grant_type: "sign_in_confirm",
+    grant_type: 'sign_in_confirm',
     iat,
     exp,
   };
@@ -34,14 +34,14 @@ export function generateSignInConfirmToken(sub: string, types: [string]) {
 
 export default async function generateAccessToken(
   additionalPayload: any,
-  grantType: string = "sign_in",
+  grantType: string = 'sign_in',
   refreshToken: string | null = null,
   oldRefreshToken: string | null = null,
 ) {
   const iat = Math.floor(Date.now() / 1000);
   const exp = iat + JWT_EXPIRY_LIMIT;
 
-  if (grantType === "sign_in") additionalPayload.session_id = uuidv4();
+  if (grantType === 'sign_in') additionalPayload.session_id = uuidv4();
 
   const accessTokenPayload = {
     iss: ISSUER,
@@ -56,10 +56,10 @@ export default async function generateAccessToken(
 
   const accessToken = jwt.sign(accessTokenPayload, ACCESS_TOKEN_SECRET!);
 
-  if (grantType === "client_credentials")
+  if (grantType === 'client_credentials')
     return {
       access_token: accessToken,
-      token_type: "bearer",
+      token_type: 'bearer',
       expires: exp,
     };
 
@@ -72,7 +72,7 @@ export default async function generateAccessToken(
   }
 
   try {
-    if (oldRefreshToken && grantType === "authorization_code") {
+    if (oldRefreshToken && grantType === 'authorization_code') {
       await db.query(
         `
                 UPDATE auth.refresh_tokens
@@ -113,7 +113,7 @@ export default async function generateAccessToken(
   return {
     access_token: accessToken,
     refresh_token: jwt.sign(refreshTokenPayload, REFRESH_TOKEN_SECRET!),
-    token_type: "bearer",
+    token_type: 'bearer',
     expires: exp,
   };
 }
@@ -123,7 +123,7 @@ export function isRefreshTokenValid(token: string): boolean {
     jwt.verify(token, REFRESH_TOKEN_SECRET, {
       audience: AUDIENCE,
       issuer: ISSUER,
-      algorithms: ["HS256"],
+      algorithms: ['HS256'],
     });
   } catch (e) {
     return false;

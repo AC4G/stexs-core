@@ -1,5 +1,5 @@
-import { Router, Request, Response } from "express";
-import { body } from "express-validator";
+import { Router, Request, Response } from 'express';
+import { body } from 'express-validator';
 import {
   EMAIL_REQUIRED,
   INTERNAL_ERROR,
@@ -12,26 +12,26 @@ import {
   PASSWORD_REQUIRED,
   RECOVERY_LINK_EXPIRED,
   TOKEN_REQUIRED,
-} from "../constants/errors";
+} from '../constants/errors';
 import {
   CustomValidationError,
   errorMessages,
   message,
-} from "../services/messageBuilderService";
-import db from "../database";
-import { v4 as uuidv4, validate as validateUUID } from "uuid";
-import sendEmail from "../services/emailService";
-import { REDIRECT_TO_RECOVERY } from "../../env-config";
-import validate from "../middlewares/validatorMiddleware";
-import logger from "../loggers/logger";
-import isExpired from "../services/isExpiredService";
+} from '../services/messageBuilderService';
+import db from '../database';
+import { v4 as uuidv4, validate as validateUUID } from 'uuid';
+import sendEmail from '../services/emailService';
+import { REDIRECT_TO_RECOVERY } from '../../env-config';
+import validate from '../middlewares/validatorMiddleware';
+import logger from '../loggers/logger';
+import isExpired from '../services/isExpiredService';
 
 const router = Router();
 
 router.post(
-  "/",
+  '/',
   [
-    body("email")
+    body('email')
       .notEmpty()
       .withMessage(EMAIL_REQUIRED)
       .bail()
@@ -64,8 +64,8 @@ router.post(
                 message: INVALID_EMAIL.messages[0],
               },
               data: {
-                path: "email",
-                location: "body",
+                path: 'email',
+                location: 'body',
               },
             },
           ]),
@@ -114,10 +114,10 @@ router.post(
     try {
       await sendEmail(
         email,
-        "Password Recovery",
+        'Password Recovery',
         undefined,
         `You can change your password by following the link: ${
-          REDIRECT_TO_RECOVERY + "?email=" + email + "&token=" + token
+          REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
         }`,
       );
     } catch (e) {
@@ -131,14 +131,14 @@ router.post(
 
     logger.info(`Recovery email sent to: ${email}`);
 
-    res.json(message("Recovery email was been send."));
+    res.json(message('Recovery email was been send.'));
   },
 );
 
 router.post(
-  "/confirm",
+  '/confirm',
   [
-    body("email")
+    body('email')
       .notEmpty()
       .withMessage(EMAIL_REQUIRED)
       .bail()
@@ -147,7 +147,7 @@ router.post(
         code: INVALID_EMAIL.code,
         message: INVALID_EMAIL.messages[0],
       }),
-    body("token")
+    body('token')
       .notEmpty()
       .withMessage(TOKEN_REQUIRED)
       .bail()
@@ -156,7 +156,7 @@ router.post(
 
         return true;
       }),
-    body("password")
+    body('password')
       .notEmpty()
       .withMessage(PASSWORD_REQUIRED)
       .bail()
@@ -190,8 +190,8 @@ router.post(
             {
               info: INVALID_REQUEST,
               data: {
-                location: "body",
-                paths: ["email", "token"],
+                location: 'body',
+                paths: ['email', 'token'],
               },
             },
           ]),
@@ -205,8 +205,8 @@ router.post(
             {
               info: RECOVERY_LINK_EXPIRED,
               data: {
-                location: "body",
-                path: "token",
+                location: 'body',
+                path: 'token',
               },
             },
           ]),
@@ -238,8 +238,8 @@ router.post(
             {
               info: NEW_PASSWORD_EQUALS_CURRENT,
               data: {
-                path: "password",
-                location: "body",
+                path: 'password',
+                location: 'body',
               },
             },
           ]),
@@ -265,7 +265,7 @@ router.post(
 
       logger.info(`Password successfully recovered for email: ${email}`);
 
-      res.json(message("Password successfully recovered."));
+      res.json(message('Password successfully recovered.'));
     } catch (e) {
       logger.error(
         `Error while updating password for email: ${email}. Error: ${

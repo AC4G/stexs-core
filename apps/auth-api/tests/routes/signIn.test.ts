@@ -1,7 +1,7 @@
 const mockQuery = jest.fn();
 
-import request from "supertest";
-import server from "../../app/server";
+import request from 'supertest';
+import server from '../../app/server';
 import {
   CODE_REQUIRED,
   EMAIL_NOT_VERIFIED,
@@ -11,11 +11,11 @@ import {
   PASSWORD_REQUIRED,
   TOKEN_REQUIRED,
   TYPE_REQUIRED,
-} from "../../app/constants/errors";
-import { NextFunction } from "express";
-import { testErrorMessages } from "../../app/services/messageBuilderService";
+} from '../../app/constants/errors';
+import { NextFunction } from 'express';
+import { testErrorMessages } from '../../app/services/messageBuilderService';
 
-jest.mock("../../app/middlewares/jwtMiddleware", () => ({
+jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -35,7 +35,7 @@ jest.mock("../../app/middlewares/jwtMiddleware", () => ({
   transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
 }));
 
-jest.mock("../../app/database", () => {
+jest.mock('../../app/database', () => {
   return {
     __esModule: true,
     default: {
@@ -44,15 +44,15 @@ jest.mock("../../app/database", () => {
   };
 });
 
-describe("Sign In Route", () => {
+describe('Sign In Route', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should handle sign in without identifier", async () => {
+  it('should handle sign in without identifier', async () => {
     const response = await request(server)
-      .post("/sign-in")
-      .send({ password: "Test123." });
+      .post('/sign-in')
+      .send({ password: 'Test123.' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -60,18 +60,18 @@ describe("Sign In Route", () => {
         {
           info: IDENTIFIER_REQUIRED,
           data: {
-            location: "body",
-            path: "identifier",
+            location: 'body',
+            path: 'identifier',
           },
         },
       ]),
     );
   });
 
-  it("should handle sign in without password", async () => {
+  it('should handle sign in without password', async () => {
     const response = await request(server)
-      .post("/sign-in")
-      .send({ identifier: "test" });
+      .post('/sign-in')
+      .send({ identifier: 'test' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -79,23 +79,23 @@ describe("Sign In Route", () => {
         {
           info: PASSWORD_REQUIRED,
           data: {
-            location: "body",
-            path: "password",
+            location: 'body',
+            path: 'password',
           },
         },
       ]),
     );
   });
 
-  it("should handle sign in with invalid credentials", async () => {
+  it('should handle sign in with invalid credentials', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
     });
 
-    const response = await request(server).post("/sign-in").send({
-      identifier: "test",
-      password: "Test123.",
+    const response = await request(server).post('/sign-in').send({
+      identifier: 'test',
+      password: 'Test123.',
     });
 
     expect(response.status).toBe(400);
@@ -107,15 +107,15 @@ describe("Sign In Route", () => {
             message: INVALID_CREDENTIALS.messages[0],
           },
           data: {
-            location: "body",
-            paths: ["identifier", "password"],
+            location: 'body',
+            paths: ['identifier', 'password'],
           },
         },
       ]),
     );
   });
 
-  it("should handle sign in without verified email", async () => {
+  it('should handle sign in without verified email', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -125,9 +125,9 @@ describe("Sign In Route", () => {
       rowCount: 1,
     });
 
-    const response = await request(server).post("/sign-in").send({
-      identifier: "test",
-      password: "Test123.",
+    const response = await request(server).post('/sign-in').send({
+      identifier: 'test',
+      password: 'Test123.',
     });
 
     expect(response.status).toBe(400);
@@ -136,21 +136,21 @@ describe("Sign In Route", () => {
     );
   });
 
-  it("should handle sign in without 2fa", async () => {
+  it('should handle sign in without 2fa', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
-          email_verified_at: "2023-08-21T12:34:56Z",
+          email_verified_at: '2023-08-21T12:34:56Z',
           types: [],
         },
       ],
       rowCount: 1,
     });
 
-    const response = await request(server).post("/sign-in").send({
-      identifier: "test",
-      password: "Test123.",
+    const response = await request(server).post('/sign-in').send({
+      identifier: 'test',
+      password: 'Test123.',
     });
 
     expect(response.status).toBe(200);
@@ -161,26 +161,26 @@ describe("Sign In Route", () => {
       refresh_token: expect.stringMatching(
         /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
       ),
-      token_type: "bearer",
+      token_type: 'bearer',
       expires: expect.any(Number),
     });
   });
 
-  it("should handle sign in initialization with email 2fa", async () => {
+  it('should handle sign in initialization with email 2fa', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
-          email_verified_at: "2023-08-21T12:34:56Z",
-          types: ["email"],
+          email_verified_at: '2023-08-21T12:34:56Z',
+          types: ['email'],
         },
       ],
       rowCount: 1,
     });
 
-    const response = await request(server).post("/sign-in").send({
-      identifier: "test",
-      password: "Test123.",
+    const response = await request(server).post('/sign-in').send({
+      identifier: 'test',
+      password: 'Test123.',
     });
 
     expect(response.status).toBe(200);
@@ -188,26 +188,26 @@ describe("Sign In Route", () => {
       token: expect.stringMatching(
         /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
       ),
-      types: ["email"],
+      types: ['email'],
       expires: expect.any(Number),
     });
   });
 
-  it("should handle sign in initialization with totp 2fa", async () => {
+  it('should handle sign in initialization with totp 2fa', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
-          email_verified_at: "2023-08-21T12:34:56Z",
-          types: ["totp"],
+          email_verified_at: '2023-08-21T12:34:56Z',
+          types: ['totp'],
         },
       ],
       rowCount: 1,
     });
 
-    const response = await request(server).post("/sign-in").send({
-      identifier: "test",
-      password: "Test123.",
+    const response = await request(server).post('/sign-in').send({
+      identifier: 'test',
+      password: 'Test123.',
     });
 
     expect(response.status).toBe(200);
@@ -215,15 +215,15 @@ describe("Sign In Route", () => {
       token: expect.stringMatching(
         /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
       ),
-      types: ["totp"],
+      types: ['totp'],
       expires: expect.any(Number),
     });
   });
 
-  it("should handle sign in confirm without code", async () => {
-    const response = await request(server).post("/sign-in/confirm").send({
-      type: "totp",
-      token: "token",
+  it('should handle sign in confirm without code', async () => {
+    const response = await request(server).post('/sign-in/confirm').send({
+      type: 'totp',
+      token: 'token',
     });
 
     expect(response.status).toBe(400);
@@ -232,18 +232,18 @@ describe("Sign In Route", () => {
         {
           info: CODE_REQUIRED,
           data: {
-            location: "body",
-            path: "code",
+            location: 'body',
+            path: 'code',
           },
         },
       ]),
     );
   });
 
-  it("should handle sign in confirm without type", async () => {
-    const response = await request(server).post("/sign-in/confirm").send({
-      code: "code",
-      token: "token",
+  it('should handle sign in confirm without type', async () => {
+    const response = await request(server).post('/sign-in/confirm').send({
+      code: 'code',
+      token: 'token',
     });
 
     expect(response.status).toBe(400);
@@ -252,18 +252,18 @@ describe("Sign In Route", () => {
         {
           info: TYPE_REQUIRED,
           data: {
-            location: "body",
-            path: "type",
+            location: 'body',
+            path: 'type',
           },
         },
       ]),
     );
   });
 
-  it("should handle sign in confirm without token", async () => {
-    const response = await request(server).post("/sign-in/confirm").send({
-      code: "code",
-      type: "totp",
+  it('should handle sign in confirm without token', async () => {
+    const response = await request(server).post('/sign-in/confirm').send({
+      code: 'code',
+      type: 'totp',
     });
 
     expect(response.status).toBe(400);
@@ -272,19 +272,19 @@ describe("Sign In Route", () => {
         {
           info: TOKEN_REQUIRED,
           data: {
-            location: "body",
-            path: "token",
+            location: 'body',
+            path: 'token',
           },
         },
       ]),
     );
   });
 
-  it("should handle sign in confirm with unsupported type", async () => {
-    const response = await request(server).post("/sign-in/confirm").send({
-      code: "code",
-      type: "sms",
-      token: "token",
+  it('should handle sign in confirm with unsupported type', async () => {
+    const response = await request(server).post('/sign-in/confirm').send({
+      code: 'code',
+      type: 'sms',
+      token: 'token',
     });
 
     expect(response.status).toBe(400);
@@ -293,8 +293,8 @@ describe("Sign In Route", () => {
         {
           info: INVALID_TYPE,
           data: {
-            location: "body",
-            path: "type",
+            location: 'body',
+            path: 'type',
           },
         },
       ]),

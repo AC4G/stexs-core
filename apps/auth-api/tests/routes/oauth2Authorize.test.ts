@@ -1,9 +1,9 @@
 const mockQuery = jest.fn();
 
-import request from "supertest";
-import server from "../../app/server";
-import { NextFunction } from "express";
-import { advanceTo, clear } from "jest-date-mock";
+import request from 'supertest';
+import server from '../../app/server';
+import { NextFunction } from 'express';
+import { advanceTo, clear } from 'jest-date-mock';
 import {
   ARRAY_REQUIRED,
   CLIENT_ALREADY_CONNECTED,
@@ -14,10 +14,10 @@ import {
   INVALID_UUID,
   REDIRECT_URL_REQUIRED,
   SCOPES_REQUIRED,
-} from "../../app/constants/errors";
-import { testErrorMessages } from "../../app/services/messageBuilderService";
+} from '../../app/constants/errors';
+import { testErrorMessages } from '../../app/services/messageBuilderService';
 
-jest.mock("../../app/middlewares/jwtMiddleware", () => ({
+jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -37,7 +37,7 @@ jest.mock("../../app/middlewares/jwtMiddleware", () => ({
   transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
 }));
 
-jest.mock("../../app/database", () => {
+jest.mock('../../app/database', () => {
   return {
     __esModule: true,
     default: {
@@ -46,25 +46,25 @@ jest.mock("../../app/database", () => {
   };
 });
 
-describe("OAuth2 Authorize", () => {
+describe('OAuth2 Authorize', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   beforeAll(() => {
-    advanceTo(new Date("2023-09-15T12:00:00"));
+    advanceTo(new Date('2023-09-15T12:00:00'));
   });
 
   afterAll(() => {
     clear();
   });
 
-  it("should handle authorize without client id", async () => {
+  it('should handle authorize without client id', async () => {
     const response = await request(server)
-      .post("/oauth2/authorize")
+      .post('/oauth2/authorize')
       .send({
-        redirect_url: "https://example.com",
-        scopes: ["inventory.read"],
+        redirect_url: 'https://example.com',
+        scopes: ['inventory.read'],
       });
 
     expect(response.status).toBe(400);
@@ -73,21 +73,21 @@ describe("OAuth2 Authorize", () => {
         {
           info: CLIENT_ID_REQUIRED,
           data: {
-            location: "body",
-            path: "client_id",
+            location: 'body',
+            path: 'client_id',
           },
         },
       ]),
     );
   });
 
-  it("should handle authorize with invalid uuid", async () => {
+  it('should handle authorize with invalid uuid', async () => {
     const response = await request(server)
-      .post("/oauth2/authorize")
+      .post('/oauth2/authorize')
       .send({
-        client_id: "invalid-uuid",
-        redirect_url: "https://example.com",
-        scopes: ["inventory.read"],
+        client_id: 'invalid-uuid',
+        redirect_url: 'https://example.com',
+        scopes: ['inventory.read'],
       });
 
     expect(response.status).toBe(400);
@@ -96,20 +96,20 @@ describe("OAuth2 Authorize", () => {
         {
           info: INVALID_UUID,
           data: {
-            location: "body",
-            path: "client_id",
+            location: 'body',
+            path: 'client_id',
           },
         },
       ]),
     );
   });
 
-  it("should handle authorize without redirect url", async () => {
+  it('should handle authorize without redirect url', async () => {
     const response = await request(server)
-      .post("/oauth2/authorize")
+      .post('/oauth2/authorize')
       .send({
-        client_id: "67054312-b0bf-4c99-a4a8-565988d4c2dd",
-        scopes: ["inventory.read"],
+        client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+        scopes: ['inventory.read'],
       });
 
     expect(response.status).toBe(400);
@@ -118,21 +118,21 @@ describe("OAuth2 Authorize", () => {
         {
           info: REDIRECT_URL_REQUIRED,
           data: {
-            location: "body",
-            path: "redirect_url",
+            location: 'body',
+            path: 'redirect_url',
           },
         },
       ]),
     );
   });
 
-  it("should handle authorize with redirect url as not url", async () => {
+  it('should handle authorize with redirect url as not url', async () => {
     const response = await request(server)
-      .post("/oauth2/authorize")
+      .post('/oauth2/authorize')
       .send({
-        client_id: "67054312-b0bf-4c99-a4a8-565988d4c2dd",
-        redirect_url: "not-url",
-        scopes: ["inventory.read"],
+        client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+        redirect_url: 'not-url',
+        scopes: ['inventory.read'],
       });
 
     expect(response.status).toBe(400);
@@ -141,18 +141,18 @@ describe("OAuth2 Authorize", () => {
         {
           info: INVALID_URL,
           data: {
-            location: "body",
-            path: "redirect_url",
+            location: 'body',
+            path: 'redirect_url',
           },
         },
       ]),
     );
   });
 
-  it("should handle authorize without scopes", async () => {
-    const response = await request(server).post("/oauth2/authorize").send({
-      client_id: "67054312-b0bf-4c99-a4a8-565988d4c2dd",
-      redirect_url: "https://example.com",
+  it('should handle authorize without scopes', async () => {
+    const response = await request(server).post('/oauth2/authorize').send({
+      client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+      redirect_url: 'https://example.com',
     });
 
     expect(response.status).toBe(400);
@@ -161,19 +161,19 @@ describe("OAuth2 Authorize", () => {
         {
           info: SCOPES_REQUIRED,
           data: {
-            location: "body",
-            path: "scopes",
+            location: 'body',
+            path: 'scopes',
           },
         },
       ]),
     );
   });
 
-  it("should handle authorize with scopes as string", async () => {
-    const response = await request(server).post("/oauth2/authorize").send({
-      client_id: "67054312-b0bf-4c99-a4a8-565988d4c2dd",
-      redirect_url: "https://example.com",
-      scopes: "scopes",
+  it('should handle authorize with scopes as string', async () => {
+    const response = await request(server).post('/oauth2/authorize').send({
+      client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+      redirect_url: 'https://example.com',
+      scopes: 'scopes',
     });
 
     expect(response.status).toBe(400);
@@ -182,18 +182,18 @@ describe("OAuth2 Authorize", () => {
         {
           info: ARRAY_REQUIRED,
           data: {
-            location: "body",
-            path: "scopes",
+            location: 'body',
+            path: 'scopes',
           },
         },
       ]),
     );
   });
 
-  it("should handle authorize with empty scopes array", async () => {
-    const response = await request(server).post("/oauth2/authorize").send({
-      client_id: "67054312-b0bf-4c99-a4a8-565988d4c2dd",
-      redirect_url: "https://example.com",
+  it('should handle authorize with empty scopes array', async () => {
+    const response = await request(server).post('/oauth2/authorize').send({
+      client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+      redirect_url: 'https://example.com',
       scopes: [],
     });
 
@@ -203,26 +203,26 @@ describe("OAuth2 Authorize", () => {
         {
           info: EMPTY_ARRAY,
           data: {
-            location: "body",
-            path: "scopes",
+            location: 'body',
+            path: 'scopes',
           },
         },
       ]),
     );
   });
 
-  it("should handle authorize with invalid client id", async () => {
+  it('should handle authorize with invalid client id', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
     });
 
     const response = await request(server)
-      .post("/oauth2/authorize")
+      .post('/oauth2/authorize')
       .send({
-        client_id: "67054312-b0bf-4c99-a4a8-565988d4c2dd",
-        redirect_url: "https://example.com",
-        scopes: ["inventory.read"],
+        client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+        redirect_url: 'https://example.com',
+        scopes: ['inventory.read'],
       });
 
     expect(response.status).toBe(404);
@@ -231,15 +231,15 @@ describe("OAuth2 Authorize", () => {
         {
           info: CLIENT_NOT_FOUND,
           data: {
-            location: "body",
-            paths: ["client_id", "redirect_url", "scopes"],
+            location: 'body',
+            paths: ['client_id', 'redirect_url', 'scopes'],
           },
         },
       ]),
     );
   });
 
-  it("should handle authorize with already connected client", async () => {
+  it('should handle authorize with already connected client', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
@@ -251,11 +251,11 @@ describe("OAuth2 Authorize", () => {
     });
 
     const response = await request(server)
-      .post("/oauth2/authorize")
+      .post('/oauth2/authorize')
       .send({
-        client_id: "67054312-b0bf-4c99-a4a8-565988d4c2dd",
-        redirect_url: "https://example.com",
-        scopes: ["inventory.read"],
+        client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+        redirect_url: 'https://example.com',
+        scopes: ['inventory.read'],
       });
 
     expect(response.status).toBe(400);
@@ -264,7 +264,7 @@ describe("OAuth2 Authorize", () => {
     );
   });
 
-  it("should handle authorize", async () => {
+  it('should handle authorize', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
@@ -290,11 +290,11 @@ describe("OAuth2 Authorize", () => {
     });
 
     const response = await request(server)
-      .post("/oauth2/authorize")
+      .post('/oauth2/authorize')
       .send({
-        client_id: "67054312-b0bf-4c99-a4a8-565988d4c2dd",
-        redirect_url: "https://example.com",
-        scopes: ["inventory.read"],
+        client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+        redirect_url: 'https://example.com',
+        scopes: ['inventory.read'],
       });
 
     expect(response.status).toBe(200);

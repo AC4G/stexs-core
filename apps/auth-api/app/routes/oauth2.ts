@@ -1,18 +1,18 @@
-import { Router, Response } from "express";
-import { Request } from "express-jwt";
+import { Router, Response } from 'express';
+import { Request } from 'express-jwt';
 import {
   transformJwtErrorMessages,
   validateAccessToken,
   validateRefreshToken,
   checkTokenGrantType,
-} from "../middlewares/jwtMiddleware";
-import db from "../database";
+} from '../middlewares/jwtMiddleware';
+import db from '../database';
 import {
   CustomValidationError,
   errorMessages,
   message,
-} from "../services/messageBuilderService";
-import { body } from "express-validator";
+} from '../services/messageBuilderService';
+import { body } from 'express-validator';
 import {
   ARRAY_REQUIRED,
   CLIENT_ALREADY_CONNECTED,
@@ -32,27 +32,32 @@ import {
   REDIRECT_URL_REQUIRED,
   REFRESH_TOKEN_REQUIRED,
   SCOPES_REQUIRED,
-} from "../constants/errors";
-import { v4 as uuidv4, validate as validateUUID } from "uuid";
-import validate from "../middlewares/validatorMiddleware";
+} from '../constants/errors';
+import { v4 as uuidv4, validate as validateUUID } from 'uuid';
+import validate from '../middlewares/validatorMiddleware';
 import {
   authorizationCodeController,
   clientCredentialsController,
   refreshTokenController,
-} from "../controllers/oauth2Controller";
-import logger from "../loggers/logger";
-import { verify } from "jsonwebtoken";
-import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from "../../env-config";
+} from '../controllers/oauth2Controller';
+import logger from '../loggers/logger';
+import { verify } from 'jsonwebtoken';
+import { 
+  AUDIENCE, 
+  ISSUER, 
+  REFRESH_TOKEN_SECRET 
+} from '../../env-config';
+import paginate from 'express-paginate';
 
 const router = Router();
 
 router.post(
-  "/authorize",
+  '/authorize',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
-    body("client_id")
+    body('client_id')
       .notEmpty()
       .withMessage(CLIENT_ID_REQUIRED)
       .bail()
@@ -61,13 +66,13 @@ router.post(
 
         return true;
       }),
-    body("redirect_url")
+    body('redirect_url')
       .notEmpty()
       .withMessage(REDIRECT_URL_REQUIRED)
       .bail()
       .isURL()
       .withMessage(INVALID_URL),
-    body("scopes")
+    body('scopes')
       .notEmpty()
       .withMessage(SCOPES_REQUIRED)
       .bail()
@@ -118,8 +123,8 @@ router.post(
             {
               info: CLIENT_NOT_FOUND,
               data: {
-                location: "body",
-                paths: ["client_id", "redirect_url", "scopes"],
+                location: 'body',
+                paths: ['client_id', 'redirect_url', 'scopes'],
               },
             },
           ]),
@@ -249,15 +254,15 @@ router.post(
 );
 
 const possibleGrantTypes = [
-  "client_credentials",
-  "authorization_code",
-  "refresh_token",
+  'client_credentials',
+  'authorization_code',
+  'refresh_token',
 ];
 
 router.post(
-  "/token",
+  '/token',
   [
-    body("grant_type")
+    body('grant_type')
       .notEmpty()
       .withMessage(GRANT_TYPE_REQUIRED)
       .bail()
@@ -270,10 +275,10 @@ router.post(
 
         return true;
       }),
-    body("client_id").custom((value, { req }) => {
+    body('client_id').custom((value, { req }) => {
       if (
         !possibleGrantTypes.includes(req.body?.grant_type) ||
-        req.body?.grant_type === "refresh_token" ||
+        req.body?.grant_type === 'refresh_token' ||
         req.body?.grant_type === undefined
       )
         return true;
@@ -285,10 +290,10 @@ router.post(
 
       return true;
     }),
-    body("client_secret").custom((value, { req }) => {
+    body('client_secret').custom((value, { req }) => {
       if (
         !possibleGrantTypes.includes(req.body?.grant_type) ||
-        req.body?.grant_type === "refresh_token" ||
+        req.body?.grant_type === 'refresh_token' ||
         req.body?.grant_type === undefined
       )
         return true;
@@ -298,9 +303,9 @@ router.post(
 
       return true;
     }),
-    body("code").custom((value, { req }) => {
+    body('code').custom((value, { req }) => {
       if (
-        req.body?.grant_type !== "authorization_code" ||
+        req.body?.grant_type !== 'authorization_code' ||
         req.body?.grant_type === undefined
       )
         return true;
@@ -310,9 +315,9 @@ router.post(
 
       return true;
     }),
-    body("refresh_token").custom((value, { req }) => {
+    body('refresh_token').custom((value, { req }) => {
       if (
-        req.body?.grant_type !== "refresh_token" ||
+        req.body?.grant_type !== 'refresh_token' ||
         req.body?.grant_type === undefined
       )
         return true;
@@ -320,7 +325,7 @@ router.post(
       if (value === undefined || value.length === 0)
         throw new CustomValidationError(REFRESH_TOKEN_REQUIRED);
 
-      if (req.body?.grant_type === "refresh_token") {
+      if (req.body?.grant_type === 'refresh_token') {
         const token = req.body.refresh_token;
 
         verify(
@@ -329,13 +334,13 @@ router.post(
           {
             audience: AUDIENCE,
             issuer: ISSUER,
-            algorithms: ["HS256"],
+            algorithms: ['HS256'],
           },
           (e, decoded) => {
             if (e) throw new CustomValidationError(INVALID_TOKEN);
 
-            if (typeof decoded === "object" && "grant_type" in decoded) {
-              if (decoded?.grant_type !== "authorization_code")
+            if (typeof decoded === 'object' && 'grant_type' in decoded) {
+              if (decoded?.grant_type !== 'authorization_code')
                 throw new CustomValidationError({
                   message: INVALID_GRANT_TYPE.messages[0],
                   code: INVALID_GRANT_TYPE.code,
@@ -359,29 +364,33 @@ router.post(
     );
 
     switch (grant_type) {
-      case "authorization_code":
+      case 'authorization_code':
         authorizationCodeController(req, res);
         break;
-      case "client_credentials":
+      case 'client_credentials':
         clientCredentialsController(req, res);
         break;
-      case "refresh_token":
+      case 'refresh_token':
         refreshTokenController(req, res);
     }
   },
 );
 
 router.get(
-  "/connections",
+  '/connections',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
+    paginate.middleware(10, 50)
   ],
   async (req: Request, res: Response) => {
+    const { page, limit } = req.query;
     const userId = req.auth?.sub;
 
-    let result;
+    console.log({ page, limit });
+
+    const offset = (page - 1) * limit;
 
     try {
       const { rows } = await db.query(
@@ -402,12 +411,21 @@ router.get(
             JOIN
                 public.organizations AS o ON oa.organization_id = o.id
             WHERE
-                oc.user_id = $1::uuid;
+                oc.user_id = $1::uuid
+            LIMIT $2 OFFSET $3;
         `,
-        [userId],
+        [userId, limit, offset],
       );
+ 
+      const itemCount = rows.length;
 
-      result = rows;
+      res.setHeader('X-Page', page);
+      res.setHeader('X-Item-Count', itemCount);
+      res.setHeader('X-Total-Pages', Math.ceil(itemCount / limit).toString());
+
+      logger.info(`Connections fetched successfully for user: ${userId}`);
+
+      res.json(rows);
     } catch (e) {
       logger.error(
         `Error while fetching connections for user: ${userId}. Error: ${
@@ -416,20 +434,16 @@ router.get(
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
-
-    logger.info(`Connections fetched successfully for user: ${userId}`);
-
-    res.json(result);
   },
 );
 
 router.delete(
-  "/connection",
+  '/connection',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
-    body("client_id")
+    body('client_id')
       .notEmpty()
       .withMessage(CLIENT_ID_REQUIRED)
       .bail()
@@ -481,17 +495,17 @@ router.delete(
       `Connection deleted successfully for user: ${userId} and client: ${clientId}`,
     );
 
-    res.send(message("Connection successfully deleted."));
+    res.send(message('Connection successfully deleted.'));
   },
 );
 
 router.delete(
-  "/revoke",
+  '/revoke',
   [
-    body("refresh_token").notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
+    body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
     validate,
     validateRefreshToken,
-    checkTokenGrantType("authorization_code"),
+    checkTokenGrantType('authorization_code'),
     transformJwtErrorMessages,
   ],
   async (req: Request, res: Response) => {
@@ -525,7 +539,7 @@ router.delete(
 
     logger.info(`Connection revoked successfully for user: ${token?.sub}`);
 
-    res.json(message("Connection successfully revoked."));
+    res.json(message('Connection successfully revoked.'));
   },
 );
 

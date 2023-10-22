@@ -1,10 +1,10 @@
 const mockQuery = jest.fn();
 
-import { NextFunction } from "express";
-import request from "supertest";
-import server from "../../app/server";
+import { NextFunction } from 'express';
+import request from 'supertest';
+import server from '../../app/server';
 
-jest.mock("../../app/middlewares/jwtMiddleware", () => ({
+jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -24,7 +24,7 @@ jest.mock("../../app/middlewares/jwtMiddleware", () => ({
   transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
 }));
 
-jest.mock("../../app/database", () => {
+jest.mock('../../app/database', () => {
   return {
     __esModule: true,
     default: {
@@ -33,19 +33,19 @@ jest.mock("../../app/database", () => {
   };
 });
 
-describe("Sign Out Routes", () => {
-  it("should handle sign out with already signed out session", async () => {
+describe('Sign Out Routes', () => {
+  it('should handle sign out with already signed out session', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
     });
 
-    const response = await request(server).post("/sign-out");
+    const response = await request(server).post('/sign-out');
 
     expect(response.status).toBe(404);
   });
 
-  it("should handle sign out of one session", async () => {
+  it('should handle sign out of one session', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -55,23 +55,23 @@ describe("Sign Out Routes", () => {
       rowCount: 1,
     });
 
-    const response = await request(server).post("/sign-out");
+    const response = await request(server).post('/sign-out');
 
     expect(response.status).toBe(204);
   });
 
-  it("should handle sign out with already signed out sessions", async () => {
+  it('should handle sign out with already signed out sessions', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
     });
 
-    const response = await request(server).post("/sign-out/everywhere");
+    const response = await request(server).post('/sign-out/everywhere');
 
     expect(response.status).toBe(404);
   });
 
-  it("should handle sign out from all devices", async () => {
+  it('should handle sign out from all devices', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -84,7 +84,7 @@ describe("Sign Out Routes", () => {
       rowCount: 2,
     });
 
-    const response = await request(server).post("/sign-out");
+    const response = await request(server).post('/sign-out');
 
     expect(response.status).toBe(204);
   });

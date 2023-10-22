@@ -1,9 +1,9 @@
-import { transports, createLogger, format } from "winston";
+import { transports, createLogger, format } from 'winston';
 
 export const devLogger = createLogger({
-  level: "debug",
+  level: 'debug',
   defaultMeta: {
-    service: "auth-api",
+    service: 'auth-api',
   },
   format: format.combine(
     format.colorize(),
@@ -14,14 +14,14 @@ export const devLogger = createLogger({
   ),
   transports: [
     new transports.Console(),
-    new transports.File({ filename: "./logs/combined.log" }),
+    new transports.File({ filename: './logs/combined.log' }),
   ],
   exceptionHandlers: [
     new transports.Console(),
-    new transports.File({ filename: "./logs/exceptions.log" }),
+    new transports.File({ filename: './logs/exceptions.log' }),
   ],
   rejectionHandlers: [
     new transports.Console(),
-    new transports.File({ filename: "./logs/rejections.log" }),
+    new transports.File({ filename: './logs/rejections.log' }),
   ],
 });

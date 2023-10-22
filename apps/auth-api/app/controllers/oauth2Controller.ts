@@ -1,5 +1,5 @@
-import { Response } from "express";
-import { errorMessages } from "../services/messageBuilderService";
+import { Response } from 'express';
+import { errorMessages } from '../services/messageBuilderService';
 import {
   CODE_EXPIRED,
   INTERNAL_ERROR,
@@ -7,13 +7,13 @@ import {
   INVALID_CLIENT_CREDENTIALS,
   INVALID_REFRESH_TOKEN,
   NO_CLIENT_SCOPES_SELECTED,
-} from "../constants/errors";
-import db from "../database";
-import { v4 as uuidv4 } from "uuid";
-import generateAccessToken from "../services/jwtService";
-import { Request } from "express-jwt";
-import logger from "../loggers/logger";
-import isExpired from "../services/isExpiredService";
+} from '../constants/errors';
+import db from '../database';
+import { v4 as uuidv4 } from 'uuid';
+import generateAccessToken from '../services/jwtService';
+import { Request } from 'express-jwt';
+import logger from '../loggers/logger';
+import isExpired from '../services/isExpiredService';
 
 export async function authorizationCodeController(req: Request, res: Response) {
   const { code, client_id, client_secret: clientSecret } = req.body;
@@ -57,8 +57,8 @@ export async function authorizationCodeController(req: Request, res: Response) {
           {
             info: INVALID_AUTHORIZATION_CODE,
             data: {
-              location: "body",
-              path: "code",
+              location: 'body',
+              path: 'code',
             },
           },
         ]),
@@ -74,8 +74,8 @@ export async function authorizationCodeController(req: Request, res: Response) {
           {
             info: CODE_EXPIRED,
             data: {
-              location: "body",
-              path: "code",
+              location: 'body',
+              path: 'code',
             },
           },
         ]),
@@ -130,7 +130,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
         scopes,
         client_id,
       },
-      "authorization_code",
+      'authorization_code',
       refreshToken,
     );
 
@@ -218,8 +218,8 @@ export async function clientCredentialsController(req: Request, res: Response) {
           {
             info: INVALID_CLIENT_CREDENTIALS,
             data: {
-              location: "body",
-              paths: ["client_id", "client_secret"],
+              location: 'body',
+              paths: ['client_id', 'client_secret'],
             },
           },
         ]),
@@ -253,7 +253,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
         scopes,
         client_id,
       },
-      "client_credentials",
+      'client_credentials',
     );
 
     logger.info(`Access token generated successfully for client: ${client_id}`);
@@ -286,8 +286,8 @@ export async function refreshTokenController(req: Request, res: Response) {
           {
             info: INVALID_REFRESH_TOKEN,
             data: {
-              location: "body",
-              path: "refresh_token",
+              location: 'body',
+              path: 'refresh_token',
             },
           },
         ]),
@@ -313,7 +313,7 @@ export async function refreshTokenController(req: Request, res: Response) {
         scopes,
         client_id,
       },
-      "authorization_code",
+      'authorization_code',
       null,
       jti,
     );
