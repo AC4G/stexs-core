@@ -42,7 +42,12 @@ import {
 } from '../controllers/oauth2Controller';
 import logger from '../loggers/logger';
 import { verify } from 'jsonwebtoken';
-import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
+import { 
+  AUDIENCE, 
+  ISSUER, 
+  REFRESH_TOKEN_SECRET 
+} from '../../env-config';
+import paginate from 'express-paginate';
 
 const router = Router();
 
@@ -377,11 +382,15 @@ router.get(
     validateAccessToken(),
     checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
+    paginate.middleware(10, 50)
   ],
   async (req: Request, res: Response) => {
+    const { page, limit } = req.query;
     const userId = req.auth?.sub;
 
-    let result;
+    console.log({ page, limit });
+
+    const offset = (page - 1) * limit;
 
     try {
       const { rows } = await db.query(
@@ -402,12 +411,21 @@ router.get(
             JOIN
                 public.organizations AS o ON oa.organization_id = o.id
             WHERE
-                oc.user_id = $1::uuid;
+                oc.user_id = $1::uuid
+            LIMIT $2 OFFSET $3;
         `,
-        [userId],
+        [userId, limit, offset],
       );
+ 
+      const itemCount = rows.length;
 
-      result = rows;
+      res.setHeader('X-Page', page);
+      res.setHeader('X-Item-Count', itemCount);
+      res.setHeader('X-Total-Pages', Math.ceil(itemCount / limit).toString());
+
+      logger.info(`Connections fetched successfully for user: ${userId}`);
+
+      res.json(rows);
     } catch (e) {
       logger.error(
         `Error while fetching connections for user: ${userId}. Error: ${
@@ -416,10 +434,6 @@ router.get(
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
-
-    logger.info(`Connections fetched successfully for user: ${userId}`);
-
-    res.json(result);
   },
 );
 
