@@ -1,13 +1,13 @@
-import { Router, Request, Response } from "express";
-import db from "../database";
-import sendEmail from "../services/emailService";
+import { Router, Request, Response } from 'express';
+import db from '../database';
+import sendEmail from '../services/emailService';
 import {
   message,
   errorMessages,
   CustomValidationError,
-} from "../services/messageBuilderService";
-import { body } from "express-validator";
-import { ISSUER } from "../../env-config";
+} from '../services/messageBuilderService';
+import { body } from 'express-validator';
+import { ISSUER } from '../../env-config';
 import {
   EMAIL_REQUIRED,
   INTERNAL_ERROR,
@@ -18,17 +18,17 @@ import {
   INVALID_USERNAME,
   PASSWORD_REQUIRED,
   USERNAME_REQUIRED,
-} from "../constants/errors";
-import { v4 as uuidv4 } from "uuid";
-import validate from "../middlewares/validatorMiddleware";
-import logger from "../loggers/logger";
+} from '../constants/errors';
+import { v4 as uuidv4 } from 'uuid';
+import validate from '../middlewares/validatorMiddleware';
+import logger from '../loggers/logger';
 
 const router = Router();
 
 router.post(
-  "/",
+  '/',
   [
-    body("username")
+    body('username')
       .notEmpty()
       .withMessage(USERNAME_REQUIRED)
       .bail()
@@ -55,7 +55,7 @@ router.post(
 
         return true;
       }),
-    body("email")
+    body('email')
       .notEmpty()
       .withMessage(EMAIL_REQUIRED)
       .bail()
@@ -64,7 +64,7 @@ router.post(
         code: INVALID_EMAIL.code,
         message: INVALID_EMAIL.messages[0],
       }),
-    body("password")
+    body('password')
       .notEmpty()
       .withMessage(PASSWORD_REQUIRED)
       .bail()
@@ -98,7 +98,7 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.error("Sign-up: Database insertion failed.");
+        logger.error('Sign-up: Database insertion failed.');
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
       }
 
@@ -108,14 +108,14 @@ router.post(
         .status(201)
         .json(
           message(
-            "Sign-up successful. Check your email for an verification link!",
+            'Sign-up successful. Check your email for an verification link!',
           ),
         );
     } catch (e) {
       const err = e as { hint: string | null };
 
       if (err.hint) {
-        const path = err.hint.split(" ").pop()!;
+        const path = err.hint.split(' ').pop()!;
 
         logger.warn(
           `Sign-up validation failed for user: ${username}, path: ${path}`,
@@ -126,11 +126,11 @@ router.post(
             {
               info: {
                 code: INVALID_INPUT_DATA.code,
-                message: err.hint + ".",
+                message: err.hint + '.',
               },
               data: {
                 path,
-                location: "body",
+                location: 'body',
               },
             },
           ]),
@@ -147,10 +147,10 @@ router.post(
     try {
       await sendEmail(
         email,
-        "Verification Email",
+        'Verification Email',
         undefined,
         `Please verify your email. ${
-          ISSUER + "/verify?email=" + email + "&token=" + token
+          ISSUER + '/verify?email=' + email + '&token=' + token
         }`,
       );
       logger.info(

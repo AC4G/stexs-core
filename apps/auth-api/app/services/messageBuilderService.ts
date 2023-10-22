@@ -1,4 +1,4 @@
-import { Result } from "express-validator";
+import { Result } from 'express-validator';
 
 export function message(
   message: string,
@@ -93,7 +93,7 @@ export function errorMessagesFromValidator(errors: Result<ValidatorError>): {
   return {
     errors: errors.array().map((error: ValidatorError) => {
       const msg =
-        typeof error.msg === "string" ? JSON.parse(error.msg) : error.msg;
+        typeof error.msg === 'string' ? JSON.parse(error.msg) : error.msg;
       return {
         code: msg.code,
         message: msg.message,
@@ -110,6 +110,6 @@ export function errorMessagesFromValidator(errors: Result<ValidatorError>): {
 export class CustomValidationError extends Error {
   constructor(info: { code: string; message: string }) {
     super(JSON.stringify(info));
-    this.name = "CustomValidationError";
+    this.name = 'CustomValidationError';
   }
 }

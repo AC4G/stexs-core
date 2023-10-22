@@ -160,9 +160,6 @@ importers:
       jest-date-mock:
         specifier: ^1.0.8
         version: 1.0.8
-      prettier:
-        specifier: 3.0.3
-        version: 3.0.3
       supertest:
         specifier: ^6.3.3
         version: 6.3.3

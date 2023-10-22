@@ -1,12 +1,12 @@
 const mockQuery = jest.fn();
 
-import { NextFunction } from "express";
-import request from "supertest";
-import server from "../../app/server";
-import { INVALID_TOKEN } from "../../app/constants/errors";
-import { testErrorMessages } from "../../app/services/messageBuilderService";
+import { NextFunction } from 'express';
+import request from 'supertest';
+import server from '../../app/server';
+import { INVALID_TOKEN } from '../../app/constants/errors';
+import { testErrorMessages } from '../../app/services/messageBuilderService';
 
-jest.mock("../../app/middlewares/jwtMiddleware", () => ({
+jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -26,7 +26,7 @@ jest.mock("../../app/middlewares/jwtMiddleware", () => ({
   transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
 }));
 
-jest.mock("../../app/database", () => {
+jest.mock('../../app/database', () => {
   return {
     __esModule: true,
     default: {
@@ -35,20 +35,20 @@ jest.mock("../../app/database", () => {
   };
 });
 
-describe("Token Route", () => {
+describe('Token Route', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should handle refresh with already signed out session", async () => {
+  it('should handle refresh with already signed out session', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
     });
 
     const response = await request(server)
-      .post("/token")
-      .send({ refresh_token: "token" });
+      .post('/token')
+      .send({ refresh_token: 'token' });
 
     expect(response.status).toBe(401);
     expect(response.body).toEqual(
@@ -56,15 +56,15 @@ describe("Token Route", () => {
         {
           info: INVALID_TOKEN,
           data: {
-            location: "body",
-            path: "refresh_token",
+            location: 'body',
+            path: 'refresh_token',
           },
         },
       ]),
     );
   });
 
-  it("should handle refresh", async () => {
+  it('should handle refresh', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -75,8 +75,8 @@ describe("Token Route", () => {
     });
 
     const response = await request(server)
-      .post("/token")
-      .send({ refresh_token: "token" });
+      .post('/token')
+      .send({ refresh_token: 'token' });
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
@@ -86,7 +86,7 @@ describe("Token Route", () => {
       refresh_token: expect.stringMatching(
         /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
       ),
-      token_type: "bearer",
+      token_type: 'bearer',
       expires: expect.any(Number),
     });
   });

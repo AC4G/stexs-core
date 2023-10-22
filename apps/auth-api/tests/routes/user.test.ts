@@ -1,8 +1,8 @@
 const mockQuery = jest.fn();
 
-import { NextFunction } from "express";
-import request from "supertest";
-import server from "../../app/server";
+import { NextFunction } from 'express';
+import request from 'supertest';
+import server from '../../app/server';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,
@@ -13,14 +13,14 @@ import {
   INVALID_PASSWORD_LENGTH,
   NEW_PASSWORD_EQUALS_CURRENT,
   PASSWORD_REQUIRED,
-} from "../../app/constants/errors";
-import { advanceTo, clear } from "jest-date-mock";
+} from '../../app/constants/errors';
+import { advanceTo, clear } from 'jest-date-mock';
 import {
   message,
   testErrorMessages,
-} from "../../app/services/messageBuilderService";
+} from '../../app/services/messageBuilderService';
 
-jest.mock("../../app/middlewares/jwtMiddleware", () => ({
+jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -40,7 +40,7 @@ jest.mock("../../app/middlewares/jwtMiddleware", () => ({
   transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
 }));
 
-jest.mock("../../app/database", () => {
+jest.mock('../../app/database', () => {
   return {
     __esModule: true,
     default: {
@@ -49,74 +49,74 @@ jest.mock("../../app/database", () => {
   };
 });
 
-describe("User Routes", () => {
+describe('User Routes', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   beforeAll(() => {
-    advanceTo(new Date("2023-09-15T12:00:00"));
+    advanceTo(new Date('2023-09-15T12:00:00'));
   });
 
   afterAll(() => {
     clear();
   });
 
-  it("should handle email change verification with expired code", async () => {
+  it('should handle email change verification with expired code', async () => {
     mockQuery.mockResolvedValueOnce({
-		rows: [
-			{
-				email_change_sent_at: "2023-09-15T10:00:00",
-			},
-		],
+      rows: [
+        {
+          email_change_sent_at: '2023-09-15T10:00:00',
+        },
+      ],
       rowCount: 1,
     });
 
     const response = await request(server)
-      .post("/user/email/verify")
-      .send({ code: "code" });
+      .post('/user/email/verify')
+      .send({ code: 'code' });
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
   });
 
-  it("should handle email change verification with invalid code", async () => {
+  it('should handle email change verification with invalid code', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
     });
 
     const response = await request(server)
-      .post("/user/email/verify")
-      .send({ code: "code" });
+      .post('/user/email/verify')
+      .send({ code: 'code' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
   });
 
-  it("should handle email change with expired verification code", async () => {
+  it('should handle email change with expired verification code', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          email_change_sent_at: "2023-09-15T10:59:00",
+          email_change_sent_at: '2023-09-15T10:59:00',
         },
       ],
       rowCount: 1,
     });
 
     const response = await request(server)
-      .post("/user/email/verify")
-      .send({ code: "expired-code" });
+      .post('/user/email/verify')
+      .send({ code: 'expired-code' });
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
   });
 
-  it("should handle email change verification", async () => {
+  it('should handle email change verification', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          email_change_sent_at: "2023-09-15T12:00:00",
+          email_change_sent_at: '2023-09-15T12:00:00',
         },
       ],
       rowCount: 1,
@@ -128,43 +128,43 @@ describe("User Routes", () => {
     });
 
     const response = await request(server)
-      .post("/user/email/verify")
-      .send({ code: "code" });
+      .post('/user/email/verify')
+      .send({ code: 'code' });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
-      message("Email successfully changed.").onTest(),
+      message('Email successfully changed.').onTest(),
     );
   });
 
-  it("should handle get user data", async () => {
+  it('should handle get user data', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
-          email: "test@example.com",
+          email: 'test@example.com',
           raw_user_meta_data: {},
-          created_at: "date",
-          updated_at: "date",
+          created_at: 'date',
+          updated_at: 'date',
         },
       ],
       rowCount: 1,
     });
 
-    const response = await request(server).get("/user");
+    const response = await request(server).get('/user');
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       id: 1,
-      email: "test@example.com",
+      email: 'test@example.com',
       raw_user_meta_data: {},
       created_at: expect.any(String),
       updated_at: expect.any(String),
     });
   });
 
-  it("should handle password change with missing password", async () => {
-    const response = await request(server).post("/user/password");
+  it('should handle password change with missing password', async () => {
+    const response = await request(server).post('/user/password');
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -172,18 +172,18 @@ describe("User Routes", () => {
         {
           info: PASSWORD_REQUIRED,
           data: {
-            location: "body",
-            path: "password",
+            location: 'body',
+            path: 'password',
           },
         },
       ]),
     );
   });
 
-  it("should handle password change with invalid password according to regex specification", async () => {
+  it('should handle password change with invalid password according to regex specification', async () => {
     const response = await request(server)
-      .post("/user/password")
-      .send({ password: "test123456" });
+      .post('/user/password')
+      .send({ password: 'test123456' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -191,15 +191,15 @@ describe("User Routes", () => {
         {
           info: INVALID_PASSWORD,
           data: {
-            location: "body",
-            path: "password",
+            location: 'body',
+            path: 'password',
           },
         },
       ]),
     );
   });
 
-  it("should handle password with current password", async () => {
+  it('should handle password with current password', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -210,8 +210,8 @@ describe("User Routes", () => {
     });
 
     const response = await request(server)
-      .post("/user/password")
-      .send({ password: "Test12345." });
+      .post('/user/password')
+      .send({ password: 'Test12345.' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -219,15 +219,15 @@ describe("User Routes", () => {
         {
           info: NEW_PASSWORD_EQUALS_CURRENT,
           data: {
-            location: "body",
-            path: "password",
+            location: 'body',
+            path: 'password',
           },
         },
       ]),
     );
   });
 
-  it("should handle password change", async () => {
+  it('should handle password change', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -243,16 +243,16 @@ describe("User Routes", () => {
     });
 
     const response = await request(server)
-      .post("/user/password")
-      .send({ password: "Test12345." });
+      .post('/user/password')
+      .send({ password: 'Test12345.' });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
-      message("Password changed successfully.").onTest(),
+      message('Password changed successfully.').onTest(),
     );
   });
 
-  it("should handle password change with password having less then 10 characters", async () => {
+  it('should handle password change with password having less then 10 characters', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -263,8 +263,8 @@ describe("User Routes", () => {
     });
 
     const response = await request(server)
-      .post("/user/password")
-      .send({ password: "Test123." });
+      .post('/user/password')
+      .send({ password: 'Test123.' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -272,16 +272,16 @@ describe("User Routes", () => {
         {
           info: INVALID_PASSWORD_LENGTH,
           data: {
-            location: "body",
-            path: "password",
+            location: 'body',
+            path: 'password',
           },
         },
       ]),
     );
   });
 
-  it("should handle email change with missing email", async () => {
-    const response = await request(server).post("/user/email");
+  it('should handle email change with missing email', async () => {
+    const response = await request(server).post('/user/email');
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -289,18 +289,18 @@ describe("User Routes", () => {
         {
           info: EMAIL_REQUIRED,
           data: {
-            location: "body",
-            path: "email",
+            location: 'body',
+            path: 'email',
           },
         },
       ]),
     );
   });
 
-  it("should handle email change with invalid email", async () => {
+  it('should handle email change with invalid email', async () => {
     const response = await request(server)
-      .post("/user/email")
-      .send({ email: "test" });
+      .post('/user/email')
+      .send({ email: 'test' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -311,34 +311,34 @@ describe("User Routes", () => {
             message: INVALID_EMAIL.messages[0],
           },
           data: {
-            location: "body",
-            path: "email",
+            location: 'body',
+            path: 'email',
           },
         },
       ]),
     );
   });
 
-  it("should handle email change", async () => {
+  it('should handle email change', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
     });
 
     const response = await request(server)
-      .post("/user/email")
-      .send({ email: "test@example.com" });
+      .post('/user/email')
+      .send({ email: 'test@example.com' });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
       message(
-        "Email change verification link has been sent to the new email address.",
+        'Email change verification link has been sent to the new email address.',
       ).onTest(),
     );
   });
 
-  it("should handle email change verification with missing code", async () => {
-    const response = await request(server).post("/user/email/verify");
+  it('should handle email change verification with missing code', async () => {
+    const response = await request(server).post('/user/email/verify');
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -346,8 +346,8 @@ describe("User Routes", () => {
         {
           info: CODE_REQUIRED,
           data: {
-            location: "body",
-            path: "code",
+            location: 'body',
+            path: 'code',
           },
         },
       ]),

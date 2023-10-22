@@ -1,18 +1,12 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-	preset: 'ts-jest',
-	testEnvironment: 'node',
-	collectCoverage: false,
-	coverageDirectory: './tests/coverage',
-	coverageReporters: [
-		'json',
-		'html',
-		'lcov'
-	],
-	collectCoverageFrom: [
-		'./app/**/*.ts'
-	]
-}
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  collectCoverage: false,
+  coverageDirectory: './tests/coverage',
+  coverageReporters: ['json', 'html', 'lcov'],
+  collectCoverageFrom: ['./app/**/*.ts'],
+};
 
 export default config;

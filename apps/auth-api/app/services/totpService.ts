@@ -1,10 +1,10 @@
-import { TOTP } from "otpauth";
+import { TOTP } from 'otpauth';
 import {
   SERVICE_NAME,
   TOTP_ALGORITHM,
   TOTP_DIGITS,
   TOTP_PERIOD,
-} from "../../env-config";
+} from '../../env-config';
 
 const totpSettings = {
   algorithm: TOTP_ALGORITHM,

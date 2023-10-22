@@ -14,7 +14,8 @@
     "type-check": "turbo run type-check",
     "test": "dotenv -- turbo run test",
     "test:coverage": "turbo run test:coverage",
-    "test:watch": "turbo run test:watch"
+    "test:watch": "turbo run test:watch",
+    "format": "prettier --write '{apps,packages}/**/*.ts'"
   },
   "workspaces": [
     "packages/*",

@@ -1,22 +1,22 @@
-import { Router, Response } from "express";
-import { Request } from "express-jwt";
-import db from "../database";
+import { Router, Response } from 'express';
+import { Request } from 'express-jwt';
+import db from '../database';
 import {
   checkTokenGrantType,
   transformJwtErrorMessages,
   validateAccessToken,
-} from "../middlewares/jwtMiddleware";
-import { errorMessages } from "../services/messageBuilderService";
-import { INTERNAL_ERROR } from "../constants/errors";
-import logger from "../loggers/logger";
+} from '../middlewares/jwtMiddleware';
+import { errorMessages } from '../services/messageBuilderService';
+import { INTERNAL_ERROR } from '../constants/errors';
+import logger from '../loggers/logger';
 
 const router = Router();
 
 router.post(
-  "/",
+  '/',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
   ],
   async (req: Request, res: Response) => {
@@ -55,10 +55,10 @@ router.post(
 );
 
 router.post(
-  "/everywhere",
+  '/everywhere',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
   ],
   async (req: Request, res: Response) => {

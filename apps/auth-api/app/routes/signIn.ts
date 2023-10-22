@@ -1,14 +1,14 @@
-import { Router, Request, Response } from "express";
-import { Request as JWTRequest } from "express-jwt";
-import db from "../database";
-import { body } from "express-validator";
+import { Router, Request, Response } from 'express';
+import { Request as JWTRequest } from 'express-jwt';
+import db from '../database';
+import { body } from 'express-validator';
 import generateAccessToken, {
   generateSignInConfirmToken,
-} from "../services/jwtService";
+} from '../services/jwtService';
 import {
   CustomValidationError,
   errorMessages,
-} from "../services/messageBuilderService";
+} from '../services/messageBuilderService';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,
@@ -22,24 +22,24 @@ import {
   TOKEN_REQUIRED,
   TYPE_REQUIRED,
   UNSUPPORTED_TYPE,
-} from "../constants/errors";
-import validate from "../middlewares/validatorMiddleware";
-import logger from "../loggers/logger";
+} from '../constants/errors';
+import validate from '../middlewares/validatorMiddleware';
+import logger from '../loggers/logger';
 import {
   checkTokenGrantType,
   transformJwtErrorMessages,
   validateSignInConfirmToken,
-} from "../middlewares/jwtMiddleware";
-import isExpired from "../services/isExpiredService";
-import { getTOTPForVerification } from "../services/totpService";
+} from '../middlewares/jwtMiddleware';
+import isExpired from '../services/isExpiredService';
+import { getTOTPForVerification } from '../services/totpService';
 
 const router = Router();
 
 router.post(
-  "/",
+  '/',
   [
-    body("identifier").notEmpty().withMessage(IDENTIFIER_REQUIRED),
-    body("password").notEmpty().withMessage(PASSWORD_REQUIRED),
+    body('identifier').notEmpty().withMessage(IDENTIFIER_REQUIRED),
+    body('password').notEmpty().withMessage(PASSWORD_REQUIRED),
     validate,
   ],
   async (req: Request, res: Response) => {
@@ -77,8 +77,8 @@ router.post(
                 message: INVALID_CREDENTIALS.messages[0],
               },
               data: {
-                location: "body",
-                paths: ["identifier", "password"],
+                location: 'body',
+                paths: ['identifier', 'password'],
               },
             },
           ]),
@@ -134,25 +134,25 @@ router.post(
 );
 
 router.post(
-  "/confirm",
+  '/confirm',
   [
-    body("code").notEmpty().withMessage(CODE_REQUIRED),
-    body("type")
+    body('code').notEmpty().withMessage(CODE_REQUIRED),
+    body('type')
       .notEmpty()
       .withMessage(TYPE_REQUIRED)
       .bail()
       .custom((value) => {
-        const supportedTypes = ["totp", "email"];
+        const supportedTypes = ['totp', 'email'];
 
         if (!supportedTypes.includes(value))
           throw new CustomValidationError(INVALID_TYPE);
 
         return true;
       }),
-    body("token").notEmpty().withMessage(TOKEN_REQUIRED),
+    body('token').notEmpty().withMessage(TOKEN_REQUIRED),
     validate,
     validateSignInConfirmToken(),
-    checkTokenGrantType("sign_in_confirm"),
+    checkTokenGrantType('sign_in_confirm'),
     transformJwtErrorMessages,
   ],
   async (req: JWTRequest, res: Response) => {
@@ -167,15 +167,15 @@ router.post(
           {
             info: UNSUPPORTED_TYPE,
             data: {
-              location: "body",
-              path: "token",
+              location: 'body',
+              path: 'token',
             },
           },
         ]),
       );
     }
 
-    if (type === "email") {
+    if (type === 'email') {
       try {
         const { rowCount, rows } = await db.query(
           `
@@ -202,8 +202,8 @@ router.post(
               {
                 info: INVALID_CODE,
                 data: {
-                  location: "body",
-                  path: "code",
+                  location: 'body',
+                  path: 'code',
                 },
               },
             ]),
@@ -217,8 +217,8 @@ router.post(
               {
                 info: CODE_EXPIRED,
                 data: {
-                  location: "body",
-                  path: "code",
+                  location: 'body',
+                  path: 'code',
                 },
               },
             ]),
@@ -252,7 +252,7 @@ router.post(
       }
     }
 
-    if (type === "totp") {
+    if (type === 'totp') {
       try {
         const { rowCount, rows } = await db.query(
           `
@@ -281,8 +281,8 @@ router.post(
               {
                 info: INVALID_CODE,
                 data: {
-                  location: "body",
-                  path: "code",
+                  location: 'body',
+                  path: 'code',
                 },
               },
             ]),

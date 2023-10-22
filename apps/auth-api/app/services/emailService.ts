@@ -1,11 +1,11 @@
-import nodemailer, { TransportOptions } from "nodemailer";
+import nodemailer, { TransportOptions } from 'nodemailer';
 import {
   SMTP_HOST,
   SMTP_PORT,
   SMTP_USER,
   SMTP_PWD,
   SMTP_EMAIL,
-} from "../../env-config";
+} from '../../env-config';
 
 async function sendEmail(
   to: string,

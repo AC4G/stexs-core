@@ -1,12 +1,12 @@
-import { Router, Response } from "express";
-import { Request } from "express-jwt";
+import { Router, Response } from 'express';
+import { Request } from 'express-jwt';
 import {
   transformJwtErrorMessages,
   validateAccessToken,
   checkTokenGrantType,
-} from "../middlewares/jwtMiddleware";
-import db from "../database";
-import { body } from "express-validator";
+} from '../middlewares/jwtMiddleware';
+import db from '../database';
+import { body } from 'express-validator';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,
@@ -19,21 +19,21 @@ import {
   NEW_PASSWORD_EQUALS_CURRENT,
   PASSWORD_CHANGE_FAILED,
   PASSWORD_REQUIRED,
-} from "../constants/errors";
-import { errorMessages, message } from "../services/messageBuilderService";
-import sendEmail from "../services/emailService";
-import validate from "../middlewares/validatorMiddleware";
-import logger from "../loggers/logger";
-import isExpired from "../services/isExpiredService";
-import generateCode from "../services/codeGeneratorService";
+} from '../constants/errors';
+import { errorMessages, message } from '../services/messageBuilderService';
+import sendEmail from '../services/emailService';
+import validate from '../middlewares/validatorMiddleware';
+import logger from '../loggers/logger';
+import isExpired from '../services/isExpiredService';
+import generateCode from '../services/codeGeneratorService';
 
 const router = Router();
 
 router.get(
-  "/",
+  '/',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
   ],
   async (req: Request, res: Response) => {
@@ -69,12 +69,12 @@ router.get(
 );
 
 router.post(
-  "/password",
+  '/password',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
-    body("password")
+    body('password')
       .notEmpty()
       .withMessage(PASSWORD_REQUIRED)
       .bail()
@@ -124,8 +124,8 @@ router.post(
             {
               info: NEW_PASSWORD_EQUALS_CURRENT,
               data: {
-                path: "password",
-                location: "body",
+                path: 'password',
+                location: 'body',
               },
             },
           ]),
@@ -151,7 +151,7 @@ router.post(
 
       logger.info(`Password change successful for user: ${userId}`);
 
-      res.json(message("Password changed successfully."));
+      res.json(message('Password changed successfully.'));
     } catch (e) {
       logger.error(
         `Error while changing password for user: ${userId}. Error: ${
@@ -164,12 +164,12 @@ router.post(
 );
 
 router.post(
-  "/email",
+  '/email',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
-    body("email")
+    body('email')
       .notEmpty()
       .withMessage(EMAIL_REQUIRED)
       .bail()
@@ -218,7 +218,7 @@ router.post(
     try {
       await sendEmail(
         newEmail,
-        "Email Change Verification",
+        'Email Change Verification',
         undefined,
         `Please verify your email change by using the following code: ${code}`,
       );
@@ -235,19 +235,19 @@ router.post(
 
     res.json(
       message(
-        "Email change verification link has been sent to the new email address.",
+        'Email change verification link has been sent to the new email address.',
       ),
     );
   },
 );
 
 router.post(
-  "/email/verify",
+  '/email/verify',
   [
     validateAccessToken(),
-    checkTokenGrantType("sign_in"),
+    checkTokenGrantType('sign_in'),
     transformJwtErrorMessages,
-    body("code").notEmpty().withMessage(CODE_REQUIRED),
+    body('code').notEmpty().withMessage(CODE_REQUIRED),
     validate,
   ],
   async (req: Request, res: Response) => {
@@ -303,7 +303,7 @@ router.post(
 
     logger.info(`Email successfully verified and changed for user: ${userId}`);
 
-    res.json(message("Email successfully changed."));
+    res.json(message('Email successfully changed.'));
   },
 );
 

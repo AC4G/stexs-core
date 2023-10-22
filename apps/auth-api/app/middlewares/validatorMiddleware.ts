@@ -1,10 +1,10 @@
-import { Result, validationResult } from "express-validator";
+import { Result, validationResult } from 'express-validator';
 import {
   ValidatorError,
   errorMessagesFromValidator,
-} from "../services/messageBuilderService";
-import { NextFunction, Request, Response } from "express";
-import logger from "../loggers/logger";
+} from '../services/messageBuilderService';
+import { NextFunction, Request, Response } from 'express';
+import logger from '../loggers/logger';
 
 export default function validate(
   req: Request,
@@ -18,10 +18,10 @@ export default function validate(
       .array()
       .map((error) => {
         const msg =
-          typeof error.msg === "string" ? JSON.parse(error.msg) : error.msg;
+          typeof error.msg === 'string' ? JSON.parse(error.msg) : error.msg;
         return msg.code;
       })
-      .join(", ");
+      .join(', ');
     logger.warn(`Validation errors - Codes: ${errorCodes}`);
 
     return res.status(400).json(errorMessagesFromValidator(errors));

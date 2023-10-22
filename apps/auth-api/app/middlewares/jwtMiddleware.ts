@@ -1,21 +1,21 @@
-import { NextFunction, Response, Request } from "express";
+import { NextFunction, Response, Request } from 'express';
 import {
   ACCESS_TOKEN_SECRET,
   AUDIENCE,
   ISSUER,
   REFRESH_TOKEN_SECRET,
   SIGN_IN_CONFIRM_TOKEN_SECRET,
-} from "../../env-config";
-import { expressjwt as jwt, Request as JWTRequest } from "express-jwt";
-import { errorMessages } from "../services/messageBuilderService";
+} from '../../env-config';
+import { expressjwt as jwt, Request as JWTRequest } from 'express-jwt';
+import { errorMessages } from '../services/messageBuilderService';
 import {
   CREDENTIALS_BAD_FORMAT,
   CREDENTIALS_REQUIRED,
   INVALID_GRANT_TYPE,
   INVALID_TOKEN,
-} from "../constants/errors";
-import { verify } from "jsonwebtoken";
-import logger from "../loggers/logger";
+} from '../constants/errors';
+import { verify } from 'jsonwebtoken';
+import logger from '../loggers/logger';
 
 class JWTError extends Error {
   code: string;
@@ -41,7 +41,7 @@ export function validateAccessToken() {
     secret: ACCESS_TOKEN_SECRET,
     audience: AUDIENCE,
     issuer: ISSUER,
-    algorithms: ["HS256"],
+    algorithms: ['HS256'],
   });
 }
 
@@ -54,7 +54,7 @@ export function validateRefreshToken(
     secret: REFRESH_TOKEN_SECRET,
     audience: AUDIENCE,
     issuer: ISSUER,
-    algorithms: ["HS256"],
+    algorithms: ['HS256'],
     getToken: (req) => req.body.refresh_token,
   })(req, res, next);
 }
@@ -64,7 +64,7 @@ export function validateSignInConfirmToken() {
     secret: SIGN_IN_CONFIRM_TOKEN_SECRET,
     audience: AUDIENCE,
     issuer: ISSUER,
-    algorithms: ["HS256"],
+    algorithms: ['HS256'],
     getToken: (req) => {
       return req.body.token;
     },
@@ -77,7 +77,7 @@ export function validateSignInConfirmOrAccessToken(
   next: NextFunction,
 ) {
   const token = req.body.token;
-  let grantType = null; 
+  let grantType = null;
 
   verify(
     token,
@@ -85,13 +85,13 @@ export function validateSignInConfirmOrAccessToken(
     {
       audience: AUDIENCE,
       issuer: ISSUER,
-      algorithms: ["HS256"],
+      algorithms: ['HS256'],
     },
     (e, decoded) => {
       if (e) return;
 
-      if (typeof decoded === "object" && "grant_type" in decoded) {
-        if (decoded?.grant_type !== "sign_in_confirm")
+      if (typeof decoded === 'object' && 'grant_type' in decoded) {
+        if (decoded?.grant_type !== 'sign_in_confirm')
           throw new JWTError(
             {
               message: INVALID_GRANT_TYPE.messages[0],
@@ -102,7 +102,7 @@ export function validateSignInConfirmOrAccessToken(
       }
 
       req.auth = decoded;
-      grantType = "sign_in_confirm";
+      grantType = 'sign_in_confirm';
     },
   );
 
@@ -116,9 +116,9 @@ export function validateSignInConfirmOrAccessToken(
     throw new JWTError(CREDENTIALS_REQUIRED, 400);
   }
 
-  const [bearer, accessToken] = authHeader.split(" ");
+  const [bearer, accessToken] = authHeader.split(' ');
 
-  if (bearer.toLowerCase() !== "bearer") {
+  if (bearer.toLowerCase() !== 'bearer') {
     throw new JWTError(CREDENTIALS_BAD_FORMAT, 400);
   }
 
@@ -128,13 +128,13 @@ export function validateSignInConfirmOrAccessToken(
     {
       audience: AUDIENCE,
       issuer: ISSUER,
-      algorithms: ["HS256"],
+      algorithms: ['HS256'],
     },
     (e, decoded) => {
       if (e) return;
 
-      if (typeof decoded === "object" && "grant_type" in decoded) {
-        if (decoded?.grant_type !== "sign_in")
+      if (typeof decoded === 'object' && 'grant_type' in decoded) {
+        if (decoded?.grant_type !== 'sign_in')
           throw new JWTError(
             {
               message: INVALID_GRANT_TYPE.messages[0],
@@ -145,7 +145,7 @@ export function validateSignInConfirmOrAccessToken(
       }
 
       req.auth = decoded;
-      grantType = "access";
+      grantType = 'access';
     },
   );
 
@@ -176,7 +176,7 @@ export function transformJwtErrorMessages(
   err: JWTError,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   logger.warn(`JWT Error: ${err.message}`);
 
