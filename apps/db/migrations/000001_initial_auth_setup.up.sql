@@ -6,11 +6,29 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "citext";  
 
+CREATE ROLE authenticator LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER ENCRYPTED PASSWORD 'authenticator';
+
 CREATE ROLE anon NOLOGIN;
-GRANT anon TO postgres;
-GRANT USAGE ON SCHEMA public to anon;
+CREATE ROLE authenticated NOLOGIN;
+
+GRANT anon TO authenticator;
+GRANT authenticated TO authenticator;
+GRANT USAGE ON SCHEMA public TO anon;
 
 CREATE SCHEMA auth;
+
+CREATE OR REPLACE FUNCTION auth.jwt()
+ RETURNS JSONB
+ STABLE
+AS $$
+BEGIN
+    RETURN coalesce(
+        nullif(current_setting('request.jwt.claim', true), ''),
+        nullif(current_setting('request.jwt.claims', true), '')
+    )::jsonb;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE auth.users (
     id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
     email CITEXT NOT NULL UNIQUE,
@@ -156,7 +174,7 @@ CREATE TABLE public.oauth2_apps (
     client_secret VARCHAR(255) NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
     description TEXT NULL,
-    homepage_url VARCHAR(255) NOT NULL,
+    homepage_url VARCHAR(255) NULL,
     redirect_url VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL,
@@ -226,9 +244,5 @@ AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION public.create_profile_for_user();
 
-GRANT ALL ON public.profiles to anon;
-GRANT ALL ON public.organizations to anon;
-GRANT ALL ON public.projects to anon;
-GRANT ALL ON public.oauth2_apps to anon;
-GRANT ALL ON public.scopes to anon;
-GRANT ALL ON public.oauth2_app_scopes to anon;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO authenticated;

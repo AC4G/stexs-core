@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { Session } from './utils/types';
+import { Session, SignInInit } from './lib/types';
 
 export class StexsAuthClient {
   private authUrl: string;
@@ -13,22 +13,17 @@ export class StexsAuthClient {
 
   constructor(
     fetch: typeof fetch,
-    authUrl: string,
-    headers: Record<string, string>,
+    authUrl: string
   ) {
     this.authUrl = authUrl;
     this.fetch = fetch;
-
-    this.authHeaders = {
-      ...headers,
-    };
 
     this.mfa = {
       factorStatus: this._factorStatus.bind(this),
       enable: this._enable.bind(this),
       disable: this._disable.bind(this),
       verify: this._verify.bind(this),
-      requestEmailCode: this._requestEmailCode.bind(this),
+      requestCode: this._requestCode.bind(this),
     };
     this.oauth = {
       authorize: this._authorize.bind(this),
@@ -93,7 +88,7 @@ export class StexsAuthClient {
    * @throws {Error} Throws an error if the sign-in token is not found or has expired.
    */
   async signInConfirm(type: string, code: string): Promise<Response> {
-    const signInInitData = JSON.parse(localStorage.getItem('sign_in_init'));
+    const signInInitData: SignInInit = JSON.parse(localStorage.getItem('sign_in_init'));
 
     if (!signInInitData) {
       throw new Error('Sign in initialization data not found.');
@@ -160,7 +155,7 @@ export class StexsAuthClient {
         );
 
         if (body.types.length === 1 && body.types[0] === 'email') {
-          await this._requestEmailCode();
+          await this._requestCode();
         }
 
         this._triggerEvent('SIGN_IN_INIT');
@@ -242,7 +237,9 @@ export class StexsAuthClient {
 
     localStorage.clear();
 
-    delete this.authHeaders['Authorization'];
+    if (this.authHeaders?.Authorization) {
+      delete this.authHeaders['Authorization'];
+    }
 
     this._triggerEvent('SIGNED_OUT');
   }
@@ -268,11 +265,17 @@ export class StexsAuthClient {
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
   async recovery(email: string): Promise<Response> {
-    return await this._request({
+    const response = await this._request({
       path: 'recovery',
       method: 'POST',
       body: { email },
     });
+
+    if (response.ok) {
+      this._triggerEvent('RECOVERY');
+    }
+
+    return response;
   }
 
   /**
@@ -343,11 +346,15 @@ export class StexsAuthClient {
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
   async verifyEmailChange(code: string): Promise<Response> {
-    return await this._request({
+    const response = await this._request({
       path: 'user/email/verify',
       method: 'POST',
       body: { code },
     });
+
+    if (response.ok) {
+      this._triggerEvent('USER_UPDATED');
+    }
   }
 
   /**
@@ -426,8 +433,8 @@ export class StexsAuthClient {
    *
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
-  private async _requestCode(type: string): Promise<Response> {
-    const signInInitData = JSON.parse(localStorage.getItem('sign_in_init'));
+  private async _requestCode(type: string = 'email'): Promise<Response> {
+    const signInInitData: SignInInit = JSON.parse(localStorage.getItem('sign_in_init'));
 
     const body = {
       type
@@ -608,7 +615,7 @@ export class StexsAuthClient {
 
     this._setAccessTokenToAuthHeaders(accessToken);
 
-    this._triggerEvent('TOKEN_REFRESHED', accessToken);
+    this._triggerEvent('TOKEN_REFRESHED');
 
     return true;
   }
@@ -651,7 +658,7 @@ export class StexsAuthClient {
   private _setAccessTokenToAuthHeaders(accessToken: string) {
     this.authHeaders = {
       ...this.authHeaders,
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`
     };
   }
 }

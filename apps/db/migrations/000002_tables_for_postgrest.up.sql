@@ -52,11 +52,5 @@ CREATE TABLE public.project_members (
     updated_at TIMESTAMPTZ NULL
 );
 
-GRANT ALL ON public.items to anon;
-GRANT ALL ON public.inventories to anon;
-GRANT ALL ON public.friends to anon;
-GRANT ALL ON public.blocked to anon;
-GRANT ALL ON public.organization_members to anon;
-GRANT ALL ON public.project_members to anon;
-
-GRANT USAGE, SELECT ON SEQUENCE public.items_id_seq TO anon;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO authenticated;

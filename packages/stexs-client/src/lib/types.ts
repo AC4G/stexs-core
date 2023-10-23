@@ -6,3 +6,10 @@ export interface Session {
     count: number;
   };
 }
+
+export interface SignInInit {
+    continuousAutoRefresh: boolean;
+    expires: number;
+    token: string;
+    types: string[]
+}

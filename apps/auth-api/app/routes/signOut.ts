@@ -16,7 +16,7 @@ router.post(
   '/',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
   ],
   async (req: Request, res: Response) => {
@@ -26,7 +26,7 @@ router.post(
       const { rowCount } = await db.query(
         `
             DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid AND grant_type = 'sign_in' AND session_id = $2::uuid;
+            WHERE user_id = $1::uuid AND grant_type = 'password' AND session_id = $2::uuid;
         `,
         [auth?.sub, auth?.session_id],
       );
@@ -58,7 +58,7 @@ router.post(
   '/everywhere',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
   ],
   async (req: Request, res: Response) => {
@@ -68,7 +68,7 @@ router.post(
       const { rowCount } = await db.query(
         `
             DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid AND grant_type = 'sign_in';
+            WHERE user_id = $1::uuid AND grant_type = 'password';
         `,
         [sub],
       );
