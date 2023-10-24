@@ -29,6 +29,49 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION auth.role()
+ RETURNS TEXT
+ STABLE
+AS $$
+BEGIN 
+  RETURN coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'role')
+  )::TEXT;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION auth.uid()
+ RETURNS UUID
+ STABLE
+AS $$
+BEGIN
+  RETURN coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'sub')
+  )::UUID;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION auth.grant()
+ RETURNS TEXT
+ STABLE
+AS $$
+BEGIN
+  RETURN coalesce(
+    nullif(current_setting('request.jwt.claim.grant_type', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'grant_type')
+  )::TEXT;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT USAGE ON SCHEMA auth to authenticated;
+
+GRANT EXECUTE ON FUNCTION auth.jwt() TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.role() TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.grant() TO authenticated;
+
 CREATE TABLE auth.users (
     id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
     email CITEXT NOT NULL UNIQUE,

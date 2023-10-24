@@ -52,5 +52,17 @@ CREATE TABLE public.project_members (
     updated_at TIMESTAMPTZ NULL
 );
 
+GRANT USAGE, SELECT ON SEQUENCE blocked_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE friends_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE inventories_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE items_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE oauth2_app_scopes_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE oauth2_apps_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE organization_members_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE organizations_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE project_members_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE projects_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE scopes_id_seq TO authenticated;
+
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO authenticated;
