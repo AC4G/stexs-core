@@ -27,6 +27,7 @@ services:
       PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS}
       PGRST_JWT_SECRET: ${ACCESS_TOKEN_SECRET}
       PGRST_JWT_AUD: ${AUDIENCE}
+      PGRST_OPENAPI_MODE: disabled
     container_name: rest
     networks:
       - stexs

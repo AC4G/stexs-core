@@ -2,11 +2,14 @@ CREATE TABLE public.items (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     parameter JSONB DEFAULT '{}'::JSONB,
-    project_id INT REFERENCES public.projects(id) ON DELETE SET NULL,
+    project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL
 );
+
+GRANT INSERT (name, parameter, project_id, creator_id) ON TABLE public.items TO authenticated;
+GRANT UPDATE (name, parameter, project_id, creator_id) ON TABLE public.items TO authenticated;
 
 CREATE TABLE public.inventories (
     id SERIAL PRIMARY KEY,
@@ -15,24 +18,76 @@ CREATE TABLE public.inventories (
     amount INT DEFAULT '0'::bigint,
     parameter JSONB DEFAULT '{}'::JSONB,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL
+    updated_at TIMESTAMPTZ NULL,
+    CONSTRAINT unique_inventories_combination UNIQUE (item_id, user_id)
 );
+
+GRANT INSERT (item_id, user_id, amount, parameter) ON TABLE public.inventories TO authenticated;
+GRANT UPDATE (amount, parameter) ON TABLE public.inventories TO authenticated;
 
 CREATE TABLE public.friends (
     id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    friend_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_friends_combination UNIQUE (user_id, friend_id)
+);  
+
+CREATE TABLE public.friend_requests (
+    id SERIAL PRIMARY KEY,
     requester_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    is_accepted BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX unique_friend_requests_combination
+ON public.friend_requests ((LEAST(requester_id, addressee_id)), (GREATEST(requester_id, addressee_id)));
+
+GRANT INSERT (requester_id, addressee_id) ON TABLE public.friend_requests TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.accept_friend_request(friend_request_id INT) RETURNS VOID AS $$
+DECLARE
+    friend_request_record public.friend_requests%ROWTYPE;
+BEGIN
+    IF current_setting('jwt.claim.sub', true) IS NULL THEN
+        RAISE sqlstate '42501' USING
+            message = 'Permission denied',
+            hint = 'Sign in first to use this function';
+    END IF;
+
+    SELECT * INTO friend_request_record
+    FROM public.friend_requests
+    WHERE id = friend_request_id;
+
+    IF friend_request_record.addressee_id = auth.uid() THEN
+        INSERT INTO public.friends (user_id, friend_id)
+        VALUES (friend_request_record.requester_id, friend_request_record.addressee_id);
+        INSERT INTO public.friends (user_id, friend_id)
+        VALUES (friend_request_record.addressee_id, friend_request_record.requester_id);
+
+        DELETE FROM public.friend_requests
+        WHERE id = friend_request_id;
+    ELSE
+        RAISE sqlstate '42501' USING
+            message = 'Permission denied',
+            hint = 'You are not authorized to accept this friend request.';
+    END IF;
+
+    PERFORM set_config('response.status', '201', true);
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.accept_friend_request(INT) TO authenticated;
 
 CREATE TABLE public.blocked (
     id SERIAL PRIMARY KEY,
     blocker_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     blocked_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_blocked_combination UNIQUE (blocker_id, blocked_id)
 );
+
+GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
 
 CREATE TABLE public.organization_members (
     id SERIAL PRIMARY KEY,
@@ -43,6 +98,9 @@ CREATE TABLE public.organization_members (
     updated_at TIMESTAMPTZ NULL
 );
 
+GRANT INSERT (organization_id, member_id, role) ON TABLE public.organization_members TO authenticated;
+GRANT UPDATE (role) ON TABLE public.organization_members TO authenticated;
+
 CREATE TABLE public.project_members (
     id SERIAL PRIMARY KEY,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
@@ -52,8 +110,12 @@ CREATE TABLE public.project_members (
     updated_at TIMESTAMPTZ NULL
 );
 
+GRANT INSERT (project_id, member_id, role) ON TABLE public.project_members TO authenticated;
+GRANT UPDATE (role) ON TABLE public.project_members TO authenticated;
+
 GRANT USAGE, SELECT ON SEQUENCE blocked_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE friends_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE friend_requests_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE inventories_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE items_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE oauth2_app_scopes_id_seq TO authenticated;

@@ -65,12 +65,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION auth.scopes()
+ RETURNS TEXT[]
+ STABLE
+AS $$
+BEGIN
+  RETURN coalesce(
+    string_to_array(nullif(current_setting('request.jwt.claim.scopes', true), ''), ','),
+    string_to_array(nullif(current_setting('request.jwt.claims', true)::JSONB->>'scopes', ''), ',')
+  )::TEXT[];
+END;
+$$ LANGUAGE plpgsql;
+
 GRANT USAGE ON SCHEMA auth to authenticated;
 
 GRANT EXECUTE ON FUNCTION auth.jwt() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.role() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.grant() TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.scopes() TO authenticated;
 
 CREATE TABLE auth.users (
     id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
@@ -182,8 +195,11 @@ CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    is_private BOOLEAN DEFAULT FALSE
+    is_private BOOLEAN DEFAULT FALSE,
+    friend_privacy_level INT DEFAULT 0
 );
+
+GRANT UPDATE (username, is_private, friend_privacy_level) ON TABLE public.profiles TO authenticated;
 
 CREATE TABLE public.organizations (
     id SERIAL PRIMARY KEY,
@@ -196,6 +212,9 @@ CREATE TABLE public.organizations (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL
 );
+
+GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
+GRANT UPDATE (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
 
 CREATE TABLE public.projects (
     id SERIAL PRIMARY KEY,
@@ -210,6 +229,9 @@ CREATE TABLE public.projects (
     CONSTRAINT unique_project_combination UNIQUE (name, organization_id)
 );
 
+GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
+GRANT UPDATE (name, description, readme, email, url) ON TABLE public.projects TO authenticated;
+
 CREATE TABLE public.oauth2_apps (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -223,6 +245,9 @@ CREATE TABLE public.oauth2_apps (
     updated_at TIMESTAMPTZ NULL,
     CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id)
 );
+
+GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 
 CREATE TABLE public.scopes (
     id SERIAL PRIMARY KEY,
@@ -240,6 +265,8 @@ CREATE TABLE public.oauth2_app_scopes (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_oauth2_app_scopes_combination UNIQUE (client_id, scope_id)
 );
+
+GRANT INSERT (client_id, scope_id) ON TABLE public.oauth2_app_scopes TO authenticated;
 
 CREATE TABLE auth.oauth2_authorization_tokens (
     id SERIAL PRIMARY KEY,
