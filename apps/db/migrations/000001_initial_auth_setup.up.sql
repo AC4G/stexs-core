@@ -196,10 +196,13 @@ CREATE TABLE public.profiles (
     username CITEXT NOT NULL UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     is_private BOOLEAN DEFAULT FALSE,
-    friend_privacy_level INT DEFAULT 0
+    friend_privacy_level INT DEFAULT 0,
+    CHECK (friend_privacy_level >= 0 AND friend_privacy_level <= 2) -- 0 = every one can see; 1 = only friends can see; 2 = no one can see
 );
 
 GRANT UPDATE (username, is_private, friend_privacy_level) ON TABLE public.profiles TO authenticated;
+GRANT SELECT ON TABLE public.profiles TO anon;
+GRANT SELECT ON TABLE public.profiles TO authenticated;
 
 CREATE TABLE public.organizations (
     id SERIAL PRIMARY KEY,
@@ -215,6 +218,8 @@ CREATE TABLE public.organizations (
 
 GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
 GRANT UPDATE (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
+GRANT SELECT ON TABLE public.organizations TO anon;
+GRANT SELECT ON TABLE public.organizations TO authenticated;
 
 CREATE TABLE public.projects (
     id SERIAL PRIMARY KEY,
@@ -231,6 +236,8 @@ CREATE TABLE public.projects (
 
 GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
 GRANT UPDATE (name, description, readme, email, url) ON TABLE public.projects TO authenticated;
+GRANT SELECT ON TABLE public.projects TO anon;
+GRANT SELECT ON TABLE public.projects TO authenticated;
 
 CREATE TABLE public.oauth2_apps (
     id SERIAL PRIMARY KEY,
@@ -248,6 +255,8 @@ CREATE TABLE public.oauth2_apps (
 
 GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 GRANT UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT SELECT ON TABLE public.oauth2_apps TO anon;
+GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
 CREATE TABLE public.scopes (
     id SERIAL PRIMARY KEY,
@@ -258,6 +267,9 @@ CREATE TABLE public.scopes (
     updated_at TIMESTAMPTZ NULL
 );
 
+GRANT SELECT ON TABLE public.scopes TO anon;
+GRANT SELECT ON TABLE public.scopes TO authenticated;
+
 CREATE TABLE public.oauth2_app_scopes (
     id SERIAL PRIMARY KEY,
     client_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE,
@@ -267,6 +279,8 @@ CREATE TABLE public.oauth2_app_scopes (
 );
 
 GRANT INSERT (client_id, scope_id) ON TABLE public.oauth2_app_scopes TO authenticated;
+GRANT SELECT ON TABLE public.oauth2_app_scopes TO anon;
+GRANT SELECT ON TABLE public.oauth2_app_scopes TO authenticated;
 
 CREATE TABLE auth.oauth2_authorization_tokens (
     id SERIAL PRIMARY KEY,
@@ -313,6 +327,3 @@ CREATE TRIGGER create_profile_trigger
 AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION public.create_profile_for_user();
-
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO authenticated;
