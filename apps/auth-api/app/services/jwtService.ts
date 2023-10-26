@@ -34,20 +34,21 @@ export function generateSignInConfirmToken(sub: string, types: [string]) {
 
 export default async function generateAccessToken(
   additionalPayload: any,
-  grantType: string = 'sign_in',
+  grantType: string = 'password',
   refreshToken: string | null = null,
   oldRefreshToken: string | null = null,
 ) {
   const iat = Math.floor(Date.now() / 1000);
   const exp = iat + JWT_EXPIRY_LIMIT;
 
-  if (grantType === 'sign_in') additionalPayload.session_id = uuidv4();
+  if (grantType === 'password') additionalPayload.session_id = uuidv4();
 
   const accessTokenPayload = {
     iss: ISSUER,
     aud: AUDIENCE,
     ...additionalPayload,
     grant_type: grantType,
+    role: 'authenticated',
     iat,
     exp,
   };
@@ -63,13 +64,7 @@ export default async function generateAccessToken(
       expires: exp,
     };
 
-  let jti;
-
-  if (refreshToken) {
-    jti = refreshToken;
-  } else {
-    jti = uuidv4();
-  }
+  const jti = refreshToken ? refreshToken : uuidv4();
 
   try {
     if (oldRefreshToken && grantType === 'authorization_code') {

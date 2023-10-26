@@ -1,20 +1,15 @@
 import { StexsAuthClient } from './StexsAuthClient';
 import { PostgrestClient, PostgrestQueryBuilder } from '@supabase/postgrest-js';
-import { AUTH_URL, REST_URL, API_KEY } from '../.stexs-client.config';
-import { Session } from './utils/types';
+import { AUTH_URL, REST_URL } from '../.stexs-client.config';
+import { Session } from './lib/types';
 
 export default class StexsClient {
   auth: StexsAuthClient;
-  defaultRestHeaders = {
-    apikey: API_KEY,
-  };
 
   protected rest: PostgrestClient;
 
   constructor(fetch: typeof fetch) {
-    this.auth = new StexsAuthClient(fetch, AUTH_URL, {
-      apikey: API_KEY,
-    });
+    this.auth = new StexsAuthClient(fetch, AUTH_URL);
     this.rest = new PostgrestClient(REST_URL, {
       fetch: this._fetchWithAuth.bind(this, fetch),
     });
@@ -32,14 +27,8 @@ export default class StexsClient {
     const accessToken = this._getAccessToken();
     const headers = new Headers(init?.headers);
 
-    if (!headers.has('apikey')) {
-      headers.set('apikey', API_KEY);
-    }
-
     if (accessToken) {
-      if (!headers.has('Authorization')) {
-        headers.set('Authorization', `Bearer ${accessToken}`);
-      }
+      headers.set('Authorization', `Bearer ${accessToken}`);
     }
 
     return baseFetch(input, { ...init, headers });

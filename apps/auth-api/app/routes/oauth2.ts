@@ -55,7 +55,7 @@ router.post(
   '/authorize',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
     body('client_id')
       .notEmpty()
@@ -380,15 +380,14 @@ router.get(
   '/connections',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
     paginate.middleware(10, 50)
   ],
   async (req: Request, res: Response) => {
-    const { page, limit } = req.query;
+    const page = (req.query?.page ?? 1) as number;
+    const limit = (req.query?.limit ?? 10) as number;
     const userId = req.auth?.sub;
-
-    console.log({ page, limit });
 
     const offset = (page - 1) * limit;
 
@@ -441,7 +440,7 @@ router.delete(
   '/connection',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
     body('client_id')
       .notEmpty()

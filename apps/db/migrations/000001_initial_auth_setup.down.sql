@@ -37,6 +37,8 @@ REVOKE ALL ON auth.users FROM anon;
 REVOKE ALL ON auth.mfa FROM anon;
 REVOKE ALL ON auth.refresh_tokens FROM anon;
 
+DROP FUNCTION IF EXISTS auth.jwt();
+
 DROP ROLE anon;
 
 DROP EXTENSION IF EXISTS "citext" CASCADE;

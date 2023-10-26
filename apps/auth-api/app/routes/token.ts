@@ -25,7 +25,7 @@ router.post(
     body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
     validate,
     validateRefreshToken,
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
   ],
   async (req: Request, res: Response) => {
@@ -35,7 +35,7 @@ router.post(
       const { rowCount } = await db.query(
         `
             DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid AND grant_type = 'sign_in' AND token = $2::uuid AND session_id = $3::uuid;
+            WHERE user_id = $1::uuid AND grant_type = 'password' AND token = $2::uuid AND session_id = $3::uuid;
         `,
         [token?.sub, token?.jti, token?.session_id],
       );

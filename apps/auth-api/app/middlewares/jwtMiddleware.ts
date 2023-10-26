@@ -134,7 +134,7 @@ export function validateSignInConfirmOrAccessToken(
       if (e) return;
 
       if (typeof decoded === 'object' && 'grant_type' in decoded) {
-        if (decoded?.grant_type !== 'sign_in')
+        if (decoded?.grant_type !== 'password')
           throw new JWTError(
             {
               message: INVALID_GRANT_TYPE.messages[0],

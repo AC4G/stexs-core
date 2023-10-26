@@ -33,7 +33,7 @@ router.get(
   '/',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
   ],
   async (req: Request, res: Response) => {
@@ -72,7 +72,7 @@ router.post(
   '/password',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
     body('password')
       .notEmpty()
@@ -167,7 +167,7 @@ router.post(
   '/email',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
     body('email')
       .notEmpty()
@@ -245,7 +245,7 @@ router.post(
   '/email/verify',
   [
     validateAccessToken(),
-    checkTokenGrantType('sign_in'),
+    checkTokenGrantType('password'),
     transformJwtErrorMessages,
     body('code').notEmpty().withMessage(CODE_REQUIRED),
     validate,

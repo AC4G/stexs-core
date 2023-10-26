@@ -21,12 +21,13 @@ services:
     ports:
       - 3000:3000
     environment:
-      PGRST_DB_URI: ${PG_URL}
+      PGRST_DB_URI: postgres://authenticator:authenticator@db:5432/postgres
       PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
       PGRST_DB_ANON_ROLE: anon
       PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS}
       PGRST_JWT_SECRET: ${ACCESS_TOKEN_SECRET}
       PGRST_JWT_AUD: ${AUDIENCE}
+      PGRST_OPENAPI_MODE: disabled
     container_name: rest
     networks:
       - stexs

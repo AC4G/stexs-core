@@ -1,7 +1,7 @@
 {
     "name": "stexs-client",
-    "main": "src/index.ts",
-    "types": "src/index.ts",
+    "main": "src/StexsClient.ts",
+    "types": "src/StexsClient.ts",
     "dependencies": {
         "@supabase/postgrest-js": "^1.8.5",
         "events": "^3.3.0",

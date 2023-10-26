@@ -6,11 +6,85 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "citext";  
 
+CREATE ROLE authenticator LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER ENCRYPTED PASSWORD 'authenticator';
+
 CREATE ROLE anon NOLOGIN;
-GRANT anon TO postgres;
-GRANT USAGE ON SCHEMA public to anon;
+CREATE ROLE authenticated NOLOGIN;
+
+GRANT anon TO authenticator;
+GRANT authenticated TO authenticator;
+GRANT USAGE ON SCHEMA public TO anon;
 
 CREATE SCHEMA auth;
+
+CREATE OR REPLACE FUNCTION auth.jwt()
+ RETURNS JSONB
+ STABLE
+AS $$
+BEGIN
+    RETURN coalesce(
+        nullif(current_setting('request.jwt.claim', true), ''),
+        nullif(current_setting('request.jwt.claims', true), '')
+    )::jsonb;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION auth.role()
+ RETURNS TEXT
+ STABLE
+AS $$
+BEGIN 
+  RETURN coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'role')
+  )::TEXT;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION auth.uid()
+ RETURNS UUID
+ STABLE
+AS $$
+BEGIN
+  RETURN coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'sub')
+  )::UUID;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION auth.grant()
+ RETURNS TEXT
+ STABLE
+AS $$
+BEGIN
+  RETURN coalesce(
+    nullif(current_setting('request.jwt.claim.grant_type', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'grant_type')
+  )::TEXT;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION auth.scopes()
+ RETURNS TEXT[]
+ STABLE
+AS $$
+BEGIN
+  RETURN coalesce(
+    string_to_array(nullif(current_setting('request.jwt.claim.scopes', true), ''), ','),
+    string_to_array(nullif(current_setting('request.jwt.claims', true)::JSONB->>'scopes', ''), ',')
+  )::TEXT[];
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT USAGE ON SCHEMA auth to authenticated;
+
+GRANT EXECUTE ON FUNCTION auth.jwt() TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.role() TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.grant() TO authenticated;
+GRANT EXECUTE ON FUNCTION auth.scopes() TO authenticated;
+
 CREATE TABLE auth.users (
     id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
     email CITEXT NOT NULL UNIQUE,
@@ -121,8 +195,14 @@ CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    is_private BOOLEAN DEFAULT FALSE
+    is_private BOOLEAN DEFAULT FALSE,
+    friend_privacy_level INT DEFAULT 0,
+    CHECK (friend_privacy_level >= 0 AND friend_privacy_level <= 2) -- 0 = every one can see; 1 = only friends can see; 2 = no one can see
 );
+
+GRANT UPDATE (username, is_private, friend_privacy_level) ON TABLE public.profiles TO authenticated;
+GRANT SELECT ON TABLE public.profiles TO anon;
+GRANT SELECT ON TABLE public.profiles TO authenticated;
 
 CREATE TABLE public.organizations (
     id SERIAL PRIMARY KEY,
@@ -135,6 +215,11 @@ CREATE TABLE public.organizations (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL
 );
+
+GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
+GRANT UPDATE (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
+GRANT SELECT ON TABLE public.organizations TO anon;
+GRANT SELECT ON TABLE public.organizations TO authenticated;
 
 CREATE TABLE public.projects (
     id SERIAL PRIMARY KEY,
@@ -149,6 +234,11 @@ CREATE TABLE public.projects (
     CONSTRAINT unique_project_combination UNIQUE (name, organization_id)
 );
 
+GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
+GRANT UPDATE (name, description, readme, email, url) ON TABLE public.projects TO authenticated;
+GRANT SELECT ON TABLE public.projects TO anon;
+GRANT SELECT ON TABLE public.projects TO authenticated;
+
 CREATE TABLE public.oauth2_apps (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -156,12 +246,17 @@ CREATE TABLE public.oauth2_apps (
     client_secret VARCHAR(255) NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
     description TEXT NULL,
-    homepage_url VARCHAR(255) NOT NULL,
+    homepage_url VARCHAR(255) NULL,
     redirect_url VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL,
     CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id)
 );
+
+GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT SELECT ON TABLE public.oauth2_apps TO anon;
+GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
 CREATE TABLE public.scopes (
     id SERIAL PRIMARY KEY,
@@ -172,6 +267,9 @@ CREATE TABLE public.scopes (
     updated_at TIMESTAMPTZ NULL
 );
 
+GRANT SELECT ON TABLE public.scopes TO anon;
+GRANT SELECT ON TABLE public.scopes TO authenticated;
+
 CREATE TABLE public.oauth2_app_scopes (
     id SERIAL PRIMARY KEY,
     client_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE,
@@ -179,6 +277,10 @@ CREATE TABLE public.oauth2_app_scopes (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_oauth2_app_scopes_combination UNIQUE (client_id, scope_id)
 );
+
+GRANT INSERT (client_id, scope_id) ON TABLE public.oauth2_app_scopes TO authenticated;
+GRANT SELECT ON TABLE public.oauth2_app_scopes TO anon;
+GRANT SELECT ON TABLE public.oauth2_app_scopes TO authenticated;
 
 CREATE TABLE auth.oauth2_authorization_tokens (
     id SERIAL PRIMARY KEY,
@@ -225,10 +327,3 @@ CREATE TRIGGER create_profile_trigger
 AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION public.create_profile_for_user();
-
-GRANT ALL ON public.profiles to anon;
-GRANT ALL ON public.organizations to anon;
-GRANT ALL ON public.projects to anon;
-GRANT ALL ON public.oauth2_apps to anon;
-GRANT ALL ON public.scopes to anon;
-GRANT ALL ON public.oauth2_app_scopes to anon;

@@ -13,3 +13,6 @@ DROP TABLE public.blocked;
 DROP TABLE public.friends;
 DROP TABLE public.inventories;
 DROP TABLE public.items;
+
+REVOKE ALL ON SEQUENCES FROM anon;
+REVOKE ALL ON TABLES FROM anon;
