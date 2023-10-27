@@ -103,12 +103,13 @@ CREATE POLICY friends_select
             )
             OR 
             (
-                auth.grant() = 'password' AND
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code' AND
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE (p.user_id = user_id AND friend_privacy_level = 0) AND
-                          (p.user_id = friend_id AND friend_privacy_level = 0)
+                    WHERE (p.user_id = user_id AND friend_privacy_level = 0 AND p.is_private = FALSE) AND
+                          (p.user_id = friend_id AND friend_privacy_level = 0 AND p.is_private = FALSE)
                 )
             )
         )
@@ -133,23 +134,108 @@ CREATE POLICY friends_insert
         EXISTS (
             SELECT 1
             FROM public.friend_requests
-            WHERE (addressee_id = auth.uid() AND requester_id = friend_id) OR
-                (addressee_id = auth.uid() AND requester_id = user_id)
+            WHERE
+                addressee_id = auth.uid() AND requester_id = friend_id
+            UNION
+            SELECT 1
+            FROM public.friend_requests
+            WHERE
+                addressee_id = auth.uid() AND requester_id = user_id
         )
     );
 
 
 
-ALTER TABLE public.inventories ENABLE ROW LEVEL SECURITY;
-
-
-
-ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
-
 CREATE OR REPLACE VIEW public.project_ids_by_jwt_organization AS
 SELECT p.project_id
 FROM public.projects p
 WHERE p.organization_id = auth.jwt()->>'organization_id'::TEXT;
+
+GRANT EXECUTE ON public.project_ids_by_jwt_organization TO authenticated;
+
+ALTER TABLE public.inventories ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY inventories_select
+    ON public.inventories
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() = 'authorization_code' AND
+                auth.uid() = user_id AND
+                'inventory.read' = ANY(auth.scopes())
+            )
+            OR 
+            (
+                auth.grant() = 'password' AND
+                user_id = ANY(SELECT friend_id FROM public.friends_of_current_user)
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE p.user_id = user_id AND inventory_privacy_level = 2
+                )
+            )
+            OR
+            (
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code' AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE p.user_id = user_id AND inventory_privacy_level = 0 AND p.is_private = FALSE
+                )
+            )
+        )
+    );
+
+CREATE POLICY inventories_update
+    ON public.inventories
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        (
+            (
+                auth.grant() = 'authorization_code' AND
+                auth.uid() = user_id AND
+                'inventory.update' = ANY(auth.scopes()) AND
+                (SELECT project_id FROM public.items WHERE id = item_id) = ANY(SELECT project_id FROM public.project_ids_by_jwt_organization)
+            )
+            OR 
+            (
+                auth.grant() = 'authorization_code' AND
+                auth.uid() = user_id AND
+                'inventory.update' = ANY(auth.scopes()) AND
+                (SELECT project_id FROM public.items WHERE id = item_id) <> ANY(SELECT project_id FROM public.project_ids_by_jwt_organization) AND
+                (amount < (SELECT amount FROM public.inventories i WHERE i.item_id = item_id AND i.user_id = auth.uid()))
+            )
+        )
+    );
+    
+CREATE POLICY inventories_delete
+    ON public.inventories
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'authorization_code' AND
+        auth.uid() = user_id AND
+        'inventory.update' = ANY(auth.scopes())
+    );
+
+CREATE POLICY inventories_insert
+    ON public.inventories
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'authorization_code' AND
+        auth.uid() = user_id AND
+        'inventory.insert' = ANY(auth.scopes()) AND
+        (SELECT project_id FROM public.items WHERE id = item_id) = ANY(SELECT project_id FROM public.project_ids_by_jwt_organization)
+    );
+
+
+
+ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY items_select
     ON public.items
@@ -164,16 +250,8 @@ CREATE POLICY items_select
             )
             OR
             (
-                auth.grant() = 'password' AND
-                (
-                    is_private = FALSE OR
-                    creator_id = auth.uid() OR
-                    EXISTS (
-                        SELECT 1
-                        FROM public.project_members pm
-                        WHERE pm.project_id = project_id AND pm.member_id = auth.uid()
-                    )
-                )
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code'
             )
         )
     );
@@ -192,18 +270,13 @@ CREATE POLICY items_update
             OR
             (
                 auth.grant() = 'password' AND
-                (
-                    creator_id = auth.uid() OR
-                    EXISTS (
-                        SELECT 1
-                        FROM public.project_members pm
-                        WHERE pm.project_id = project_id AND pm.member_id = auth.uid() AND 
-                            (
-                                pm.role = 'Admin' OR
-                                pm.role = 'Editor' OR
-                                pm.role = 'Moderator'
-                            )
-                    )
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Editor', 'Moderator')
                 )
             )
         )
@@ -226,12 +299,10 @@ CREATE POLICY items_delete
                 EXISTS (
                     SELECT 1
                     FROM public.project_members pm
-                    WHERE pm.project_id = project_id AND pm.member_id = auth.uid() AND 
-                        (
-                            pm.role = 'Admin' OR
-                            pm.role = 'Editor' OR
-                            pm.role = 'Moderator'
-                        )
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Editor', 'Moderator')
                 )
             )
         )
@@ -254,12 +325,10 @@ CREATE POLICY items_insert
                 EXISTS (
                     SELECT 1
                     FROM public.project_members pm
-                    WHERE pm.project_id = project_id AND pm.member_id = auth.uid() AND 
-                        (
-                            pm.role = 'Admin' OR
-                            pm.role = 'Editor' OR
-                            pm.role = 'Moderator'
-                        )
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Editor', 'Moderator')
                 )
             )
         )

@@ -41,7 +41,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
                 JOIN public.scopes AS s ON aot.scope_id = s.id
                 WHERE aot.token_id IN (SELECT id FROM token_info)
             )
-            SELECT *
+            SELECT id, user_id, scopes
             FROM token_info
             CROSS JOIN token_scopes;
         `,
