@@ -6,11 +6,12 @@ CREATE TABLE public.items (
     creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     is_private BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL
+    updated_at TIMESTAMPTZ NULL,
+    CONSTRAINT unique_items_combination UNIQUE (name, project_id)
 );
 
-GRANT INSERT (name, parameter, project_id, creator_id) ON TABLE public.items TO authenticated;
-GRANT UPDATE (name, parameter, project_id, creator_id) ON TABLE public.items TO authenticated;
+GRANT INSERT (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
+GRANT UPDATE (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
 GRANT SELECT ON TABLE public.items TO anon;
 GRANT SELECT ON TABLE public.items TO authenticated;
 

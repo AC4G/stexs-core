@@ -89,7 +89,7 @@ CREATE POLICY friends_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                'friends.read' = ANY(auth.scopes()::TEXT[])
+                'friends.read' = ANY(auth.scopes())
             )  
             OR 
             (
@@ -146,6 +146,11 @@ ALTER TABLE public.inventories ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
 
+CREATE OR REPLACE VIEW public.project_ids_by_jwt_organization AS
+SELECT p.project_id
+FROM public.projects p
+WHERE p.organization_id = auth.jwt()->>'organization_id'::TEXT;
+
 CREATE POLICY items_select
     ON public.items
     AS PERMISSIVE
@@ -154,12 +159,8 @@ CREATE POLICY items_select
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'items.read' = ANY(auth.scopes()::TEXT[]) AND
-                project_id = ANY(
-                    SELECT project_id
-                    FROM public.projects p 
-                    WHERE p.organization_id = auth.jwt()->>'organization_id'::TEXT
-                )
+                'items.read' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT project_id FROM project_ids_by_jwt_organization)
             )
             OR
             (
@@ -182,7 +183,30 @@ CREATE POLICY items_update
     AS PERMISSIVE
     FOR UPDATE
     USING (
-
+        (
+            (
+                auth.grant() = 'client_credentials' AND
+                'items.update' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT project_id FROM project_ids_by_jwt_organization)
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                (
+                    creator_id = auth.uid() OR
+                    EXISTS (
+                        SELECT 1
+                        FROM public.project_members pm
+                        WHERE pm.project_id = project_id AND pm.member_id = auth.uid() AND 
+                            (
+                                pm.role = 'Admin' OR
+                                pm.role = 'Editor' OR
+                                pm.role = 'Moderator'
+                            )
+                    )
+                )
+            )
+        )
     );
 
 CREATE POLICY items_delete
@@ -190,7 +214,27 @@ CREATE POLICY items_delete
     AS PERMISSIVE
     FOR DELETE
     USING (
-
+        (
+            (
+                auth.grant() = 'client_credentials' AND
+                'items.delete' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT project_id FROM project_ids_by_jwt_organization)
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE pm.project_id = project_id AND pm.member_id = auth.uid() AND 
+                        (
+                            pm.role = 'Admin' OR
+                            pm.role = 'Editor' OR
+                            pm.role = 'Moderator'
+                        )
+                )
+            )
+        )
     );
 
 CREATE POLICY items_insert
@@ -198,7 +242,27 @@ CREATE POLICY items_insert
     AS PERMISSIVE
     FOR INSERT
     WITH CHECK (
-
+        (
+            (
+                auth.grant() = 'client_credentials' AND
+                'items.insert' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT project_id FROM project_ids_by_jwt_organization)
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE pm.project_id = project_id AND pm.member_id = auth.uid() AND 
+                        (
+                            pm.role = 'Admin' OR
+                            pm.role = 'Editor' OR
+                            pm.role = 'Moderator'
+                        )
+                )
+            )
+        )
     );
 
 
