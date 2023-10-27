@@ -142,7 +142,66 @@ CREATE POLICY friends_insert
 
 ALTER TABLE public.inventories ENABLE ROW LEVEL SECURITY;
 
+
+
 ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY items_select
+    ON public.items
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() = 'client_credentials' AND
+                'items.read' = ANY(auth.scopes()::TEXT[]) AND
+                project_id = ANY(
+                    SELECT project_id
+                    FROM public.projects p 
+                    WHERE p.organization_id = auth.jwt()->>'organization_id'::TEXT
+                )
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                (
+                    is_private = FALSE OR
+                    creator_id = auth.uid() OR
+                    EXISTS (
+                        SELECT 1
+                        FROM public.project_members pm
+                        WHERE pm.project_id = project_id AND pm.member_id = auth.uid()
+                    )
+                )
+            )
+        )
+    );
+
+CREATE POLICY items_update
+    ON public.items
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+
+    );
+
+CREATE POLICY items_delete
+    ON public.items
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+
+    );
+
+CREATE POLICY items_insert
+    ON public.items
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+
+    );
+
+
 
 ALTER TABLE public.oauth2_app_scopes ENABLE ROW LEVEL SECURITY;
 

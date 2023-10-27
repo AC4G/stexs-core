@@ -4,6 +4,7 @@ CREATE TABLE public.items (
     parameter JSONB DEFAULT '{}'::JSONB,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    is_private BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL
 );
