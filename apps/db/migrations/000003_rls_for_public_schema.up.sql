@@ -344,7 +344,39 @@ ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 
+
+
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY profiles_select
+    ON public.profiles
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code'
+            )
+            OR
+            (
+                auth.grant() = 'authorization_code' AND
+                auth.uid() = user_id AND
+                'profile.read' = ANY(auth.scopes())
+            )
+        )
+    );
+
+CREATE POLICY profiles_update
+    ON public.profiles
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        auth.grant() = 'password' AND
+        auth.uid() = user_id
+    );
+
+
 
 ALTER TABLE public.project_members ENABLE ROW LEVEL SECURITY;
 

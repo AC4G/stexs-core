@@ -205,7 +205,7 @@ CREATE TABLE public.profiles (
     -- 0 = every one can select; 1 = only friends can select; 2 = no one can select only the user itself
 );
 
-GRANT UPDATE (username, is_private, friend_privacy_level) ON TABLE public.profiles TO authenticated;
+GRANT UPDATE (username, is_private, friend_privacy_level, inventory_privacy_level) ON TABLE public.profiles TO authenticated;
 GRANT SELECT ON TABLE public.profiles TO anon;
 GRANT SELECT ON TABLE public.profiles TO authenticated;
 
