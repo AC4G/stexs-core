@@ -314,7 +314,7 @@ CREATE TABLE auth.oauth2_connections (
     CONSTRAINT unique_oauth2_connections_combination UNIQUE (user_id, client_id)
 );
 
-CREATE OR REPLACE FUNCTION public.create_profile_for_user()
+CREATE OR REPLACE FUNCTION auth.create_profile_for_user()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.profiles (user_id, username)
@@ -331,4 +331,4 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER create_profile_trigger
 AFTER INSERT ON auth.users
 FOR EACH ROW
-EXECUTE FUNCTION public.create_profile_for_user();
+EXECUTE FUNCTION auth.create_profile_for_user();

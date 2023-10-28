@@ -338,9 +338,18 @@ CREATE POLICY items_insert
 
 ALTER TABLE public.oauth2_app_scopes ENABLE ROW LEVEL SECURITY;
 
+
+
+
 ALTER TABLE public.oauth2_apps ENABLE ROW LEVEL SECURITY;
 
+
+
+
 ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
+
+
+
 
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 
@@ -380,8 +389,98 @@ CREATE POLICY profiles_update
 
 ALTER TABLE public.project_members ENABLE ROW LEVEL SECURITY;
 
+
+
+
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY projects_select
+    ON public.projects
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() <> 'client_credentials' AND 
+                auth.grant() <> 'authorization_code'
+            )
+            OR 
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.read' = ANY(auth.scopes()) AND
+                id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+        )
+    );
+
+CREATE POLICY projects_update
+    ON public.projects
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        (
+            (
+                auth.grant() = 'password' AND 
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Moderator')
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.update' = ANY(auth.scopes()) AND
+                id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+        )
+    );
+
+CREATE POLICY projects_delete
+    ON public.projects
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            SELECT 1
+            FROM public.project_members pm
+            WHERE
+                pm.project_id = id AND
+                pm.member_id = auth.uid() AND
+                pm.role = 'Admin'
+        )
+    );
+
+CREATE POLICY projects_insert
+    ON public.projects
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            SELECT 1
+            FROM public.project_members pm
+            WHERE
+                pm.project_id = id AND
+                pm.member_id = auth.uid() AND
+                pm.role = 'Admin'
+        )
+    );
+
+
+
 ALTER TABLE public.scopes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY scopes_select
+    ON public.scopes
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        auth.grant() <> 'authorization_code'
+    );
 
 
