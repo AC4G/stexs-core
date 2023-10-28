@@ -125,6 +125,8 @@ GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
 GRANT SELECT ON TABLE public.blocked TO anon;
 GRANT SELECT ON TABLE public.blocked TO authenticated;
 
+
+
 CREATE TABLE public.organization_members (
     id SERIAL PRIMARY KEY,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -132,13 +134,15 @@ CREATE TABLE public.organization_members (
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL,
-    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator'))
+    CHECK (role IN ('Member', 'Admin', 'Moderator'))
 );
 
 GRANT INSERT (organization_id, member_id, role) ON TABLE public.organization_members TO authenticated;
 GRANT UPDATE (role) ON TABLE public.organization_members TO authenticated;
 GRANT SELECT ON TABLE public.organization_members TO anon;
 GRANT SELECT ON TABLE public.organization_members TO authenticated;
+
+
 
 CREATE TABLE public.project_members (
     id SERIAL PRIMARY KEY,
@@ -154,6 +158,8 @@ GRANT INSERT (project_id, member_id, role) ON TABLE public.project_members TO au
 GRANT UPDATE (role) ON TABLE public.project_members TO authenticated;
 GRANT SELECT ON TABLE public.project_members TO anon;
 GRANT SELECT ON TABLE public.project_members TO authenticated;
+
+
 
 GRANT USAGE, SELECT ON SEQUENCE blocked_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE friends_id_seq TO authenticated;

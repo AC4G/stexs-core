@@ -353,6 +353,83 @@ ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY organizations_select
+    ON public.organizations
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code'
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'organization.read' = ANY(auth.scopes()) AND
+                id = (auth.jwt()->>'organization_id')::INT
+            )
+        )
+    );
+
+CREATE POLICY organizations_update
+    ON public.organizations
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        (
+            (
+                auth.grant() = 'password' AND 
+                EXISTS (
+                    SELECT 1
+                    FROM public.organization_members pm
+                    WHERE
+                        om.organization_id = id AND
+                        om.member_id = auth.uid() AND
+                        om.role IN ('Admin', 'Moderator')
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'organization.update' = ANY(auth.scopes()) AND
+                id = (auth.jwt()->>'organization_id')::INT
+            )
+        )
+    );
+
+CREATE POLICY organizations_delete
+    ON public.organizations
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = id AND
+                om.member_id = auth.uid() AND
+                om.role = 'Admin'
+        )
+    );
+
+CREATE POLICY organizations_insert
+    ON public.organizations
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = id AND
+                om.member_id = auth.uid() AND
+                om.role = 'Admin'
+        )
+    );
+
 
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
