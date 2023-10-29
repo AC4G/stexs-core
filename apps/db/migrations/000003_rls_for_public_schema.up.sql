@@ -353,15 +353,11 @@ CREATE POLICY oauth2_app_scopes_delete
     USING (
         auth.grant() = 'password' AND
         EXISTS (
-            WITH app AS (
-                SELECT oa.organization_id
-                FROM public.oauth2_apps oa
-                WHERE oa.id = client_id
-            )
             SELECT 1
-            FROM public.organization_members om
+            FROM public.oauth2_apps oa
+            JOIN public.organization_members om ON oa.organization_id = om.organization_id
             WHERE
-                om.organization_id = (SELECT organization_id FROM app) AND
+                oa.id = app_id AND
                 om.member_id = auth.uid() AND
                 om.role IN ('Admin', 'Moderator')
         )
@@ -374,15 +370,11 @@ CREATE POLICY oauth2_app_scopes_insert
     WITH CHECK (
         auth.grant() = 'password' AND 
         EXISTS (
-            WITH app AS (
-                SELECT oa.organization_id
-                FROM public.oauth2_apps oa
-                WHERE oa.id = client_id
-            )
             SELECT 1
-            FROM public.organization_members om
+            FROM public.oauth2_apps oa
+            JOIN public.organization_members om ON oa.organization_id = om.organization_id
             WHERE
-                om.organization_id = (SELECT organization_id FROM app) AND
+                oa.id = app_id AND
                 om.member_id = auth.uid() AND
                 om.role IN ('Admin', 'Moderator')
         )
@@ -398,13 +390,16 @@ CREATE POLICY oauth2_apps_select
     FOR SELECT
     USING (
         auth.grant() = 'password' AND
-        EXISTS(
-            SELECT 1
-            FROM public.organization_members om
-            WHERE
-                om.organization_id = (SELECT organization_id FROM app) AND
-                om.member_id = auth.uid() AND
-                om.role IN ('Admin', 'Moderator')
+        (
+            EXISTS(
+                SELECT 1
+                FROM public.organization_members om
+                WHERE
+                    om.organization_id = organization_id AND
+                    om.member_id = auth.uid() AND
+                    om.role IN ('Admin', 'Moderator')
+            ) OR
+            client_secret IS NULL
         )
     );
 
@@ -418,7 +413,7 @@ CREATE POLICY oauth2_apps_update
             SELECT 1
             FROM public.organization_members om
             WHERE
-                om.organization_id = (SELECT organization_id FROM app) AND
+                om.organization_id = organization_id AND
                 om.member_id = auth.uid() AND
                 om.role IN ('Admin', 'Moderator')
         )
@@ -434,7 +429,7 @@ CREATE POLICY oauth2_apps_delete
             SELECT 1
             FROM public.organization_members om
             WHERE
-                om.organization_id = (SELECT organization_id FROM app) AND
+                om.organization_id = organization_id AND
                 om.member_id = auth.uid() AND
                 om.role IN ('Admin', 'Moderator')
         )
@@ -450,7 +445,7 @@ CREATE POLICY oauth2_apps_insert
             SELECT 1
             FROM public.organization_members om
             WHERE
-                om.organization_id = (SELECT organization_id FROM app) AND
+                om.organization_id = organization_id AND
                 om.member_id = auth.uid() AND
                 om.role IN ('Admin', 'Moderator')
         )
@@ -670,5 +665,3 @@ CREATE POLICY scopes_select
     USING (
         auth.grant() <> 'authorization_code'
     );
-
-

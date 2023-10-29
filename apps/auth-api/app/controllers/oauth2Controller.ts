@@ -32,7 +32,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
             token_info AS (
                 SELECT aot.id, aot.user_id, aot.created_at
                 FROM auth.oauth2_authorization_tokens AS aot
-                JOIN app_info AS ai ON aot.client_id = ai.id
+                JOIN app_info AS ai ON aot.app_id = ai.id
                 WHERE aot.token = $1::uuid
             ),
             token_scopes AS (
@@ -154,7 +154,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
                 FROM auth.refresh_tokens
                 WHERE user_id = $3::uuid AND token = $1::uuid AND grant_type = 'authorization_code' AND session_id IS NULL
             )
-            INSERT INTO auth.oauth2_connections (user_id, client_id, refresh_token_id)
+            INSERT INTO auth.oauth2_connections (user_id, app_id, refresh_token_id)
             SELECT $3::uuid, id, (SELECT id FROM refresh_token_info)
             FROM app_info;
         `,
@@ -201,7 +201,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
             app_scopes AS (
                 SELECT STRING_TO_ARRAY(STRING_AGG(s.name, ','), ',') AS scopes
                 FROM app_info AS ai
-                JOIN public.oauth2_app_scopes AS oas ON ai.id = oas.client_id
+                JOIN public.oauth2_app_scopes AS oas ON ai.id = oas.app_id
                 JOIN public.scopes AS s ON oas.scope_id = s.id
                 WHERE s.type = 'client'
             )

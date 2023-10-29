@@ -260,8 +260,20 @@ CREATE TABLE public.oauth2_apps (
 
 GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 GRANT UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
-GRANT SELECT ON TABLE public.oauth2_apps TO anon;
 GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
+
+CREATE OR REPLACE VIEW public.oauth2_apps_public AS
+SELECT
+    id,
+    name,
+    client_id,
+    organization_id,
+    description,
+    homepage_url,
+    redirect_url
+FROM public.oauth2_apps;
+
+GRANT SELECT ON public.oauth2_apps_public TO authenticated;
 
 CREATE TABLE public.scopes (
     id SERIAL PRIMARY KEY,
@@ -277,13 +289,13 @@ GRANT SELECT ON TABLE public.scopes TO authenticated;
 
 CREATE TABLE public.oauth2_app_scopes (
     id SERIAL PRIMARY KEY,
-    client_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE,
+    app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE,
     scope_id INT REFERENCES public.scopes(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_oauth2_app_scopes_combination UNIQUE (client_id, scope_id)
+    CONSTRAINT unique_oauth2_app_scopes_combination UNIQUE (app_id, scope_id)
 );
 
-GRANT INSERT (client_id, scope_id) ON TABLE public.oauth2_app_scopes TO authenticated;
+GRANT INSERT (app_id, scope_id) ON TABLE public.oauth2_app_scopes TO authenticated;
 GRANT SELECT ON TABLE public.oauth2_app_scopes TO anon;
 GRANT SELECT ON TABLE public.oauth2_app_scopes TO authenticated;
 
@@ -291,9 +303,9 @@ CREATE TABLE auth.oauth2_authorization_tokens (
     id SERIAL PRIMARY KEY,
     token UUID NOT NULL UNIQUE,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    client_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
+    app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_oauth2_authorization_tokens_combination UNIQUE (user_id, client_id)
+    CONSTRAINT unique_oauth2_authorization_tokens_combination UNIQUE (user_id, app_id)
 );
 
 CREATE TABLE auth.oauth2_authorization_token_scopes (
@@ -307,11 +319,11 @@ CREATE TABLE auth.oauth2_authorization_token_scopes (
 CREATE TABLE auth.oauth2_connections (
     id SERIAL PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    client_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
+    app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
     refresh_token_id INT REFERENCES auth.refresh_tokens(id) ON DELETE CASCADE NOT NULL UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL,
-    CONSTRAINT unique_oauth2_connections_combination UNIQUE (user_id, client_id)
+    CONSTRAINT unique_oauth2_connections_combination UNIQUE (user_id, app_id)
 );
 
 CREATE OR REPLACE FUNCTION auth.create_profile_for_user()
