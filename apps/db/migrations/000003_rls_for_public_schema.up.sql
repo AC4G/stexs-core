@@ -338,16 +338,95 @@ CREATE POLICY items_insert
 
 ALTER TABLE public.oauth2_app_scopes ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY oauth2_app_scopes_select
+    ON public.oauth2_app_scopes
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        auth.grant() = 'password'
+    );
+
+CREATE POLICY oauth2_app_scopes_delete
+    ON public.oauth2_app_scopes
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'password' AND
+        EXISTS (
+            WITH app_project AS (
+                SELECT oa.project_id
+                FROM public.oauth2_apps oa
+                WHERE oa.id = client_id
+            )
+            SELECT 1
+            FROM public.project_members pm
+            WHERE
+                pm.project_id = (SELECT project_id FROM app_project) AND
+                pm.member_id = auth.uid() AND
+                pm.role IN ('Admin', 'Moderator')
+        )
+    );
+
+CREATE POLICY oauth2_app_scopes_insert
+    ON public.oauth2_app_scopes
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            WITH app_project AS (
+                SELECT oa.project_id
+                FROM public.oauth2_apps oa
+                WHERE oa.id = client_id
+            )
+            SELECT 1
+            FROM public.project_members pm
+            WHERE
+                pm.project_id = (SELECT project_id FROM app_project) AND
+                pm.member_id = auth.uid() AND
+                pm.role IN ('Admin', 'Moderator')
+        )
+    );
 
 
 
 ALTER TABLE public.oauth2_apps ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY oauth2_apps_select
+    ON public.oauth2_apps
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+
+    );
+
+CREATE POLICY oauth2_apps_update
+    ON public.oauth2_apps
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+
+    );
+
+CREATE POLICY oauth2_apps_delete
+    ON public.oauth2_apps
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+
+    );
+
+CREATE POLICY oauth2_apps_insert
+    ON public.oauth2_apps
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+
+    );
 
 
 
 ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
-
 
 
 
@@ -382,7 +461,7 @@ CREATE POLICY organizations_update
                 auth.grant() = 'password' AND 
                 EXISTS (
                     SELECT 1
-                    FROM public.organization_members pm
+                    FROM public.organization_members om
                     WHERE
                         om.organization_id = id AND
                         om.member_id = auth.uid() AND
