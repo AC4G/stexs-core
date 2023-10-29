@@ -307,6 +307,25 @@ BEFORE INSERT ON public.oauth2_apps
 FOR EACH ROW
 EXECUTE FUNCTION public.generate_client_credentials();
 
+CREATE OR REPLACE FUNCTION public.generate_new_client_secret(app_id INT)
+RETURNS VOID AS $$
+BEGIN
+    IF (auth.grant() = 'password' AND
+        EXISTS (
+            SELECT 1
+            FROM public.organization_members om
+            WHERE om.organization_id = NEW.organization_id
+                AND om.member_id = auth.uid()
+                AND om.role IN ('Admin', 'Moderator')
+        )) THEN
+        NEW.client_secret = md5(random()::text || clock_timestamp()::text);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.generate_new_client_secret(INT) TO authenticated;
+
 
 
 CREATE TABLE public.scopes (
