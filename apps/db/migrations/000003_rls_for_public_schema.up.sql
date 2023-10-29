@@ -353,17 +353,17 @@ CREATE POLICY oauth2_app_scopes_delete
     USING (
         auth.grant() = 'password' AND
         EXISTS (
-            WITH app_project AS (
-                SELECT oa.project_id
+            WITH app AS (
+                SELECT oa.organization_id
                 FROM public.oauth2_apps oa
                 WHERE oa.id = client_id
             )
             SELECT 1
-            FROM public.project_members pm
+            FROM public.organization_members om
             WHERE
-                pm.project_id = (SELECT project_id FROM app_project) AND
-                pm.member_id = auth.uid() AND
-                pm.role IN ('Admin', 'Moderator')
+                om.organization_id = (SELECT organization_id FROM app) AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
         )
     );
 
@@ -374,17 +374,17 @@ CREATE POLICY oauth2_app_scopes_insert
     WITH CHECK (
         auth.grant() = 'password' AND 
         EXISTS (
-            WITH app_project AS (
-                SELECT oa.project_id
+            WITH app AS (
+                SELECT oa.organization_id
                 FROM public.oauth2_apps oa
                 WHERE oa.id = client_id
             )
             SELECT 1
-            FROM public.project_members pm
+            FROM public.organization_members om
             WHERE
-                pm.project_id = (SELECT project_id FROM app_project) AND
-                pm.member_id = auth.uid() AND
-                pm.role IN ('Admin', 'Moderator')
+                om.organization_id = (SELECT organization_id FROM app) AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
         )
     );
 
@@ -397,7 +397,15 @@ CREATE POLICY oauth2_apps_select
     AS PERMISSIVE
     FOR SELECT
     USING (
-
+        auth.grant() = 'password' AND
+        EXISTS(
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = (SELECT organization_id FROM app) AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
     );
 
 CREATE POLICY oauth2_apps_update
@@ -405,7 +413,15 @@ CREATE POLICY oauth2_apps_update
     AS PERMISSIVE
     FOR UPDATE
     USING (
-
+        auth.grant() = 'password' AND
+        EXISTS(
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = (SELECT organization_id FROM app) AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
     );
 
 CREATE POLICY oauth2_apps_delete
@@ -413,7 +429,15 @@ CREATE POLICY oauth2_apps_delete
     AS PERMISSIVE
     FOR DELETE
     USING (
-
+        auth.grant() = 'password' AND
+        EXISTS(
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = (SELECT organization_id FROM app) AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
     );
 
 CREATE POLICY oauth2_apps_insert
@@ -421,7 +445,15 @@ CREATE POLICY oauth2_apps_insert
     AS PERMISSIVE
     FOR INSERT
     WITH CHECK (
-
+        auth.grant() = 'password' AND
+        EXISTS(
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = (SELECT organization_id FROM app) AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
     );
 
 
