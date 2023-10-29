@@ -4,14 +4,18 @@ CREATE TABLE public.items (
     parameter JSONB DEFAULT '{}'::JSONB,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    is_private BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL
+    updated_at TIMESTAMPTZ NULL,
+    CONSTRAINT unique_items_combination UNIQUE (name, project_id)
 );
 
-GRANT INSERT (name, parameter, project_id, creator_id) ON TABLE public.items TO authenticated;
-GRANT UPDATE (name, parameter, project_id, creator_id) ON TABLE public.items TO authenticated;
+GRANT INSERT (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
+GRANT UPDATE (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
 GRANT SELECT ON TABLE public.items TO anon;
 GRANT SELECT ON TABLE public.items TO authenticated;
+
+
 
 CREATE TABLE public.inventories (
     id SERIAL PRIMARY KEY,
@@ -121,13 +125,16 @@ GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
 GRANT SELECT ON TABLE public.blocked TO anon;
 GRANT SELECT ON TABLE public.blocked TO authenticated;
 
+
+
 CREATE TABLE public.organization_members (
     id SERIAL PRIMARY KEY,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
     member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL
+    updated_at TIMESTAMPTZ NULL,
+    CHECK (role IN ('Member', 'Admin', 'Moderator'))
 );
 
 GRANT INSERT (organization_id, member_id, role) ON TABLE public.organization_members TO authenticated;
@@ -135,19 +142,24 @@ GRANT UPDATE (role) ON TABLE public.organization_members TO authenticated;
 GRANT SELECT ON TABLE public.organization_members TO anon;
 GRANT SELECT ON TABLE public.organization_members TO authenticated;
 
+
+
 CREATE TABLE public.project_members (
     id SERIAL PRIMARY KEY,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL
+    updated_at TIMESTAMPTZ NULL,
+    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator'))
 );
 
 GRANT INSERT (project_id, member_id, role) ON TABLE public.project_members TO authenticated;
 GRANT UPDATE (role) ON TABLE public.project_members TO authenticated;
 GRANT SELECT ON TABLE public.project_members TO anon;
 GRANT SELECT ON TABLE public.project_members TO authenticated;
+
+
 
 GRANT USAGE, SELECT ON SEQUENCE blocked_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE friends_id_seq TO authenticated;

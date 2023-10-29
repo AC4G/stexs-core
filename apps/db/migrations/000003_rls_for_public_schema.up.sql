@@ -89,7 +89,7 @@ CREATE POLICY friends_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                'friends.read' = ANY(auth.scopes()::TEXT[])
+                'friends.read' = ANY(auth.scopes())
             )  
             OR 
             (
@@ -103,12 +103,13 @@ CREATE POLICY friends_select
             )
             OR 
             (
-                auth.grant() = 'password' AND
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code' AND
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE (p.user_id = user_id AND friend_privacy_level = 0) AND
-                          (p.user_id = friend_id AND friend_privacy_level = 0)
+                    WHERE (p.user_id = user_id AND friend_privacy_level = 0 AND p.is_private = FALSE) AND
+                          (p.user_id = friend_id AND friend_privacy_level = 0 AND p.is_private = FALSE)
                 )
             )
         )
@@ -133,31 +134,542 @@ CREATE POLICY friends_insert
         EXISTS (
             SELECT 1
             FROM public.friend_requests
-            WHERE (addressee_id = auth.uid() AND requester_id = friend_id) OR
-                (addressee_id = auth.uid() AND requester_id = user_id)
+            WHERE
+                addressee_id = auth.uid() AND requester_id = friend_id
+            UNION
+            SELECT 1
+            FROM public.friend_requests
+            WHERE
+                addressee_id = auth.uid() AND requester_id = user_id
         )
     );
 
 
 
+CREATE OR REPLACE VIEW public.project_ids_by_jwt_organization AS
+SELECT id
+FROM public.projects
+WHERE organization_id = (auth.jwt()->>'organization_id')::INT;
+
+GRANT SELECT ON public.project_ids_by_jwt_organization TO authenticated;
+
 ALTER TABLE public.inventories ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY inventories_select
+    ON public.inventories
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() = 'authorization_code' AND
+                auth.uid() = user_id AND
+                'inventory.read' = ANY(auth.scopes())
+            )
+            OR 
+            (
+                auth.grant() = 'password' AND
+                user_id = ANY(SELECT friend_id FROM public.friends_of_current_user)
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE p.user_id = user_id AND p.inventory_privacy_level = 2
+                )
+            )
+            OR
+            (
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code' AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE p.user_id = user_id AND p.inventory_privacy_level = 0 AND p.is_private = FALSE
+                )
+            )
+        )
+    );
+
+CREATE POLICY inventories_update
+    ON public.inventories
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        (
+            (
+                auth.grant() = 'authorization_code' AND
+                auth.uid() = user_id AND
+                'inventory.update' = ANY(auth.scopes()) AND
+                (SELECT project_id FROM public.items WHERE id = item_id) = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
+            )
+            OR 
+            (
+                auth.grant() = 'authorization_code' AND
+                auth.uid() = user_id AND
+                'inventory.update' = ANY(auth.scopes()) AND
+                (SELECT project_id FROM public.items WHERE id = item_id) <> ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
+                (amount < (SELECT amount FROM public.inventories i WHERE i.item_id = item_id AND i.user_id = auth.uid()))
+            )
+        )
+    );
+    
+CREATE POLICY inventories_delete
+    ON public.inventories
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'authorization_code' AND
+        auth.uid() = user_id AND
+        'inventory.update' = ANY(auth.scopes())
+    );
+
+CREATE POLICY inventories_insert
+    ON public.inventories
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'authorization_code' AND
+        auth.uid() = user_id AND
+        'inventory.insert' = ANY(auth.scopes()) AND
+        (SELECT project_id FROM public.items WHERE id = item_id) = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
+    );
+
+
 
 ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY items_select
+    ON public.items
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() = 'client_credentials' AND
+                'items.read' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+            OR
+            (
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code'
+            )
+        )
+    );
+
+CREATE POLICY items_update
+    ON public.items
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        (
+            (
+                auth.grant() = 'client_credentials' AND
+                'items.update' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Editor', 'Moderator')
+                )
+            )
+        )
+    );
+
+CREATE POLICY items_delete
+    ON public.items
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        (
+            (
+                auth.grant() = 'client_credentials' AND
+                'items.delete' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Editor', 'Moderator')
+                )
+            )
+        )
+    );
+
+CREATE POLICY items_insert
+    ON public.items
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        (
+            (
+                auth.grant() = 'client_credentials' AND
+                'items.insert' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Editor', 'Moderator')
+                )
+            )
+        )
+    );
+
+
+
 ALTER TABLE public.oauth2_app_scopes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY oauth2_app_scopes_select
+    ON public.oauth2_app_scopes
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        auth.grant() = 'password'
+    );
+
+CREATE POLICY oauth2_app_scopes_delete
+    ON public.oauth2_app_scopes
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'password' AND
+        EXISTS (
+            WITH app AS (
+                SELECT oa.organization_id
+                FROM public.oauth2_apps oa
+                WHERE oa.id = app_id
+            )
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = (SELECT organization_id FROM app) AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
+    );
+
+CREATE POLICY oauth2_app_scopes_insert
+    ON public.oauth2_app_scopes
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            WITH app AS (
+                SELECT oa.organization_id
+                FROM public.oauth2_apps oa
+                WHERE oa.id = app_id
+            )
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = (SELECT organization_id FROM app) AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
+    );
+
+
 
 ALTER TABLE public.oauth2_apps ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY oauth2_apps_select
+    ON public.oauth2_apps
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        auth.grant() = 'password' AND
+        (
+            EXISTS(
+                SELECT 1
+                FROM public.organization_members om
+                WHERE
+                    om.organization_id = organization_id AND
+                    om.member_id = auth.uid() AND
+                    om.role IN ('Admin', 'Moderator')
+            ) OR
+            client_secret IS NULL
+        )
+    );
+
+CREATE POLICY oauth2_apps_update
+    ON public.oauth2_apps
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        auth.grant() = 'password' AND
+        EXISTS(
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = organization_id AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
+    );
+
+CREATE POLICY oauth2_apps_delete
+    ON public.oauth2_apps
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'password' AND
+        EXISTS(
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = organization_id AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
+    );
+
+CREATE POLICY oauth2_apps_insert
+    ON public.oauth2_apps
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'password' AND
+        EXISTS(
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = organization_id AND
+                om.member_id = auth.uid() AND
+                om.role IN ('Admin', 'Moderator')
+        )
+    );
+
+
+
 ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
+
+
 
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY organizations_select
+    ON public.organizations
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code'
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'organization.read' = ANY(auth.scopes()) AND
+                id = (auth.jwt()->>'organization_id')::INT
+            )
+        )
+    );
+
+CREATE POLICY organizations_update
+    ON public.organizations
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        (
+            (
+                auth.grant() = 'password' AND 
+                EXISTS (
+                    SELECT 1
+                    FROM public.organization_members om
+                    WHERE
+                        om.organization_id = id AND
+                        om.member_id = auth.uid() AND
+                        om.role IN ('Admin', 'Moderator')
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'organization.update' = ANY(auth.scopes()) AND
+                id = (auth.jwt()->>'organization_id')::INT
+            )
+        )
+    );
+
+CREATE POLICY organizations_delete
+    ON public.organizations
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = id AND
+                om.member_id = auth.uid() AND
+                om.role = 'Admin'
+        )
+    );
+
+CREATE POLICY organizations_insert
+    ON public.organizations
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            SELECT 1
+            FROM public.organization_members om
+            WHERE
+                om.organization_id = id AND
+                om.member_id = auth.uid() AND
+                om.role = 'Admin'
+        )
+    );
+
+
+
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY profiles_select
+    ON public.profiles
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() <> 'client_credentials' AND
+                auth.grant() <> 'authorization_code'
+            )
+            OR
+            (
+                auth.grant() = 'authorization_code' AND
+                auth.uid() = user_id AND
+                'profile.read' = ANY(auth.scopes())
+            )
+        )
+    );
+
+CREATE POLICY profiles_update
+    ON public.profiles
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        auth.grant() = 'password' AND
+        auth.uid() = user_id
+    );
+
+
 
 ALTER TABLE public.project_members ENABLE ROW LEVEL SECURITY;
 
+
+
+
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY projects_select
+    ON public.projects
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() <> 'client_credentials' AND 
+                auth.grant() <> 'authorization_code'
+            )
+            OR 
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.read' = ANY(auth.scopes()) AND
+                id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+        )
+    );
+
+CREATE POLICY projects_update
+    ON public.projects
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        (
+            (
+                auth.grant() = 'password' AND 
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Moderator')
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.update' = ANY(auth.scopes()) AND
+                id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+        )
+    );
+
+CREATE POLICY projects_delete
+    ON public.projects
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            SELECT 1
+            FROM public.project_members pm
+            WHERE
+                pm.project_id = id AND
+                pm.member_id = auth.uid() AND
+                pm.role = 'Admin'
+        )
+    );
+
+CREATE POLICY projects_insert
+    ON public.projects
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        auth.grant() = 'password' AND 
+        EXISTS (
+            SELECT 1
+            FROM public.project_members pm
+            WHERE
+                pm.project_id = id AND
+                pm.member_id = auth.uid() AND
+                pm.role = 'Admin'
+        )
+    );
+
+
 
 ALTER TABLE public.scopes ENABLE ROW LEVEL SECURITY;
 
-
+CREATE POLICY scopes_select
+    ON public.scopes
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        auth.grant() <> 'authorization_code'
+    );

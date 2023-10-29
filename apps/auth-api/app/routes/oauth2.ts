@@ -105,7 +105,7 @@ router.post(
                     SELECT 1
                     FROM public.oauth2_app_scopes ascs
                     JOIN public.scopes s ON ascs.scope_id = s.id
-                    WHERE ascs.client_id = a.id
+                    WHERE ascs.app_id = a.id
                         AND s.type = 'user'
                         AND obj.scope = s.name::text
                 )
@@ -149,7 +149,7 @@ router.post(
       const { rowCount } = await db.query(
         `
             SELECT 1 FROM auth.oauth2_connections
-            WHERE user_id = $1::uuid AND client_id = (
+            WHERE user_id = $1::uuid AND app_id = (
                 SELECT id
                 FROM public.oauth2_apps
                 WHERE client_id = $2::uuid
@@ -184,9 +184,9 @@ router.post(
                 FROM public.oauth2_apps
                 WHERE client_id = $3::uuid
             )
-            INSERT INTO auth.oauth2_authorization_tokens (token, user_id, client_id)
+            INSERT INTO auth.oauth2_authorization_tokens (token, user_id, app_id)
             VALUES ($1::uuid, $2::uuid, (SELECT id FROM app_info))
-            ON CONFLICT (user_id, client_id)
+            ON CONFLICT (user_id, app_id)
             DO UPDATE
             SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
             RETURNING id;
