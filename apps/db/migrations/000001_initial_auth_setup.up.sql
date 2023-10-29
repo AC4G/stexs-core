@@ -6,14 +6,19 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS "citext";  
 
-CREATE ROLE authenticator LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER ENCRYPTED PASSWORD 'authenticator';
 
+
+CREATE ROLE authenticator LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER ENCRYPTED PASSWORD 'authenticator';
 CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
+
+
 
 GRANT anon TO authenticator;
 GRANT authenticated TO authenticator;
 GRANT USAGE ON SCHEMA public TO anon;
+
+
 
 CREATE SCHEMA auth;
 
@@ -85,6 +90,8 @@ GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.grant() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.scopes() TO authenticated;
 
+
+
 CREATE TABLE auth.users (
     id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
     email CITEXT NOT NULL UNIQUE,
@@ -125,6 +132,8 @@ CREATE TABLE auth.refresh_tokens (
     updated_at TIMESTAMPTZ NULL,
     CONSTRAINT unique_refresh_token_combination UNIQUE (user_id, session_id, grant_type, token)
 );
+
+
 
 CREATE OR REPLACE FUNCTION auth.create_mfa_for_user()
 RETURNS TRIGGER AS $$
@@ -191,6 +200,8 @@ BEFORE INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION auth.encrypt_password();
 
+
+
 CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
@@ -209,6 +220,8 @@ GRANT UPDATE (username, is_private, friend_privacy_level, inventory_privacy_leve
 GRANT SELECT ON TABLE public.profiles TO anon;
 GRANT SELECT ON TABLE public.profiles TO authenticated;
 
+
+
 CREATE TABLE public.organizations (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -225,6 +238,8 @@ GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE publ
 GRANT UPDATE (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
 GRANT SELECT ON TABLE public.organizations TO anon;
 GRANT SELECT ON TABLE public.organizations TO authenticated;
+
+
 
 CREATE TABLE public.projects (
     id SERIAL PRIMARY KEY,
@@ -244,6 +259,8 @@ GRANT UPDATE (name, description, readme, email, url) ON TABLE public.projects TO
 GRANT SELECT ON TABLE public.projects TO anon;
 GRANT SELECT ON TABLE public.projects TO authenticated;
 
+
+
 CREATE TABLE public.oauth2_apps (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -260,6 +277,7 @@ CREATE TABLE public.oauth2_apps (
 
 GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 GRANT UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT SELECT ON TABLE public.oauth2_apps TO anon;
 GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
 CREATE OR REPLACE VIEW public.oauth2_apps_public AS
@@ -275,6 +293,22 @@ FROM public.oauth2_apps;
 
 GRANT SELECT ON public.oauth2_apps_public TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.generate_client_credentials()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.client_id := uuid_generate_v4();
+    NEW.client_secret := md5(random()::text || clock_timestamp()::text);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER generate_client_credentials_trigger
+BEFORE INSERT ON public.oauth2_apps
+FOR EACH ROW
+EXECUTE FUNCTION public.generate_client_credentials();
+
+
+
 CREATE TABLE public.scopes (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -287,6 +321,8 @@ CREATE TABLE public.scopes (
 GRANT SELECT ON TABLE public.scopes TO anon;
 GRANT SELECT ON TABLE public.scopes TO authenticated;
 
+
+
 CREATE TABLE public.oauth2_app_scopes (
     id SERIAL PRIMARY KEY,
     app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE,
@@ -298,6 +334,8 @@ CREATE TABLE public.oauth2_app_scopes (
 GRANT INSERT (app_id, scope_id) ON TABLE public.oauth2_app_scopes TO authenticated;
 GRANT SELECT ON TABLE public.oauth2_app_scopes TO anon;
 GRANT SELECT ON TABLE public.oauth2_app_scopes TO authenticated;
+
+
 
 CREATE TABLE auth.oauth2_authorization_tokens (
     id SERIAL PRIMARY KEY,
@@ -325,6 +363,8 @@ CREATE TABLE auth.oauth2_connections (
     updated_at TIMESTAMPTZ NULL,
     CONSTRAINT unique_oauth2_connections_combination UNIQUE (user_id, app_id)
 );
+
+
 
 CREATE OR REPLACE FUNCTION auth.create_profile_for_user()
 RETURNS TRIGGER AS $$

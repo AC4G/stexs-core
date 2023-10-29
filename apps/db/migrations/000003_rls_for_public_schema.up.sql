@@ -353,11 +353,15 @@ CREATE POLICY oauth2_app_scopes_delete
     USING (
         auth.grant() = 'password' AND
         EXISTS (
+            WITH app AS (
+                SELECT oa.organization_id
+                FROM public.oauth2_apps oa
+                WHERE oa.id = app_id
+            )
             SELECT 1
-            FROM public.oauth2_apps oa
-            JOIN public.organization_members om ON oa.organization_id = om.organization_id
+            FROM public.organization_members om
             WHERE
-                oa.id = app_id AND
+                om.organization_id = (SELECT organization_id FROM app) AND
                 om.member_id = auth.uid() AND
                 om.role IN ('Admin', 'Moderator')
         )
@@ -370,11 +374,15 @@ CREATE POLICY oauth2_app_scopes_insert
     WITH CHECK (
         auth.grant() = 'password' AND 
         EXISTS (
+            WITH app AS (
+                SELECT oa.organization_id
+                FROM public.oauth2_apps oa
+                WHERE oa.id = app_id
+            )
             SELECT 1
-            FROM public.oauth2_apps oa
-            JOIN public.organization_members om ON oa.organization_id = om.organization_id
+            FROM public.organization_members om
             WHERE
-                oa.id = app_id AND
+                om.organization_id = (SELECT organization_id FROM app) AND
                 om.member_id = auth.uid() AND
                 om.role IN ('Admin', 'Moderator')
         )
