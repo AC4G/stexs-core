@@ -30,6 +30,11 @@ REVOKE UPDATE (role) ON TABLE public.project_members FROM authenticated;
 REVOKE DELETE ON TABLE public.project_members FROM authenticated;
 REVOKE SELECT ON TABLE public.project_members FROM anon;
 REVOKE SELECT ON TABLE public.project_members FROM authenticated;
+REVOKE INSERT (organization_id, addressee_id, role) ON TABLE public.organization_requests FROM authenticated;
+REVOKE UPDATE (role) ON TABLE public.organization_members FROM authenticated;
+REVOKE DELETE ON TABLE public.organization_requests FROM authenticated;
+REVOKE SELECT ON TABLE public.organization_requests FROM anon;
+REVOKE SELECT ON TABLE public.organization_requests FROM authenticated;
 
 DROP TRIGGER friend_insert_trigger ON public.friends;
 DROP FUNCTION friend_insert();
