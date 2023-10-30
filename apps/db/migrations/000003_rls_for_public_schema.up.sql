@@ -483,13 +483,27 @@ CREATE POLICY organization_members_update
     FOR UPDATE
     USING (
         auth.grant() = 'password' AND
-        EXISTS(
-            SELECT 1
-            FROM public.organization_members om
-            WHERE
-                om.organization_id = organization_id AND
-                om.member_id = auth.uid() AND
-                om.role IN ('Admin', 'Moderator')
+        (
+            EXISTS (
+                SELECT 1
+                FROM public.organization_members om
+                WHERE
+                    om.organization_id = organization_id AND
+                    om.member_id = auth.uid() AND
+                    om.role = 'Admin'
+            )
+            OR
+            (
+                EXISTS (
+                    SELECT 1
+                    FROM public.organization_members om
+                    WHERE
+                        om.organization_id = organization_id AND
+                        om.member_id = auth.uid() AND
+                        om.role = 'Moderator'
+                ) AND
+                role NOT IN ('Admin', 'Moderator')
+            )
         )
     );
 
