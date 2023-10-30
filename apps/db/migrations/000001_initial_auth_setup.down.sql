@@ -10,7 +10,11 @@ REVOKE SELECT ON TABLE public.profiles FROM anon;
 REVOKE EXECUTE ON FUNCTION public.generate_new_client_secret(INT) FROM authenticated;
 REVOKE INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps FROM authenticated;
 REVOKE UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps FROM authenticated;
+REVOKE DELETE ON TABLE public.organizations FROM authenticated;
 REVOKE SELECT ON TABLE public.oauth2_apps FROM authenticated;
+REVOKE DELETE ON TABLE public.projects FROM authenticated;
+REVOKE DELETE ON TABLE public.oauth2_apps FROM authenticated;
+REVOKE DELETE ON TABLE public.oauth2_app_scopes FROM authenticated;
 
 DROP TRIGGER generate_client_credentials_trigger ON public.oauth2_apps;
 DROP FUNCTION public.generate_client_credentials();
