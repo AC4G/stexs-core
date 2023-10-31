@@ -103,8 +103,7 @@ CREATE POLICY friends_select
             )
             OR 
             (
-                auth.grant() <> 'client_credentials' AND
-                auth.grant() <> 'authorization_code' AND
+                auth.grant() NOT IN ('client_credentials', 'authorization_code') AND
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
@@ -178,8 +177,7 @@ CREATE POLICY inventories_select
             )
             OR
             (
-                auth.grant() <> 'client_credentials' AND
-                auth.grant() <> 'authorization_code' AND
+                auth.grant() NOT IN ('client_credentials', 'authorization_code') AND
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
@@ -250,8 +248,7 @@ CREATE POLICY items_select
             )
             OR
             (
-                auth.grant() <> 'client_credentials' AND
-                auth.grant() <> 'authorization_code'
+                auth.grant() NOT IN ('client_credentials', 'authorization_code')
             )
         )
     );
@@ -469,8 +466,7 @@ CREATE POLICY organization_members_select
     FOR SELECT
     USING (
         (
-            auth.grant() <> 'client_credentials' AND
-            auth.grant() <> 'authorization_code' AND
+            auth.grant() NOT IN ('client_credentials', 'authorization_code') AND
             EXISTS (
                 SELECT 1
                 FROM public.profiles AS p
@@ -493,16 +489,16 @@ CREATE POLICY organization_members_update
         (
             (
                 auth.grant() = 'password' AND
-                EXISTS (
-                SELECT 1
-                FROM public.organization_members om
-                WHERE
-                    om.organization_id = organization_id AND
-                    om.member_id = auth.uid() AND
-                    om.role = 'Admin'
-                )
-                OR
                 (
+                    EXISTS (
+                        SELECT 1
+                        FROM public.organization_members om
+                        WHERE
+                            om.organization_id = organization_id AND
+                            om.member_id = auth.uid() AND
+                            om.role = 'Admin'
+                    )
+                    OR
                     EXISTS (
                         SELECT 1
                         FROM public.organization_members om
@@ -537,9 +533,31 @@ CREATE POLICY organization_members_delete
                     FROM public.organization_members om
                     WHERE
                         om.organization_id = organization_id AND
-                        om.member_id = auth.uid() AND
-                        om.role IN ('Admin', 'Moderator')
+                        om.member_id = auth.uid()
                 )
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                EXISTS(
+                    SELECT 1
+                    FROM public.organization_members om
+                    WHERE
+                        om.organization_id = organization_id AND
+                        om.role 'Admin'
+                )
+            )
+            OR 
+            (
+                auth.grant() = 'password' AND
+                EXISTS(
+                    SELECT 1
+                    FROM public.organization_members om
+                    WHERE
+                        om.organization_id = organization_id AND
+                        om.role 'Moderator'
+                ) AND
+                role NOT IN ('Admin', 'Moderator')
             )
             OR
             (
@@ -712,8 +730,7 @@ CREATE POLICY organizations_select
     USING (
         (
             (
-                auth.grant() <> 'client_credentials' AND
-                auth.grant() <> 'authorization_code'
+                auth.grant() NOT IN ('client_credentials', 'authorization_code')
             )
             OR
             (
@@ -793,8 +810,7 @@ CREATE POLICY profiles_select
     USING (
         (
             (
-                auth.grant() <> 'client_credentials' AND
-                auth.grant() <> 'authorization_code'
+                auth.grant() NOT IN ('client_credentials', 'authorization_code')
             )
             OR
             (
@@ -825,11 +841,18 @@ CREATE POLICY project_members_select
     USING (
         (
             (
-
+                auth.grant() NOT IN ('client_credentials', 'authorization_code') AND
+                    EXISTS (
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE p.user_id = user_id AND p.is_private = FALSE
+                )
             )
             OR 
             (
-
+                auth.grant() = 'client_credentials' AND
+                'project.members.read' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
             )
         )
     );
@@ -839,7 +862,40 @@ CREATE POLICY project_members_update
     AS PERMISSIVE
     FOR UPDATE 
     USING (
-
+        (
+            (
+                auth.grant() = 'password' AND
+                (
+                    EXISTS (
+                        SELECT 1
+                        FROM public.project_members pm
+                        WHERE
+                            pm.project_id = project_id AND
+                            pm.member_id = auth.uid() AND
+                            pm.role = 'Admin'
+                    )
+                    OR
+                    (
+                        EXISTS (
+                            SELECT 1
+                            FROM public.project_members pm
+                            WHERE
+                                pm.project_id = project_id AND
+                                pm.member_id = auth.uid() AND
+                                pm.role = 'Moderator'
+                        ) AND
+                        role NOT IN ('Admin', 'Moderator')
+                    )
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.members.update' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                role NOT IN ('Admin', 'Moderator')
+            )
+        )
     );
 
 CREATE POLICY project_members_delete
@@ -847,7 +903,48 @@ CREATE POLICY project_members_delete
     AS PERMISSIVE
     FOR DELETE
     USING (
-
+        (
+            (
+                auth.grant() = 'password' AND
+                EXISTS(
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.member_id = auth.uid()
+                )
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                EXISTS(
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.role 'Admin'
+                )
+            )
+            OR 
+            (
+                auth.grant() = 'password' AND
+                EXISTS(
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.role 'Moderator'
+                ) AND
+                role NOT IN ('Admin', 'Moderator')
+            )
+            OR 
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.members.delete' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                role NOT IN ('Admin', 'Moderator')
+            )
+        )
     );
 
 CREATE POLICY project_members_insert
@@ -855,7 +952,16 @@ CREATE POLICY project_members_insert
     AS PERMISSIVE
     FOR INSERT
     WITH CHECK (
-
+        auth.grant() = 'password' AND
+        auth.uid() = member_id AND
+        EXISTS (
+            SELECT 1
+            FROM public.project_requests prq
+            WHERE 
+                prq.project_id = project_id AND 
+                prq.addressee_id = auth.uid() AND
+                prq.role = role
+        )
     );
 
 
@@ -869,8 +975,7 @@ CREATE POLICY projects_select
     USING (
         (
             (
-                auth.grant() <> 'client_credentials' AND 
-                auth.grant() <> 'authorization_code'
+                auth.grant() NOT IN ('client_credentials', 'authorization_code')
             )
             OR 
             (
