@@ -12,6 +12,7 @@ CREATE TABLE public.items (
 
 GRANT INSERT (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
 GRANT UPDATE (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
+GRANT DELETE ON TABLE public.items TO authenticated;
 GRANT SELECT ON TABLE public.items TO anon;
 GRANT SELECT ON TABLE public.items TO authenticated;
 
@@ -30,6 +31,7 @@ CREATE TABLE public.inventories (
 
 GRANT INSERT (item_id, user_id, amount, parameter) ON TABLE public.inventories TO authenticated;
 GRANT UPDATE (amount, parameter) ON TABLE public.inventories TO authenticated;
+GRANT DELETE ON TABLE public.inventories TO authenticated;
 GRANT SELECT ON TABLE public.inventories TO anon;
 GRANT SELECT ON TABLE public.inventories TO authenticated;
 
@@ -122,6 +124,7 @@ CREATE TABLE public.blocked (
 );
 
 GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
+GRANT DELETE ON TABLE public.blocked TO authenticated;
 GRANT SELECT ON TABLE public.blocked TO anon;
 GRANT SELECT ON TABLE public.blocked TO authenticated;
 
@@ -139,8 +142,27 @@ CREATE TABLE public.organization_members (
 
 GRANT INSERT (organization_id, member_id, role) ON TABLE public.organization_members TO authenticated;
 GRANT UPDATE (role) ON TABLE public.organization_members TO authenticated;
+GRANT DELETE ON TABLE public.organization_members TO authenticated;
 GRANT SELECT ON TABLE public.organization_members TO anon;
 GRANT SELECT ON TABLE public.organization_members TO authenticated;
+
+
+
+CREATE TABLE public.organization_requests (
+    id SERIAL PRIMARY KEY,
+    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
+    addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    role VARCHAR(255) DEFAULT 'Member' NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NULL,
+    CHECK (role IN ('Member', 'Admin', 'Moderator'))
+);
+
+GRANT INSERT (organization_id, addressee_id, role) ON TABLE public.organization_requests TO authenticated;
+GRANT UPDATE (role) ON TABLE public.organization_requests TO authenticated;
+GRANT DELETE ON TABLE public.organization_requests TO authenticated;
+GRANT SELECT ON TABLE public.organization_requests TO anon;
+GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 
 
 
@@ -156,8 +178,25 @@ CREATE TABLE public.project_members (
 
 GRANT INSERT (project_id, member_id, role) ON TABLE public.project_members TO authenticated;
 GRANT UPDATE (role) ON TABLE public.project_members TO authenticated;
+GRANT DELETE ON TABLE public.project_members TO authenticated;
 GRANT SELECT ON TABLE public.project_members TO anon;
 GRANT SELECT ON TABLE public.project_members TO authenticated;
+
+CREATE TABLE public.project_requests (
+    id SERIAL PRIMARY KEY,
+    project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
+    addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    role VARCHAR(255) DEFAULT 'Member' NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NULL,
+    CHECK (role IN ('Member', 'Admin', 'Moderator'))
+);
+
+GRANT INSERT (project_id, addressee_id, role) ON TABLE public.project_requests TO authenticated;
+GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
+GRANT DELETE ON TABLE public.project_requests TO authenticated;
+GRANT SELECT ON TABLE public.project_requests TO anon;
+GRANT SELECT ON TABLE public.project_requests TO authenticated;
 
 
 
@@ -170,6 +209,8 @@ GRANT USAGE, SELECT ON SEQUENCE oauth2_app_scopes_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE oauth2_apps_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE organization_members_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE organizations_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE organization_requests_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE project_members_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE projects_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE project_requests_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE scopes_id_seq TO authenticated;

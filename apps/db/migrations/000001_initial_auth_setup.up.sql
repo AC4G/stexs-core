@@ -236,6 +236,7 @@ CREATE TABLE public.organizations (
 
 GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
 GRANT UPDATE (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
+GRANT DELETE ON TABLE public.organizations TO authenticated;
 GRANT SELECT ON TABLE public.organizations TO anon;
 GRANT SELECT ON TABLE public.organizations TO authenticated;
 
@@ -256,6 +257,7 @@ CREATE TABLE public.projects (
 
 GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
 GRANT UPDATE (name, description, readme, email, url) ON TABLE public.projects TO authenticated;
+GRANT DELETE ON TABLE public.projects TO authenticated;
 GRANT SELECT ON TABLE public.projects TO anon;
 GRANT SELECT ON TABLE public.projects TO authenticated;
 
@@ -277,6 +279,7 @@ CREATE TABLE public.oauth2_apps (
 
 GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 GRANT UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT DELETE ON TABLE public.oauth2_apps TO authenticated;
 GRANT SELECT ON TABLE public.oauth2_apps TO anon;
 GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
@@ -310,17 +313,24 @@ EXECUTE FUNCTION public.generate_client_credentials();
 CREATE OR REPLACE FUNCTION public.generate_new_client_secret(app_id INT)
 RETURNS VOID AS $$
 BEGIN
-    IF (auth.grant() = 'password' AND
+    IF (
+        auth.grant() = 'password' AND
         EXISTS (
             SELECT 1
-            FROM public.organization_members om
-            WHERE om.organization_id = NEW.organization_id
+            FROM public.oauth2_apps oa
+            JOIN public.organization_members om ON oa.organization_id = om.organization_id
+            WHERE oa.id = app_id
                 AND om.member_id = auth.uid()
                 AND om.role IN ('Admin', 'Moderator')
-        )) THEN
-        NEW.client_secret = md5(random()::text || clock_timestamp()::text);
+        )
+    ) THEN
+        UPDATE public.oauth2_apps
+        SET client_secret = md5(random()::text || clock_timestamp()::text)
+        WHERE id = app_id;
+    ELSE
+        RAISE sqlstate '42501' USING
+            message = 'Insufficient Privilege';
     END IF;
-    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -351,6 +361,7 @@ CREATE TABLE public.oauth2_app_scopes (
 );
 
 GRANT INSERT (app_id, scope_id) ON TABLE public.oauth2_app_scopes TO authenticated;
+GRANT DELETE ON TABLE public.oauth2_app_scopes TO authenticated;
 GRANT SELECT ON TABLE public.oauth2_app_scopes TO anon;
 GRANT SELECT ON TABLE public.oauth2_app_scopes TO authenticated;
 
