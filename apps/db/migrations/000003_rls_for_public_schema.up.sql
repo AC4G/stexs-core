@@ -576,13 +576,26 @@ CREATE POLICY organization_members_insert
     WITH CHECK (
         auth.grant() = 'password' AND
         auth.uid() = member_id AND
-        EXISTS (
-            SELECT 1
-            FROM public.organization_requests orq
-            WHERE 
-                orq.organization_id = organization_id AND 
-                orq.addressee_id = auth.uid() AND
-                orq.role = role
+        (
+            EXISTS (
+                SELECT 1
+                FROM public.organization_requests orq
+                WHERE 
+                    orq.organization_id = organization_id AND 
+                    orq.addressee_id = auth.uid() AND
+                    orq.role = role
+            )
+            OR
+            (
+                NOT EXISTS (
+                    SELECT 1
+                    FROM public.organization_members om
+                    WHERE 
+                        om.organization_id = organization_id AND
+                        om.role = 'Admin'
+                ) AND
+                role = 'Admin'
+            )
         )
     );
 
@@ -1132,13 +1145,24 @@ CREATE POLICY project_members_insert
     WITH CHECK (
         auth.grant() = 'password' AND
         auth.uid() = member_id AND
-        EXISTS (
-            SELECT 1
-            FROM public.project_requests prq
-            WHERE 
-                prq.project_id = project_id AND 
-                prq.addressee_id = auth.uid() AND
-                prq.role = role
+        (
+            EXISTS (
+                SELECT 1
+                FROM public.project_requests prq
+                WHERE 
+                    prq.project_id = project_id AND 
+                    prq.addressee_id = auth.uid() AND
+                    prq.role = role
+            )
+            OR
+            EXISTS (
+                SELECT 1
+                FROM public.organization_members om
+                WHERE
+                    om.organization_id = organization_id AND
+                    om.member_id = auth.uid() AND
+                    om.role = 'Admin'
+            )
         )
     );
 
