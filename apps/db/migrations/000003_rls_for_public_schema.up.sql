@@ -629,20 +629,35 @@ CREATE TABLE public.organization_requests_update
         (
             (
                 auth.grant() = 'password' AND
-                EXISTS (
-                    SELECT 1
-                    FROM public.organization_members om
-                    WHERE
-                        om.organization_id = organization_id AND
-                        om.member_id = auth.uid() AND
-                        om.role IN ('Admin', 'Moderator')
+                (
+                    EXISTS (
+                        SELECT 1
+                        FROM public.organization_members om
+                        WHERE
+                            om.organization_id = organization_id AND
+                            om.member_id = auth.uid() AND
+                            om.role = 'Admin'
+                    )
+                    OR
+                    (
+                        EXISTS (
+                            SELECT 1
+                            FROM public.organization_members om
+                            WHERE
+                                om.organization_id = organization_id AND
+                                om.member_id = auth.uid() AND
+                                om.role = 'Moderator'
+                        ) AND
+                        role NOT IN ('Admin', 'Moderator')
+                    )
                 )
             )
             OR
             (
                 auth.grant() = 'client_credentials' AND
                 'organization.requests.update' = ANY(auth.scopes()) AND
-                organization_id = (auth.jwt()->>'organization_id')::INT
+                organization_id = (auth.jwt()->>'organization_id')::INT AND
+                role NOT IN ('Admin', 'Moderator')
             )
         )
     );
@@ -655,25 +670,36 @@ CREATE POLICY public.organization_requests_delete
         (
             (
                 auth.grant() = 'password' AND
-                auth.uid() = addressee_id
-            )
-            OR 
-            (
-                auth.grant() = 'password' AND
-                EXISTS (
-                    SELECT 1
-                    FROM public.organization_members om
-                    WHERE
-                        om.organization_id = organization_id AND
-                        om.member_id = auth.uid() AND
-                        om.role IN ('Admin', 'Moderator')
+                (
+                    auth.uid() = addressee_id OR
+                    EXISTS (
+                        SELECT 1
+                        FROM public.organization_members om
+                        WHERE
+                            om.organization_id = organization_id AND
+                            om.member_id = auth.uid() AND
+                            om.role = 'Admin'
+                    )
+                    OR
+                    (
+                        EXISTS (
+                            SELECT 1
+                            FROM public.organization_members om
+                            WHERE
+                                om.organization_id = organization_id AND
+                                om.member_id = auth.uid() AND
+                                om.role = 'Moderator'
+                        ) AND
+                        role NOT IN ('Admin', 'Moderator')
+                    )
                 )
             )
             OR 
             (
                 auth.grant() = 'client_credentials' AND
                 'organization.requests.delete' = ANY(auth.scopes()) AND
-                organization_id = (auth.jwt()->>'organization_id')::INT
+                organization_id = (auth.jwt()->>'organization_id')::INT AND
+                role NOT IN ('Admin', 'Moderator')
             )
         )
     );
@@ -788,15 +814,7 @@ CREATE POLICY organizations_insert
     AS PERMISSIVE
     FOR INSERT
     WITH CHECK (
-        auth.grant() = 'password' AND 
-        EXISTS (
-            SELECT 1
-            FROM public.organization_members om
-            WHERE
-                om.organization_id = id AND
-                om.member_id = auth.uid() AND
-                om.role = 'Admin'
-        )
+        auth.grant() = 'password'
     );
 
 
@@ -828,6 +846,166 @@ CREATE POLICY profiles_update
     USING (
         auth.grant() = 'password' AND
         auth.uid() = user_id
+    );
+
+
+
+ALTER TABLE public.project_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY project_requests_select
+    ON public.project_requests
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        (
+            (
+                auth.grant() = 'password' AND
+                auth.uid() = addressee_id 
+            )
+            OR
+            (
+                auth.grant() = 'password' AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.project_members pm
+                    WHERE
+                        pm.project_id = project_id AND
+                        pm.member_id = auth.uid() AND
+                        pm.role IN ('Admin', 'Moderator')
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.requests.read' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+            )
+        )
+    );
+
+CREATE POLICY project_requests_update
+    ON public.project_requests
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        (
+            (
+                auth.grant() = 'password' AND
+                (
+                    EXISTS (
+                        SELECT 1
+                        FROM public.project_members pm
+                        WHERE
+                            pm.project_id = project_id AND
+                            pm.member_id = auth.uid() AND
+                            pm.role = 'Admin'
+                    )
+                    OR
+                    (
+                        EXISTS (
+                            SELECT 1
+                            FROM public.project_members pm
+                            WHERE
+                                pm.project_id = project_id AND
+                                pm.member_id = auth.uid() AND
+                                pm.role = 'Moderator'
+                        ) AND
+                        role NOT IN ('Admin', 'Moderator')
+                    )
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.requests.update' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                role NOT IN ('Admin', 'Moderator')
+            )
+        )
+    );
+
+CREATE POLICY project_requests_delete
+    ON public.project_requests
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        (
+            (
+                auth.grant() = 'password' AND
+                (
+                    auth.uid() = addressee_id OR
+                    EXISTS (
+                        SELECT 1
+                        FROM public.project_members pm
+                        WHERE
+                            pm.project_id = project_id AND
+                            pm.member_id = auth.uid() AND
+                            pm.role = 'Admin'
+                    )
+                    OR
+                    (
+                        EXISTS (
+                            SELECT 1
+                            FROM public.project_members pm
+                            WHERE
+                                pm.project_id = project_id AND
+                                pm.member_id = auth.uid() AND
+                                pm.role = 'Moderator'
+                        ) AND
+                        role NOT IN ('Admin', 'Moderator')
+                    )
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.requests.delete' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                role NOT IN ('Admin', 'Moderator')
+            )
+        )
+    );
+
+CREATE POLICY project_requests_insert
+    ON public.project_requests
+    AS PERMISSIVE
+    FOR INSERT 
+    WITH CHECK (
+        (
+            (
+                auth.grant() = 'password' AND
+                (
+                    auth.uid() = addressee_id OR
+                    EXISTS (
+                        SELECT 1
+                        FROM public.project_members pm
+                        WHERE
+                            pm.project_id = project_id AND
+                            pm.member_id = auth.uid() AND
+                            pm.role = 'Admin'
+                    )
+                    OR
+                    (
+                        EXISTS (
+                            SELECT 1
+                            FROM public.project_members pm
+                            WHERE
+                                pm.project_id = project_id AND
+                                pm.member_id = auth.uid() AND
+                                pm.role = 'Moderator'
+                        ) AND
+                        role NOT IN ('Admin', 'Moderator')
+                    )
+                )
+            )
+            OR
+            (
+                auth.grant() = 'client_credentials' AND
+                'project.requests.insert' = ANY(auth.scopes()) AND
+                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                role NOT IN ('Admin', 'Moderator')
+            )
+        )
     );
 
 
@@ -1036,11 +1214,11 @@ CREATE POLICY projects_insert
         auth.grant() = 'password' AND 
         EXISTS (
             SELECT 1
-            FROM public.project_members pm
+            FROM public.organization_members om
             WHERE
-                pm.project_id = id AND
-                pm.member_id = auth.uid() AND
-                pm.role = 'Admin'
+                om.organization_id = organization_id AND
+                om.member_id = auth.uid() AND
+                om.role = 'Admin'
         )
     );
 
