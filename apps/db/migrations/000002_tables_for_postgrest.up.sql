@@ -164,6 +164,21 @@ GRANT DELETE ON TABLE public.organization_requests TO authenticated;
 GRANT SELECT ON TABLE public.organization_requests TO anon;
 GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.make_user_member_of_organization()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.organization_members (organization_id, member_id, role)
+    VALUES (NEW.id, auth.uid(), 'Admin');
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER make_user_member_of_organization_trigger
+AFTER INSERT ON public.organizations
+FOR EACH ROW
+EXECUTE FUNCTION public.make_user_member_of_organization();
+
 
 
 CREATE TABLE public.project_members (
@@ -197,6 +212,21 @@ GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
 GRANT DELETE ON TABLE public.project_requests TO authenticated;
 GRANT SELECT ON TABLE public.project_requests TO anon;
 GRANT SELECT ON TABLE public.project_requests TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.make_user_member_of_project()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.project_members (project_id, member_id, role)
+    VALUES (NEW.id, auth.uid(), 'Admin');
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER make_user_member_of_project_trigger
+AFTER INSERT ON public.projects
+FOR EACH ROW
+EXECUTE FUNCTION public.make_user_member_of_project();
 
 
 
