@@ -552,7 +552,16 @@ CREATE POLICY organization_members_delete
                     FROM public.organization_members om
                     WHERE
                         om.organization_id = organization_id AND
-                        om.member_id = auth.uid()
+                        om.member_id = auth.uid() AND
+                        (
+                            (om.role <> 'Admin') OR
+                            (
+                                om.role = 'Admin' AND
+                                (SELECT COUNT(*) FROM public.organization_members omc
+                                WHERE omc.organization_id = organization_id
+                                AND omc.role = 'Admin') > 1
+                            )
+                        )
                 )
             )
             OR
@@ -742,18 +751,16 @@ CREATE POLICY organization_requests_insert
     FOR INSERT 
     WITH CHECK (
         (
+            NOT EXISTS (
+                SELECT 1
+                FROM public.organization_members om
+                WHERE
+                    om.organization_id = organization_id AND
+                    om.member_id = member_id   
+            )AND
             (
-                auth.grant() = 'password' AND
                 (
-                    EXISTS (
-                        SELECT 1
-                        FROM public.organization_members om
-                        WHERE
-                            om.organization_id = organization_id AND
-                            om.member_id = auth.uid() AND
-                            om.role = 'Admin'
-                    )
-                    OR
+                    auth.grant() = 'password' AND
                     (
                         EXISTS (
                             SELECT 1
@@ -761,18 +768,29 @@ CREATE POLICY organization_requests_insert
                             WHERE
                                 om.organization_id = organization_id AND
                                 om.member_id = auth.uid() AND
-                                om.role = 'Moderator'
-                        ) AND
-                        role NOT IN ('Admin', 'Moderator')
+                                om.role = 'Admin'
+                        )
+                        OR
+                        (
+                            EXISTS (
+                                SELECT 1
+                                FROM public.organization_members om
+                                WHERE
+                                    om.organization_id = organization_id AND
+                                    om.member_id = auth.uid() AND
+                                    om.role = 'Moderator'
+                            ) AND
+                            role NOT IN ('Admin', 'Moderator')
+                        )
                     )
                 )
-            )
-            OR 
-            (
-                auth.grant() = 'client_credentials' AND
-                'organization.requests.insert' = ANY(auth.scopes()) AND
-                organization_id = (auth.jwt()->>'organization_id')::INT AND
-                role NOT IN ('Admin', 'Moderator')
+                OR 
+                (
+                    auth.grant() = 'client_credentials' AND
+                    'organization.requests.insert' = ANY(auth.scopes()) AND
+                    organization_id = (auth.jwt()->>'organization_id')::INT AND
+                    role NOT IN ('Admin', 'Moderator')
+                )
             )
         )
     );
@@ -1004,38 +1022,47 @@ CREATE POLICY project_requests_insert
     FOR INSERT 
     WITH CHECK (
         (
+            NOT EXISTS (
+                SELECT 1
+                FROM public.project_members pm
+                WHERE
+                    pm.project_id = project_id AND
+                    pm.member_id = member_id
+            ) AND
             (
-                auth.grant() = 'password' AND
                 (
-                    auth.uid() = addressee_id OR
-                    EXISTS (
-                        SELECT 1
-                        FROM public.project_members pm
-                        WHERE
-                            pm.project_id = project_id AND
-                            pm.member_id = auth.uid() AND
-                            pm.role = 'Admin'
-                    )
-                    OR
+                    auth.grant() = 'password' AND
                     (
+                        auth.uid() = addressee_id OR
                         EXISTS (
                             SELECT 1
                             FROM public.project_members pm
                             WHERE
                                 pm.project_id = project_id AND
                                 pm.member_id = auth.uid() AND
-                                pm.role = 'Moderator'
-                        ) AND
-                        role NOT IN ('Admin', 'Moderator')
+                                pm.role = 'Admin'
+                        )
+                        OR
+                        (
+                            EXISTS (
+                                SELECT 1
+                                FROM public.project_members pm
+                                WHERE
+                                    pm.project_id = project_id AND
+                                    pm.member_id = auth.uid() AND
+                                    pm.role = 'Moderator'
+                            ) AND
+                            role NOT IN ('Admin', 'Moderator')
+                        )
                     )
                 )
-            )
-            OR
-            (
-                auth.grant() = 'client_credentials' AND
-                'project.requests.insert' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
-                role NOT IN ('Admin', 'Moderator')
+                OR
+                (
+                    auth.grant() = 'client_credentials' AND
+                    'project.requests.insert' = ANY(auth.scopes()) AND
+                    project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                    role NOT IN ('Admin', 'Moderator')
+                )
             )
         )
     );
@@ -1136,7 +1163,17 @@ CREATE POLICY project_members_delete
                     FROM public.project_members pm
                     WHERE
                         pm.project_id = project_id AND
-                        pm.member_id = auth.uid()
+                        pm.member_id = auth.uid() AND
+                        (
+                            (pm.role <> 'Admin') OR
+                            (
+                                pm.role = 'Admin' AND
+                                (SELECT COUNT(*) FROM public.project_members pmc
+                                WHERE pmc.project_id = project_id
+                                AND pmc.role = 'Admin') > 1
+                            )
+                    
+                        )
                 )
             )
             OR
