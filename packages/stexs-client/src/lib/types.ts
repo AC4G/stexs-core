@@ -8,8 +8,8 @@ export interface Session {
 }
 
 export interface SignInInit {
-    continuousAutoRefresh: boolean;
-    expires: number;
-    token: string;
-    types: string[]
+  continuousAutoRefresh: boolean;
+  expires: number;
+  token: string;
+  types: string[];
 }

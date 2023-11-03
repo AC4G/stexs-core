@@ -42,11 +42,7 @@ import {
 } from '../controllers/oauth2Controller';
 import logger from '../loggers/logger';
 import { verify } from 'jsonwebtoken';
-import { 
-  AUDIENCE, 
-  ISSUER, 
-  REFRESH_TOKEN_SECRET 
-} from '../../env-config';
+import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
 import paginate from 'express-paginate';
 
 const router = Router();
@@ -382,7 +378,7 @@ router.get(
     validateAccessToken(),
     checkTokenGrantType('password'),
     transformJwtErrorMessages,
-    paginate.middleware(10, 50)
+    paginate.middleware(10, 50),
   ],
   async (req: Request, res: Response) => {
     const page = (req.query?.page ?? 1) as number;
@@ -415,7 +411,7 @@ router.get(
         `,
         [userId, limit, offset],
       );
- 
+
       const itemCount = rows.length;
 
       res.setHeader('X-Page', page);
