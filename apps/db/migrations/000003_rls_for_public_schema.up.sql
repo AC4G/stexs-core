@@ -246,7 +246,7 @@ CREATE POLICY items_select
             (
                 auth.grant() = 'client_credentials' AND
                 'items.read' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR
             (
@@ -264,7 +264,7 @@ CREATE POLICY items_update
             (
                 auth.grant() = 'client_credentials' AND
                 'items.update' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR
             (
@@ -290,7 +290,7 @@ CREATE POLICY items_delete
             (
                 auth.grant() = 'client_credentials' AND
                 'items.delete' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR
             (
@@ -316,7 +316,7 @@ CREATE POLICY items_insert
             (
                 auth.grant() = 'client_credentials' AND
                 'items.insert' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR
             (
@@ -928,7 +928,7 @@ CREATE POLICY project_requests_select
             (
                 auth.grant() = 'client_credentials' AND
                 'project.requests.read' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
         )
     );
@@ -968,7 +968,7 @@ CREATE POLICY project_requests_update
             (
                 auth.grant() = 'client_credentials' AND
                 'project.requests.update' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
                 role NOT IN ('Admin', 'Moderator')
             )
         )
@@ -1010,7 +1010,7 @@ CREATE POLICY project_requests_delete
             (
                 auth.grant() = 'client_credentials' AND
                 'project.requests.delete' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
                 role NOT IN ('Admin', 'Moderator')
             )
         )
@@ -1060,7 +1060,7 @@ CREATE POLICY project_requests_insert
                 (
                     auth.grant() = 'client_credentials' AND
                     'project.requests.insert' = ANY(auth.scopes()) AND
-                    project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                    project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
                     role NOT IN ('Admin', 'Moderator')
                 )
             )
@@ -1089,7 +1089,7 @@ CREATE POLICY project_members_select
             (
                 auth.grant() = 'client_credentials' AND
                 'project.members.read' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
         )
     );
@@ -1144,7 +1144,7 @@ CREATE POLICY project_members_update
             (
                 auth.grant() = 'client_credentials' AND
                 'project.members.update' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
                 role NOT IN ('Admin', 'Moderator')
             )
         )
@@ -1203,7 +1203,7 @@ CREATE POLICY project_members_delete
             (
                 auth.grant() = 'client_credentials' AND
                 'project.members.delete' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM project_ids_by_jwt_organization) AND
+                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
                 role NOT IN ('Admin', 'Moderator')
             )
         )
@@ -1254,7 +1254,7 @@ CREATE POLICY projects_select
             (
                 auth.grant() = 'client_credentials' AND
                 'project.read' = ANY(auth.scopes()) AND
-                id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+                id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
         )
     );
@@ -1280,7 +1280,7 @@ CREATE POLICY projects_update
             (
                 auth.grant() = 'client_credentials' AND
                 'project.update' = ANY(auth.scopes()) AND
-                id = ANY(SELECT id FROM project_ids_by_jwt_organization)
+                id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
         )
     );

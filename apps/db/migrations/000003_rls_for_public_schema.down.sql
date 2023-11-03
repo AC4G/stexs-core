@@ -16,20 +16,15 @@ DROP POLICY IF EXISTS friends_select ON public.friends;
 DROP POLICY IF EXISTS friends_delete ON public.friends;
 DROP POLICY IF EXISTS friends_insert ON public.friends;
 
-REVOKE SELECT ON public.friends_of_current_user FROM authenticated;
-
-DROP VIEW IF EXISTS public.friends_of_current_user;
-
-REVOKE SELECT ON public.project_ids_by_jwt_organization FROM authenticated;
-
-DROP VIEW IF EXISTS public.project_ids_by_jwt_organization;
-
 ALTER TABLE public.inventories DISABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS inventories_select ON public.inventories;
 DROP POLICY IF EXISTS inventories_update ON public.inventories;
 DROP POLICY IF EXISTS inventories_delete ON public.inventories;
 DROP POLICY IF EXISTS inventories_insert ON public.inventories;
+
+REVOKE SELECT ON public.friends_of_current_user FROM authenticated;
+DROP VIEW IF EXISTS public.friends_of_current_user;
 
 ALTER TABLE public.items DISABLE ROW LEVEL SECURITY;
 
@@ -97,6 +92,9 @@ DROP POLICY IF EXISTS projects_select ON public.projects;
 DROP POLICY IF EXISTS projects_update ON public.projects;
 DROP POLICY IF EXISTS projects_delete ON public.projects;
 DROP POLICY IF EXISTS projects_insert ON public.projects;
+
+REVOKE SELECT ON public.project_ids_by_jwt_organization FROM authenticated;
+DROP VIEW IF EXISTS public.project_ids_by_jwt_organization;
 
 ALTER TABLE public.scopes DISABLE ROW LEVEL SECURITY;
 
