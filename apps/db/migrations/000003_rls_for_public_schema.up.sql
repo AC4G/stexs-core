@@ -219,7 +219,7 @@ CREATE POLICY inventories_delete
     USING (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        'inventory.update' = ANY(auth.scopes())
+        'inventory.delete' = ANY(auth.scopes())
     );
 
 CREATE POLICY inventories_insert
@@ -532,7 +532,7 @@ CREATE POLICY organization_members_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'project.members.update' = ANY(auth.scopes()) AND
+                'organization.members.update' = ANY(auth.scopes()) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Admin', 'Moderator')
             )
