@@ -15,7 +15,7 @@
     "test": "dotenv -- turbo run test",
     "test:coverage": "turbo run test:coverage",
     "test:watch": "turbo run test:watch",
-    "test:db": "pg_prove --username $PG_USER --dbname $PG_DATABASE --host $PG_HOST --port $PG_PORT apps/db/tests/*_test.sql",
+    "test:db": "find apps/db/tests -type f -name '*_test.sql' -exec pg_prove --host localhost --dbname postgres --username postgres {} \\;",
     "format": "prettier --write '{apps,packages}/**/*.ts'"
   },
   "workspaces": [
