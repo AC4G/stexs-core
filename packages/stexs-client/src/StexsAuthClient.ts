@@ -11,10 +11,7 @@ export class StexsAuthClient {
   mfa;
   oauth;
 
-  constructor(
-    fetch: typeof fetch,
-    authUrl: string
-  ) {
+  constructor(fetch: typeof fetch, authUrl: string) {
     this.authUrl = authUrl;
     this.fetch = fetch;
 
@@ -88,7 +85,9 @@ export class StexsAuthClient {
    * @throws {Error} Throws an error if the sign-in token is not found or has expired.
    */
   async signInConfirm(type: string, code: string): Promise<Response> {
-    const signInInitData: SignInInit = JSON.parse(localStorage.getItem('sign_in_init'));
+    const signInInitData: SignInInit = JSON.parse(
+      localStorage.getItem('sign_in_init'),
+    );
 
     if (!signInInitData) {
       throw new Error('Sign in initialization data not found.');
@@ -379,10 +378,10 @@ export class StexsAuthClient {
     return await this._request({
       path: `mfa/enable`,
       method: 'POST',
-      body: { 
+      body: {
         type,
-        code 
-      }
+        code,
+      },
     });
   }
 
@@ -400,9 +399,9 @@ export class StexsAuthClient {
     return await this._request({
       path: `mfa/disable`,
       method: 'POST',
-      body: { 
+      body: {
         code,
-        type
+        type,
       },
     });
   }
@@ -434,10 +433,12 @@ export class StexsAuthClient {
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
   private async _requestCode(type: string = 'email'): Promise<Response> {
-    const signInInitData: SignInInit = JSON.parse(localStorage.getItem('sign_in_init'));
+    const signInInitData: SignInInit = JSON.parse(
+      localStorage.getItem('sign_in_init'),
+    );
 
     const body = {
-      type
+      type,
     };
 
     if (signInInitData && signInInitData.token) {
@@ -447,7 +448,7 @@ export class StexsAuthClient {
     return await this._request({
       path: 'mfa/send-code',
       method: 'POST',
-      body
+      body,
     });
   }
 
@@ -658,7 +659,7 @@ export class StexsAuthClient {
   private _setAccessTokenToAuthHeaders(accessToken: string) {
     this.authHeaders = {
       ...this.authHeaders,
-      Authorization: `Bearer ${accessToken}`
+      Authorization: `Bearer ${accessToken}`,
     };
   }
 }

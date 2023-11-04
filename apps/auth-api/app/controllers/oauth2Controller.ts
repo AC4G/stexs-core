@@ -254,7 +254,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
       {
         scopes,
         client_id,
-        organization_id
+        organization_id,
       },
       'client_credentials',
     );

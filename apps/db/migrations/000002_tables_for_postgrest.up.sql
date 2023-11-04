@@ -230,17 +230,17 @@ EXECUTE FUNCTION public.make_user_member_of_project();
 
 
 
-GRANT USAGE, SELECT ON SEQUENCE blocked_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE friends_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE friend_requests_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE inventories_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE items_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE oauth2_app_scopes_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE oauth2_apps_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE organization_members_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE organizations_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE organization_requests_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE project_members_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE projects_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE project_requests_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE scopes_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.blocked_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.friends_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.friend_requests_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.inventories_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.items_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.oauth2_app_scopes_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.oauth2_apps_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.organization_members_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.organizations_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.organization_requests_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.project_members_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.projects_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.project_requests_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.scopes_id_seq TO authenticated;
