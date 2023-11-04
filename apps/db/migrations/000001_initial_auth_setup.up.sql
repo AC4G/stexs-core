@@ -1,10 +1,9 @@
 SET TIME ZONE 'UTC';
 
-CREATE SCHEMA extensions;
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "citext";  
+CREATE EXTENSION IF NOT EXISTS "pgtap";
 
 
 
@@ -93,7 +92,7 @@ GRANT EXECUTE ON FUNCTION auth.scopes() TO authenticated;
 
 
 CREATE TABLE auth.users (
-    id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     email CITEXT NOT NULL UNIQUE,
     encrypted_password VARCHAR(255) NOT NULL,
     email_verified_at TIMESTAMPTZ NULL,
@@ -190,7 +189,7 @@ EXECUTE FUNCTION auth.check_username_and_email_before_insert();
 CREATE OR REPLACE FUNCTION auth.encrypt_password()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.encrypted_password := extensions.crypt(NEW.encrypted_password, extensions.gen_salt('bf'));
+    NEW.encrypted_password := crypt(NEW.encrypted_password, gen_salt('bf'));
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
