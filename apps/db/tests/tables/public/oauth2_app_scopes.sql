@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(18);
+SELECT plan(19);
 
 SELECT has_table('oauth2_app_scopes', 'public.oauth2_app_scopes table exists');
 
@@ -28,5 +28,6 @@ SELECT col_default_is('oauth2_app_scopes', 'created_at', 'CURRENT_TIMESTAMP', 'c
 
 SELECT col_not_null('oauth2_app_scopes', 'app_id', 'app_id has a NOT NULL constraint');
 SELECT col_not_null('oauth2_app_scopes', 'scope_id', 'scope_id has a NOT NULL constraint');
+SELECT col_not_null('oauth2_app_scopes', 'created_at', 'created_at has a NOT NULL constraint');
 
 ROLLBACK;

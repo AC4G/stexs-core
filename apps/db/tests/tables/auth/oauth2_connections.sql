@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(24);
+SELECT plan(25);
 
 SELECT has_table('auth', 'oauth2_connections', 'auth.oauth2_connections table exists');
 
@@ -32,6 +32,7 @@ SELECT col_default_is('auth', 'oauth2_connections', 'created_at', 'CURRENT_TIMES
 SELECT col_not_null('auth', 'oauth2_connections', 'user_id', 'user_id has a NOT NULL constraint');
 SELECT col_not_null('auth', 'oauth2_connections', 'app_id', 'app_id has a NOT NULL constraint');
 SELECT col_not_null('auth', 'oauth2_connections', 'refresh_token_id', 'refresh_token_id has a NOT NULL constraint');
+SELECT col_not_null('auth', 'oauth2_connections', 'created_at', 'created_at has a NOT NULL constraint');
 
 SELECT col_is_null('auth', 'oauth2_connections', 'updated_at', 'updated_at has a NULL constraint');
 

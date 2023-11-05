@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(40);
+SELECT plan(41);
 
 SELECT has_table('oauth2_apps', 'public.oauth2_apps table exists');
 
@@ -48,6 +48,7 @@ SELECT col_not_null('oauth2_apps', 'client_id', 'client_id has a NOT NULL constr
 SELECT col_not_null('oauth2_apps', 'client_secret', 'client_secret has a NOT NULL constraint');
 SELECT col_not_null('oauth2_apps', 'organization_id', 'organization_id has a NOT NULL constraint');
 SELECT col_not_null('oauth2_apps', 'redirect_url', 'redirect_url has a NOT NULL constraint');
+SELECT col_not_null('oauth2_apps', 'created_at', 'created_at has a NOT NULL constraint');
 
 SELECT col_is_null('oauth2_apps', 'description', 'description has a NULL constraint');
 SELECT col_is_null('oauth2_apps', 'homepage_url', 'homepage_url has a NULL constraint');

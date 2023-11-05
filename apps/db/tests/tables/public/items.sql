@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(37);
+SELECT plan(38);
 
 SELECT has_table('items', 'public.items table exists');
 
@@ -45,6 +45,7 @@ SELECT col_default_is('items', 'created_at', 'CURRENT_TIMESTAMP', 'created_at ha
 SELECT col_not_null('items', 'name', 'name has a NOT NULL constraint');
 SELECT col_not_null('items', 'parameter', 'parameter has a NOT NULL constraint');
 SELECT col_not_null('items', 'project_id', 'project_id has a NOT NULL constraint');
+SELECT col_not_null('items', 'is_private', 'is_private has a NOT NULL constraint');
 SELECT col_not_null('items', 'created_at', 'created_at has a NOT NULL constraint');
 
 SELECT col_is_null('items', 'creator_id', 'creator_id has a NULL constraint');

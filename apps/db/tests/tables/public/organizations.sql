@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(37);
+SELECT plan(38);
 
 SELECT has_table('organizations', 'public.organizations table exists');
 
@@ -41,6 +41,7 @@ SELECT col_type_is('organizations', 'updated_at', 'timestamp with time zone', 'u
 SELECT col_default_is('organizations', 'created_at', 'CURRENT_TIMESTAMP', 'created_at has default CURRENT_TIMESTAMP');
 
 SELECT col_not_null('organizations', 'name', 'name has a NOT NULL constraint');
+SELECT col_not_null('organizations', 'created_at', 'created_at has a NOT NULL constraint');
 
 SELECT col_is_null('organizations', 'display_name', 'display_name has a NOT NULL constraint');
 SELECT col_is_null('organizations', 'description', 'description has a NOT NULL constraint');

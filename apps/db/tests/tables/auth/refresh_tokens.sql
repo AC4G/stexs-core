@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(24);
+SELECT plan(25);
 
 SELECT has_table('auth', 'refresh_tokens', 'auth.refresh_tokens table exists');
 
@@ -31,6 +31,7 @@ SELECT col_default_is('auth', 'refresh_tokens', 'created_at', 'CURRENT_TIMESTAMP
 SELECT col_not_null('auth', 'refresh_tokens', 'token', 'token has a NOT NULL constraint');
 SELECT col_not_null('auth', 'refresh_tokens', 'user_id', 'user_id has a NOT NULL constraint');
 SELECT col_not_null('auth', 'refresh_tokens', 'grant_type', 'grant_type has a NOT NULL constraint');
+SELECT col_not_null('auth', 'refresh_tokens', 'created_at', 'created_at has a NOT NULL constraint');
 
 SELECT col_is_null('auth', 'refresh_tokens', 'session_id', 'session_id has a NULL constraint');
 SELECT col_is_null('auth', 'refresh_tokens', 'updated_at', 'updated_at has a NULL constraint');

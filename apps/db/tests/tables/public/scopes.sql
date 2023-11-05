@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(22);
+SELECT plan(23);
 
 SELECT has_table('scopes', 'public.scopes table exists');
 
@@ -30,6 +30,7 @@ SELECT col_default_is('scopes', 'created_at', 'CURRENT_TIMESTAMP', 'created_at h
 SELECT col_not_null('scopes', 'name', 'name has a NOT NULL constraint');
 SELECT col_not_null('scopes', 'description', 'description has a NOT NULL constraint');
 SELECT col_not_null('scopes', 'type', 'type has a NOT NULL constraint');
+SELECT col_not_null('scopes', 'created_at', 'created_at has a NOT NULL constraint');
 
 SELECT col_is_null('scopes', 'updated_at', 'updated_at has a NULL constraint');
 

@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(35);
+SELECT plan(37);
 
 SELECT has_table('profiles', 'public.profiles table exists');
 
@@ -44,6 +44,8 @@ SELECT col_default_is('profiles', 'created_at', 'CURRENT_TIMESTAMP', 'created_at
 
 SELECT col_not_null('profiles', 'username', 'username has a NOT NULL constraint');
 SELECT col_not_null('profiles', 'is_private', 'is_private has a NOT NULL constraint');
+SELECT col_not_null('profiles', 'friend_privacy_level', 'friend_privacy_level has a NOT NULL constraint');
+SELECT col_not_null('profiles', 'inventory_privacy_level', 'inventory_privacy_level has a NOT NULL constraint');
 
 PREPARE insert_invalid_friend_privacy_level_higher_then_2 AS INSERT INTO public.profiles (user_id, username, friend_privacy_level) VALUES (uuid_generate_v4(), 'test', 3);
 SELECT throws_ok('insert_invalid_friend_privacy_level_higher_then_2', '23514', 'new row for relation "profiles" violates check constraint "profiles_check"', 'Should get an violation for check constraint "porfiles_check" for invalid friend_privacy_level value for higher then 2');

@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(38);
+SELECT plan(39);
 
 SELECT has_table('projects', 'public.projects table exists');
 
@@ -44,6 +44,7 @@ SELECT col_default_is('projects', 'created_at', 'CURRENT_TIMESTAMP', 'created_at
 
 SELECT col_not_null('projects', 'name', 'name has a NOT NULL constraint');
 SELECT col_not_null('projects', 'organization_id', 'organization_id has a NOT NULL constraint');
+SELECT col_not_null('projects', 'created_at', 'created_at has a NOT NULL constraint');
 
 SELECT col_is_null('projects', 'description', 'description has a NOT NULL constraint');
 SELECT col_is_null('projects', 'readme', 'readme has a NOT NULL constraint');
