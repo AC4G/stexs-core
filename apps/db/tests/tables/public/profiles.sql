@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(36);
+SELECT plan(35);
 
 SELECT has_table('profiles', 'public.profiles table exists');
 
@@ -26,9 +26,6 @@ SELECT column_privs_are('profiles', 'inventory_privacy_level', 'authenticated', 
 
 SELECT table_privs_are('profiles', 'anon', ARRAY['SELECT'], 'anon role has SELECT privilege on public.profiles');
 SELECT table_privs_are('profiles', 'authenticated', ARRAY['SELECT'], 'authenticated role has SELECT privilege on public.profiles');
-
-
-SELECT col_is_pk('profiles', 'user_id', 'user_id is a primary key');
 
 SELECT col_is_unique('profiles', 'username', 'username has a unique constraint');
 

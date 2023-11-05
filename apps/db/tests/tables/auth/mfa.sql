@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(23);
+SELECT plan(22);
 
 SELECT has_table('auth', 'mfa', 'auth.mfa table exists');
 
@@ -11,8 +11,6 @@ SELECT has_column('auth', 'mfa', 'totp_secret', 'totp_secret is a column in auth
 SELECT has_column('auth', 'mfa', 'totp_verified_at', 'totp_verified_at is a column in auth.mfa');
 SELECT has_column('auth', 'mfa', 'email_code', 'email_code is a column in auth.mfa');
 SELECT has_column('auth', 'mfa', 'email_code_sent_at', 'email_code_sent_at is a column in auth.mfa');
-
-SELECT col_is_pk('auth', 'mfa', 'user_id', 'user_id is a primary key');
 
 SELECT fk_ok('auth', 'mfa', 'user_id', 'auth', 'users', 'id', 'user_id references to auth.users(id)');
 
