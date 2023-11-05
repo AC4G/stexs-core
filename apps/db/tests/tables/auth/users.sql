@@ -24,7 +24,7 @@ SELECT has_column('auth', 'users', 'updated_at', 'updated_at is a column in auth
 SELECT col_is_pk('auth', 'users', 'id', 'id is a primary key');
 
 SELECT col_is_unique('auth', 'users', 'email', 'email has a unique constraint');
-SELECT col_is_unique('auth', 'users', ARRAY['email_change', 'email_change_token'], 'email_change and email_change_token has a unique constraint');
+SELECT col_is_unique('auth', 'users', ARRAY['email_change', 'email_change_token'], 'email_change and email_change_token have a unique constraint');
 
 SELECT col_type_is('auth', 'users', 'id', 'uuid', 'id is of type uuid');
 SELECT col_type_is('auth', 'users', 'email', 'citext', 'email is of type citext');

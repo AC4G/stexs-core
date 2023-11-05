@@ -371,7 +371,7 @@ CREATE TABLE auth.oauth2_authorization_tokens (
     token UUID NOT NULL UNIQUE,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_oauth2_authorization_tokens_combination UNIQUE (user_id, app_id)
 );
 

@@ -14,7 +14,7 @@ SELECT has_column('auth', 'refresh_tokens', 'updated_at', 'updated_at is a colum
 
 SELECT col_is_pk('auth', 'refresh_tokens', 'id', 'id is a primary key');
 
-SELECT col_is_unique('auth', 'refresh_tokens', ARRAY['user_id', 'session_id', 'grant_type', 'token'], 'user_id, session_id, grant_type and token has a unique constraint');
+SELECT col_is_unique('auth', 'refresh_tokens', ARRAY['user_id', 'session_id', 'grant_type', 'token'], 'user_id, session_id, grant_type and token have a unique constraint');
 
 SELECT fk_ok('auth', 'refresh_tokens', 'user_id', 'auth', 'users', 'id', 'user_id references to auth.users(id)');
 
