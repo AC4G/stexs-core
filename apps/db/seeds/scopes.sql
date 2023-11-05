@@ -27,3 +27,4 @@ INSERT INTO public.scopes (name, description, type) VALUES
     ('organization.requests.update', 'Update requests in organization.', 'client'),
     ('organization.requests.delete', 'Delete requests from organization.', 'client'),
     ('organization.requests.insert', 'Create new requests for organization.', 'client');
+    
