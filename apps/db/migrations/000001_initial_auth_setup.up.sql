@@ -104,7 +104,7 @@ CREATE TABLE auth.users (
     email_change VARCHAR(255) NULL,
     email_change_sent_at TIMESTAMPTZ NULL,
     email_change_token UUID NULL,
-    recovery_token UUID null,
+    recovery_token UUID NULL,
     recovery_sent_at TIMESTAMPTZ NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL,
