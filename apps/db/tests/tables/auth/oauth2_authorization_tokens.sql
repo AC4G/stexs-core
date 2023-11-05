@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(20);
+SELECT plan(21);
 
 SELECT has_table('auth', 'oauth2_authorization_tokens', 'auth.oauth2_authorization_tokens table exists');
 
@@ -29,5 +29,6 @@ SELECT col_default_is('auth', 'oauth2_authorization_tokens', 'created_at', 'CURR
 SELECT col_not_null('auth', 'oauth2_authorization_tokens', 'token', 'token has a NOT NULL constraint');
 SELECT col_not_null('auth', 'oauth2_authorization_tokens', 'user_id', 'user_id has a NOT NULL constraint');
 SELECT col_not_null('auth', 'oauth2_authorization_tokens', 'app_id', 'app_id has a NOT NULL constraint');
+SELECT col_not_null('auth', 'oauth2_authorization_tokens', 'created_at', 'created_at has a NOT NULL constraint');
 
 ROLLBACK;

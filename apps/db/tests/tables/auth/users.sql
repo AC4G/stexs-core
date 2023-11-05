@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(52);
+SELECT plan(55);
 
 SELECT has_table('auth', 'users', 'auth.users table exists');
 
@@ -46,14 +46,17 @@ SELECT col_type_is('auth', 'users', 'updated_at', 'timestamp with time zone', 'u
 SELECT col_default_is('auth', 'users', 'id', 'uuid_generate_v4()', 'id has default uuid_generate_v4()');
 SELECT col_default_is('auth', 'users', 'is_super_admin', FALSE, 'is_super_admin has default FALSE');
 SELECT col_default_is('auth', 'users', 'created_at', 'CURRENT_TIMESTAMP', 'created_at has default CURRENT_TIMESTAMP');
+SELECT col_default_is('auth', 'users', 'raw_user_meta_data', '{}', 'raw_user_meta_data has default {}');
 
 SELECT col_not_null('auth', 'users', 'email', 'email has a NOT NULL constraint');
 SELECT col_not_null('auth', 'users', 'encrypted_password', 'encrypted_password has a NOT NULL constraint');
+SELECT col_not_null('auth', 'users', 'raw_user_meta_data', 'raw_user_meta_data has a NOT NULL constraint');
+SELECT col_not_null('auth', 'users', 'is_super_admin', 'is_super_admin has a NOT NULL constraint');
+SELECT col_not_null('auth', 'users', 'created_at', 'created_at has a NOT NULL constraint');
 
 SELECT col_is_null('auth', 'users', 'email_verified_at', 'email_verified_at has a NULL constraint');
 SELECT col_is_null('auth', 'users', 'verification_token', 'verification_token has a NULL constraint');
 SELECT col_is_null('auth', 'users', 'verification_sent_at', 'verification_sent_at has a NULL constraint');
-SELECT col_is_null('auth', 'users', 'raw_user_meta_data', 'raw_user_meta_data has a NULL constraint');
 SELECT col_is_null('auth', 'users', 'banned_until', 'banned_until has a NULL constraint');
 SELECT col_is_null('auth', 'users', 'email_change', 'email_change has a NULL constraint');
 SELECT col_is_null('auth', 'users', 'email_change_sent_at', 'email_change_sent_at has a NULL constraint');

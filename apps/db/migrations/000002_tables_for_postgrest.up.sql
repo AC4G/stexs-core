@@ -1,12 +1,12 @@
 CREATE TABLE public.items (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    parameter JSONB DEFAULT '{}'::JSONB,
+    parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    is_private BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    is_private BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ,
     CONSTRAINT unique_items_combination UNIQUE (name, project_id)
 );
 
@@ -25,7 +25,7 @@ CREATE TABLE public.inventories (
     amount INT DEFAULT '0'::bigint,
     parameter JSONB DEFAULT '{}'::JSONB,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CONSTRAINT unique_inventories_combination UNIQUE (item_id, user_id)
 );
 
@@ -136,7 +136,7 @@ CREATE TABLE public.organization_members (
     member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CHECK (role IN ('Member', 'Admin', 'Moderator'))
 );
 
@@ -154,7 +154,7 @@ CREATE TABLE public.organization_requests (
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CHECK (role IN ('Member', 'Admin', 'Moderator'))
 );
 
@@ -187,7 +187,7 @@ CREATE TABLE public.project_members (
     member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator'))
 );
 
@@ -203,7 +203,7 @@ CREATE TABLE public.project_requests (
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CHECK (role IN ('Member', 'Admin', 'Moderator'))
 );
 

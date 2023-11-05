@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(16);
+SELECT plan(17);
 
 SELECT has_table('auth', 'oauth2_authorization_token_scopes', 'auth.oauth2_authorization_token_scopes table exists');
 
@@ -25,5 +25,6 @@ SELECT col_default_is('auth', 'oauth2_authorization_token_scopes', 'created_at',
 
 SELECT col_not_null('auth', 'oauth2_authorization_token_scopes', 'token_id', 'token_id has a NOT NULL constraint');
 SELECT col_not_null('auth', 'oauth2_authorization_token_scopes', 'scope_id', 'scope_id has a NOT NULL constraint');
+SELECT col_not_null('auth', 'oauth2_authorization_token_scopes', 'created_at', 'created_at has a NOT NULL constraint');
 
 ROLLBACK;

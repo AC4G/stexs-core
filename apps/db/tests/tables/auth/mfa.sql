@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(22);
+SELECT plan(24);
 
 SELECT has_table('auth', 'mfa', 'auth.mfa table exists');
 
@@ -24,6 +24,9 @@ SELECT col_type_is('auth', 'mfa', 'email_code_sent_at', 'timestamp with time zon
 
 SELECT col_default_is('auth', 'mfa', 'email', TRUE, 'email has default TRUE');
 SELECT col_default_is('auth', 'mfa', 'totp', FALSE, 'totp has default FALSE');
+
+SELECT col_not_null('auth', 'mfa', 'email', 'email has a NOT NULL constraint');
+SELECT col_not_null('auth', 'mfa', 'totp', 'totp has a NOT NULL constraint');
 
 SELECT col_is_null('auth', 'mfa', 'totp_secret', 'totp_secret has a NULL constraint');
 SELECT col_is_null('auth', 'mfa', 'totp_verified_at', 'totp_verified_at has a NULL constraint');
