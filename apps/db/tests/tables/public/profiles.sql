@@ -18,18 +18,17 @@ SELECT col_has_check('profiles', ARRAY[
     'inventory_privacy_level'
 ], 'friend_privacy_level and inventory_privacy_level have a check constraint');
 
-SELECT column_privs_are('profiles', 'username', 'authenticated', ARRAY['SELECT', 'UPDATE'], 'authenticated role has UPDATE and SELECT privilege on username');
-SELECT column_privs_are('profiles', 'is_private', 'authenticated', ARRAY['SELECT', 'UPDATE'], 'authenticated role has UPDATE and SELECT privilege on is_private');
-SELECT column_privs_are('profiles', 'friend_privacy_level', 'authenticated', ARRAY['SELECT', 'UPDATE'], 'authenticated role has UPDATE and SELECT privilege on friend_privacy_level');
-SELECT column_privs_are('profiles', 'inventory_privacy_level', 'authenticated', ARRAY['SELECT', 'UPDATE'], 'authenticated role has UPDATE and SELECT privilege on inventory_privacy_level');
-
+SELECT column_privs_are('profiles', 'username', 'authenticated', ARRAY['SELECT', 'UPDATE'], 'authenticated role has UPDATE and SELECT privileges on username');
+SELECT column_privs_are('profiles', 'is_private', 'authenticated', ARRAY['SELECT', 'UPDATE'], 'authenticated role has UPDATE and SELECT privileges on is_private');
+SELECT column_privs_are('profiles', 'friend_privacy_level', 'authenticated', ARRAY['SELECT', 'UPDATE'], 'authenticated role has UPDATE and SELECT privileges on friend_privacy_level');
+SELECT column_privs_are('profiles', 'inventory_privacy_level', 'authenticated', ARRAY['SELECT', 'UPDATE'], 'authenticated role has UPDATE and SELECT privileges on inventory_privacy_level');
 
 SELECT table_privs_are('profiles', 'anon', ARRAY['SELECT'], 'anon role has SELECT privilege on public.profiles');
 SELECT table_privs_are('profiles', 'authenticated', ARRAY['SELECT'], 'authenticated role has SELECT privilege on public.profiles');
 
-SELECT col_is_unique('profiles', 'username', 'username has a unique constraint');
-
 SELECT fk_ok('public', 'profiles', 'user_id', 'auth', 'users', 'id', 'user_id references to auth.users(id)');
+
+SELECT col_is_unique('profiles', 'username', 'username has a unique constraint');
 
 SELECT col_type_is('profiles', 'user_id', 'uuid', 'user_id is of type uuid');
 SELECT col_type_is('profiles', 'username', 'citext', 'username is of type citext');

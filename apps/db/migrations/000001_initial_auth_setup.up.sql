@@ -223,7 +223,7 @@ GRANT SELECT ON TABLE public.profiles TO authenticated;
 
 CREATE TABLE public.organizations (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
+    name CITEXT NOT NULL UNIQUE,
     display_name VARCHAR(255) NULL,
     description TEXT NULL,
     readme TEXT NULL,
@@ -243,7 +243,7 @@ GRANT SELECT ON TABLE public.organizations TO authenticated;
 
 CREATE TABLE public.projects (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name CITEXT NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
     description TEXT NULL,
     readme TEXT NULL,
