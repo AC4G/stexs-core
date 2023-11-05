@@ -95,19 +95,19 @@ CREATE TABLE auth.users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     email CITEXT NOT NULL UNIQUE,
     encrypted_password VARCHAR(255) NOT NULL,
-    email_verified_at TIMESTAMPTZ NULL,
-    verification_token UUID NULL,
-    verification_sent_at TIMESTAMPTZ NULL,
-    raw_user_meta_data JSONB NULL,
+    email_verified_at TIMESTAMPTZ,
+    verification_token UUID,
+    verification_sent_at TIMESTAMPTZ,
+    raw_user_meta_data JSONB,
     is_super_admin BOOLEAN DEFAULT FALSE,
-    banned_until TIMESTAMPTZ NULL,
-    email_change VARCHAR(255) NULL,
-    email_change_sent_at TIMESTAMPTZ NULL,
-    email_change_token UUID NULL,
-    recovery_token UUID NULL,
-    recovery_sent_at TIMESTAMPTZ NULL,
+    banned_until TIMESTAMPTZ,
+    email_change VARCHAR(255),
+    email_change_sent_at TIMESTAMPTZ,
+    email_change_token UUID,
+    recovery_token UUID,
+    recovery_sent_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CONSTRAINT unique_email_change_combination UNIQUE (email_change, email_change_token)
 );
 
@@ -115,20 +115,20 @@ CREATE TABLE auth.mfa (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email BOOLEAN DEFAULT TRUE,
     totp BOOLEAN DEFAULT FALSE,
-    totp_secret VARCHAR(255) NULL,
-    totp_verified_at TIMESTAMPTZ NULL,
-    email_code VARCHAR(8) NULL,
-    email_code_sent_at TIMESTAMPTZ NULL
+    totp_secret VARCHAR(255),
+    totp_verified_at TIMESTAMPTZ,
+    email_code VARCHAR(8),
+    email_code_sent_at TIMESTAMPTZ
 );
 
 CREATE TABLE auth.refresh_tokens (
     id SERIAL PRIMARY KEY,
     token UUID NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    session_id UUID NULL,
+    session_id UUID,
     grant_type VARCHAR(50) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CONSTRAINT unique_refresh_token_combination UNIQUE (user_id, session_id, grant_type, token)
 );
 
@@ -224,13 +224,13 @@ GRANT SELECT ON TABLE public.profiles TO authenticated;
 CREATE TABLE public.organizations (
     id SERIAL PRIMARY KEY,
     name CITEXT NOT NULL UNIQUE,
-    display_name VARCHAR(255) NULL,
-    description TEXT NULL,
-    readme TEXT NULL,
-    email VARCHAR(255) NULL,
-    url VARCHAR(255) NULL,
+    display_name VARCHAR(255),
+    description TEXT,
+    readme TEXT,
+    email VARCHAR(255),
+    url VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL
+    updated_at TIMESTAMPTZ
 );
 
 GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
@@ -244,13 +244,13 @@ GRANT SELECT ON TABLE public.organizations TO authenticated;
 CREATE TABLE public.projects (
     id SERIAL PRIMARY KEY,
     name CITEXT NOT NULL,
-    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
-    description TEXT NULL,
-    readme TEXT NULL,
-    email VARCHAR(255) NULL,
-    url VARCHAR(255) NULL,
+    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULl,
+    description TEXT,
+    readme TEXT,
+    email VARCHAR(255),
+    url VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CONSTRAINT unique_project_combination UNIQUE (name, organization_id)
 );
 
@@ -267,12 +267,12 @@ CREATE TABLE public.oauth2_apps (
     name VARCHAR(255) NOT NULL,
     client_id UUID NOT NULL UNIQUE,
     client_secret VARCHAR(255) NOT NULL,
-    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
-    description TEXT NULL,
-    homepage_url VARCHAR(255) NULL,
+    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
+    description TEXT,
+    homepage_url VARCHAR(255),
     redirect_url VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id)
 );
 
@@ -343,7 +343,7 @@ CREATE TABLE public.scopes (
     description TEXT NOT NULL,
     type VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL
+    updated_at TIMESTAMPTZ
 );
 
 GRANT SELECT ON TABLE public.scopes TO anon;
@@ -353,8 +353,8 @@ GRANT SELECT ON TABLE public.scopes TO authenticated;
 
 CREATE TABLE public.oauth2_app_scopes (
     id SERIAL PRIMARY KEY,
-    app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE,
-    scope_id INT REFERENCES public.scopes(id) ON DELETE CASCADE,
+    app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
+    scope_id INT REFERENCES public.scopes(id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_oauth2_app_scopes_combination UNIQUE (app_id, scope_id)
 );
@@ -389,7 +389,7 @@ CREATE TABLE auth.oauth2_connections (
     app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
     refresh_token_id INT REFERENCES auth.refresh_tokens(id) ON DELETE CASCADE NOT NULL UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ,
     CONSTRAINT unique_oauth2_connections_combination UNIQUE (user_id, app_id)
 );
 
