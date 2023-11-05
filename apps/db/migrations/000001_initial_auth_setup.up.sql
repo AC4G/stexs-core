@@ -1,10 +1,9 @@
 SET TIME ZONE 'UTC';
 
-CREATE SCHEMA extensions;
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "citext";  
+CREATE EXTENSION IF NOT EXISTS "pgtap";
 
 
 
@@ -93,7 +92,7 @@ GRANT EXECUTE ON FUNCTION auth.scopes() TO authenticated;
 
 
 CREATE TABLE auth.users (
-    id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     email CITEXT NOT NULL UNIQUE,
     encrypted_password VARCHAR(255) NOT NULL,
     email_verified_at TIMESTAMPTZ NULL,
@@ -105,7 +104,7 @@ CREATE TABLE auth.users (
     email_change VARCHAR(255) NULL,
     email_change_sent_at TIMESTAMPTZ NULL,
     email_change_token UUID NULL,
-    recovery_token UUID null,
+    recovery_token UUID NULL,
     recovery_sent_at TIMESTAMPTZ NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NULL,
@@ -190,7 +189,7 @@ EXECUTE FUNCTION auth.check_username_and_email_before_insert();
 CREATE OR REPLACE FUNCTION auth.encrypt_password()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.encrypted_password := extensions.crypt(NEW.encrypted_password, extensions.gen_salt('bf'));
+    NEW.encrypted_password := crypt(NEW.encrypted_password, gen_salt('bf'));
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -205,7 +204,7 @@ EXECUTE FUNCTION auth.encrypt_password();
 CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
-    is_private BOOLEAN DEFAULT FALSE, -- global switch | turns every privacy policy to 1 if the level is 0 | doesnt change level 2 privacy levels
+    is_private BOOLEAN NOT NULL DEFAULT FALSE, -- global switch | turns every privacy policy to 1 if the level is 0 | doesnt change level 2 privacy levels
     friend_privacy_level INT DEFAULT 0,
     inventory_privacy_level INT DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -213,7 +212,7 @@ CREATE TABLE public.profiles (
         (friend_privacy_level >= 0 AND friend_privacy_level <= 2) AND
         (inventory_privacy_level >= 0 AND inventory_privacy_level <= 2)
     )
-    -- 0 = every one can select; 1 = only friends can select; 2 = no one can select only the user itself
+    -- 0 = every one can select; 1 = only friends can select; 2 = no one can select only the user himself
 );
 
 GRANT UPDATE (username, is_private, friend_privacy_level, inventory_privacy_level) ON TABLE public.profiles TO authenticated;
@@ -372,7 +371,7 @@ CREATE TABLE auth.oauth2_authorization_tokens (
     token UUID NOT NULL UNIQUE,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_oauth2_authorization_tokens_combination UNIQUE (user_id, app_id)
 );
 

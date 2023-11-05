@@ -36,7 +36,7 @@ services:
 
 
   db: 
-    image: postgres:16-alpine3.17
+    image: supabase/postgres:latest
     ports: 
       - 5432:5432
     restart: unless-stopped

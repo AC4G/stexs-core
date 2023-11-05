@@ -1,14 +1,14 @@
 INSERT INTO public.scopes (name, description, type) VALUES
-    ('friends.read', "Read access to the user's friend list.", 'user'),
+    ('friends.read', 'Read access to the user''s friend list.', 'user'),
     ('items.read', 'Read items.', 'client'),
     ('items.update', 'Update items.', 'client'),
     ('items.delete', 'Delete items.', 'client'),
     ('items.insert', 'Create new items.', 'client'),
-    ('inventory.read', "Read items in the user's inventory.", 'user'),
-    ('inventory.update', "Update items in the users's inventory.", 'user'),
-    ('inventory.delete', "Delete existing items from the user's inventory.", 'user'),
-    ('inventory.insert', "Insert new items to the user's inventory.", 'user'),
-    ('profile.read', "Read user's profile.", 'user'),
+    ('inventory.read', 'Read items in the user''s inventory.', 'user'),
+    ('inventory.update', 'Update items in the user''s inventory.', 'user'),
+    ('inventory.delete', 'Delete existing items from the user''s inventory.', 'user'),
+    ('inventory.insert', 'Insert new items to the user''s inventory.', 'user'),
+    ('profile.read', 'Read user''s profile.', 'user'),
     ('project.read', 'Read projects.', 'client'),
     ('project.update', 'Update projects.', 'client'),
     ('project.members.read', 'Read project members list.', 'client'),
@@ -27,3 +27,4 @@ INSERT INTO public.scopes (name, description, type) VALUES
     ('organization.requests.update', 'Update requests in organization.', 'client'),
     ('organization.requests.delete', 'Delete requests from organization.', 'client'),
     ('organization.requests.insert', 'Create new requests for organization.', 'client');
+    
