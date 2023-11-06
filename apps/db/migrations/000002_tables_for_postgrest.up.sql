@@ -22,9 +22,9 @@ CREATE TABLE public.inventories (
     id SERIAL PRIMARY KEY,
     item_id INT REFERENCES public.items(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    amount INT DEFAULT '0'::bigint,
-    parameter JSONB DEFAULT '{}'::JSONB,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    amount INT DEFAULT '0'::BIGINT NOT NULL,
+    parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_inventories_combination UNIQUE (item_id, user_id)
 );
