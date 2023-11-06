@@ -117,9 +117,9 @@ GRANT SELECT ON TABLE public.friend_requests TO authenticated;
 
 CREATE TABLE public.blocked (
     id SERIAL PRIMARY KEY,
-    blocker_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    blocked_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    blocker_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    blocked_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT unique_blocked_combination UNIQUE (blocker_id, blocked_id)
 );
 
