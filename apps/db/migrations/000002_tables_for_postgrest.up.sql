@@ -101,7 +101,7 @@ CREATE TABLE public.friend_requests (
     id SERIAL PRIMARY KEY,
     requester_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CHECK (requester_id <> addressee_id)
 );
 
