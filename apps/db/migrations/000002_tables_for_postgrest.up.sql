@@ -138,7 +138,7 @@ CREATE TABLE public.organization_members (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_organization_members_combination UNIQUE (organization_id, member_id),
-    CHECK (role IN ('Member', 'Admin', 'Moderator'))
+    CHECK (role IN ('Member', 'Admin', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (organization_id, member_id, role) ON TABLE public.organization_members TO authenticated;
@@ -154,9 +154,10 @@ CREATE TABLE public.organization_requests (
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CHECK (role IN ('Member', 'Admin', 'Moderator'))
+    CONSTRAINT unique_organization_requests_combination UNIQUE (organization_id, addressee_id),
+    CHECK (role IN ('Member', 'Admin', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (organization_id, addressee_id, role) ON TABLE public.organization_requests TO authenticated;
@@ -169,7 +170,7 @@ CREATE OR REPLACE FUNCTION public.make_user_member_of_organization()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.organization_members (organization_id, member_id, role)
-    VALUES (NEW.id, auth.uid(), 'Admin');
+    VALUES (NEW.id, auth.uid(), 'Owner');
 
     RETURN NEW;
 END;
@@ -189,7 +190,7 @@ CREATE TABLE public.project_members (
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ,
-    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator'))
+    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (project_id, member_id, role) ON TABLE public.project_members TO authenticated;
@@ -205,7 +206,7 @@ CREATE TABLE public.project_requests (
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ,
-    CHECK (role IN ('Member', 'Admin', 'Moderator'))
+    CHECK (role IN ('Member', 'Admin', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (project_id, addressee_id, role) ON TABLE public.project_requests TO authenticated;
@@ -218,7 +219,7 @@ CREATE OR REPLACE FUNCTION public.make_user_member_of_project()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.project_members (project_id, member_id, role)
-    VALUES (NEW.id, auth.uid(), 'Admin');
+    VALUES (NEW.id, auth.uid(), 'Owner');
 
     RETURN NEW;
 END;
