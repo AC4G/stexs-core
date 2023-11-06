@@ -132,11 +132,12 @@ GRANT SELECT ON TABLE public.blocked TO authenticated;
 
 CREATE TABLE public.organization_members (
     id SERIAL PRIMARY KEY,
-    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
-    member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
+    member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
+    CONSTRAINT unique_organization_members_combination UNIQUE (organization_id, member_id),
     CHECK (role IN ('Member', 'Admin', 'Moderator'))
 );
 
