@@ -22,9 +22,9 @@ CREATE TABLE public.inventories (
     id SERIAL PRIMARY KEY,
     item_id INT REFERENCES public.items(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    amount INT DEFAULT '0'::bigint,
-    parameter JSONB DEFAULT '{}'::JSONB,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    amount INT DEFAULT '0'::BIGINT NOT NULL,
+    parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_inventories_combination UNIQUE (item_id, user_id)
 );
@@ -41,7 +41,7 @@ CREATE TABLE public.friends (
     id SERIAL PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     friend_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT unique_friends_combination UNIQUE (user_id, friend_id)
 );  
 
@@ -101,7 +101,7 @@ CREATE TABLE public.friend_requests (
     id SERIAL PRIMARY KEY,
     requester_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CHECK (requester_id <> addressee_id)
 );
 
@@ -110,34 +110,33 @@ ON public.friend_requests ((LEAST(requester_id, addressee_id)), (GREATEST(reques
 
 GRANT INSERT (requester_id, addressee_id) ON TABLE public.friend_requests TO authenticated;
 GRANT DELETE ON TABLE public.friend_requests TO authenticated;
-GRANT SELECT ON TABLE public.friend_requests TO anon;
 GRANT SELECT ON TABLE public.friend_requests TO authenticated;
 
 
 
 CREATE TABLE public.blocked (
     id SERIAL PRIMARY KEY,
-    blocker_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    blocked_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    blocker_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    blocked_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT unique_blocked_combination UNIQUE (blocker_id, blocked_id)
 );
 
 GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
 GRANT DELETE ON TABLE public.blocked TO authenticated;
-GRANT SELECT ON TABLE public.blocked TO anon;
 GRANT SELECT ON TABLE public.blocked TO authenticated;
 
 
 
 CREATE TABLE public.organization_members (
     id SERIAL PRIMARY KEY,
-    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE,
-    member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
+    member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CHECK (role IN ('Member', 'Admin', 'Moderator'))
+    CONSTRAINT unique_organization_members_combination UNIQUE (organization_id, member_id),
+    CHECK (role IN ('Member', 'Admin', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (organization_id, member_id, role) ON TABLE public.organization_members TO authenticated;
@@ -153,22 +152,22 @@ CREATE TABLE public.organization_requests (
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CHECK (role IN ('Member', 'Admin', 'Moderator'))
+    CONSTRAINT unique_organization_requests_combination UNIQUE (organization_id, addressee_id),
+    CHECK (role IN ('Member', 'Admin', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (organization_id, addressee_id, role) ON TABLE public.organization_requests TO authenticated;
 GRANT UPDATE (role) ON TABLE public.organization_requests TO authenticated;
 GRANT DELETE ON TABLE public.organization_requests TO authenticated;
-GRANT SELECT ON TABLE public.organization_requests TO anon;
 GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.make_user_member_of_organization()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.organization_members (organization_id, member_id, role)
-    VALUES (NEW.id, auth.uid(), 'Admin');
+    VALUES (NEW.id, auth.uid(), 'Owner');
 
     RETURN NEW;
 END;
@@ -186,9 +185,10 @@ CREATE TABLE public.project_members (
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator'))
+    CONSTRAINT unique_project_members_combination UNIQUE (project_id, member_id),
+    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (project_id, member_id, role) ON TABLE public.project_members TO authenticated;
@@ -202,22 +202,22 @@ CREATE TABLE public.project_requests (
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CHECK (role IN ('Member', 'Admin', 'Moderator'))
+    CONSTRAINT unique_project_requests_combination UNIQUE (project_id, addressee_id),
+    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (project_id, addressee_id, role) ON TABLE public.project_requests TO authenticated;
 GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
 GRANT DELETE ON TABLE public.project_requests TO authenticated;
-GRANT SELECT ON TABLE public.project_requests TO anon;
 GRANT SELECT ON TABLE public.project_requests TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.make_user_member_of_project()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.project_members (project_id, member_id, role)
-    VALUES (NEW.id, auth.uid(), 'Admin');
+    VALUES (NEW.id, auth.uid(), 'Owner');
 
     RETURN NEW;
 END;
