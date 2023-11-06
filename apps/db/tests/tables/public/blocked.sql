@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(20);
+SELECT plan(19);
 
 SELECT has_table('blocked', 'public.blocked table exists');
 
@@ -12,7 +12,6 @@ SELECT has_column('blocked', 'created_at', 'created_at is a column in public.blo
 SELECT column_privs_are('blocked', 'blocker_id', 'authenticated', ARRAY['SELECT', 'INSERT'], 'authenticated role has SELECT and INSERT privileges on blocker_id');
 SELECT column_privs_are('blocked', 'blocked_id', 'authenticated', ARRAY['SELECT', 'INSERT'], 'authenticated role has SELECT and INSERT privileges on blocked_id');
 
-SELECT table_privs_are('blocked', 'anon', ARRAY['SELECT'], 'anon role has SELECT privilege on public.blocked');
 SELECT table_privs_are('blocked', 'authenticated', ARRAY['SELECT', 'DELETE'], 'anon role has SELECT and DELETE privileges on public.blocked');
 
 SELECT col_is_pk('blocked', 'id', 'id is a primary key');

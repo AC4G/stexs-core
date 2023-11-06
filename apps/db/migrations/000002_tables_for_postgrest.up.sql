@@ -110,7 +110,6 @@ ON public.friend_requests ((LEAST(requester_id, addressee_id)), (GREATEST(reques
 
 GRANT INSERT (requester_id, addressee_id) ON TABLE public.friend_requests TO authenticated;
 GRANT DELETE ON TABLE public.friend_requests TO authenticated;
-GRANT SELECT ON TABLE public.friend_requests TO anon;
 GRANT SELECT ON TABLE public.friend_requests TO authenticated;
 
 
@@ -125,7 +124,6 @@ CREATE TABLE public.blocked (
 
 GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
 GRANT DELETE ON TABLE public.blocked TO authenticated;
-GRANT SELECT ON TABLE public.blocked TO anon;
 GRANT SELECT ON TABLE public.blocked TO authenticated;
 
 
@@ -163,7 +161,6 @@ CREATE TABLE public.organization_requests (
 GRANT INSERT (organization_id, addressee_id, role) ON TABLE public.organization_requests TO authenticated;
 GRANT UPDATE (role) ON TABLE public.organization_requests TO authenticated;
 GRANT DELETE ON TABLE public.organization_requests TO authenticated;
-GRANT SELECT ON TABLE public.organization_requests TO anon;
 GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.make_user_member_of_organization()
@@ -205,15 +202,15 @@ CREATE TABLE public.project_requests (
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CHECK (role IN ('Member', 'Admin', 'Moderator', 'Owner'))
+    CONSTRAINT unique_project_requests_combination UNIQUE (project_id, addressee_id),
+    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (project_id, addressee_id, role) ON TABLE public.project_requests TO authenticated;
 GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
 GRANT DELETE ON TABLE public.project_requests TO authenticated;
-GRANT SELECT ON TABLE public.project_requests TO anon;
 GRANT SELECT ON TABLE public.project_requests TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.make_user_member_of_project()

@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(36);
+SELECT plan(35);
 
 SELECT has_table('organization_requests', 'public.organization_requests table exists');
 
@@ -19,7 +19,6 @@ SELECT column_privs_are('organization_requests', 'organization_id', 'authenticat
 SELECT column_privs_are('organization_requests', 'addressee_id', 'authenticated', ARRAY['SELECT', 'INSERT'], 'authenticated role has SELECT and INSERT privileges on addressee_id');
 SELECT column_privs_are('organization_requests', 'role', 'authenticated', ARRAY['SELECT', 'INSERT', 'UPDATE'], 'authenticated role has SELECT, INSERT and UPDATE privileges on role');
 
-SELECT table_privs_are('organization_requests', 'anon', ARRAY['SELECT'], 'anon role has SELECT privilege on public.organization_requests');
 SELECT table_privs_are('organization_requests', 'authenticated', ARRAY['SELECT', 'DELETE'], 'authenticated role has SELECT and DELETE privileges on public.organization_requests');
 
 SELECT col_is_pk('organization_requests', 'id', 'id is a primary key');

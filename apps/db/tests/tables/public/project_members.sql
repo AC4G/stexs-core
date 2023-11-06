@@ -64,5 +64,4 @@ SELECT throws_ok('insert_owner_role', '23503', 'insert or update on table "proje
 PREPARE insert_invalid_role AS INSERT INTO public.project_members (project_id, member_id, role) VALUES (5, '75336027-7f85-494b-8f25-910e41c9af73'::UUID, 'InvalidRole');
 SELECT throws_ok('insert_invalid_role', '23514', 'new row for relation "project_members" violates check constraint "project_members_role_check"', 'Should get a violation for check constraint "project_members_role_check" for invalid role');
 
-
 ROLLBACK;

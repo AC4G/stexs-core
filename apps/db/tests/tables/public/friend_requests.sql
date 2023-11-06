@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(25);
+SELECT plan(24);
 
 SELECT has_table('friend_requests', 'public.friend_requests table exists');
 
@@ -16,7 +16,6 @@ SELECT col_has_check('friend_requests', ARRAY['requester_id', 'addressee_id'], '
 SELECT column_privs_are('friend_requests', 'requester_id', 'authenticated', ARRAY['SELECT', 'INSERT'], 'authenticated role has SELECT and INSERT privileges on requester_id');
 SELECT column_privs_are('friend_requests', 'addressee_id', 'authenticated', ARRAY['SELECT', 'INSERT'], 'authenticated role has SELECT and INSERT privileges on addressee_id');
 
-SELECT table_privs_are('friend_requests', 'anon', ARRAY['SELECT'], 'anon role has a SELECT privilege on public.friend_requests');
 SELECT table_privs_are('friend_requests', 'authenticated', ARRAY['SELECT', 'DELETE'], 'authenticated role has a SELECT and DELETE privileges on public.friend_requests');
 
 SELECT col_is_pk('friend_requests', 'id', 'id is a primary key');
