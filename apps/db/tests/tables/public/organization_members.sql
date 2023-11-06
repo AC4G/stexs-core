@@ -47,16 +47,16 @@ SELECT col_not_null('organization_members', 'created_at', 'created_at has a NOT 
 SELECT col_is_null('organization_members', 'updated_at', 'updated_at has a NULL constraint');
 
 PREPARE insert_member_role AS INSERT INTO public.organization_members (organization_id, member_id, role) VALUES (1, '75336027-7f85-494b-8f25-910e41c9af73'::UUID, 'Member');
-SELECT throws_ok('insert_member_role', '23503', 'insert or update on table "organization_members" violates foreign key constraint "organization_members_organization_id_fkey"', 'Should get an violation for foreign key constraint "organization_members_organization_id_fkey" for valid role');
+SELECT throws_ok('insert_member_role', '23503', 'insert or update on table "organization_members" violates foreign key constraint "organization_members_organization_id_fkey"', 'Should get an violation for foreign key constraint "organization_members_organization_id_fkey" for valid role Member');
 
 PREPARE insert_moderator_role AS INSERT INTO public.organization_members (organization_id, member_id, role) VALUES (2, '75336027-7f85-494b-8f25-910e41c9af73'::UUID, 'Moderator');
-SELECT throws_ok('insert_moderator_role', '23503', 'insert or update on table "organization_members" violates foreign key constraint "organization_members_organization_id_fkey"', 'Should get an violation for foreign key constraint "organization_members_organization_id_fkey" for valid role');
+SELECT throws_ok('insert_moderator_role', '23503', 'insert or update on table "organization_members" violates foreign key constraint "organization_members_organization_id_fkey"', 'Should get an violation for foreign key constraint "organization_members_organization_id_fkey" for valid role Moderator');
 
 PREPARE insert_admin_role AS INSERT INTO public.organization_members (organization_id, member_id, role) VALUES (3, '75336027-7f85-494b-8f25-910e41c9af73'::UUID, 'Admin');
-SELECT throws_ok('insert_admin_role', '23503', 'insert or update on table "organization_members" violates foreign key constraint "organization_members_organization_id_fkey"', 'Should get an violation for foreign key constraint "organization_members_organization_id_fkey" for valid role');
+SELECT throws_ok('insert_admin_role', '23503', 'insert or update on table "organization_members" violates foreign key constraint "organization_members_organization_id_fkey"', 'Should get an violation for foreign key constraint "organization_members_organization_id_fkey" for valid role Admin');
 
 PREPARE insert_owner_role AS INSERT INTO public.organization_members (organization_id, member_id, role) VALUES (4, '75336027-7f85-494b-8f25-910e41c9af73'::UUID, 'Owner');
-SELECT throws_ok('insert_owner_role', '23503', 'insert or update on table "organization_members" violates foreign key constraint "organization_members_organization_id_fkey"', 'Should get an violation for foreign key constraint "organization_members_organization_id_fkey" for valid role');
+SELECT throws_ok('insert_owner_role', '23503', 'insert or update on table "organization_members" violates foreign key constraint "organization_members_organization_id_fkey"', 'Should get an violation for foreign key constraint "organization_members_organization_id_fkey" for valid role Owner');
 
 PREPARE insert_invalid_role AS INSERT INTO public.organization_members (organization_id, member_id, role) VALUES (5, '75336027-7f85-494b-8f25-910e41c9af73'::UUID, 'InvalidRole');
 SELECT throws_ok('insert_invalid_role', '23514', 'new row for relation "organization_members" violates check constraint "organization_members_role_check"', 'Should get a violation for check constraint "organization_members_role_check" for invalid role');

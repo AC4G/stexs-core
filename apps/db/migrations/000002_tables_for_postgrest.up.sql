@@ -188,8 +188,9 @@ CREATE TABLE public.project_members (
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
+    CONSTRAINT unique_project_members_combination UNIQUE (project_id, member_id),
     CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator', 'Owner'))
 );
 
