@@ -29,7 +29,7 @@ BEGIN
     RETURN coalesce(
         nullif(current_setting('request.jwt.claim', true), ''),
         nullif(current_setting('request.jwt.claims', true), '')
-    )::jsonb;
+    )::JSONB;
 END;
 $$ LANGUAGE plpgsql;
 
