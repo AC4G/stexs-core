@@ -166,8 +166,10 @@ GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 CREATE OR REPLACE FUNCTION public.make_user_member_of_organization()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.organization_members (organization_id, member_id, role)
-    VALUES (NEW.id, auth.uid(), 'Owner');
+    IF (auth.uid() IS NOT NULL) THEN
+        INSERT INTO public.organization_members (organization_id, member_id, role)
+        VALUES (NEW.id, auth.uid(), 'Owner');
+    END IF;
 
     RETURN NEW;
 END;

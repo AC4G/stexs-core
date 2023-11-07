@@ -320,7 +320,7 @@ BEGIN
             JOIN public.organization_members om ON oa.organization_id = om.organization_id
             WHERE oa.id = app_id
                 AND om.member_id = auth.uid()
-                AND om.role IN ('Admin', 'Moderator')
+                AND om.role IN ('Owner', 'Admin')
         )
     ) THEN
         UPDATE public.oauth2_apps
@@ -402,7 +402,7 @@ BEGIN
     VALUES (NEW.id, NEW.raw_user_meta_data->>'username');
 
     UPDATE auth.users
-    SET raw_user_meta_data = NULL
+    SET raw_user_meta_data = '{}'::JSONB
     WHERE id = NEW.id;
 
     RETURN NEW;
