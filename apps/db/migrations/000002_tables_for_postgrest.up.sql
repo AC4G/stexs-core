@@ -50,7 +50,7 @@ GRANT DELETE ON TABLE public.friends TO authenticated;
 GRANT SELECT ON TABLE public.friends TO anon;
 GRANT SELECT ON TABLE public.friends TO authenticated;
 
-CREATE OR REPLACE FUNCTION friend_insert()
+CREATE OR REPLACE FUNCTION public.friend_insert()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NOT EXISTS (
@@ -72,9 +72,9 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER friend_insert_trigger
 AFTER INSERT ON public.friends
 FOR EACH ROW 
-EXECUTE FUNCTION friend_insert();
+EXECUTE FUNCTION public.friend_insert();
 
-CREATE OR REPLACE FUNCTION friend_delete()
+CREATE OR REPLACE FUNCTION public.friend_delete()
 RETURNS TRIGGER AS $$
 BEGIN
     IF EXISTS (
@@ -93,7 +93,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER friend_delete_trigger
 AFTER DELETE ON public.friends
 FOR EACH ROW
-EXECUTE FUNCTION friend_delete();
+EXECUTE FUNCTION public.friend_delete();
 
 
 
