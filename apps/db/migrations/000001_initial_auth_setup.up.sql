@@ -158,7 +158,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION auth.check_username_and_email_before_insert()
+CREATE OR REPLACE FUNCTION auth.check_username_and_email()
 RETURNS TRIGGER AS $$
 BEGIN
     PERFORM 1
@@ -184,7 +184,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER check_username_and_email_trigger
 BEFORE INSERT ON auth.users
 FOR EACH ROW
-EXECUTE FUNCTION auth.check_username_and_email_before_insert();
+EXECUTE FUNCTION auth.check_username_and_email();
 
 CREATE OR REPLACE FUNCTION auth.encrypt_password()
 RETURNS TRIGGER AS $$

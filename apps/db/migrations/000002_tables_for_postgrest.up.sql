@@ -163,7 +163,7 @@ GRANT UPDATE (role) ON TABLE public.organization_requests TO authenticated;
 GRANT DELETE ON TABLE public.organization_requests TO authenticated;
 GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.make_user_member_of_organization()
+CREATE OR REPLACE FUNCTION public.make_organization_creator_as_owner()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (auth.uid() IS NOT NULL) THEN
@@ -175,10 +175,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER make_user_member_of_organization_trigger
+CREATE TRIGGER make_organization_creator_as_owner_trigger
 AFTER INSERT ON public.organizations
 FOR EACH ROW
-EXECUTE FUNCTION public.make_user_member_of_organization();
+EXECUTE FUNCTION public.make_organization_creator_as_owner();
 
 
 
@@ -215,11 +215,35 @@ GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
 GRANT DELETE ON TABLE public.project_requests TO authenticated;
 GRANT SELECT ON TABLE public.project_requests TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.make_user_member_of_project()
+CREATE OR REPLACE FUNCTION public.make_project_creator_as_member()
 RETURNS TRIGGER AS $$
+DECLARE
+    organization_id INT;
+    user_role TEXT;
 BEGIN
+    organization_id := (
+        SELECT organization_id
+        FROM public.projects
+        WHERE id = NEW.id
+    );
+
+    user_role := (
+        SELECT om.role
+        FROM public.organization_members om
+        WHERE om.organization_id = organization_id
+        AND om.member_id = auth.uid()
+    );
+
     INSERT INTO public.project_members (project_id, member_id, role)
-    VALUES (NEW.id, auth.uid(), 'Owner');
+    SELECT NEW.id, auth.uid(), user_role;
+
+    IF user_role <> 'Owner' THEN
+        INSERT INTO public.project_members (project_id, member_id, role)
+        SELECT NEW.id, om.member_id, 'Owner'
+        FROM public.organization_members om
+        WHERE om.organization_id = organization_id
+        AND om.role = 'Owner';
+    END IF;
 
     RETURN NEW;
 END;

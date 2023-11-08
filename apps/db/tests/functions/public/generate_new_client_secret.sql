@@ -2,7 +2,7 @@ BEGIN;
 
 SELECT plan(14);
 
-SELECT has_function('generate_new_client_secret', ARRAY['integer'], 'Function generate_new_client_secret(int) should exist');
+SELECT has_function('generate_new_client_secret', ARRAY['integer'], 'Function public.generate_new_client_secret(int) should exist');
 
 SELECT function_lang_is('generate_new_client_secret', 'plpgsql', 'generate_new_client_secret should be written in plpgsql');
 
