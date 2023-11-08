@@ -215,22 +215,22 @@ GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
 GRANT DELETE ON TABLE public.project_requests TO authenticated;
 GRANT SELECT ON TABLE public.project_requests TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.make_project_creator_as_member()
+CREATE OR REPLACE FUNCTION public.make_project_creator_a_member()
 RETURNS TRIGGER AS $$
 DECLARE
-    organization_id INT;
+    org_id INT;
     user_role TEXT;
 BEGIN
-    organization_id := (
-        SELECT organization_id
-        FROM public.projects
-        WHERE id = NEW.id
+    org_id := (
+        SELECT p.organization_id
+        FROM public.projects p
+        WHERE p.id = NEW.id
     );
 
     user_role := (
         SELECT om.role
         FROM public.organization_members om
-        WHERE om.organization_id = organization_id
+        WHERE om.organization_id = org_id
         AND om.member_id = auth.uid()
     );
 
@@ -241,7 +241,7 @@ BEGIN
         INSERT INTO public.project_members (project_id, member_id, role)
         SELECT NEW.id, om.member_id, 'Owner'
         FROM public.organization_members om
-        WHERE om.organization_id = organization_id
+        WHERE om.organization_id = org_id
         AND om.role = 'Owner';
     END IF;
 
@@ -249,10 +249,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER make_project_creator_as_member_trigger
+CREATE TRIGGER make_project_creator_a_member_trigger
 AFTER INSERT ON public.projects
 FOR EACH ROW
-EXECUTE FUNCTION public.make_project_creator_as_member();
+EXECUTE FUNCTION public.make_project_creator_a_member();
 
 
 
