@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(5);
+SELECT plan(6);
 
 SELECT has_function('friend_insert', 'Function public.friend_insert() should exist');
 
@@ -17,6 +17,7 @@ INSERT INTO public.friend_requests (requester_id, addressee_id) VALUES ('bb753d9
 
 INSERT INTO public.friends (user_id, friend_id) VALUES ('bb753d90-a640-433b-b339-6632b57a0620'::UUID, 'bb753d90-a640-433b-b339-6632b57a0619'::UUID);
 
-SELECT ok(1 = (SELECT 1 FROM public.friends WHERE friend_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID AND user_id = 'bb753d90-a640-433b-b339-6632b57a0619'::UUID), 'Should create a bipolar entry');
+SELECT ok(1 = (SELECT 1 FROM public.friends WHERE user_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID AND friend_id = 'bb753d90-a640-433b-b339-6632b57a0619'::UUID), 'Should create an entry as friend');
+SELECT ok(1 = (SELECT 1 FROM public.friends WHERE user_id = 'bb753d90-a640-433b-b339-6632b57a0619'::UUID AND friend_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID), 'Should create a bipolar entry');
 
 ROLLBACK;
