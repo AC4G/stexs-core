@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(31);
+SELECT plan(32);
 
 SELECT can('auth', ARRAY['jwt', 'role', 'uid', 'grant', 'scopes'], 'Functions for getting authenticated users jwt from request exists');
 
@@ -42,5 +42,9 @@ SELECT ok(auth.role() = 'authenticated', 'auth.role() returns authenticated role
 SELECT ok(auth.uid() = '2d7ab9f2-e4dd-4635-a830-6f1f724fd2f9', 'auth.uid() returns expected uuid from sub');
 SELECT ok(auth.grant() = 'password', 'auth.grant() returns expected grant type');
 SELECT ok(auth.scopes() IS NULL, 'auth.scopes() returns NULL');
+
+SELECT set_config('request.jwt.claim.scopes', 'inventory.read,inventory.write', true);
+
+SELECT ok(auth.scopes() = ARRAY['inventory.read', 'inventory.write'], 'auth.scopes() should return expected scopes');
 
 ROLLBACK;

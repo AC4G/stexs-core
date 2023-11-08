@@ -158,7 +158,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION auth.check_username_and_email_before_insert()
+CREATE OR REPLACE FUNCTION auth.check_username_and_email()
 RETURNS TRIGGER AS $$
 BEGIN
     PERFORM 1
@@ -166,7 +166,9 @@ BEGIN
     WHERE username = NEW.raw_user_meta_data->>'username';
 
     IF FOUND THEN
-        RAISE EXCEPTION USING HINT = 'Please choose a different username';
+        RAISE sqlstate '23505' USING
+            MESSAGE = 'Provided username is already taken',
+            HINT = 'Please choose a different username';
     END IF;
 
     PERFORM 1
@@ -174,7 +176,9 @@ BEGIN
     WHERE email = NEW.email;
 
     IF FOUND THEN
-        RAISE EXCEPTION USING HINT = 'Please choose a different email';
+        RAISE sqlstate '23505' USING
+            MESSAGE = 'Provided email is already taken',
+            HINT = 'Please choose a different email';
     END IF;
 
     RETURN NEW;
@@ -184,7 +188,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER check_username_and_email_trigger
 BEFORE INSERT ON auth.users
 FOR EACH ROW
-EXECUTE FUNCTION auth.check_username_and_email_before_insert();
+EXECUTE FUNCTION auth.check_username_and_email();
 
 CREATE OR REPLACE FUNCTION auth.encrypt_password()
 RETURNS TRIGGER AS $$
