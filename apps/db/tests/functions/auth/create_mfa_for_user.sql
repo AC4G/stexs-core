@@ -2,7 +2,7 @@ BEGIN;
 
 SELECT plan(5);
 
-SELECT has_function('auth', 'create_mfa_for_user', 'Function auth.create_mfa_for_user() should exists');
+SELECT has_function('auth', 'create_mfa_for_user', 'Function auth.create_mfa_for_user() should exist');
 
 SELECT is_normal_function('auth', 'create_mfa_for_user', 'Function auth.create_mfa_for_user() is a normal function');
 

@@ -249,10 +249,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER make_user_member_of_project_trigger
+CREATE TRIGGER make_project_creator_as_member_trigger
 AFTER INSERT ON public.projects
 FOR EACH ROW
-EXECUTE FUNCTION public.make_user_member_of_project();
+EXECUTE FUNCTION public.make_project_creator_as_member();
 
 
 
