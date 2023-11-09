@@ -154,7 +154,7 @@ RETURNS void AS $$
 BEGIN
     DELETE FROM auth.users
     WHERE email_verified_at IS NULL
-    AND verification_sent_at + interval '24 hours' < CURRENT_TIMESTAMP;
+    AND verification_sent_at + INTERVAL '24 hours' < CURRENT_TIMESTAMP;
 END;
 $$ LANGUAGE plpgsql;
 
