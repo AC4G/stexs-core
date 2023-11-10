@@ -53,10 +53,14 @@ SELECT ok(1 = (SELECT 1 FROM public.blocked WHERE blocker_id = 'bb753d90-a640-43
 
 DELETE FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID;
 
+RESET ROLE;
+
 SELECT ok(1 = (SELECT 1 FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID), 'Should not allow the deletion of the entry');
+
+SET ROLE authenticated;
 
 DELETE FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0619'::UUID;
 
-SELECT ok((SELECT 1 FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID) IS NULL, 'Should allow the deletion of the entry');
+SELECT ok((SELECT 1 FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0619'::UUID) IS NULL, 'Should allow the deletion of the entry');
 
 ROLLBACK;
