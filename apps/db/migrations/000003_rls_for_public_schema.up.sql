@@ -24,8 +24,7 @@ CREATE POLICY blocked_insert
     FOR INSERT
     WITH CHECK (
         auth.grant() = 'password' AND 
-        auth.uid() = blocker_id AND 
-        auth.uid() <> blocked_id
+        auth.uid() = blocker_id
     );  
 
 
