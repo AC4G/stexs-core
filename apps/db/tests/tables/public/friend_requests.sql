@@ -37,7 +37,7 @@ SELECT col_not_null('friend_requests', 'addressee_id', 'addressee_id has a NOT N
 SELECT col_not_null('friend_requests', 'created_at', 'created_at has a NOT NULL constraint');
 
 PREPARE insert_user_friend_request_to_himself AS INSERT INTO public.friend_requests (requester_id, addressee_id) VALUES ('75336027-7f85-494b-8f25-910e41c9af73'::UUID, '75336027-7f85-494b-8f25-910e41c9af73'::UUID);
-SELECT throws_ok('insert_user_friend_request_to_himself', '23514', 'new row for relation "friend_requests" violates check constraint "friend_requests_check"', 'Should get an violation for check constraint "friend_requests_check" for setting his id in requester_id and addressee_id');
+SELECT throws_ok('insert_user_friend_request_to_himself', '23514', 'new row for relation "friend_requests" violates check constraint "friend_requests_check"', 'Should get an violation for check constraint "friend_requests_check" for inserting his id in requester_id and addressee_id');
 
 PREPARE insert_user_friend_request_to_someone_else AS INSERT INTO public.friend_requests (requester_id, addressee_id) VALUES ('75336027-7f85-494b-8f25-910e41c9af73'::UUID, '75336027-7f85-494b-8f25-910e41c9af74'::UUID);
 SELECT throws_ok('insert_user_friend_request_to_someone_else', '23503', 'insert or update on table "friend_requests" violates foreign key constraint "friend_requests_requester_id_fkey"', 'Should get an violation for foreign key constraint "friend_requests_requester_id_fkey" for having a different id in addressee_id as his own in requester_id');

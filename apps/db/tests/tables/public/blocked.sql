@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(19);
+SELECT plan(22);
 
 SELECT has_table('blocked', 'public.blocked table exists');
 
@@ -8,6 +8,10 @@ SELECT has_column('blocked', 'id', 'id is a column in public.blocked');
 SELECT has_column('blocked', 'blocker_id', 'blocker_id is a column in public.blocked');
 SELECT has_column('blocked', 'blocked_id', 'blocked_id is a column in public.blocked');
 SELECT has_column('blocked', 'created_at', 'created_at is a column in public.blocked');
+
+SELECT has_check('blocked', 'public.blocked has a check constraint');
+
+SELECT col_has_check('blocked', ARRAY['blocker_id', 'blocked_id'], 'blocker_id and blocked_id have a check constraint');
 
 SELECT column_privs_are('blocked', 'blocker_id', 'authenticated', ARRAY['SELECT', 'INSERT'], 'authenticated role has SELECT and INSERT privileges on blocker_id');
 SELECT column_privs_are('blocked', 'blocked_id', 'authenticated', ARRAY['SELECT', 'INSERT'], 'authenticated role has SELECT and INSERT privileges on blocked_id');
@@ -29,5 +33,8 @@ SELECT col_type_is('blocked', 'created_at', 'timestamp with time zone', 'created
 SELECT col_not_null('blocked', 'blocker_id', 'blocker_id has a NOT NULL constraint');
 SELECT col_not_null('blocked', 'blocked_id', 'blocked_id has a NOT NULL constraint');
 SELECT col_not_null('blocked', 'created_at', 'created_at has a NOT NULL constraint');
+
+PREPARE insert_blocked_himself AS INSERT INTO public.blocked (blocker_id, blocked_id) VALUES ('bb753d90-a640-433b-b339-6632b57a0620'::UUID, 'bb753d90-a640-433b-b339-6632b57a0620'::UUID);
+SELECT throws_ok('insert_blocked_himself', '23514', 'new row for relation "blocked" violates check constraint "blocked_check"', 'Should get an violation for check constraint "blocked_check" for inserting blocker_id and blocked_id the same');
 
 ROLLBACK;
