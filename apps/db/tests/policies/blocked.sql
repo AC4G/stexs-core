@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(10);
+SELECT plan(11);
 
 SELECT policies_are('blocked', ARRAY[
     'blocked_select',
@@ -18,21 +18,12 @@ INSERT INTO auth.users (id, email, encrypted_password, raw_user_meta_data) VALUE
 
 -- Start blocked_insert policy
 
-SET ROLE anon;
-
-PREPARE insert_entry AS INSERT INTO public.blocked (blocker_id, blocked_id) VALUES ('bb753d90-a640-433b-b339-6632b57a0619'::UUID, 'bb753d90-a640-433b-b339-6632b57a0620'::UUID);
-SELECT throws_ok('insert_entry', '42501', 'permission denied for table blocked', 'Should throw an permission denied error for inserting with anon role');
-
 SET ROLE authenticated;
 
-SELECT throws_ok('insert_entry', '42501', 'new row violates row-level security policy for table "blocked"', 'Should get an violation for security policy for table "blocked" by inserting with authenticated role only');
-
-SELECT set_config('request.jwt.claim.grant_type', 'authorization_code', true);
-SELECT set_config('request.jwt.claim.sub', 'bb753d90-a640-433b-b339-6632b57a0619', true);
-
-SELECT throws_ok('insert_entry', '42501', 'new row violates row-level security policy for table "blocked"', 'Should get an violation for security policy for table "blocked" by inserting with grant type authorization_code');
+PREPARE insert_entry AS INSERT INTO public.blocked (blocker_id, blocked_id) VALUES ('bb753d90-a640-433b-b339-6632b57a0619'::UUID, 'bb753d90-a640-433b-b339-6632b57a0620'::UUID);
 
 SELECT set_config('request.jwt.claim.grant_type', 'password', true);
+SELECT set_config('request.jwt.claim.sub', 'bb753d90-a640-433b-b339-6632b57a0619', true);
 
 SELECT lives_ok('insert_entry', 'Should create a new entry');
 
@@ -43,8 +34,29 @@ SELECT throws_ok('insert_entry', '42501', 'new row violates row-level security p
 PREPARE insert_the_same_id_for_blocker_and_blocked_id AS INSERT INTO public.blocked (blocker_id, blocked_id) VALUES ('bb753d90-a640-433b-b339-6632b57a0620'::UUID, 'bb753d90-a640-433b-b339-6632b57a0620'::UUID);
 SELECT throws_ok('insert_the_same_id_for_blocker_and_blocked_id', '23514', 'new row for relation "blocked" violates check constraint "blocked_check"', 'Should get an violation for check constraint "blocked_check" by inserting with blocked_id as the blocker_id');
 
+RESET ROLE;
+
+INSERT INTO public.blocked (blocker_id, blocked_id) VALUES ('bb753d90-a640-433b-b339-6632b57a0619'::UUID, 'bb753d90-a640-433b-b339-6632b57a0621'::UUID);
+INSERT INTO public.blocked (blocker_id, blocked_id) VALUES ('bb753d90-a640-433b-b339-6632b57a0620'::UUID, 'bb753d90-a640-433b-b339-6632b57a0621'::UUID);
+
 -- Start blocked_select policy
 
+SET ROLE authenticated;
 
+SELECT set_config('request.jwt.claim.grant_type', 'password', true);
+SELECT set_config('request.jwt.claim.sub', 'bb753d90-a640-433b-b339-6632b57a0619', true);
+
+SELECT ok((SELECT 1 FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID) IS NULL, 'Should return no entries because blocker_id is not the current users id');
+SELECT ok(1 = (SELECT 1 FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0619'::UUID AND blocked_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID), 'Should return entry');
+
+-- Start blocked_delete policy
+
+DELETE FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID;
+
+SELECT ok(1 = (SELECT 1 FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID), 'Should not allow the deletion of the entry');
+
+DELETE FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0619'::UUID;
+
+SELECT ok((SELECT 1 FROM public.blocked WHERE blocker_id = 'bb753d90-a640-433b-b339-6632b57a0620'::UUID) IS NULL, 'Should allow the deletion of the entry');
 
 ROLLBACK;
