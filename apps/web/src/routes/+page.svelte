@@ -1,4 +1,5 @@
 <script>
+  import { Button } from 'ui';
 </script>
 
-<section>HI</section>
+<Button />
