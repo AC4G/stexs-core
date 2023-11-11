@@ -1,0 +1,11 @@
+{
+  "name": "ui",
+  "version": "0.0.0",
+  "type": "module",
+	"module": "index.ts",
+	"svelte": "index.ts",
+  "scripts": {},
+  "devDependencies": {
+    "svelte": "^4.0.5"
+  }
+}

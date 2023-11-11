@@ -350,7 +350,6 @@ CREATE TABLE public.scopes (
     updated_at TIMESTAMPTZ
 );
 
-GRANT SELECT ON TABLE public.scopes TO anon;
 GRANT SELECT ON TABLE public.scopes TO authenticated;
 
 

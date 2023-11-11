@@ -22,6 +22,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"stexs-client": "workspace:*"
+		"stexs-client": "workspace:*",
+		"ui": "workspace:*"
 	}
 }
