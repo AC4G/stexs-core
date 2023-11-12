@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
 </script>
 
-<button>HI</button>
+<button class="btn bg-primary-500 variant-filled">
+  <slot />
+</button>
