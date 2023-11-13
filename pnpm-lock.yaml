@@ -184,6 +184,9 @@ importers:
       '@tauri-apps/api':
         specifier: ^1.5.1
         version: 1.5.1
+      stexs-client:
+        specifier: workspace:*
+        version: link:../../packages/stexs-client
       ui:
         specifier: workspace:*
         version: link:../../packages/ui

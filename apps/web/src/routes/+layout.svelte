@@ -1,8 +1,11 @@
 <script lang="ts">
   import '../app.postcss';
-  import { AppShell } from '@skeletonlabs/skeleton';
+  import { AppShell, setInitialClassState } from '@skeletonlabs/skeleton';
 </script>
 
+<svelte:head>
+  {@html `<script>(${setInitialClassState.toString()})();</script>`}
+</svelte:head>
 <AppShell>
   <slot />
 </AppShell>

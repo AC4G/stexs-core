@@ -58,7 +58,8 @@
         "height": 900,
         "resizable": true,
         "title": "Stexs",
-        "width": 1600
+        "width": 1600,
+        "visible": false
       }
     ]
   }

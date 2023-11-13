@@ -1,6 +1,6 @@
 <script lang="ts">
 </script>
 
-<button class="btn bg-primary-500 variant-filled">
+<button class="btn variant-filled-primary">
   <slot />
 </button>
