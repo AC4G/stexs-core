@@ -1,6 +1,8 @@
 <script lang="ts">
   import '../app.postcss';
-  import { AppShell } from '@skeletonlabs/skeleton';
+  import { AppShell, setInitialClassState } from '@skeletonlabs/skeleton';
+
+  setInitialClassState();
 </script>
 
 <AppShell>

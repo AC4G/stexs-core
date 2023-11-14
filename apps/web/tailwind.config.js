@@ -1,8 +1,10 @@
 import { join } from 'path';
 import { skeleton } from '@skeletonlabs/tw-plugin';
+import { stexsTheme } from '../../packages/ui/stexsTheme';
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'media',
   content: [
     "./src/**/*.{html,js,svelte,ts}",
     "../../packages/ui/**/*.{html,js,svelte,ts}",
@@ -17,7 +19,9 @@ export default {
   plugins: [
     skeleton({
       themes: {
-        preset: ['gold-nouveau']
+        custom: [
+          stexsTheme
+        ]
       }
     })
   ],

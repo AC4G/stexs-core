@@ -29,6 +29,7 @@
 	"type": "module",
 	"dependencies": {
 		"@tauri-apps/api": "^1.5.1",
+		"stexs-client": "workspace:*",
 		"ui": "workspace:*"
 	}
 }
