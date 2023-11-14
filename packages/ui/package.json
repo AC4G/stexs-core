@@ -2,8 +2,9 @@
   "name": "ui",
   "version": "0.0.0",
   "type": "module",
-  "module": "index.ts",
-  "svelte": "index.ts",
+  "module": "./src/index.ts",
+  "svelte": "./src/index.ts",
+  "types": "./src/index.ts",
   "scripts": {},
   "devDependencies": {
     "@skeletonlabs/skeleton": "^2.5.0",

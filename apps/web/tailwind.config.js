@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { skeleton } from '@skeletonlabs/tw-plugin';
 import { stexsTheme } from '../../packages/ui/stexsTheme';
+import forms from '@tailwindcss/forms';
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -23,7 +24,8 @@ export default {
           stexsTheme
         ]
       }
-    })
+    }),
+    forms
   ],
 }
 
