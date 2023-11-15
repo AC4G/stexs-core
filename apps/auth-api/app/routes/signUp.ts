@@ -98,17 +98,17 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.error('Sign-up: Database insertion failed.');
+        logger.error('Sign up: Database insertion failed.');
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
       }
 
-      logger.info(`Sign-up successful for user: ${username}`);
+      logger.info(`Sign up successful for user: ${username}`);
 
       res
         .status(201)
         .json(
           message(
-            'Sign-up successful. Check your email for an verification link!',
+            'Sign up successful. Check your email for an verification link!',
           ),
         );
     } catch (e) {
@@ -118,7 +118,7 @@ router.post(
         const path = err.hint.split(' ').pop()!;
 
         logger.warn(
-          `Sign-up validation failed for user: ${username}, path: ${path}`,
+          `Sign up validation failed for user: ${username}, path: ${path}`,
         );
 
         return res.status(400).json(

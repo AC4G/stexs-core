@@ -1,0 +1,10 @@
+{
+  "name": "validation-schemas",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "devDependencies": {
+    "zod": "^3.22.4"
+  }
+}
