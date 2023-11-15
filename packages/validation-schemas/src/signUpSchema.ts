@@ -13,6 +13,7 @@ export const signUpSchema = z.object({
     message: 'Must include at least one uppercase letter,<br>one lowercase letter, one number, and one special character.'
   }),
   confirm: z.string(),
+  terms: z.boolean().refine((value) => value)
 }).superRefine(({ confirm, password }, ctx) => {
   if (confirm !== password) {
     ctx.addIssue({

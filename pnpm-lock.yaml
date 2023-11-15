@@ -224,6 +224,9 @@ importers:
       svelte-check:
         specifier: ^3.4.3
         version: 3.5.2(postcss@8.4.31)(svelte@4.2.1)
+      sveltekit-flash-message:
+        specifier: ^2.2.2
+        version: 2.2.2(@sveltejs/kit@1.25.2)(svelte@4.2.1)
       sveltekit-superforms:
         specifier: ^1.10.1
         version: 1.10.1(@sveltejs/kit@1.25.2)(svelte@4.2.1)(zod@3.22.4)
@@ -294,6 +297,9 @@ importers:
       svelte-check:
         specifier: ^3.4.3
         version: 3.5.2(postcss@8.4.31)(svelte@4.2.1)
+      sveltekit-flash-message:
+        specifier: ^2.2.1
+        version: 2.2.2(@sveltejs/kit@1.25.2)(svelte@4.2.1)
       sveltekit-superforms:
         specifier: ^1.10.1
         version: 1.10.1(@sveltejs/kit@1.25.2)(svelte@4.2.1)(zod@3.22.4)
@@ -7129,6 +7135,16 @@ packages:
       locate-character: 3.0.0
       magic-string: 0.30.5
       periscopic: 3.1.0
+    dev: true
+
+  /sveltekit-flash-message@2.2.2(@sveltejs/kit@1.25.2)(svelte@4.2.1):
+    resolution: {integrity: sha512-5xaQbkbEfzIMT2VfyJNtXl/20ugaBLc/9BzeQ+l4rHr+IoWC81qRANKAFlfZqZ2eCGPq1pzIhVeuxaPk74dAgA==}
+    peerDependencies:
+      '@sveltejs/kit': 1.x
+      svelte: 3.x || 4.x
+    dependencies:
+      '@sveltejs/kit': 1.25.2(svelte@4.2.1)(vite@4.4.11)
+      svelte: 4.2.1
     dev: true
 
   /sveltekit-superforms@1.10.1(@sveltejs/kit@1.25.2)(svelte@4.2.1)(zod@3.22.4):
