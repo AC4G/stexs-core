@@ -32,6 +32,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"iconify-icon": "^1.0.8",
 		"stexs-client": "workspace:*",
 		"ui": "workspace:*",
 		"validation-schemas": "workspace:*"

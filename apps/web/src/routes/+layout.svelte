@@ -12,12 +12,13 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { getFlash } from 'sveltekit-flash-message';
+  import 'iconify-icon';
 
   initializeStores();
 
   const toastStore = getToastStore();
   const flash = getFlash(page);
-  const excludeRoutes = ['/sign-in', '/sign-up'];
+  const excludeRoutes = ['/sign-in', '/sign-up', '/sign-in-confirm'];
   let signedIn: boolean;
 
   flash.subscribe(($flash) => {
@@ -48,6 +49,11 @@
     <slot />
   </AppShell>
 {:else}
+  <div class="m-[20px] absolute">
+    <a href="/" class="btn-icon variant-filled-surface">
+      <iconify-icon icon="ph:arrow-left-bold" />
+    </a>
+  </div>
   <AppShell>
     <slot />
   </AppShell>

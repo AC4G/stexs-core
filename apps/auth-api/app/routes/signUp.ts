@@ -38,7 +38,7 @@ router.post(
         message: INVALID_USERNAME.messages[0],
       })
       .custom((value: string) => {
-        if (!/^[A-Za-z0-9!@#$%^&*()_+=\-[\]{}|;:'",.<>/?`~\\ ]+$/.test(value))
+        if (!/^[A-Za-z0-9._]+$/.test(value))
           throw new CustomValidationError({
             code: INVALID_USERNAME.code,
             message: INVALID_USERNAME.messages[2],

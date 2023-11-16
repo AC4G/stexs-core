@@ -219,7 +219,7 @@ router.post(
         `
             SELECT 
                 CASE 
-                    WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password 
+                    WHEN crypt($1::text, encrypted_password) = encrypted_password 
                     THEN true 
                     ELSE false 
                 END AS is_current_password
@@ -250,7 +250,7 @@ router.post(
         `
             UPDATE auth.users
             SET 
-                encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf')),
+                encrypted_password = crypt($1::text, gen_salt('bf')),
                 recovery_token = NULL,
                 recovery_sent_at = NULL
             WHERE email = $2::text;
