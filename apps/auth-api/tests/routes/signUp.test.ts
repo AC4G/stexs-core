@@ -88,6 +88,16 @@ describe('Sign Up', () => {
         {
           info: {
             code: INVALID_USERNAME.code,
+            message: INVALID_USERNAME.messages[2],
+          },
+          data: {
+            location: 'body',
+            path: 'username',
+          },
+        },
+        {
+          info: {
+            code: INVALID_USERNAME.code,
             message: INVALID_USERNAME.messages[1],
           },
           data: {
@@ -300,7 +310,7 @@ describe('Sign Up', () => {
     expect(response.status).toBe(201);
     expect(response.body).toEqual(
       message(
-        'Sign-up successful. Check your email for an verification link!',
+        'Sign up successful. Check your email for an verification link!',
       ).onTest(),
     );
   });

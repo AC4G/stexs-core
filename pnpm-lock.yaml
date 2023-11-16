@@ -184,6 +184,9 @@ importers:
       '@tauri-apps/api':
         specifier: ^1.5.1
         version: 1.5.1
+      iconify-icon:
+        specifier: ^1.0.8
+        version: 1.0.8
       stexs-client:
         specifier: workspace:*
         version: link:../../packages/stexs-client
@@ -248,6 +251,9 @@ importers:
 
   apps/web:
     dependencies:
+      iconify-icon:
+        specifier: ^1.0.8
+        version: 1.0.8
       stexs-client:
         specifier: workspace:*
         version: link:../../packages/stexs-client
@@ -339,6 +345,10 @@ importers:
         version: 20.8.7
 
   packages/ui:
+    dependencies:
+      iconify-icon:
+        specifier: ^1.0.8
+        version: 1.0.8
     devDependencies:
       '@skeletonlabs/skeleton':
         specifier: ^2.5.0
@@ -1033,6 +1043,10 @@ packages:
 
   /@humanwhocodes/object-schema@2.0.1:
     resolution: {integrity: sha512-dvuCeX5fC9dXgJn9t+X5atfmgQAzUOWqS1254Gh0m6i8wKd10ebXkfNKiRK+1GWi/yTvvLDHpoxLr0xxxeslWw==}
+
+  /@iconify/types@2.0.0:
+    resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
+    dev: false
 
   /@istanbuljs/load-nyc-config@1.1.0:
     resolution: {integrity: sha512-VjeHSlIzpv/NyD3N0YuHfXOPDIixcA1q2ZV98wsMqcYlPmv2n3Yb2lYP9XMElnaFVXg5A7YLTeLu6V84uQDjmQ==}
@@ -4389,6 +4403,12 @@ packages:
     resolution: {integrity: sha512-nZXjEF2nbo7lIw3mgYjItAfgQXog3OjJogSbKa2CQIIvSGWcKgeJnQlNXip6NglNzYH45nSRiEVimMvYL8DDqQ==}
     engines: {node: '>=14.18.0'}
     dev: true
+
+  /iconify-icon@1.0.8:
+    resolution: {integrity: sha512-jvbUKHXf8EnGGArmhlP2IG8VqQLFFyTvTqb9LVL2TKTh7/eCCD1o2HHE9thpbJJb6B8hzhcFb6rOKhvo7reNKA==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: false
 
   /iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}

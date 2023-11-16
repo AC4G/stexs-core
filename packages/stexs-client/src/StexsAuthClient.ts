@@ -37,9 +37,14 @@ export class StexsAuthClient {
     }
 
     const session: Session = this._getSession();
+    const signInInit: SignInInit = this._getSignInInit();
 
     if (session && session.access_token) {
       this._setAccessTokenToAuthHeaders(session.access_token);
+    }
+
+    if (signInInit && new Date(signInInit.expires * 1000) < new Date()) {
+      localStorage.removeItem('sign_in_init');
     }
 
     this._scheduleTokenRefresh();
@@ -121,6 +126,13 @@ export class StexsAuthClient {
     }
 
     return response;
+  }
+
+  /**
+   *  Deletes the sign in init session from localStorage
+   */
+  cancelSignInConfirm() {
+    localStorage.removeItem('sign_in_init');
   }
 
   /**
@@ -512,6 +524,15 @@ export class StexsAuthClient {
     return this._getSession();
   }
 
+  /**
+   * Retrieves the sign in init session from local storage.
+   *
+   * @returns {SignInInit} The user sign in init session obtained from local storage.
+   */
+  getSignInInit(): SignInInit {
+    return this._getSignInInit();
+  }
+
   onAuthStateChange(callback: (event: string) => void) {
     this.eventEmitter.on('SIGNED_IN', () => {
       callback('SIGNED_IN');
@@ -623,6 +644,10 @@ export class StexsAuthClient {
 
   private _getSession(): Session {
     return JSON.parse(localStorage.getItem('session') as Session);
+  }
+
+  private _getSignInInit(): SignInInit {
+    return JSON.parse(localStorage.getItem('sign_in_init') as SignInInit);
   }
 
   private async _request({

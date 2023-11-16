@@ -1,6 +1,6 @@
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
-import type { ToastSettings } from "@skeletonlabs/skeleton";
+import type { ToastSettings } from '@skeletonlabs/skeleton';
 
 declare global {
   namespace App {

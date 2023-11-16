@@ -7,7 +7,7 @@ export const INVALID_USERNAME = {
   messages: [
     'Username can be minimum 1 and maximum 20 characters long.',
     'Username cannot look like an email address!',
-    'Please enter a valid username using Latin characters.',
+    'Please enter only letters, numbers, dots, and underscores.',
   ],
 };
 export const EMAIL_REQUIRED = {
@@ -48,9 +48,7 @@ export const IDENTIFIER_REQUIRED = {
 };
 export const INVALID_CREDENTIALS = {
   code: 'INVALID_CREDENTIALS',
-  messages: [
-    'Invalid credentials. Please check your username/email and password.',
-  ],
+  messages: ['Invalid credentials. Verify your username/email and password.'],
 };
 export const EMAIL_NOT_VERIFIED = {
   code: 'EMAIL_NOT_VERIFIED',

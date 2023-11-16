@@ -66,7 +66,11 @@
       <div class="mt-3">
         <p>
           Already have an account?
-          <a href="/sign-in" class="text-secondary-500">Sign In</a>
+          <a
+            href="/sign-in"
+            class="text-secondary-500 hover:text-secondary-400 transition"
+            >Sign In</a
+          >
         </p>
       </div>
     </div>
@@ -154,10 +158,16 @@
           required
           bind:checked={$form.terms}
         />
-        <span>I agree to Terms and Conditions</span>
+        <span
+          >I agree to <a
+            href="/terms-and-conditions"
+            class="text-secondary-500 hover:text-secondary-400 transition"
+            >Terms and Conditions</a
+          ></span
+        >
       </label>
       <div class="flex justify-center items-center">
-        <Button type="submit" class="variant-filled-primary">Submit</Button>
+        <Button type="submit" class="variant-filled-primary">Confirm</Button>
       </div>
     </form>
   </div>

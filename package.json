@@ -9,6 +9,7 @@
     "build:module": "turbo run build:module",
     "lint": "turbo run lint",
     "dev": "dotenv -- turbo run dev",
+    "tauri": "turbo run tauri --filter desktop",
     "clean": "turbo run clean",
     "clean:logs": "turbo run clean:logs",
     "type-check": "turbo run type-check",
