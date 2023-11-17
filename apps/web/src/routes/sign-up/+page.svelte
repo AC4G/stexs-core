@@ -2,11 +2,13 @@
   import { Button } from 'ui';
   import { signUpSchema } from 'validation-schemas';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
-  import { stexsClient } from '../../stexsClient';
+  import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { getFlash } from 'sveltekit-flash-message/client';
+  import { ProgressRadial } from '@skeletonlabs/skeleton';
 
+  let submitted: boolean = false;
   const flash = getFlash(page);
 
   const { form, errors, validate } = superForm(
@@ -23,8 +25,10 @@
 
     if (!result.valid) return;
 
+    submitted = true;
+
     const response = await (
-      await stexsClient.auth.signUp($form.username, $form.email, $form.password)
+      await stexs.auth.signUp($form.username, $form.email, $form.password)
     ).json();
 
     if (response.success) {
@@ -56,11 +60,13 @@
         }
       }
     );
+
+    submitted = false;
   }
 </script>
 
 <div class="flex items-center justify-center h-screen">
-  <div class="card p-5 variant-ghost-surface space-y-4">
+  <div class="card p-5 variant-ghost-surface space-y-6">
     <div class="text-center">
       <h3 class="h3 text-primary-500">Sign Up</h3>
       <div class="mt-3">
@@ -82,7 +88,7 @@
       </ul>
     {/if}
     <form
-      class="space-y-4"
+      class="space-y-6"
       autocomplete="off"
       on:submit|preventDefault={signUp}
     >
@@ -166,8 +172,22 @@
           ></span
         >
       </label>
-      <div class="flex justify-center items-center">
-        <Button type="submit" class="variant-filled-primary">Confirm</Button>
+      <div class="flex justify-center">
+        {#if submitted}
+          <Button
+            type="submit"
+            class="variant-filled-primary opacity-50 cursor-not-allowed"
+            disabled
+          >
+            <ProgressRadial
+              stroke={40}
+              strokeLinecap="round"
+              class="w-[24px]"
+            />
+          </Button>
+        {:else}
+          <Button type="submit" class="variant-filled-primary">Submit</Button>
+        {/if}
       </div>
     </form>
   </div>

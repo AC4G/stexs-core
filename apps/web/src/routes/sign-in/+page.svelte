@@ -2,14 +2,17 @@
   import { signInSchema } from 'validation-schemas';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
   import { Button } from 'ui';
-  import { stexsClient } from '../../stexsClient';
+  import { stexs } from '../../stexsClient';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import type { SignInInit } from 'stexs-client/src/lib/types';
-  import { previousPage } from '../../lib/stores';
+  import { redirectToPreviousPage } from '$lib/stores/previousPage';
+  import { ProgressRadial } from '@skeletonlabs/skeleton';
+
+  let submitted: boolean = false;
 
   onMount(() => {
-    const signInInit: SignInInit = stexsClient.auth.getSignInInit();
+    const signInInit: SignInInit = stexs.auth.getSignInInit();
     if (signInInit !== null && new Date(signInInit.expires * 1000) > new Date())
       return goto('/sign-in-confirm');
   });
@@ -28,17 +31,15 @@
 
     if (!result.valid) return;
 
+    submitted = true;
+
     const response = await (
-      await stexsClient.auth.signIn(
-        $form.identifier,
-        $form.password,
-        $form.remember
-      )
+      await stexs.auth.signIn($form.identifier, $form.password, $form.remember)
     ).json();
 
     if (response.token) return goto('/sign-in-confirm');
 
-    if (response.access_token) return goto($previousPage);
+    if (response.access_token) return redirectToPreviousPage();
 
     response.errors.forEach((error: { message: string }) => {
       $errors._errors === undefined
@@ -46,11 +47,13 @@
         : $errors._errors.push(error.message);
       return;
     });
+
+    submitted = false;
   }
 </script>
 
 <div class="flex items-center justify-center h-screen flex-col">
-  <div class="card p-5 variant-ghost-surface space-y-4">
+  <div class="card p-5 variant-ghost-surface space-y-6">
     <div class="text-center">
       <h3 class="h3 text-primary-500">Sign In</h3>
       <div class="mt-3">
@@ -72,7 +75,7 @@
       </ul>
     {/if}
     <form
-      class="space-y-4"
+      class="space-y-6"
       autocomplete="off"
       on:submit|preventDefault={signIn}
     >
@@ -113,8 +116,22 @@
           >Forgot password?</a
         >
       </div>
-      <div class="flex justify-center items-center">
-        <Button type="submit" class="variant-filled-primary">Sign In</Button>
+      <div class="flex justify-center">
+        {#if submitted}
+          <Button
+            type="submit"
+            class="variant-filled-primary opacity-50 cursor-not-allowed"
+            disabled
+          >
+            <ProgressRadial
+              stroke={40}
+              strokeLinecap="round"
+              class="w-[24px]"
+            />
+          </Button>
+        {:else}
+          <Button type="submit" class="variant-filled-primary">Sign In</Button>
+        {/if}
       </div>
     </form>
   </div>

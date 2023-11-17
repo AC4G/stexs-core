@@ -8,6 +8,8 @@
   "scripts": {},
   "devDependencies": {
     "@skeletonlabs/skeleton": "^2.5.0",
+    "flowbite": "^2.1.1",
+    "flowbite-svelte": "^0.44.19",
     "svelte": "^4.0.5"
   },
   "dependencies": {
