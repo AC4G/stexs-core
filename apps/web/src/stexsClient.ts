@@ -1,3 +1,3 @@
 import StexsClient from 'stexs-client';
 
-export const stexsClient: StexsClient = new StexsClient(fetch);
+export const stexs: StexsClient = new StexsClient(fetch);

@@ -1,6 +1,7 @@
 <script lang="ts">
   let buttonProps = {
-    class: $$restProps.class + ' btn',
+    ...$$restProps,
+    class: ($$restProps.class || '') + ' btn',
   };
 </script>
 

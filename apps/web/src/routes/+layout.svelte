@@ -8,7 +8,7 @@
     getToastStore,
   } from '@skeletonlabs/skeleton';
   import { Header } from 'ui';
-  import { stexsClient } from '../stexsClient';
+  import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { getFlash } from 'sveltekit-flash-message';
@@ -28,9 +28,9 @@
   });
 
   onMount(() => {
-    if (stexsClient.auth.getSession()) signedIn = true;
+    if (stexs.auth.getSession()) signedIn = true;
 
-    stexsClient.auth.onAuthStateChange((event) => {
+    stexs.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') signedIn = true;
     });
   });
