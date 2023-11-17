@@ -178,13 +178,76 @@
         on:click={cancelSignInConfirm}>Cancel</Button
       >
     {:else if type}
-      {#if $errors._errors && Array.isArray($errors._errors)}
-        <ul class="whitespace-normal text-[12px] text-error-400 text-center">
-          {#each $errors._errors as error (error)}
-            <li>{error}</li>
-          {/each}
-        </ul>
-      {/if}
+      <div class="flex justify-center">
+        {#if $errors._errors && Array.isArray($errors._errors)}
+          <ul class="whitespace-normal text-[12px] text-error-400 text-center">
+            {#each $errors._errors as error (error)}
+              <li>{error}</li>
+            {/each}
+          </ul>
+        {/if}
+        {#if signInInit.types.length > 1}
+          <Button class="p-2 variant-ghost-surface">
+            <span class="badge variant-filled-primary rounded">
+              <iconify-icon icon={choices[type].icon} class="text-[24px]" />
+            </span>
+            <p>{choices[type].description}</p>
+            <iconify-icon
+              icon="iconamoon:arrow-down-2-duotone"
+              class="text-[24px]"
+            />
+          </Button>
+          <Dropdown
+            class="bg-surface-800 rounded-md p-2 space-y-2 border border-solid border-surface-500"
+          >
+            {#each signInInit.types as currentType}
+              <Radio bind:group={type} value={currentType} custom>
+                <div
+                  class="flex justify-start cursor-pointer variant-ghost-surface p-2 rounded-md hover:bg-surface-500 peer-checked:bg-surface-500 peer-checked:cursor-default transition w-full items-center"
+                >
+                  <span class="badge variant-filled-primary rounded">
+                    <iconify-icon
+                      icon={choices[currentType].icon}
+                      class="text-[24px]"
+                    />
+                  </span>
+                  <p class="ml-2">{choices[currentType].description}</p>
+                </div>
+              </Radio>
+            {/each}
+          </Dropdown>
+        {/if}
+        {#if requestCodeTypes.includes(type)}
+          <div class="ml-[4px] flex justify-between">
+            {#if requested}
+              <Button
+                class="variant-ghost-secondary opacity-50 cursor-not-allowed"
+                title="Resend code"
+              >
+                <ProgressRadial
+                  stroke={40}
+                  strokeLinecap="round"
+                  class="w-[24px]"
+                />
+              </Button>
+            {:else}
+              <Button
+                title="Resend code"
+                class="variant-ghost-secondary"
+                on:click={async () => {
+                  requested = true;
+                  await requestNewCode(true);
+                }}
+              >
+                <iconify-icon
+                  icon="tabler:reload"
+                  class="text-[24px]"
+                /></Button
+              >
+            {/if}
+          </div>
+        {/if}
+      </div>
       <form
         class="space-y-6"
         autocomplete="off"
@@ -223,62 +286,6 @@
           {/if}
         </div>
       </form>
-      {#if (signInInit && signInInit.types.length > 1) || requestCodeTypes.includes(type)}
-        <hr class="!border-t-2" />
-        <div class="flex justify-between">
-          {#if signInInit.types.length > 1}
-            <Button>
-              <span class="badge variant-filled-primary">
-                <iconify-icon icon={choices[type].icon} class="text-[24px]" />
-              </span>
-              <iconify-icon
-                icon="iconamoon:arrow-down-2-duotone"
-                class="text-[24px]"
-              />
-            </Button>
-            <Dropdown
-              class="absolute left-[-38px] bg-surface-800 rounded-md p-2 space-y-2 border border-solid border-surface-500"
-            >
-              {#each signInInit.types as currentType}
-                <Radio bind:group={type} value={currentType} custom>
-                  <div
-                    class="flex justify-start cursor-pointer variant-ghost-surface p-2 rounded-md hover:bg-surface-500 peer-checked:bg-surface-500 peer-checked:cursor-default transition w-full items-center"
-                  >
-                    <span class="badge variant-filled-primary">
-                      <iconify-icon
-                        icon={choices[currentType].icon}
-                        class="text-[24px]"
-                      />
-                    </span>
-                    <p class="ml-2">{choices[currentType].description}</p>
-                  </div>
-                </Radio>
-              {/each}
-            </Dropdown>
-          {/if}
-          {#if requestCodeTypes.includes(type)}
-            {#if requested}
-              <Button
-                class="variant-ghost-secondary opacity-50 cursor-not-allowed w-[130px]"
-              >
-                <ProgressRadial
-                  stroke={40}
-                  strokeLinecap="round"
-                  class="w-[24px]"
-                />
-              </Button>
-            {:else}
-              <Button
-                class="variant-ghost-secondary"
-                on:click={async () => {
-                  requested = true;
-                  await requestNewCode(true);
-                }}>Resend code</Button
-              >
-            {/if}
-          {/if}
-        </div>
-      {/if}
     {/if}
   </div>
 </div>
