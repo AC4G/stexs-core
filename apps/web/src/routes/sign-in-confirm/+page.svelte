@@ -147,25 +147,30 @@
         {/if}
       </div>
     </div>
-    {#if !type && signInInit}
+    {#if !type}
       <div class="flex flex-col space-y-2">
-        {#each signInInit.types as currentType}
-          <Button
-            on:click={async () => {
-              type = currentType;
-              requestCodeTypes.includes(type) && (await requestNewCode());
-            }}
-            class="flex variant-ringed-surface p-2 rounded-md hover:bg-surface-600 transition items-center space-x-2 justify-start"
-          >
-            <span class="badge variant-filled-primary"
-              ><iconify-icon
-                icon={choices[currentType].icon}
-                class="text-[24px]"
-              /></span
+        {#if signInInit}
+          {#each signInInit.types as currentType}
+            <Button
+              on:click={async () => {
+                type = currentType;
+                requestCodeTypes.includes(type) && (await requestNewCode());
+              }}
+              class="flex variant-ringed-surface p-2 rounded-md hover:bg-surface-600 transition items-center space-x-2 justify-start"
             >
-            <p>{choices[currentType].description}</p>
-          </Button>
-        {/each}
+              <span class="badge variant-filled-primary"
+                ><iconify-icon
+                  icon={choices[currentType].icon}
+                  class="text-[24px]"
+                /></span
+              >
+              <p>{choices[currentType].description}</p>
+            </Button>
+          {/each}
+        {:else}
+          <div class="placeholder animate-pulse h-[48px]" />
+          <div class="placeholder animate-pulse h-[48px]" />
+        {/if}
       </div>
       <Button
         class="variant-ringed-surface hover:bg-surface-600"
