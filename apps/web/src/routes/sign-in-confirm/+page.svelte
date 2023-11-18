@@ -7,7 +7,7 @@
   import 'iconify-icon';
   import { redirectToPreviousPage } from '$lib/stores/previousPage';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
-  import { signInConfirmSchema } from 'validation-schemas';
+  import { SignInConfirm } from 'validation-schemas';
   import type { MFAMethod } from '$lib/types';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
   import { getFlash } from 'sveltekit-flash-message/client';
@@ -40,9 +40,9 @@
   const requestCodeTypes = ['email'];
 
   const { form, errors, validate } = superForm(
-    superValidateSync(signInConfirmSchema),
+    superValidateSync(SignInConfirm),
     {
-      validators: signInConfirmSchema,
+      validators: SignInConfirm,
       validationMethod: 'oninput',
       clearOnSubmit: 'none',
     }
@@ -179,14 +179,7 @@
       >
     {:else if type}
       <div class="flex justify-center">
-        {#if $errors._errors && Array.isArray($errors._errors)}
-          <ul class="whitespace-normal text-[12px] text-error-400 text-center">
-            {#each $errors._errors as error (error)}
-              <li>{error}</li>
-            {/each}
-          </ul>
-        {/if}
-        {#if signInInit.types.length > 1}
+        {#if signInInit.types && signInInit.types.length > 1}
           <Button class="p-2 variant-ghost-surface">
             <span class="badge variant-filled-primary rounded">
               <iconify-icon icon={choices[type].icon} class="text-[24px]" />
@@ -248,6 +241,13 @@
           </div>
         {/if}
       </div>
+      {#if $errors._errors && Array.isArray($errors._errors)}
+        <ul class="whitespace-normal text-[12px] text-error-400 text-center">
+          {#each $errors._errors as error (error)}
+            <li>{error}</li>
+          {/each}
+        </ul>
+      {/if}
       <form
         class="space-y-6"
         autocomplete="off"

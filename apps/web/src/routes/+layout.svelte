@@ -18,7 +18,12 @@
 
   const toastStore = getToastStore();
   const flash = getFlash(page);
-  const excludeRoutes = ['/sign-in', '/sign-up', '/sign-in-confirm'];
+  const excludeRoutes = [
+    '/sign-in',
+    '/sign-up',
+    '/sign-in-confirm',
+    '/recovery',
+  ];
   let signedIn: boolean;
 
   flash.subscribe(($flash) => {
