@@ -170,21 +170,9 @@
         >
       </label>
       <div class="flex justify-center">
-        {#if submitted}
-          <Button
-            type="submit"
-            class="variant-filled-primary opacity-50 cursor-not-allowed"
-            disabled
-          >
-            <ProgressRadial
-              stroke={40}
-              strokeLinecap="round"
-              class="w-[24px]"
-            />
-          </Button>
-        {:else}
-          <Button type="submit" class="variant-filled-primary">Submit</Button>
-        {/if}
+        <Button type="submit" class="variant-filled-primary" {submitted}
+          >Submit</Button
+        >
       </div>
     </form>
   </div>

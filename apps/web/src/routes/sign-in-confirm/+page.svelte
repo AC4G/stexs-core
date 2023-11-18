@@ -212,32 +212,17 @@
         {/if}
         {#if requestCodeTypes.includes(type)}
           <div class="ml-[4px] flex justify-between">
-            {#if requested}
-              <Button
-                class="variant-ghost-secondary opacity-50 cursor-not-allowed"
-                title="Resend code"
-              >
-                <ProgressRadial
-                  stroke={40}
-                  strokeLinecap="round"
-                  class="w-[24px]"
-                />
-              </Button>
-            {:else}
-              <Button
-                title="Resend code"
-                class="variant-ghost-secondary"
-                on:click={async () => {
-                  requested = true;
-                  await requestNewCode(true);
-                }}
-              >
-                <iconify-icon
-                  icon="tabler:reload"
-                  class="text-[24px]"
-                /></Button
-              >
-            {/if}
+            <Button
+              title="Resend code"
+              class="variant-ghost-secondary"
+              on:click={async () => {
+                requested = true;
+                await requestNewCode(true);
+              }}
+              submitted={requested}
+            >
+              <iconify-icon icon="tabler:reload" class="text-[24px]" /></Button
+            >
           </div>
         {/if}
       </div>
@@ -269,21 +254,9 @@
             value="Cancel"
             on:click={cancelSignInConfirm}>Cancel</Button
           >
-          {#if submitted}
-            <Button
-              type="submit"
-              class="variant-filled-primary opacity-50 cursor-not-allowed"
-              disabled
-            >
-              <ProgressRadial
-                stroke={40}
-                strokeLinecap="round"
-                class="w-[24px]"
-              />
-            </Button>
-          {:else}
-            <Button type="submit" class="variant-filled-primary">Submit</Button>
-          {/if}
+          <Button type="submit" class="variant-filled-primary" {submitted}
+            >Submit</Button
+          >
         </div>
       </form>
     {/if}
