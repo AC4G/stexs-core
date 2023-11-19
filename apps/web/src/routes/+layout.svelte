@@ -55,7 +55,7 @@
   </AppShell>
 {:else}
   <div class="m-[20px] absolute">
-    <a href="/" class="btn-icon variant-filled-surface">
+    <a href="/" class="btn-icon variant-filled-surface" title="Home">
       <iconify-icon icon="ph:arrow-left-bold" />
     </a>
   </div>

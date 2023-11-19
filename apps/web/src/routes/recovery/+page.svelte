@@ -54,7 +54,7 @@
         timeout: 10000,
       };
       submitted = false;
-      return goto('/sign-in');
+      return;
     }
 
     response.errors.forEach((error: { message: string }) => {
@@ -103,6 +103,8 @@
         : $confirmErrors._errors.push(error.message);
       return;
     });
+
+    submitted = false;
   }
 
   function cancel() {
@@ -116,7 +118,7 @@
       <h3 class="h3 text-primary-500">Password Recovery</h3>
       <div class="mt-3 max-w-[280px] mx-auto">
         {#if confirm}
-          <p>Choose a new password for your account.</p>
+          <p>Choose a new password for {email}.</p>
         {:else}
           <p>
             Enter your email to receive a recovery link. Make sure it's the
@@ -197,7 +199,7 @@
         >
         <Button type="submit" class="variant-filled-primary" {submitted}>
           {#if confirm}
-            Updated Password
+            Update Password
           {:else}
             Request Recovery
           {/if}
