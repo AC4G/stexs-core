@@ -1,8 +1,9 @@
 <script lang="ts">
-  let buttonProps = {
-    ...$$restProps,
-    class: ($$restProps.class || '') + ' btn',
-  };
+  import { ProgressRadial } from '@skeletonlabs/skeleton';
+
+  export let submitted: boolean = $$restProps.submitted || false;
+  export let type: 'button' | 'submit' | 'reset' = 'button';
+  export let title: string | undefined;
 </script>
 
 <button
@@ -11,7 +12,16 @@
   on:mouseenter
   on:mouseleave
   on:focus
-  {...buttonProps}
+  {type}
+  {title}
+  class={submitted
+    ? $$restProps.class + ' opacity-50 cursor-not-allowed btn'
+    : $$restProps.class + ' btn'}
+  {...$$restProps.disabled ? { disabled: true } : {}}
 >
-  <slot />
+  {#if submitted}
+    <ProgressRadial stroke={40} strokeLinecap="round" class="w-[24px]" />
+  {:else}
+    <slot />
+  {/if}
 </button>

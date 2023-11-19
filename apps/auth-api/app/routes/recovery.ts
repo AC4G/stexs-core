@@ -75,8 +75,7 @@ router.post(
       logger.info(`Email checked for password recovery: ${email}`);
     } catch (e) {
       logger.error(
-        `Error while checking email for password recovery for email: ${email}. Error: ${
-          e instanceof Error ? e.message : e
+        `Error while checking email for password recovery for email: ${email}. Error: ${e instanceof Error ? e.message : e
         }`,
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
@@ -104,8 +103,7 @@ router.post(
       logger.info(`Recovery token successfully updated for email: ${email}`);
     } catch (e) {
       logger.error(
-        `Error while updating recovery token for email: ${email}. Error: ${
-          e instanceof Error ? e.message : e
+        `Error while updating recovery token for email: ${email}. Error: ${e instanceof Error ? e.message : e
         }`,
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
@@ -116,14 +114,12 @@ router.post(
         email,
         'Password Recovery',
         undefined,
-        `You can change your password by following the link: ${
-          REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
+        `You can change your password by following the link: ${REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
         }`,
       );
     } catch (e) {
       logger.error(
-        `Error while sending recovery email to ${email}. Error: ${
-          e instanceof Error ? e.message : e
+        `Error while sending recovery email to ${email}. Error: ${e instanceof Error ? e.message : e
         }`,
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
@@ -268,8 +264,7 @@ router.post(
       res.json(message('Password successfully recovered.'));
     } catch (e) {
       logger.error(
-        `Error while updating password for email: ${email}. Error: ${
-          e instanceof Error ? e.message : e
+        `Error while updating password for email: ${email}. Error: ${e instanceof Error ? e.message : e
         }`,
       );
       res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
