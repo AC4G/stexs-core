@@ -8,36 +8,36 @@ FROM base AS builder
 RUN apk add --no-cache libc6-compat
 RUN apk update
 
-WORKDIR /app
+WORKDIR /src
 COPY . .
 RUN turbo prune auth-api --docker
 
 FROM base AS installer
 RUN apk add --no-cache libc6-compat
 RUN apk update
-WORKDIR /app
+WORKDIR /src
 
 COPY .gitignore  .gitignore
-COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /src/out/json/ .
+COPY --from=builder /src/out/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN pnpm install
 
-COPY --from=builder /app/out/full/ .
+COPY --from=builder /src/out/full/ .
 COPY turbo.json turbo.json
 
 RUN pnpm build --filter=auth-api || true
 
 FROM base AS runner
-WORKDIR /app
+WORKDIR /src
 
 RUN addgroup --system --gid 1001 expressjs
 RUN adduser --system --uid 1001 expressjs
 
-RUN chown -R expressjs:expressjs /app
+RUN chown -R expressjs:expressjs /src
 
 USER expressjs
-COPY --from=installer /app .
+COPY --from=installer /src .
 
 COPY .env .
 
-CMD ["pm2-runtime", "apps/auth-api/dist/app/server.js"]
+CMD ["pm2-runtime", "apps/auth-api/dist/src/server.js"]

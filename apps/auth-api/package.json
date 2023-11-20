@@ -1,13 +1,13 @@
 {
     "name": "auth-api",
     "version": "1.0.0",
-    "main": "./app/server.ts",
+    "main": "./src/server.ts",
     "type": "commonjs",
     "scripts": {
         "build": "tsc",
-        "dev": "tsx watch app/server.ts",
+        "dev": "tsx watch ./src/server.ts",
         "test": "cross-env ENV=test jest --verbose",
-        "lint": "eslint './app/**/*.ts' './tests/**/*.ts'",
+        "lint": "eslint './src/**/*.ts' './tests/**/*.ts'",
         "clean": "rm -rf dist",
         "clean:logs": "rm -f logs/*"
     },
@@ -47,7 +47,6 @@
         "@types/uuid": "^9.0.2",
         "@typescript-eslint/eslint-plugin": "^6.7.5",
         "@typescript-eslint/parser": "^6.7.5",
-        "bun-types": "^1.0.1",
         "cross-env": "^7.0.3",
         "eslint": "^8.51.0",
         "eslint-config-prettier": "^9.0.0",
