@@ -288,6 +288,9 @@ importers:
       ui:
         specifier: workspace:*
         version: link:../../packages/ui
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.1
       validation-schemas:
         specifier: workspace:*
         version: link:../../packages/validation-schemas
@@ -319,6 +322,9 @@ importers:
       '@types/node':
         specifier: ^20.8.7
         version: 20.8.10
+      '@types/uuid':
+        specifier: ^9.0.2
+        version: 9.0.5
       autoprefixer:
         specifier: ^10.4.16
         version: 10.4.16(postcss@8.4.31)

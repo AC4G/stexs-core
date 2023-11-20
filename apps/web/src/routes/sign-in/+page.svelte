@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { signInSchema } from 'validation-schemas';
+  import { SignIn } from 'validation-schemas';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
   import { Button } from 'ui';
   import { stexs } from '../../stexsClient';
@@ -17,14 +17,11 @@
       return goto('/sign-in-confirm');
   });
 
-  const { form, errors, validate } = superForm(
-    superValidateSync(signInSchema),
-    {
-      validators: signInSchema,
-      validationMethod: 'oninput',
-      clearOnSubmit: 'none',
-    }
-  );
+  const { form, errors, validate } = superForm(superValidateSync(SignIn), {
+    validators: SignIn,
+    validationMethod: 'oninput',
+    clearOnSubmit: 'none',
+  });
 
   async function signIn() {
     const result = await validate();
@@ -111,27 +108,15 @@
           <span>Remember me</span>
         </label>
         <a
-          href="/reset"
+          href="/recovery"
           class="text-secondary-500 hover:text-secondary-400 transition"
           >Forgot password?</a
         >
       </div>
       <div class="flex justify-center">
-        {#if submitted}
-          <Button
-            type="submit"
-            class="variant-filled-primary opacity-50 cursor-not-allowed"
-            disabled
-          >
-            <ProgressRadial
-              stroke={40}
-              strokeLinecap="round"
-              class="w-[24px]"
-            />
-          </Button>
-        {:else}
-          <Button type="submit" class="variant-filled-primary">Sign In</Button>
-        {/if}
+        <Button type="submit" class="variant-filled-primary" {submitted}
+          >Sign In</Button
+        >
       </div>
     </form>
   </div>
