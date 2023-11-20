@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button } from 'ui';
-  import { signUpSchema } from 'validation-schemas';
+  import { SignUp } from 'validation-schemas';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
   import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
@@ -11,14 +11,11 @@
   let submitted: boolean = false;
   const flash = getFlash(page);
 
-  const { form, errors, validate } = superForm(
-    superValidateSync(signUpSchema),
-    {
-      validators: signUpSchema,
-      validationMethod: 'oninput',
-      clearOnSubmit: 'none',
-    }
-  );
+  const { form, errors, validate } = superForm(superValidateSync(SignUp), {
+    validators: SignUp,
+    validationMethod: 'oninput',
+    clearOnSubmit: 'none',
+  });
 
   async function signUp() {
     const result = await validate();
@@ -137,7 +134,7 @@
       {#if $errors.password && Array.isArray($errors.password)}
         <ul class="whitespace-normal text-[12px] text-error-400">
           {#each $errors.password as error (error)}
-            <li>{@html error}</li>
+            <li>{error}</li>
           {/each}
         </ul>
       {/if}
@@ -173,21 +170,9 @@
         >
       </label>
       <div class="flex justify-center">
-        {#if submitted}
-          <Button
-            type="submit"
-            class="variant-filled-primary opacity-50 cursor-not-allowed"
-            disabled
-          >
-            <ProgressRadial
-              stroke={40}
-              strokeLinecap="round"
-              class="w-[24px]"
-            />
-          </Button>
-        {:else}
-          <Button type="submit" class="variant-filled-primary">Submit</Button>
-        {/if}
+        <Button type="submit" class="variant-filled-primary" {submitted}
+          >Submit</Button
+        >
       </div>
     </form>
   </div>

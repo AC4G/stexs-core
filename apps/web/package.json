@@ -18,6 +18,7 @@
 		"@tailwindcss/forms": "^0.5.7",
 		"@types/cookie": "^0.5.1",
 		"@types/node": "^20.8.7",
+		"@types/uuid": "^9.0.2",
 		"autoprefixer": "^10.4.16",
 		"flowbite": "^2.1.1",
 		"flowbite-svelte": "^0.44.19",
@@ -37,6 +38,7 @@
 		"iconify-icon": "^1.0.8",
 		"stexs-client": "workspace:*",
 		"ui": "workspace:*",
+		"uuid": "^9.0.0",
 		"validation-schemas": "workspace:*"
 	}
 }

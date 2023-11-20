@@ -181,7 +181,7 @@ export const ROUTE_NOT_FOUND = {
 };
 export const NEW_PASSWORD_EQUALS_CURRENT = {
   code: 'NEW_PASSWORD_EQUALS_CURRENT',
-  message: "New password cann't be the same as the current password.",
+  message: "New password can't be the same as the current password.",
 };
 export const RECOVERY_LINK_EXPIRED = {
   code: 'RECOVERY_LINK_EXPIRED',
