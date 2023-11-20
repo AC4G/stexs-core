@@ -98,10 +98,7 @@ services:
     volumes:
       - ~/minio/data:/data
     container_name: minio
-    environment:
-      - MINIO_ROOT_PASSWORD=stexs
-      - MINIO_ROOT_USER=stexs
-    command: server
+    command: server --console-address ":9001" /data
     networks:
       - stexs
 
