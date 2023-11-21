@@ -96,12 +96,11 @@ services:
       - 9000:9000
       - 9001:9001
     volumes:
-      - ~/minio/data:/data
+      - ./docker/minio/data:/data
     container_name: minio
     command: server --console-address ":9001" /data
     networks:
       - stexs
-
   
 networks:
   stexs:
