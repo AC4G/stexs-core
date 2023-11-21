@@ -14,6 +14,20 @@ services:
     depends_on: 
       - db
 
+
+  storage-api:
+    build:
+      context: .
+      dockerfile: ./apps/storage-api/Dockerfile
+    restart: on-failure
+    ports:
+      - 3002:3002
+    container_name: storage-api
+    networks:
+      - stexs
+    depends_on:
+      - minio
+
   
   rest:
     image: postgrest/postgrest:latest
@@ -72,7 +86,7 @@ services:
     ports:
       - 1025:1025
       - 8025:8025
-    restart: unless-stopped
+    restart: on-failure
     container_name: mailpit
 
 
@@ -95,6 +109,7 @@ services:
     ports: 
       - 9000:9000
       - 9001:9001
+    restart: on-failure
     volumes:
       - ./docker/minio/data:/data
     container_name: minio
