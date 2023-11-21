@@ -9,7 +9,7 @@
 
 **/logs
 
-docker/db/data
+docker/**/data
 docker/haproxy/certs
 
 
