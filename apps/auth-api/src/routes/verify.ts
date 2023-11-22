@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { errorMessages, message } from '../services/messageBuilderService';
+import { errorMessages, message } from 'utils-ts/messageBuilder';
 import db from '../database';
 import { body, query } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
@@ -11,9 +11,9 @@ import {
   INTERNAL_ERROR,
   INVALID_EMAIL,
   TOKEN_REQUIRED,
-} from '../constants/errors';
+} from 'utils-ts/errors';
 import { v4 as uuidv4 } from 'uuid';
-import validate from '../middlewares/validatorMiddleware';
+import validate from 'utils-ts/validatorMiddleware';
 import logger from '../loggers/logger';
 import isExpired from '../services/isExpiredService';
 
@@ -32,7 +32,7 @@ router.get(
         message: INVALID_EMAIL.messages[0],
       }),
     query('token').notEmpty().withMessage(TOKEN_REQUIRED),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { email, token } = req.query;
@@ -133,7 +133,7 @@ router.post(
         code: INVALID_EMAIL.code,
         message: INVALID_EMAIL.messages[0],
       }),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const email = req.body.email;

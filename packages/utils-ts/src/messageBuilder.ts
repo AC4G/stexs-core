@@ -4,6 +4,7 @@ export function message(
   message: string,
   data: Record<string, any> = {},
   success: boolean = true,
+  expect: any | undefined = undefined,
 ) {
   const baseMessage = {
     success,
@@ -59,14 +60,17 @@ export function errorMessages(errors: Error[]): { errors: ErrorResponse[] } {
   };
 }
 
-export function testErrorMessages(errors: Error[]): {
+export function testErrorMessages(
+  errors: Error[],
+  expect: any,
+): {
   errors: ErrorResponse[];
 } {
   return {
     errors: errors.map((error) => ({
       code: error.info.code,
       message: error.info.message,
-      timestamp: expect.any(String),
+      timestamp: expect.any(String) as unknown as string,
       data: {
         ...error.data,
       },

@@ -1,0 +1,42 @@
+{
+  "name": "utils-ts",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc"
+  },
+  "typesVersions": {
+    "*": {
+      "messageBuilder": [
+        "./dist/messageBuilder.d.ts"
+      ],
+      "errors": [
+        "./dist/constants/errors.d.ts"
+      ],
+      "jwtMiddleware": [
+        "./dist/middlewares/jwt.d.ts"
+      ],
+      "validatorMiddleware": [
+        "./dist/middlewares/validator.d.ts"
+      ]
+    }
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-jwt": "^8.4.1",
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/jsonwebtoken": "^9.0.2",
+    "@types/node": "^20.8.7"
+  },
+  "exports": {
+    "./messageBuilder": "./dist/messageBuilder.js",
+    "./errors": "./dist/constants/errors.js",
+    "./jwtMiddleware": "./dist/middlewares/jwt.js",
+    "./validatorMiddleware": "./dist/middlewares/validator.js"
+  }
+}

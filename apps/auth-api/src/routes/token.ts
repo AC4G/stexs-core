@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { errorMessages } from '../services/messageBuilderService';
+import { errorMessages } from 'utils-ts/messageBuilder';
 import db from '../database';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
@@ -7,15 +7,16 @@ import {
   INTERNAL_ERROR,
   INVALID_TOKEN,
   REFRESH_TOKEN_REQUIRED,
-} from '../constants/errors';
-import {
-  checkTokenGrantType,
-  transformJwtErrorMessages,
-  validateRefreshToken,
-} from '../middlewares/jwtMiddleware';
+} from 'utils-ts/errors';
 import logger from '../loggers/logger';
 import { body } from 'express-validator';
-import validate from '../middlewares/validatorMiddleware';
+import validate from 'utils-ts/validatorMiddleware';
+import {
+  validateRefreshToken,
+  checkTokenGrantType,
+  transformJwtErrorMessages,
+} from 'utils-ts/jwtMiddleware';
+import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
 
 const router = Router();
 
@@ -23,10 +24,10 @@ router.post(
   '/',
   [
     body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
-    validate,
-    validateRefreshToken,
+    validate(logger),
+    validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
     const token = req.auth;

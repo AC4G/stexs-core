@@ -12,17 +12,17 @@ import {
   PASSWORD_REQUIRED,
   RECOVERY_LINK_EXPIRED,
   TOKEN_REQUIRED,
-} from '../constants/errors';
+} from 'utils-ts/errors';
 import {
   CustomValidationError,
   errorMessages,
   message,
-} from '../services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 import db from '../database';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import sendEmail from '../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../env-config';
-import validate from '../middlewares/validatorMiddleware';
+import validate from 'utils-ts/validatorMiddleware';
 import logger from '../loggers/logger';
 import isExpired from '../services/isExpiredService';
 
@@ -40,7 +40,7 @@ router.post(
         code: INVALID_EMAIL.code,
         message: INVALID_EMAIL.messages[0],
       }),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { email } = req.body;
@@ -75,7 +75,8 @@ router.post(
       logger.info(`Email checked for password recovery: ${email}`);
     } catch (e) {
       logger.error(
-        `Error while checking email for password recovery for email: ${email}. Error: ${e instanceof Error ? e.message : e
+        `Error while checking email for password recovery for email: ${email}. Error: ${
+          e instanceof Error ? e.message : e
         }`,
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
@@ -103,7 +104,8 @@ router.post(
       logger.info(`Recovery token successfully updated for email: ${email}`);
     } catch (e) {
       logger.error(
-        `Error while updating recovery token for email: ${email}. Error: ${e instanceof Error ? e.message : e
+        `Error while updating recovery token for email: ${email}. Error: ${
+          e instanceof Error ? e.message : e
         }`,
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
@@ -114,12 +116,14 @@ router.post(
         email,
         'Password Recovery',
         undefined,
-        `You can change your password by following the link: ${REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
+        `You can change your password by following the link: ${
+          REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
         }`,
       );
     } catch (e) {
       logger.error(
-        `Error while sending recovery email to ${email}. Error: ${e instanceof Error ? e.message : e
+        `Error while sending recovery email to ${email}. Error: ${
+          e instanceof Error ? e.message : e
         }`,
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
@@ -163,7 +167,7 @@ router.post(
       .bail()
       .isLength({ min: 10 })
       .withMessage(INVALID_PASSWORD_LENGTH),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { email, token, password } = req.body;
@@ -264,7 +268,8 @@ router.post(
       res.json(message('Password successfully recovered.'));
     } catch (e) {
       logger.error(
-        `Error while updating password for email: ${email}. Error: ${e instanceof Error ? e.message : e
+        `Error while updating password for email: ${email}. Error: ${
+          e instanceof Error ? e.message : e
         }`,
       );
       res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
