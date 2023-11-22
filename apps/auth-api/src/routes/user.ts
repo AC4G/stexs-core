@@ -19,8 +19,7 @@ import { errorMessages, message } from 'utils-ts/messageBuilder';
 import sendEmail from '../services/emailService';
 import validate from 'utils-ts/validatorMiddleware';
 import logger from '../loggers/logger';
-import isExpired from '../services/isExpiredService';
-import generateCode from '../services/codeGeneratorService';
+import { generateCode, isExpired } from 'utils-ts';
 import {
   validateAccessToken,
   checkTokenGrantType,

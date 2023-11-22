@@ -5,8 +5,13 @@
   "scripts": {
     "build": "tsc"
   },
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
   "typesVersions": {
     "*": {
+      ".": [
+        "./dist/index.d.ts"
+      ],
       "messageBuilder": [
         "./dist/messageBuilder.d.ts"
       ],
@@ -34,6 +39,7 @@
     "@types/node": "^20.8.7"
   },
   "exports": {
+    ".": "./dist/index.js",
     "./messageBuilder": "./dist/messageBuilder.js",
     "./errors": "./dist/constants/errors.js",
     "./jwtMiddleware": "./dist/middlewares/jwt.js",

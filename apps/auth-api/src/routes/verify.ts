@@ -15,7 +15,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import validate from 'utils-ts/validatorMiddleware';
 import logger from '../loggers/logger';
-import isExpired from '../services/isExpiredService';
+import { isExpired } from 'utils-ts';
 
 const router = Router();
 

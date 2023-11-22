@@ -22,7 +22,7 @@ import {
 } from 'utils-ts/errors';
 import validate from 'utils-ts/validatorMiddleware';
 import logger from '../loggers/logger';
-import isExpired from '../services/isExpiredService';
+import { isExpired } from 'utils-ts';
 import { getTOTPForVerification } from '../services/totpService';
 import {
   validateSignInConfirmToken,

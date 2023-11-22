@@ -17,8 +17,7 @@ import {
   getTOTPForSettup,
   getTOTPForVerification,
 } from '../services/totpService';
-import isExpired from '../services/isExpiredService';
-import generateCode from '../services/codeGeneratorService';
+import { generateCode, isExpired } from 'utils-ts';
 import sendEmail from '../services/emailService';
 
 export async function enableTOTP(req: Request, res: Response) {

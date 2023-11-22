@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
 import logger from '../loggers/logger';
-import isExpired from '../services/isExpiredService';
+import { isExpired } from 'utils-ts';
 
 export async function authorizationCodeController(req: Request, res: Response) {
   const { code, client_id, client_secret: clientSecret } = req.body;
