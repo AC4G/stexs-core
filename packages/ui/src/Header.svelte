@@ -1,24 +1,23 @@
 <script>
   import { AppBar } from '@skeletonlabs/skeleton';
-
-  export let signedIn = false;
+  import { page } from '$app/stores';
 </script>
 
 <AppBar
   gridColumns="grid-cols-3"
   slotDefault="place-self-center"
   slotTrail="place-content-end"
+  class="h-[80px]"
 >
   <svelte:fragment slot="lead">
-    <a href="/" class="h4 tracking-wider">STEXS</a>
+    {#if $page.path === '/'}
+      <a href="/" class="h4 tracking-wider">STEXS</a>
+    {:else}
+     <h4 class="h4 tracking-wider cursor-default">STEXS</h4>
+    {/if}
   </svelte:fragment>
 
   <svelte:fragment slot="trail">
-    {#if !signedIn}
-      <a href="/sign-in" class="btn">Sign-In</a>
-      <a href="/sign-up" class="btn variant-filled-primary">Sign-Up</a>
-    {:else}
-      User
-    {/if}
+    <slot />
   </svelte:fragment>
 </AppBar>

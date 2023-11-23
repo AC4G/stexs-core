@@ -83,7 +83,7 @@ router.post(
       const signedUrl = await avatarsClient.getSignedUrl('putObject', {
         Bucket: 'avatars',
         Key: userId + '.' + fileExtension,
-        Expires: 60,
+        Expires: 10,
         ContentType: `image/${fileExtension}`,
       });
 

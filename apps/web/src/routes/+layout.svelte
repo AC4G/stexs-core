@@ -5,14 +5,16 @@
     Toast,
     setInitialClassState,
     initializeStores,
-    getToastStore,
+    getToastStore
   } from '@skeletonlabs/skeleton';
-  import { Header } from 'ui';
+  import { Header, Avatar } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { getFlash } from 'sveltekit-flash-message';
   import 'iconify-icon';
+  import { user } from '$lib/stores/user';
+  import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
 
   initializeStores();
 
@@ -32,11 +34,27 @@
     toastStore.trigger($flash);
   });
 
-  onMount(() => {
-    if (stexs.auth.getSession()) signedIn = true;
+  const fetchAndSetUser = async () => {
+    const { data } = await stexs.from('profiles').select('user_id,username');
+    const { user_id: userId, username } = data[0];
 
-    stexs.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') signedIn = true;
+    user.set({
+      userId,
+      username,
+    });
+
+    return true;
+  }
+
+  onMount(async () => {
+    if (stexs.auth.getSession()) {
+      signedIn = await fetchAndSetUser();
+    }
+
+    stexs.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN') {
+        signedIn = await fetchAndSetUser();
+      }
     });
   });
 </script>
@@ -49,7 +67,14 @@
 {#if !excludeRoutes.includes($page.url.pathname)}
   <AppShell>
     <svelte:fragment slot="header">
-      <Header {signedIn} />
+      <Header>
+        {#if !signedIn}
+          <a href="/sign-in" class="btn">Sign-In</a>
+          <a href="/sign-up" class="btn variant-filled-primary">Sign-Up</a>
+        {:else}
+          <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$user.userId} username={$user.username}  styles="w-[48px] rounded-full" />
+        {/if}
+      </Header>
     </svelte:fragment>
     <slot />
   </AppShell>
