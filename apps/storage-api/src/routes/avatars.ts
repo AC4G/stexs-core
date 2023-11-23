@@ -39,7 +39,7 @@ router.post(
     validate(logger),
   ],
   async (req: Request, res: Response) => {
-    const userId = req.auth?.sub;
+    const userId = req.auth?.sub!;
     const { fileExtension } = req.body;
 
     try {
@@ -51,30 +51,33 @@ router.post(
         })
         .promise();
 
-      if (KeyCount && KeyCount > 0 && Contents) {
-        const Objects = Contents.map((content) => ({
-          Key: content.Key as string,
-        }));
-
+      if (
+        KeyCount &&
+        KeyCount > 0 &&
+        Contents &&
+        Contents[0].Key !== userId + '.' + fileExtension
+      ) {
         await avatarsClient
           .deleteObjects({
             Bucket: 'avatars',
             Delete: {
-              Objects,
+              Objects: [{ Key: Contents[0].Key as string }],
             },
           })
           .promise();
 
-        logger.info(`Deleted previous avatar from user: ${userId}`);
+        logger.info(`Deleted avatar from user: ${userId}`);
       }
     } catch (e) {
       logger.error(
-        `Error while fetching list of objects in avatars bucket. Error: Error: ${
+        `Error while fetching list of objects or delete object in avatars bucket. Error: Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
+
+    if (res.headersSent) return res;
 
     try {
       const signedUrl = await avatarsClient.getSignedUrl('putObject', {
@@ -103,7 +106,41 @@ router.delete(
     checkTokenGrantType('password'),
     transformJwtErrorMessages(logger),
   ],
-  async (req: Request, res: Response) => {},
+  async (req: Request, res: Response) => {
+    const userId = req.auth?.sub!;
+
+    try {
+      const { KeyCount, Contents } = await avatarsClient
+        .listObjectsV2({
+          Bucket: 'avatars',
+          MaxKeys: 1,
+          Prefix: userId,
+        })
+        .promise();
+
+      if (KeyCount && KeyCount > 0 && Contents) {
+        await avatarsClient
+          .deleteObjects({
+            Bucket: 'avatars',
+            Delete: {
+              Objects: [{ Key: Contents[0].Key as string }],
+            },
+          })
+          .promise();
+
+        logger.info(`Deleted avatar from user: ${userId}`);
+      }
+    } catch (e) {
+      logger.error(
+        `Error while fetching list of objects or delete object in avatars bucket. Error: Error: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    }
+
+    return res.status(204).json();
+  },
 );
 
 export default router;
