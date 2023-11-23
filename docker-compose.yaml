@@ -1,34 +1,6 @@
 version: '3.7'
 
-services:
-  auth-api:
-    build: 
-      context: .
-      dockerfile: ./apps/auth-api/Dockerfile
-    restart: on-failure
-    ports:
-      - 3001:3001
-    container_name: auth-api
-    networks:
-      - stexs
-    depends_on: 
-      - db
-
-
-  storage-api:
-    build:
-      context: .
-      dockerfile: ./apps/storage-api/Dockerfile
-    restart: on-failure
-    ports:
-      - 3002:3002
-    container_name: storage-api
-    networks:
-      - stexs
-    depends_on:
-      - minio
-
-  
+services:  
   rest:
     image: postgrest/postgrest:latest
     restart: on-failure
@@ -71,13 +43,12 @@ services:
     volumes:
       - ./docker/haproxy:/etc/haproxy
     environment:
-      - JWT_SECRET=${ACCESS_TOKEN_SECRET}
+      JWT_SECRET: ${ACCESS_TOKEN_SECRET}
     container_name: haproxy
     command: ["haproxy", "-f", "/etc/haproxy/haproxy.cfg"]
     networks:
       - stexs
     depends_on:
-      - auth-api
       - rest
 
 
@@ -97,11 +68,9 @@ services:
     restart: unless-stopped
     container_name: swagger
     environment:
-      - SWAGGER_JSON_URL=http://localhost:3001/
+      SWAGGER_JSON_URL: http://localhost:3001/
     networks:
       - stexs
-    depends_on:
-      - auth-api
 
 
   minio:

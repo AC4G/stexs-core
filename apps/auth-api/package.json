@@ -5,7 +5,7 @@
     "type": "commonjs",
     "scripts": {
         "build": "tsc",
-        "dev": "tsx watch ./src/server.ts",
+        "dev": "tsc-watch --onSuccess \"node ./dist/src/server.js\"",
         "test": "cross-env ENV=test jest --verbose",
         "lint": "eslint './src/**/*.ts' './tests/**/*.ts'",
         "clean": "rm -rf dist",
@@ -28,6 +28,7 @@
         "pg": "^8.11.2",
         "response-time": "^2.3.2",
         "speakeasy": "^2.0.0",
+        "utils-ts": "workspace:*",
         "uuid": "^9.0.0",
         "winston": "^3.11.0",
         "winston-loki": "^6.0.7"
@@ -60,6 +61,7 @@
         "supertest": "^6.3.3",
         "ts-jest": "^29.1.1",
         "ts-node": "^10.9.1",
+        "tsc-watch": "^6.0.4",
         "typescript": "^5.2.2"
     }
 }

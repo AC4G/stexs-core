@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { Request } from 'express-jwt';
 import db from '../database';
 import logger from '../loggers/logger';
-import { errorMessages, message } from '../services/messageBuilderService';
+import { errorMessages, message } from 'utils-ts/messageBuilder';
 import {
   CODE_EXPIRED,
   INTERNAL_ERROR,
@@ -12,13 +12,12 @@ import {
   TOTP_ALREADY_DISABLED,
   TOTP_ALREADY_ENABLED,
   TOTP_ALREADY_VERIFIED,
-} from '../constants/errors';
+} from 'utils-ts/errors';
 import {
   getTOTPForSettup,
   getTOTPForVerification,
 } from '../services/totpService';
-import isExpired from '../services/isExpiredService';
-import generateCode from '../services/codeGeneratorService';
+import { generateCode, isExpired } from 'utils-ts';
 import sendEmail from '../services/emailService';
 
 export async function enableTOTP(req: Request, res: Response) {

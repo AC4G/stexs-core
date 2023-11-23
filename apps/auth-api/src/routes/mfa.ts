@@ -1,26 +1,17 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import {
-  checkTokenGrantType,
-  transformJwtErrorMessages,
-  validateAccessToken,
-  validateSignInConfirmOrAccessToken,
-} from '../middlewares/jwtMiddleware';
 import db from '../database';
 import logger from '../loggers/logger';
-import {
-  CustomValidationError,
-  errorMessages,
-} from '../services/messageBuilderService';
+import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
 import {
   CODE_REQUIRED,
   INTERNAL_ERROR,
   INVALID_TYPE,
   TYPE_REQUIRED,
   UNSUPPORTED_TYPE,
-} from '../constants/errors';
+} from 'utils-ts/errors';
 import { body } from 'express-validator';
-import validate from '../middlewares/validatorMiddleware';
+import validate from 'utils-ts/validatorMiddleware';
 import {
   enableEmail,
   enableTOTP,
@@ -29,15 +20,27 @@ import {
   verifyTOTP,
   sendEmailCode,
 } from '../controllers/mfaController';
+import {
+  validateAccessToken,
+  validateSignInConfirmOrAccessToken,
+  checkTokenGrantType,
+  transformJwtErrorMessages,
+} from 'utils-ts/jwtMiddleware';
+import {
+  ACCESS_TOKEN_SECRET,
+  AUDIENCE,
+  ISSUER,
+  SIGN_IN_CONFIRM_TOKEN_SECRET,
+} from '../../env-config';
 
 const router = Router();
 
 router.get(
   '/',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -76,9 +79,9 @@ router.get(
 router.post(
   '/enable',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     body('type')
       .notEmpty()
       .withMessage(TYPE_REQUIRED)
@@ -103,7 +106,7 @@ router.post(
 
       return true;
     }),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { type } = req.body;
@@ -121,9 +124,9 @@ router.post(
 router.post(
   '/disable',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     body('type')
       .notEmpty()
       .withMessage(TYPE_REQUIRED)
@@ -138,7 +141,7 @@ router.post(
         return true;
       }),
     body('code').notEmpty().withMessage(CODE_REQUIRED),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { type } = req.body;
@@ -157,9 +160,9 @@ router.post(
 router.post(
   '/verify',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     body('type')
       .notEmpty()
       .withMessage(TYPE_REQUIRED)
@@ -173,7 +176,7 @@ router.post(
         return true;
       }),
     body('code').notEmpty().withMessage(CODE_REQUIRED),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { type } = req.body;
@@ -189,8 +192,13 @@ router.post(
 router.post(
   '/send-code',
   [
-    validateSignInConfirmOrAccessToken,
-    transformJwtErrorMessages,
+    validateSignInConfirmOrAccessToken(
+      ACCESS_TOKEN_SECRET,
+      SIGN_IN_CONFIRM_TOKEN_SECRET,
+      AUDIENCE,
+      ISSUER,
+    ),
+    transformJwtErrorMessages(logger),
     body('type')
       .notEmpty()
       .withMessage(TYPE_REQUIRED)
@@ -204,7 +212,7 @@ router.post(
 
         return true;
       }),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { type } = req.body;

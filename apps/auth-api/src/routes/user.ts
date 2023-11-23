@@ -1,10 +1,5 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import {
-  transformJwtErrorMessages,
-  validateAccessToken,
-  checkTokenGrantType,
-} from '../middlewares/jwtMiddleware';
 import db from '../database';
 import { body } from 'express-validator';
 import {
@@ -19,22 +14,27 @@ import {
   NEW_PASSWORD_EQUALS_CURRENT,
   PASSWORD_CHANGE_FAILED,
   PASSWORD_REQUIRED,
-} from '../constants/errors';
-import { errorMessages, message } from '../services/messageBuilderService';
+} from 'utils-ts/errors';
+import { errorMessages, message } from 'utils-ts/messageBuilder';
 import sendEmail from '../services/emailService';
-import validate from '../middlewares/validatorMiddleware';
+import validate from 'utils-ts/validatorMiddleware';
 import logger from '../loggers/logger';
-import isExpired from '../services/isExpiredService';
-import generateCode from '../services/codeGeneratorService';
+import { generateCode, isExpired } from 'utils-ts';
+import {
+  validateAccessToken,
+  checkTokenGrantType,
+  transformJwtErrorMessages,
+} from 'utils-ts/jwtMiddleware';
+import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
 
 const router = Router();
 
 router.get(
   '/',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -71,9 +71,9 @@ router.get(
 router.post(
   '/password',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     body('password')
       .notEmpty()
       .withMessage(PASSWORD_REQUIRED)
@@ -85,7 +85,7 @@ router.post(
       .bail()
       .isLength({ min: 10 })
       .withMessage(INVALID_PASSWORD_LENGTH),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -166,9 +166,9 @@ router.post(
 router.post(
   '/email',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     body('email')
       .notEmpty()
       .withMessage(EMAIL_REQUIRED)
@@ -178,7 +178,7 @@ router.post(
         code: INVALID_EMAIL.code,
         message: INVALID_EMAIL.messages[0],
       }),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { email: newEmail } = req.body;
@@ -244,11 +244,11 @@ router.post(
 router.post(
   '/email/verify',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     body('code').notEmpty().withMessage(CODE_REQUIRED),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub;

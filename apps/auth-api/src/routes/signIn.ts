@@ -5,10 +5,7 @@ import { body } from 'express-validator';
 import generateAccessToken, {
   generateSignInConfirmToken,
 } from '../services/jwtService';
-import {
-  CustomValidationError,
-  errorMessages,
-} from '../services/messageBuilderService';
+import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,
@@ -22,16 +19,21 @@ import {
   TOKEN_REQUIRED,
   TYPE_REQUIRED,
   UNSUPPORTED_TYPE,
-} from '../constants/errors';
-import validate from '../middlewares/validatorMiddleware';
+} from 'utils-ts/errors';
+import validate from 'utils-ts/validatorMiddleware';
 import logger from '../loggers/logger';
+import { isExpired } from 'utils-ts';
+import { getTOTPForVerification } from '../services/totpService';
 import {
+  validateSignInConfirmToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-  validateSignInConfirmToken,
-} from '../middlewares/jwtMiddleware';
-import isExpired from '../services/isExpiredService';
-import { getTOTPForVerification } from '../services/totpService';
+} from 'utils-ts/jwtMiddleware';
+import {
+  AUDIENCE,
+  ISSUER,
+  SIGN_IN_CONFIRM_TOKEN_SECRET,
+} from '../../env-config';
 
 const router = Router();
 
@@ -40,7 +42,7 @@ router.post(
   [
     body('identifier').notEmpty().withMessage(IDENTIFIER_REQUIRED),
     body('password').notEmpty().withMessage(PASSWORD_REQUIRED),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
@@ -150,10 +152,10 @@ router.post(
         return true;
       }),
     body('token').notEmpty().withMessage(TOKEN_REQUIRED),
-    validate,
-    validateSignInConfirmToken(),
+    validate(logger),
+    validateSignInConfirmToken(SIGN_IN_CONFIRM_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('sign_in_confirm'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
   ],
   async (req: JWTRequest, res: Response) => {
     const userId = req.auth?.sub;

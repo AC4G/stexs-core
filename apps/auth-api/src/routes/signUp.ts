@@ -5,7 +5,7 @@ import {
   message,
   errorMessages,
   CustomValidationError,
-} from '../services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 import { body } from 'express-validator';
 import { ISSUER } from '../../env-config';
 import {
@@ -18,10 +18,10 @@ import {
   INVALID_USERNAME,
   PASSWORD_REQUIRED,
   USERNAME_REQUIRED,
-} from '../constants/errors';
+} from 'utils-ts/errors';
 import { v4 as uuidv4 } from 'uuid';
-import validate from '../middlewares/validatorMiddleware';
 import logger from '../loggers/logger';
+import validate from 'utils-ts/validatorMiddleware';
 
 const router = Router();
 
@@ -75,7 +75,7 @@ router.post(
       .bail()
       .isLength({ min: 10 })
       .withMessage(INVALID_PASSWORD_LENGTH),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { username, password, email } = req.body;

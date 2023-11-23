@@ -1,23 +1,24 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
 import db from '../database';
+import { errorMessages } from 'utils-ts/messageBuilder';
+import { INTERNAL_ERROR } from 'utils-ts/errors';
+import logger from '../loggers/logger';
+import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
 import {
+  validateAccessToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-  validateAccessToken,
-} from '../middlewares/jwtMiddleware';
-import { errorMessages } from '../services/messageBuilderService';
-import { INTERNAL_ERROR } from '../constants/errors';
-import logger from '../loggers/logger';
+} from 'utils-ts/jwtMiddleware';
 
 const router = Router();
 
 router.post(
   '/',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
     const auth = req.auth;
@@ -57,9 +58,9 @@ router.post(
 router.post(
   '/everywhere',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
     const sub = req.auth?.sub;

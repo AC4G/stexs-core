@@ -1,17 +1,11 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import {
-  transformJwtErrorMessages,
-  validateAccessToken,
-  validateRefreshToken,
-  checkTokenGrantType,
-} from '../middlewares/jwtMiddleware';
 import db from '../database';
 import {
   CustomValidationError,
   errorMessages,
   message,
-} from '../services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 import { body } from 'express-validator';
 import {
   ARRAY_REQUIRED,
@@ -32,9 +26,9 @@ import {
   REDIRECT_URL_REQUIRED,
   REFRESH_TOKEN_REQUIRED,
   SCOPES_REQUIRED,
-} from '../constants/errors';
+} from 'utils-ts/errors';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
-import validate from '../middlewares/validatorMiddleware';
+import validate from 'utils-ts/validatorMiddleware';
 import {
   authorizationCodeController,
   clientCredentialsController,
@@ -42,17 +36,28 @@ import {
 } from '../controllers/oauth2Controller';
 import logger from '../loggers/logger';
 import { verify } from 'jsonwebtoken';
-import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
+import {
+  ACCESS_TOKEN_SECRET,
+  AUDIENCE,
+  ISSUER,
+  REFRESH_TOKEN_SECRET,
+} from '../../env-config';
 import paginate from 'express-paginate';
+import {
+  validateAccessToken,
+  validateRefreshToken,
+  checkTokenGrantType,
+  transformJwtErrorMessages,
+} from 'utils-ts/jwtMiddleware';
 
 const router = Router();
 
 router.post(
   '/authorize',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     body('client_id')
       .notEmpty()
       .withMessage(CLIENT_ID_REQUIRED)
@@ -80,7 +85,7 @@ router.post(
 
         return true;
       }),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { client_id, redirect_url, scopes } = req.body;
@@ -350,7 +355,7 @@ router.post(
 
       return true;
     }),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { grant_type } = req.body;
@@ -375,9 +380,9 @@ router.post(
 router.get(
   '/connections',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     paginate.middleware(10, 50),
   ],
   async (req: Request, res: Response) => {
@@ -435,9 +440,9 @@ router.get(
 router.delete(
   '/connection',
   [
-    validateAccessToken(),
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
     body('client_id')
       .notEmpty()
       .withMessage(CLIENT_ID_REQUIRED)
@@ -447,7 +452,7 @@ router.delete(
 
         return true;
       }),
-    validate,
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { client_id: clientId } = req.body;
@@ -498,10 +503,10 @@ router.delete(
   '/revoke',
   [
     body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
-    validate,
-    validateRefreshToken,
+    validate(logger),
+    validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('authorization_code'),
-    transformJwtErrorMessages,
+    transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
     const token = req.auth;

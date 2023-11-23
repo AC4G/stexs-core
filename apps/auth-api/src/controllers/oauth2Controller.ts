@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { errorMessages } from '../services/messageBuilderService';
+import { errorMessages } from 'utils-ts/messageBuilder';
 import {
   CODE_EXPIRED,
   INTERNAL_ERROR,
@@ -7,13 +7,13 @@ import {
   INVALID_CLIENT_CREDENTIALS,
   INVALID_REFRESH_TOKEN,
   NO_CLIENT_SCOPES_SELECTED,
-} from '../constants/errors';
+} from 'utils-ts/errors';
 import db from '../database';
 import { v4 as uuidv4 } from 'uuid';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
 import logger from '../loggers/logger';
-import isExpired from '../services/isExpiredService';
+import { isExpired } from 'utils-ts';
 
 export async function authorizationCodeController(req: Request, res: Response) {
   const { code, client_id, client_secret: clientSecret } = req.body;

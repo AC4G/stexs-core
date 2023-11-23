@@ -5,17 +5,17 @@ import { goto } from '$app/navigation';
 export const previousPage = writable<string>('/');
 
 export function redirectToPreviousPage() {
-    let path;
+  let path;
 
-    const unsubscribe = previousPage.subscribe(currentPath => {
-        path = currentPath;
-    });
+  const unsubscribe = previousPage.subscribe((currentPath) => {
+    path = currentPath;
+  });
 
-    unsubscribe();
+  unsubscribe();
 
-    previousPage.set('/');
+  previousPage.set('/');
 
-    if (typeof window === 'undefined') throw redirect(302, path);
+  if (typeof window === 'undefined') throw redirect(302, path);
 
-    return goto(path);
+  return goto(path);
 }
