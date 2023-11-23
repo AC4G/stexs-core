@@ -77,17 +77,20 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    if (res.headersSent) return res;
-
     try {
-      const signedUrl = await avatarsClient.getSignedUrl('putObject', {
+      const signedPost = await avatarsClient.createPresignedPost({
         Bucket: 'avatars',
-        Key: userId + '.' + fileExtension,
-        Expires: 10,
-        ContentType: `image/${fileExtension}`,
+        Fields: {
+          key: userId + '.' + fileExtension,
+          'Content-Type': `image/${fileExtension}`,
+        },
+        Conditions: [
+          ['content-length-range', 0, 1024 * 1024],
+        ],
+        Expires: 60,
       });
 
-      return res.json({ signedUrl });
+      return res.json(signedPost);
     } catch (e) {
       logger.error(
         `Error while generating a signed url for avatar upload for user: ${userId}. Error: Error: ${
