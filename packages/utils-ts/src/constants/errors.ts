@@ -240,3 +240,15 @@ export const RATE_LIMIT_EXCEEDED = {
   code: 'RATE_LIMIT_EXCEEDED',
   message: 'Rate limit exceeded. Please try again later.',
 };
+export const FILE_EXTENSION_REQUIRED = {
+  code: 'FILE_EXTENSION_REQUIRED',
+  message: 'Please provide a file extension.',
+};
+export const UNSUPPORTED_FILE_EXTENSION = {
+  code: 'INVALID_FILE_EXTENSION',
+  message: 'Supported file extensions are jpg, jpeg, png, gif and webp.',
+};
+export const JWT_EXPIRED = {
+  code: 'JWT_EXPIRED',
+  message: 'Provided token is expired.',
+};

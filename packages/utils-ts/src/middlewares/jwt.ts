@@ -6,6 +6,7 @@ import {
   CREDENTIALS_REQUIRED,
   INVALID_GRANT_TYPE,
   INVALID_TOKEN,
+  JWT_EXPIRED,
 } from '../constants/errors';
 import { verify } from 'jsonwebtoken';
 import { Logger } from 'winston';
@@ -84,13 +85,15 @@ export function validateSignInConfirmOrAccessToken(
 
     verify(
       token,
-      accessSecret,
+      confirmSecret,
       {
         audience,
         issuer,
         algorithms: ['HS256'],
       },
       (e, decoded) => {
+        if (e?.message === 'jwt expired') throw new JWTError(JWT_EXPIRED, 403);
+
         if (e) return;
 
         if (typeof decoded === 'object' && 'grant_type' in decoded) {
@@ -127,13 +130,15 @@ export function validateSignInConfirmOrAccessToken(
 
     verify(
       accessToken,
-      confirmSecret,
+      accessSecret,
       {
         audience,
         issuer,
         algorithms: ['HS256'],
       },
       (e, decoded) => {
+        if (e?.message === 'jwt expired') throw new JWTError(JWT_EXPIRED, 403);
+
         if (e) return;
 
         if (typeof decoded === 'object' && 'grant_type' in decoded) {

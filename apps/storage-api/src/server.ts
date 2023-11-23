@@ -6,6 +6,7 @@ import logger from './loggers/logger';
 import { ENV, SERVER_PORT } from '../env-config';
 import { errorMessages } from 'utils-ts/messageBuilder';
 import { ROUTE_NOT_FOUND } from 'utils-ts/errors';
+import avatarsRouter from './routes/avatars';
 
 process.on('uncaughtException', (err) => {
   logger.error(`Uncaught Exception: ${err.message}`);
@@ -24,6 +25,8 @@ server.use((req, res, next) => {
   logger.debug(`Request Body: ${JSON.stringify(req.body)}`);
   next();
 });
+
+server.use('/avatars', avatarsRouter);
 
 server.use((req, res, next) => {
   logger.warn(`Route not found: ${req.method} ${req.path}`);
