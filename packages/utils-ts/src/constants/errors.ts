@@ -248,7 +248,3 @@ export const UNSUPPORTED_FILE_EXTENSION = {
   code: 'INVALID_FILE_EXTENSION',
   message: 'Supported file extensions are jpg, jpeg, png, gif and webp.',
 };
-export const JWT_EXPIRED = {
-  code: 'JWT_EXPIRED',
-  message: 'Provided token is expired.',
-};
