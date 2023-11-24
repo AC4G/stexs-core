@@ -333,6 +333,9 @@ importers:
 
   apps/web:
     dependencies:
+      fast-xml-parser:
+        specifier: ^4.3.2
+        version: 4.3.2
       iconify-icon:
         specifier: ^1.0.8
         version: 1.0.8
@@ -370,6 +373,9 @@ importers:
       '@tailwindcss/forms':
         specifier: ^0.5.7
         version: 0.5.7(tailwindcss@3.3.5)
+      '@tanstack/svelte-query':
+        specifier: ^5.8.7
+        version: 5.8.7(svelte@4.2.1)
       '@types/cookie':
         specifier: ^0.5.1
         version: 0.5.2
@@ -440,6 +446,9 @@ importers:
 
   packages/ui:
     dependencies:
+      fast-xml-parser:
+        specifier: ^4.3.2
+        version: 4.3.2
       iconify-icon:
         specifier: ^1.0.8
         version: 1.0.8
@@ -447,6 +456,9 @@ importers:
       '@skeletonlabs/skeleton':
         specifier: ^2.5.0
         version: 2.5.0(svelte@4.2.1)
+      '@tanstack/svelte-query':
+        specifier: ^5.8.7
+        version: 5.8.7(svelte@4.2.1)
       flowbite:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1792,6 +1804,19 @@ packages:
     dependencies:
       mini-svg-data-uri: 1.4.4
       tailwindcss: 3.3.5
+    dev: true
+
+  /@tanstack/query-core@5.8.7:
+    resolution: {integrity: sha512-58xOSkxxZK4SGQ/uzX8MDZHLGZCkxlgkPxnfhxUOL2uchnNHyay2UVcR3mQNMgaMwH1e2l+0n+zfS7+UJ/MAJw==}
+    dev: true
+
+  /@tanstack/svelte-query@5.8.7(svelte@4.2.1):
+    resolution: {integrity: sha512-KzilehNQQO4wxxucEy1NJMo0q/NZ0nhrq5TX5MNzklsu0QZ5x+Hn5x7DVox4uKazkCuro1S7PhGEAwFQnHTuwQ==}
+    peerDependencies:
+      svelte: '>=3 <5'
+    dependencies:
+      '@tanstack/query-core': 5.8.7
+      svelte: 4.2.1
     dev: true
 
   /@tauri-apps/api@1.5.1:
@@ -4187,6 +4212,13 @@ packages:
   /fast-safe-stringify@2.1.1:
     resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
     dev: true
+
+  /fast-xml-parser@4.3.2:
+    resolution: {integrity: sha512-rmrXUXwbJedoXkStenj1kkljNF7ugn5ZjR9FJcwmCfcCbtOMDghPajbc+Tck6vE6F5XsDmx+Pr2le9fw8+pXBg==}
+    hasBin: true
+    dependencies:
+      strnum: 1.0.5
+    dev: false
 
   /fastq@1.15.0:
     resolution: {integrity: sha512-wBrocU2LCXXa+lWBt8RoIRD89Fi8OdABODa/kEnyeyjS5aZO5/GNvI5sEINADqP/h8M29UHTHUb53sUu5Ihqdw==}
@@ -7291,6 +7323,10 @@ packages:
   /strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
+
+  /strnum@1.0.5:
+    resolution: {integrity: sha512-J8bbNyKKXl5qYcR36TIO8W3mVGVHrmmxsd5PAItGkmyzwJvybiw2IVq5nqd0i4LSNSkB/sx9VHllbfFdr9k1JA==}
+    dev: false
 
   /sucrase@3.34.0:
     resolution: {integrity: sha512-70/LQEZ07TEcxiU2dz51FKaE6hCTWC6vr7FOk3Gr0U60C3shtAN+H+BFr9XlYe5xqf3RA8nrc+VIwzCfnxuXJw==}
