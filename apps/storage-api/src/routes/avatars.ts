@@ -84,9 +84,7 @@ router.post(
           key: userId + '.' + fileExtension,
           'Content-Type': `image/${fileExtension}`,
         },
-        Conditions: [
-          ['content-length-range', 0, 1024 * 1024],
-        ],
+        Conditions: [['content-length-range', 0, 1024 * 1024]],
         Expires: 60,
       });
 
