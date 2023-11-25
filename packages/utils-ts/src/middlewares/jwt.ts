@@ -5,7 +5,7 @@ import {
   CREDENTIALS_BAD_FORMAT,
   CREDENTIALS_REQUIRED,
   INVALID_GRANT_TYPE,
-  INVALID_TOKEN
+  INVALID_TOKEN,
 } from '../constants/errors';
 import { verify } from 'jsonwebtoken';
 import { Logger } from 'winston';
@@ -91,7 +91,8 @@ export function validateSignInConfirmOrAccessToken(
         algorithms: ['HS256'],
       },
       (e, decoded) => {
-        if (e?.message === 'jwt expired') throw new JWTError(INVALID_TOKEN, 403);
+        if (e?.message === 'jwt expired')
+          throw new JWTError(INVALID_TOKEN, 403);
 
         if (e) return;
 
@@ -136,7 +137,8 @@ export function validateSignInConfirmOrAccessToken(
         algorithms: ['HS256'],
       },
       (e, decoded) => {
-        if (e?.message === 'jwt expired') throw new JWTError(INVALID_TOKEN, 403);
+        if (e?.message === 'jwt expired')
+          throw new JWTError(INVALID_TOKEN, 403);
 
         if (e) return;
 

@@ -3,7 +3,7 @@
 
   export let submitted: boolean = $$restProps.submitted || false;
   export let type: 'button' | 'submit' | 'reset' = 'button';
-  export let title: string | undefined;
+  export let title: string | undefined = undefined;
 </script>
 
 <button
