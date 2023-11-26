@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 
 export interface User {
-  userId: string;
+  id: string;
   username: string;
 }
 

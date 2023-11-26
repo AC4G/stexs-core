@@ -6,7 +6,7 @@ export class StexsAuthClient {
   private fetch: typeof fetch;
   private authHeaders: Record<string, string>;
 
-  private eventEmitter: EventEmitter = new EventEmitter();
+  private eventEmitter = new EventEmitter();
 
   mfa;
   oauth;
@@ -91,8 +91,8 @@ export class StexsAuthClient {
    */
   async signInConfirm(type: string, code: string): Promise<Response> {
     const signInInitData: SignInInit = JSON.parse(
-      localStorage.getItem('sign_in_init'),
-    );
+      localStorage.getItem('sign_in_init') as string
+    ) as SignInInit;
 
     if (!signInInitData) {
       throw new Error('Sign in initialization data not found.');
@@ -173,6 +173,10 @@ export class StexsAuthClient {
       }
 
       if (body.access_token && body.refresh_token) {
+        this._setAccessTokenToAuthHeaders(body.access_token);
+
+        const user = await (await this.getUser()).json();
+
         localStorage.setItem(
           'session',
           JSON.stringify({
@@ -181,10 +185,9 @@ export class StexsAuthClient {
               enabled: continuousAutoRefresh,
               count: 0, // Counts up to 24 if auto refresh is disabled
             },
+            user
           }),
         );
-
-        this._setAccessTokenToAuthHeaders(body.access_token);
 
         this._triggerEvent('SIGNED_IN');
       }
@@ -199,13 +202,13 @@ export class StexsAuthClient {
    * @param {string} username - The username for the new account.
    * @param {string} email - The email address for the new account.
    * @param {string} password - The password for the new account.
-   * @returns {Promise<Request>} A Promise that resolves with the signup request data.
+   * @returns {Promise<Response>} A Promise that resolves with the signup response data.
    */
   async signUp(
     username: string,
     email: string,
     password: string,
-  ): Promise<Request> {
+  ): Promise<Response> {
     return await this._request({
       path: 'sign-up',
       method: 'POST',
@@ -219,15 +222,19 @@ export class StexsAuthClient {
 
   /**
    * Signs the user out from the current session.
+   * 
+   * @returns {Promise<void>} A Promise that resolves with void.
    */
-  async signOut(): void {
+  async signOut(): Promise<void> {
     await this._baseSignOut('sign-out');
   }
 
   /**
    * Signs the user out from all active sessions.
+   * 
+   * @returns {Promise<void>} A Promise that resolves with void.
    */
-  async signOutFromAllSessions(): void {
+  async signOutFromAllSessions(): Promise<void> {
     await this._baseSignOut('sign-out/everywhere');
   }
 
@@ -235,8 +242,9 @@ export class StexsAuthClient {
    * Signs the user out based on the provided path, with optional session check and data clearing.
    *
    * @param {string} path - The path specifying the sign-out action.
+   * @returns {Promise<void>} A Promise that resolves with void.
    */
-  private async _baseSignOut(path: string): void {
+  private async _baseSignOut(path: string): Promise<void> {
     const session: Session = this._getSession();
 
     if (session?.access_token) {
@@ -366,6 +374,8 @@ export class StexsAuthClient {
     if (response.ok) {
       this._triggerEvent('USER_UPDATED');
     }
+
+    return response;
   }
 
   /**
@@ -446,11 +456,12 @@ export class StexsAuthClient {
    */
   private async _requestCode(type: string = 'email'): Promise<Response> {
     const signInInitData: SignInInit = JSON.parse(
-      localStorage.getItem('sign_in_init'),
+      localStorage.getItem('sign_in_init') as string
     );
 
     const body = {
       type,
+      token: ''
     };
 
     if (signInInitData && signInInitData.token) {
@@ -475,7 +486,7 @@ export class StexsAuthClient {
   private async _authorize(
     client_id: string,
     redirect_url: string,
-    scopes: Array,
+    scopes: string[],
   ): Promise<Response> {
     return await this._request({
       path: 'oauth2/authorize',
@@ -621,21 +632,22 @@ export class StexsAuthClient {
     const body = await response.json();
     const refresh = { ...session.refresh };
 
+    this._setAccessTokenToAuthHeaders(body.access_token);
+
     if (refresh.enabled === false) {
       refresh.count++;
     }
+
+    const user = await (await this.getUser()).json();
 
     localStorage.setItem(
       'session',
       JSON.stringify({
         ...body,
         refresh,
+        user
       }),
     );
-
-    const accessToken = body.access_token;
-
-    this._setAccessTokenToAuthHeaders(accessToken);
 
     this._triggerEvent('TOKEN_REFRESHED');
 
@@ -643,17 +655,17 @@ export class StexsAuthClient {
   }
 
   private _getSession(): Session {
-    return JSON.parse(localStorage.getItem('session') as Session);
+    return JSON.parse(localStorage.getItem('session') as string) as Session;
   }
 
   private _getSignInInit(): SignInInit {
-    return JSON.parse(localStorage.getItem('sign_in_init') as SignInInit);
+    return JSON.parse(localStorage.getItem('sign_in_init') as string) as SignInInit;
   }
 
   private async _request({
     path,
     method = 'GET',
-    body = null,
+    body = undefined,
     headers = {},
   }: {
     path: string;

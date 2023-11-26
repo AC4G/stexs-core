@@ -10,15 +10,13 @@
     export let endpoint: string;
 
     const query = createQuery({
-        queryKey: ['avatar'],
+        queryKey: ['avatar', userId],
         queryFn: async () => {
-            if (username && userId) {
-                const response = await fetch(`${endpoint}/avatars/?list-type=2&prefix=${userId}`);
-                const data = await response.text();
+            const response = await fetch(`${endpoint}/avatars/?list-type=2&prefix=${userId}`);
+            const data = await response.text();
 
-                const doc = parser.parse(data);
-                return { key: doc.ListBucketResult.Contents.Key };
-            }
+            const doc = parser.parse(data);
+            return { key: doc.ListBucketResult.Contents.Key };
         }
     });
 </script>
