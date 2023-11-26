@@ -18,6 +18,7 @@
   import { browser } from '$app/environment';
   import { Dropdown, DropdownItem, DropdownDivider } from 'flowbite-svelte';
   import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
+    import { goto } from '$app/navigation';
 
   initializeStores();
   const queryClient = new QueryClient({
@@ -46,33 +47,32 @@
     toastStore.trigger($flash);
   });
 
-  const fetchAndSetUser = async () => {
-    const { id } = await (await stexs.auth.getUser()).json();
-    const { data } = await stexs.from('profiles').select('username').eq('user_id', id);
-    const { username } = data[0];
-
-    user.set({
-      userId: id,
-      username,
-    });
-
-    return true;
-  }
-
   onMount(async () => {
-    if (stexs.auth.getSession()) {
-      signedIn = await fetchAndSetUser();
+    const session = stexs.auth.getSession();
+
+    if (session) {
+      user.set({
+        id: session.user.id,
+        username: session.user.raw_user_meta_data.username
+      })
+      signedIn = true;
     }
   });
 
   stexs.auth.onAuthStateChange(async (event) => {
     if (event === 'SIGNED_IN') {
-      signedIn = await fetchAndSetUser();
+      const session = stexs.auth.getSession();
+      user.set({
+        id: session.user.id,
+        username: session.user.raw_user_meta_data.username
+      })
+      signedIn = true;
     }
 
     if (event === 'SIGNED_OUT') {
       user.set(null);
       signedIn = false;
+      goto('/');
     }
   });
 </script>
@@ -91,14 +91,13 @@
           <a href="/sign-up" class="btn variant-filled-primary">Sign-Up</a>
         {:else}
           <div class="relative inline-block mr-[8px]">
-            <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$user?.userId} username={$user?.username} class="avatarMenu w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarMenuOpen && "!border-primary-500"} transition" />
-            <Dropdown triggeredBy=".avatarMenu" {activeUrl} activeClass="variant-ghost-secondary" bind:open={avatarMenuOpen} class="absolute right-[-24px] bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
-              <div class="px-4 py-2 rounded variant-ghost-primary">
+            <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$user?.id} username={$user?.username} class="avatarMenu w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarMenuOpen && "!border-primary-500"} transition" />
+            <Dropdown triggeredBy=".avatarMenu" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarMenuOpen} class="absolute rounded-md right-[-24px] bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+              <div class="px-4 py-2 rounded variant-ghost-secondary">
                 <Truncated text={$user?.username || ''} maxLength={8} class="text-[16px]" />
               </div>
               <DropdownDivider />
-              <DropdownItem href="/@{$user?.username}" class="hover:!bg-surface-500 transition rounded text-[16px]">Profile</DropdownItem>
-              <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]">Friends</DropdownItem>
+              <DropdownItem href="/{$user?.username}" class="hover:!bg-surface-500 transition rounded text-[16px]">Profile</DropdownItem>
               <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]">Settings</DropdownItem>
               <DropdownDivider />
               <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]" on:click={async () => { await stexs.auth.signOut() }} >Sign out</DropdownItem>

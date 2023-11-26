@@ -94,11 +94,6 @@ CREATE POLICY friends_select
             (
                 auth.grant() = 'password' AND
                 user_id = ANY(SELECT friend_id FROM public.friends_of_current_user)
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM public.profiles AS p
-                    WHERE p.user_id = user_id AND friend_privacy_level = 2
-                )
             )
             OR 
             (
@@ -106,8 +101,8 @@ CREATE POLICY friends_select
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE (p.user_id = user_id AND friend_privacy_level = 0 AND p.is_private = FALSE) AND
-                          (p.user_id = friend_id AND friend_privacy_level = 0 AND p.is_private = FALSE)
+                    WHERE (p.user_id = user_id AND p.is_private = FALSE) AND
+                          (p.user_id = friend_id AND p.is_private = FALSE)
                 )
             )
         )
@@ -170,11 +165,6 @@ CREATE POLICY inventories_select
             (
                 auth.grant() = 'password' AND
                 user_id = ANY(SELECT friend_id FROM public.friends_of_current_user)
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM public.profiles AS p
-                    WHERE p.user_id = user_id AND p.inventory_privacy_level = 2
-                )
             )
             OR
             (
@@ -182,7 +172,7 @@ CREATE POLICY inventories_select
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = user_id AND p.inventory_privacy_level = 0 AND p.is_private = FALSE
+                    WHERE p.user_id = user_id AND p.is_private = FALSE
                 )
             )
         )
@@ -878,6 +868,10 @@ CREATE POLICY profiles_select
         (
             (
                 auth.grant() NOT IN ('client_credentials', 'authorization_code')
+            )
+            OR
+            (
+                auth.grant() IS NULL
             )
             OR
             (

@@ -208,18 +208,11 @@ EXECUTE FUNCTION auth.encrypt_password();
 CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
-    is_private BOOLEAN NOT NULL DEFAULT FALSE, -- global switch | turns every privacy policy to 1 if the level is 0 | doesnt change level 2 privacy levels
-    friend_privacy_level INT DEFAULT 0 NOT NULL,
-    inventory_privacy_level INT DEFAULT 0 NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CHECK (
-        (friend_privacy_level >= 0 AND friend_privacy_level <= 2) AND
-        (inventory_privacy_level >= 0 AND inventory_privacy_level <= 2)
-    )
-    -- 0 = every one can select; 1 = only friends can select; 2 = no one can select only the user himself
+    is_private BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-GRANT UPDATE (username, is_private, friend_privacy_level, inventory_privacy_level) ON TABLE public.profiles TO authenticated;
+GRANT UPDATE (username, is_private) ON TABLE public.profiles TO authenticated;
 GRANT SELECT ON TABLE public.profiles TO anon;
 GRANT SELECT ON TABLE public.profiles TO authenticated;
 
@@ -403,10 +396,6 @@ RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.profiles (user_id, username)
     VALUES (NEW.id, NEW.raw_user_meta_data->>'username');
-
-    UPDATE auth.users
-    SET raw_user_meta_data = '{}'::JSONB
-    WHERE id = NEW.id;
 
     RETURN NEW;
 END;
