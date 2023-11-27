@@ -370,12 +370,12 @@ importers:
       '@sveltejs/kit':
         specifier: ^1.20.4
         version: 1.25.2(svelte@4.2.1)(vite@4.4.11)
+      '@sveltestack/svelte-query':
+        specifier: ^1.6.0
+        version: 1.6.0
       '@tailwindcss/forms':
         specifier: ^0.5.7
         version: 0.5.7(tailwindcss@3.3.5)
-      '@tanstack/svelte-query':
-        specifier: ^5.8.7
-        version: 5.8.7(svelte@4.2.1)
       '@types/cookie':
         specifier: ^0.5.1
         version: 0.5.2
@@ -456,9 +456,9 @@ importers:
       '@skeletonlabs/skeleton':
         specifier: ^2.5.0
         version: 2.5.0(svelte@4.2.1)
-      '@tanstack/svelte-query':
-        specifier: ^5.8.7
-        version: 5.8.7(svelte@4.2.1)
+      '@sveltestack/svelte-query':
+        specifier: ^1.6.0
+        version: 1.6.0
       flowbite:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1797,6 +1797,15 @@ packages:
       - supports-color
     dev: true
 
+  /@sveltestack/svelte-query@1.6.0:
+    resolution: {integrity: sha512-C0wWuh6av1zu3Pzwrg6EQmX3BhDZQ4gMAdYu6Tfv4bjbEZTB00uEDz52z92IZdONh+iUKuyo0xRZ2e16k2Xifg==}
+    peerDependencies:
+      broadcast-channel: ^4.5.0
+    peerDependenciesMeta:
+      broadcast-channel:
+        optional: true
+    dev: true
+
   /@tailwindcss/forms@0.5.7(tailwindcss@3.3.5):
     resolution: {integrity: sha512-QE7X69iQI+ZXwldE+rzasvbJiyV/ju1FGHH0Qn2W3FKbuYtqp8LKcy6iSw79fVUT5/Vvf+0XgLCeYVG+UV6hOw==}
     peerDependencies:
@@ -1804,19 +1813,6 @@ packages:
     dependencies:
       mini-svg-data-uri: 1.4.4
       tailwindcss: 3.3.5
-    dev: true
-
-  /@tanstack/query-core@5.8.7:
-    resolution: {integrity: sha512-58xOSkxxZK4SGQ/uzX8MDZHLGZCkxlgkPxnfhxUOL2uchnNHyay2UVcR3mQNMgaMwH1e2l+0n+zfS7+UJ/MAJw==}
-    dev: true
-
-  /@tanstack/svelte-query@5.8.7(svelte@4.2.1):
-    resolution: {integrity: sha512-KzilehNQQO4wxxucEy1NJMo0q/NZ0nhrq5TX5MNzklsu0QZ5x+Hn5x7DVox4uKazkCuro1S7PhGEAwFQnHTuwQ==}
-    peerDependencies:
-      svelte: '>=3 <5'
-    dependencies:
-      '@tanstack/query-core': 5.8.7
-      svelte: 4.2.1
     dev: true
 
   /@tauri-apps/api@1.5.1:

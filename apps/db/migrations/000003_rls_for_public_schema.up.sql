@@ -73,6 +73,7 @@ FROM public.friends
 WHERE user_id = auth.uid();
 
 GRANT SELECT ON public.friends_of_current_user TO authenticated;
+GRANT SELECT ON public.friends_of_current_user TO anon;
 
 CREATE POLICY friends_select
     ON public.friends
