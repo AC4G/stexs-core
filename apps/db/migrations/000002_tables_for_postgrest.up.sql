@@ -3,7 +3,7 @@ CREATE TABLE public.items (
     name VARCHAR(255) NOT NULL,
     parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
-    creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    creator_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     is_private BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
@@ -21,7 +21,7 @@ GRANT SELECT ON TABLE public.items TO authenticated;
 CREATE TABLE public.inventories (
     id SERIAL PRIMARY KEY,
     item_id INT REFERENCES public.items(id) ON DELETE CASCADE NOT NULL,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     amount INT DEFAULT '0'::BIGINT NOT NULL,
     parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -39,8 +39,8 @@ GRANT SELECT ON TABLE public.inventories TO authenticated;
 
 CREATE TABLE public.friends (
     id SERIAL PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    friend_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+    friend_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT unique_friends_combination UNIQUE (user_id, friend_id)
 );  
@@ -99,8 +99,8 @@ EXECUTE FUNCTION public.friend_delete();
 
 CREATE TABLE public.friend_requests (
     id SERIAL PRIMARY KEY,
-    requester_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    requester_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+    addressee_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CHECK (requester_id <> addressee_id)
 );
@@ -116,8 +116,8 @@ GRANT SELECT ON TABLE public.friend_requests TO authenticated;
 
 CREATE TABLE public.blocked (
     id SERIAL PRIMARY KEY,
-    blocker_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    blocked_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    blocker_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+    blocked_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT unique_blocked_combination UNIQUE (blocker_id, blocked_id),
     CHECK (blocker_id <> blocked_id)
@@ -132,7 +132,7 @@ GRANT SELECT ON TABLE public.blocked TO authenticated;
 CREATE TABLE public.organization_members (
     id SERIAL PRIMARY KEY,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
-    member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    member_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
@@ -151,7 +151,7 @@ GRANT SELECT ON TABLE public.organization_members TO authenticated;
 CREATE TABLE public.organization_requests (
     id SERIAL PRIMARY KEY,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
-    addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    addressee_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
@@ -186,7 +186,7 @@ EXECUTE FUNCTION public.make_organization_creator_as_owner();
 CREATE TABLE public.project_members (
     id SERIAL PRIMARY KEY,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
-    member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    member_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
@@ -203,7 +203,7 @@ GRANT SELECT ON TABLE public.project_members TO authenticated;
 CREATE TABLE public.project_requests (
     id SERIAL PRIMARY KEY,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
-    addressee_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    addressee_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     role VARCHAR(255) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,

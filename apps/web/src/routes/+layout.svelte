@@ -17,8 +17,8 @@
   import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
   import { browser } from '$app/environment';
   import { Dropdown, DropdownItem, DropdownDivider } from 'flowbite-svelte';
-  import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
-    import { goto } from '$app/navigation';
+  import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
+  import { goto } from '$app/navigation';
 
   initializeStores();
   const queryClient = new QueryClient({
