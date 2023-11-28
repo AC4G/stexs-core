@@ -9,13 +9,13 @@ export interface Session {
   user: {
     id: string;
     email: string;
-    raw_user_meta_data: { 
+    raw_user_meta_data: {
       username: string;
       [key: string]: any;
     };
     created_at: string;
     updated_at: string;
-  }
+  };
 }
 
 export interface SignInInit {

@@ -18,7 +18,7 @@
 </script>
 
 <div class="grid gap-4 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-    {#if !$inventoryQuery.isLoading}
+    {#if $inventoryQuery.isLoading}
         {#each Array(20) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-full" />
         {/each}
@@ -31,7 +31,7 @@
             {/each}
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
-                <p class="text-[18px] variant-ghost-tertiary p-4 rounded-md text-center">User has no items in inventory yet</p>
+                <p class="text-[18px] p-4 text-center">User has no items in inventory yet</p>
             </div>
         {/if}
     {/if}

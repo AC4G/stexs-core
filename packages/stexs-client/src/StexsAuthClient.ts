@@ -91,7 +91,7 @@ export class StexsAuthClient {
    */
   async signInConfirm(type: string, code: string): Promise<Response> {
     const signInInitData: SignInInit = JSON.parse(
-      localStorage.getItem('sign_in_init') as string
+      localStorage.getItem('sign_in_init') as string,
     ) as SignInInit;
 
     if (!signInInitData) {
@@ -185,7 +185,7 @@ export class StexsAuthClient {
               enabled: continuousAutoRefresh,
               count: 0, // Counts up to 24 if auto refresh is disabled
             },
-            user
+            user,
           }),
         );
 
@@ -222,7 +222,7 @@ export class StexsAuthClient {
 
   /**
    * Signs the user out from the current session.
-   * 
+   *
    * @returns {Promise<void>} A Promise that resolves with void.
    */
   async signOut(): Promise<void> {
@@ -231,7 +231,7 @@ export class StexsAuthClient {
 
   /**
    * Signs the user out from all active sessions.
-   * 
+   *
    * @returns {Promise<void>} A Promise that resolves with void.
    */
   async signOutFromAllSessions(): Promise<void> {
@@ -456,12 +456,12 @@ export class StexsAuthClient {
    */
   private async _requestCode(type: string = 'email'): Promise<Response> {
     const signInInitData: SignInInit = JSON.parse(
-      localStorage.getItem('sign_in_init') as string
+      localStorage.getItem('sign_in_init') as string,
     );
 
     const body = {
       type,
-      token: ''
+      token: '',
     };
 
     if (signInInitData && signInInitData.token) {
@@ -645,7 +645,7 @@ export class StexsAuthClient {
       JSON.stringify({
         ...body,
         refresh,
-        user
+        user,
       }),
     );
 
@@ -659,7 +659,9 @@ export class StexsAuthClient {
   }
 
   private _getSignInInit(): SignInInit {
-    return JSON.parse(localStorage.getItem('sign_in_init') as string) as SignInInit;
+    return JSON.parse(
+      localStorage.getItem('sign_in_init') as string,
+    ) as SignInInit;
   }
 
   private async _request({

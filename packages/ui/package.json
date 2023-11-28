@@ -7,6 +7,7 @@
   "types": "./src/index.ts",
   "scripts": {},
   "devDependencies": {
+    "@iconify/svelte": "^3.1.4",
     "@skeletonlabs/skeleton": "^2.5.0",
     "@sveltestack/svelte-query": "^1.6.0",
     "flowbite": "^2.1.1",
@@ -14,7 +15,6 @@
     "svelte": "^4.0.5"
   },
   "dependencies": {
-    "fast-xml-parser": "^4.3.2",
-    "iconify-icon": "^1.0.8"
+    "fast-xml-parser": "^4.3.2"
   }
 }

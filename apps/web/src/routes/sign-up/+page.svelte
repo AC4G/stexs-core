@@ -6,7 +6,6 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { getFlash } from 'sveltekit-flash-message/client';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
 
   let submitted: boolean = false;
   const flash = getFlash(page);
