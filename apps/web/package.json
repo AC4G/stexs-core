@@ -10,6 +10,7 @@
 	},
 	"devDependencies": {
 		"@fontsource/fira-mono": "^4.5.10",
+		"@iconify/svelte": "^3.1.4",
 		"@neoconfetti/svelte": "^1.0.0",
 		"@skeletonlabs/skeleton": "^2.5.0",
 		"@skeletonlabs/tw-plugin": "^0.2.4",
@@ -37,7 +38,6 @@
 	"type": "module",
 	"dependencies": {
 		"fast-xml-parser": "^4.3.2",
-		"iconify-icon": "^1.0.8",
 		"stexs-client": "workspace:*",
 		"ui": "workspace:*",
 		"uuid": "^9.0.0",

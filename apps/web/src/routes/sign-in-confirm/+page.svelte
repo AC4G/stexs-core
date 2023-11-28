@@ -4,12 +4,11 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import type { SignInInit } from 'stexs-client/src/lib/types';
-  import 'iconify-icon';
+  import Icon from '@iconify/svelte';
   import { redirectToPreviousPage } from '$lib/stores/previousPage';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
   import { SignInConfirm } from 'validation-schemas';
   import type { MFAMethod } from '$lib/types';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
   import { getFlash } from 'sveltekit-flash-message/client';
   import { page } from '$app/stores';
   import { Dropdown, Radio } from 'flowbite-svelte';
@@ -159,7 +158,7 @@
               class="flex variant-ringed-surface p-2 rounded-md hover:bg-surface-600 transition items-center space-x-2 justify-start"
             >
               <span class="badge variant-filled-primary"
-                ><iconify-icon
+                ><Icon
                   icon={choices[currentType].icon}
                   class="text-[24px]"
                 /></span
@@ -182,10 +181,10 @@
         {#if signInInit.types && signInInit.types.length > 1}
           <Button class="p-2 variant-ghost-surface">
             <span class="badge variant-filled-primary rounded">
-              <iconify-icon icon={choices[type].icon} class="text-[24px]" />
+              <Icon icon={choices[type].icon} class="text-[24px]" />
             </span>
             <p>{choices[type].description}</p>
-            <iconify-icon
+            <Icon
               icon="iconamoon:arrow-down-2-duotone"
               class="text-[24px]"
             />
@@ -199,7 +198,7 @@
                   class="flex justify-start cursor-pointer variant-ghost-surface p-2 rounded-md hover:bg-surface-500 peer-checked:bg-surface-500 peer-checked:cursor-default transition w-full items-center"
                 >
                   <span class="badge variant-filled-primary rounded">
-                    <iconify-icon
+                    <Icon
                       icon={choices[currentType].icon}
                       class="text-[24px]"
                     />
@@ -221,7 +220,7 @@
               }}
               submitted={requested}
             >
-              <iconify-icon icon="tabler:reload" class="text-[24px]" /></Button
+              <con icon="tabler:reload" class="text-[24px]" /></Button
             >
           </div>
         {/if}

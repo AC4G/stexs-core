@@ -12,7 +12,7 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { getFlash } from 'sveltekit-flash-message';
-  import 'iconify-icon';
+  import Icon from '@iconify/svelte';
   import { user } from '$lib/stores/user';
   import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
   import { browser } from '$app/environment';
@@ -92,7 +92,7 @@
         {:else}
           <div class="relative inline-block mr-[8px]">
             <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$user?.id} username={$user?.username} class="avatarMenu w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarMenuOpen && "!border-primary-500"} transition" />
-            <Dropdown triggeredBy=".avatarMenu" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarMenuOpen} class="absolute rounded-md right-[-24px] bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+            <Dropdown triggeredBy=".avatarMenu" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarMenuOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
               <div class="px-4 py-2 rounded variant-ghost-secondary">
                 <Truncated text={$user?.username || ''} maxLength={8} class="text-[16px]" />
               </div>
@@ -110,7 +110,7 @@
   {:else}
     <div class="m-[20px] absolute">
       <a href="/" class="btn-icon variant-filled-surface" title="Home">
-        <iconify-icon icon="ph:arrow-left-bold" />
+        <Icon icon="ph:arrow-left-bold" />
       </a>
     </div>
     <AppShell>
