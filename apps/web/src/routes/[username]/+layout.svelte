@@ -5,13 +5,14 @@
     import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
     import { stexs } from "../../stexsClient";
     import { useQuery } from '@sveltestack/svelte-query'
-    import { TabAnchor, TabGroup } from "@skeletonlabs/skeleton";
+    import { TabAnchor, TabGroup, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
     import { goto } from "$app/navigation";
     import { getFlash } from "sveltekit-flash-message/client";
     import { setContext } from "svelte";
     import Icon from '@iconify/svelte';
     import { Dropdown, DropdownItem } from "flowbite-svelte";
     
+    const modalStore = getModalStore();
     const flash = getFlash(page);
     let friendRequestSubmitted: boolean = false;
     let friendRequestRevocationSubmitted: boolean = false;
@@ -57,7 +58,7 @@
 
         if (error) {
             $flash = {
-                message: 'Could not remove friend. Try out again.',
+                message: 'Could not send friend request. Try out again.',
                 classes: 'variant-ghost-error',
                 timeout: 5000,
             };
@@ -66,7 +67,7 @@
         if (data.length > 0) {
             friendRequestSend = true;
             $flash = {
-                message: 'Friend successfully removed.',
+                message: 'Friend request successfully send.',
                 classes: 'variant-ghost-success',
                 timeout: 5000,
             };
@@ -75,8 +76,9 @@
         friendRequestSubmitted = false;
     }
 
-    async function revokeFriendRequest(requesterId: string, addresseeId: string) {
+    async function revokeFriendRequest(params: { requesterId: string, addresseeId: string }) {
         friendRequestRevocationSubmitted = true;
+        const { requesterId, addresseeId } = params;
         const { error } = await stexs.from('friend_requests').delete().eq('requester_id', requesterId).eq('addressee_id', addresseeId);
 
         if (error) {
@@ -97,26 +99,61 @@
         friendRequestRevocationSubmitted = false;
     }
 
-    async function removeFriend(userId: string, friendId: string) {
+    function revokeFriendRequestModal(requesterId: string, addresseeId: string) {
+        const modal: ModalSettings = {
+            type: 'component',
+            component: 'confirm',
+            meta: {
+                text: 'Do you really want to revoke the friend request?',
+                function: revokeFriendRequest,
+                fnParams: {
+                    requesterId,
+                    addresseeId
+                },
+                fnAsync: true
+            }
+        };
+        modalStore.set([modal]);
+    }
+
+    async function removeFriend(params: { userId: string, friendId: string }) {
         removeFriendSubmitted = true;
+        const { userId, friendId } = params;
         const { error } = await stexs.from('friends').delete().eq('user_id', userId).eq('friend_id', friendId);
 
         if (error) {
             $flash = {
-                message: 'Could not revoke friend request. Try out again.',
+                message: 'Could not remove friend. Try out again.',
                 classes: 'variant-ghost-error',
                 timeout: 5000,
             };
         } else {
             friendRequestSend = false;
             $flash = {
-                message: 'Friend request successfully revoked.',
+                message: 'Friend successfully removed.',
                 classes: 'variant-ghost-success',
                 timeout: 5000,
             };
         }
 
-        removeFriendSubmitted = false
+        removeFriendSubmitted = false;
+    }
+
+    function removeFriendModal(username: string, userId: string, friendId: string) {
+        const modal: ModalSettings = {
+            type: 'component',
+            component: 'confirm',
+            meta: {
+                text: `Do you really want to remove ${username} as your friend?`,
+                function: removeFriend,
+                fnParams: {
+                    userId,
+                    friendId
+                },
+                fnAsync: true
+            }
+        };
+        modalStore.set([modal]);
     }
 
     $: profileQuery = useQuery({
@@ -179,18 +216,18 @@
                     <div class="grid pt-[12px] sm:col-start-3 col-span-full">
                         <div class="flex justify-between sm:justify-end">
                             {#if friendRequestSend}
-                                <Button on:click={async () => await revokeFriendRequest($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500">Friend Request Send</Button>
+                                <Button on:click={async () => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
                             {:else if !isFriend}
                                 <Button on:click={async () => await sendFriendRequest($user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
                             {:else}
-                                <Button on:click={async () => await removeFriend($user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500">Friends</Button>
+                                <Button on:click={async () => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
                             {/if}
                             <Button class="w-fit h-fit p-1 group">
                                 <Icon icon="pepicons-pop:dots-y" class="text-[26px] group-hover:text-surface-400 transition" />
                             </Button>
                             <Dropdown class="absolute right-[-6px] rounded-md bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
-                                <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-500">Report</DropdownItem>
-                                <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-500">Block</DropdownItem>
+                                <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-600">Report</DropdownItem>
+                                <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
                             </Dropdown>
                         </div>
                     </div>

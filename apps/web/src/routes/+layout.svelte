@@ -5,9 +5,14 @@
     Toast,
     setInitialClassState,
     initializeStores,
-    getToastStore
+    getToastStore,
+    Modal,
+    getModalStore,
+
+    type ModalComponent
+
   } from '@skeletonlabs/skeleton';
-  import { Header, Avatar, Truncated } from 'ui';
+  import { Header, Avatar, Truncated, Confirm } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
@@ -31,6 +36,9 @@
 
   const toastStore = getToastStore();
   const flash = getFlash(page);
+  const modalRegistry: Record<string, ModalComponent> = {
+    confirm: { ref: Confirm }
+  };
   const excludeRoutes = [
     '/sign-in',
     '/sign-up',
@@ -82,7 +90,8 @@
 </svelte:head>
 
 <QueryClientProvider client={queryClient}>
-  <Toast />
+  <Toast buttonDismiss="btn-icon btn-icon-sm rounded-full variant-filled pt-[0.5px]" />
+  <Modal components={modalRegistry} />
   {#if !excludeRoutes.includes($page.url.pathname)}
     <AppShell>
       <Header>
