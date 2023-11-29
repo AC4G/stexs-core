@@ -2,6 +2,7 @@
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../stexsClient";
     import { getContext } from "svelte";
+    import { user } from "$lib/stores/user";
 
     let { userId, isPrivate, isFriend }: { userId: string, isPrivate: boolean, isFriend: boolean } = getContext('profile');
 
@@ -31,7 +32,7 @@
             {/each}
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
-                <p class="text-[18px] p-4 text-center">User has no items in inventory yet</p>
+                <p class="text-[18px] p-4 text-center">{$user?.id === userId ?  'You have no items in your inventory at the moment': 'User has no items in inventory at the moment'}</p>
             </div>
         {/if}
     {/if}
