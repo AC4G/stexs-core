@@ -2,8 +2,7 @@
   import { Button } from 'ui';
   import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
-  import type { SignInInit } from 'stexs-client/src/lib/types';
+  import type { Session, SignInInit } from 'stexs-client/src/lib/types';
   import Icon from '@iconify/svelte';
   import { redirectToPreviousPage } from '$lib/stores/previousPage';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
@@ -12,6 +11,7 @@
   import { getFlash } from 'sveltekit-flash-message/client';
   import { page } from '$app/stores';
   import { Dropdown, Radio } from 'flowbite-svelte';
+  import { useQuery } from '@sveltestack/svelte-query';
 
   let signInInit: SignInInit;
   let type: string;
@@ -47,18 +47,27 @@
     }
   );
 
-  onMount(async () => {
-    signInInit = stexs.auth.getSignInInit();
+  const signInConfirmSetupQuery = useQuery({
+    queryKey: ['signInConfirmSetup'],
+    queryFn: async () => {
+      const session: Session = stexs.auth.getSession();
 
-    if (
-      !signInInit ||
-      (signInInit !== null && new Date(signInInit.expires * 1000) < new Date())
-    ) {
-      return goto('/sign-in');
-    }
+      if (session) return goto('/');
 
-    if (signInInit.types.length === 1) {
-      type = signInInit.types[0];
+      signInInit = stexs.auth.getSignInInit();
+
+      if (
+        !signInInit ||
+        (signInInit !== null && new Date(signInInit.expires * 1000) < new Date())
+      ) {
+        return goto('/sign-in');
+      }
+
+      if (signInInit.types.length === 1) {
+        type = signInInit.types[0];
+      }
+
+      return { data: true };
     }
   });
 
@@ -132,132 +141,134 @@
   }
 </script>
 
-<div class="flex items-center justify-center h-screen">
-  <div class="card p-5 variant-ghost-surface space-y-6">
-    <div class="m-auto">
-      <h3 class="h3 text-primary-500 text-center">
-        Multi-Factor Authentication
-      </h3>
-      <div class="mt-3 m-auto max-w-[280px] text-center">
-        {#if !type}
-          {descriptions._selection}
-        {:else}
-          {descriptions[type]}
-        {/if}
+{#if !$signInConfirmSetupQuery.isLoading && $signInConfirmSetupQuery.data}
+  <div class="flex items-center justify-center h-screen">
+    <div class="card p-5 variant-ghost-surface space-y-6">
+      <div class="m-auto">
+        <h3 class="h3 text-primary-500 text-center">
+          Multi-Factor Authentication
+        </h3>
+        <div class="mt-3 m-auto max-w-[280px] text-center">
+          {#if !type}
+            {descriptions._selection}
+          {:else}
+            {descriptions[type]}
+          {/if}
+        </div>
       </div>
-    </div>
-    {#if !type}
-      <div class="flex flex-col space-y-2">
-        {#if signInInit}
-          {#each signInInit.types as currentType}
-            <Button
-              on:click={async () => {
-                type = currentType;
-                requestCodeTypes.includes(type) && (await requestNewCode());
-              }}
-              class="flex variant-ringed-surface p-2 rounded-md hover:bg-surface-600 transition items-center space-x-2 justify-start"
-            >
-              <span class="badge variant-filled-primary"
-                ><Icon
-                  icon={choices[currentType].icon}
-                  class="text-[24px]"
-                /></span
-              >
-              <p>{choices[currentType].description}</p>
-            </Button>
-          {/each}
-        {:else}
-          <div class="placeholder animate-pulse h-[48px]" />
-          <div class="placeholder animate-pulse h-[48px]" />
-        {/if}
-      </div>
-      <Button
-        class="variant-ringed-surface hover:bg-surface-600"
-        value="Cancel"
-        on:click={cancelSignInConfirm}>Cancel</Button
-      >
-    {:else if type}
-      <div class="flex justify-center">
-        {#if signInInit.types && signInInit.types.length > 1}
-          <Button class="p-2 variant-ghost-surface">
-            <span class="badge variant-filled-primary rounded">
-              <Icon icon={choices[type].icon} class="text-[24px]" />
-            </span>
-            <p>{choices[type].description}</p>
-            <Icon
-              icon="iconamoon:arrow-down-2-duotone"
-              class="text-[24px]"
-            />
-          </Button>
-          <Dropdown
-            class="bg-surface-800 rounded-md p-2 space-y-2 border border-solid border-surface-500"
-          >
+      {#if !type}
+        <div class="flex flex-col space-y-2">
+          {#if signInInit}
             {#each signInInit.types as currentType}
-              <Radio bind:group={type} value={currentType} custom>
-                <div
-                  class="flex justify-start cursor-pointer variant-ghost-surface p-2 rounded-md hover:bg-surface-500 peer-checked:bg-surface-500 peer-checked:cursor-default transition w-full items-center"
+              <Button
+                on:click={async () => {
+                  type = currentType;
+                  requestCodeTypes.includes(type) && (await requestNewCode());
+                }}
+                class="flex variant-ringed-surface p-2 rounded-md hover:bg-surface-600 transition items-center space-x-2 justify-start"
+              >
+                <span class="badge variant-filled-primary"
+                  ><Icon
+                    icon={choices[currentType].icon}
+                    class="text-[24px]"
+                  /></span
                 >
-                  <span class="badge variant-filled-primary rounded">
-                    <Icon
-                      icon={choices[currentType].icon}
-                      class="text-[24px]"
-                    />
-                  </span>
-                  <p class="ml-2">{choices[currentType].description}</p>
-                </div>
-              </Radio>
+                <p>{choices[currentType].description}</p>
+              </Button>
             {/each}
-          </Dropdown>
-        {/if}
-        {#if requestCodeTypes.includes(type)}
-          <div class="ml-[4px] flex justify-between">
-            <Button
-              title="Resend code"
-              class="variant-ghost-secondary"
-              on:click={async () => {
-                requested = true;
-                await requestNewCode(true);
-              }}
-              submitted={requested}
+          {:else}
+            <div class="placeholder animate-pulse h-[48px]" />
+            <div class="placeholder animate-pulse h-[48px]" />
+          {/if}
+        </div>
+        <Button
+          class="variant-ringed-surface hover:bg-surface-600"
+          value="Cancel"
+          on:click={cancelSignInConfirm}>Cancel</Button
+        >
+      {:else if type}
+        <div class="flex justify-center">
+          {#if signInInit.types && signInInit.types.length > 1}
+            <Button class="p-2 variant-ghost-surface">
+              <span class="badge variant-filled-primary rounded">
+                <Icon icon={choices[type].icon} class="text-[24px]" />
+              </span>
+              <p>{choices[type].description}</p>
+              <Icon
+                icon="iconamoon:arrow-down-2-duotone"
+                class="text-[24px]"
+              />
+            </Button>
+            <Dropdown
+              class="bg-surface-800 rounded-md p-2 space-y-2 border border-solid border-surface-500"
             >
-              <con icon="tabler:reload" class="text-[24px]" /></Button
+              {#each signInInit.types as currentType}
+                <Radio bind:group={type} value={currentType} custom>
+                  <div
+                    class="flex justify-start cursor-pointer variant-ghost-surface p-2 rounded-md hover:bg-surface-500 peer-checked:bg-surface-500 peer-checked:cursor-default transition w-full items-center"
+                  >
+                    <span class="badge variant-filled-primary rounded">
+                      <Icon
+                        icon={choices[currentType].icon}
+                        class="text-[24px]"
+                      />
+                    </span>
+                    <p class="ml-2">{choices[currentType].description}</p>
+                  </div>
+                </Radio>
+              {/each}
+            </Dropdown>
+          {/if}
+          {#if requestCodeTypes.includes(type)}
+            <div class="ml-[4px] flex justify-between">
+              <Button
+                title="Resend code"
+                class="variant-ghost-secondary"
+                on:click={async () => {
+                  requested = true;
+                  await requestNewCode(true);
+                }}
+                submitted={requested}
+              >
+                <Icon icon="tabler:reload" class="text-[24px]" /></Button
+              >
+            </div>
+          {/if}
+        </div>
+        {#if $errors._errors && Array.isArray($errors._errors)}
+          <ul class="whitespace-normal text-[12px] text-error-400 text-center">
+            {#each $errors._errors as error (error)}
+              <li>{error}</li>
+            {/each}
+          </ul>
+        {/if}
+        <form
+          class="space-y-6"
+          autocomplete="off"
+          on:submit|preventDefault={signInConfirm}
+        >
+          <label for="code" class="label">
+            <span>Code</span>
+            <input
+              id="code"
+              class="input"
+              type="text"
+              required
+              bind:value={$form.code}
+            />
+          </label>
+          <div class="flex justify-between">
+            <Button
+              class="variant-ringed-surface hover:bg-surface-600"
+              value="Cancel"
+              on:click={cancelSignInConfirm}>Cancel</Button
+            >
+            <Button type="submit" class="variant-filled-primary" {submitted}
+              >Submit</Button
             >
           </div>
-        {/if}
-      </div>
-      {#if $errors._errors && Array.isArray($errors._errors)}
-        <ul class="whitespace-normal text-[12px] text-error-400 text-center">
-          {#each $errors._errors as error (error)}
-            <li>{error}</li>
-          {/each}
-        </ul>
+        </form>
       {/if}
-      <form
-        class="space-y-6"
-        autocomplete="off"
-        on:submit|preventDefault={signInConfirm}
-      >
-        <label for="code" class="label">
-          <span>Code</span>
-          <input
-            id="code"
-            class="input"
-            type="text"
-            required
-            bind:value={$form.code}
-          />
-        </label>
-        <div class="flex justify-between">
-          <Button
-            class="variant-ringed-surface hover:bg-surface-600"
-            value="Cancel"
-            on:click={cancelSignInConfirm}>Cancel</Button
-          >
-          <Button type="submit" class="variant-filled-primary" {submitted}
-            >Submit</Button
-          >
-        </div>
-      </form>
-    {/if}
+    </div>
   </div>
-</div>
+{/if}

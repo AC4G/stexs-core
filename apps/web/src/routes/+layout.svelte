@@ -7,10 +7,7 @@
     initializeStores,
     getToastStore,
     Modal,
-    getModalStore,
-
     type ModalComponent
-
   } from '@skeletonlabs/skeleton';
   import { Header, Avatar, Truncated, Confirm } from 'ui';
   import { stexs } from '../stexsClient';
