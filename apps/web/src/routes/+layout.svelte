@@ -64,7 +64,7 @@
     }
   });
 
-  stexs.auth.onAuthStateChange(async (event) => {
+  stexs.auth.onAuthStateChange(event => {
     if (event === 'SIGNED_IN') {
       const session = stexs.auth.getSession();
       user.set({

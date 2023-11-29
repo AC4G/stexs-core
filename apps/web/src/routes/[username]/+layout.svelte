@@ -41,7 +41,7 @@
     }
 
     async function fetchFriends(userId: string) {
-        const { data } = await stexs.from('friends').select('profiles!friends_user_id_fkey(user_id,username)').eq('user_id', userId);
+        const { data } = await stexs.from('friends').select('profiles!friends_friend_id_fkey(user_id,username)').eq('user_id', userId);
         return data;
     }
 
@@ -52,9 +52,9 @@
 
     async function sendFriendRequest(requester_id: string, addressee_id: string) {
         friendRequestSubmitted = true;
-        const { data, error } = await stexs.from('friend_requests').insert([
+        const { error } = await stexs.from('friend_requests').insert([
             { requester_id, addressee_id }
-        ]).select();
+        ]);
 
         if (error) {
             $flash = {
@@ -62,9 +62,7 @@
                 classes: 'variant-ghost-error',
                 timeout: 5000,
             };
-        }
-
-        if (data.length > 0) {
+        } else {
             friendRequestSend = true;
             $flash = {
                 message: 'Friend request successfully send.',
@@ -186,7 +184,9 @@
 
     $: friendRequestSend = $friendRequestQuery.data;
 
-    $: setContext('profile', { userId, isPrivate, isFriend });
+    $: console.log({ $friendsQuery })
+
+    $: setContext('profile', { userId, isPrivate, isFriend, friendsQuery });
 </script>
 
 <div class="w-screen h-screen bg-no-repeat bg-top bg-[url('https://cdn.cloudflare.steamstatic.com/steam/clusters/sale_autumn2019_assets/54b5034d397baccb93181cc6/home_header_bg_rainy_english.gif?t=1700618391')]">
@@ -207,7 +207,7 @@
                             {#if $friendsQuery.isLoading}
                                 <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                             {:else}
-                                <p class="text-[18px]">Friends {$friendsQuery.data?.length}</p>
+                                <p class="text-[18px]">Friends {$friendsQuery.data?.length ?? 0}</p>
                             {/if}
                         {/if}
                     </div>
@@ -236,7 +236,7 @@
             <div class="grid grid-rows-1 mt-[28px]">
                 {#if $profileQuery.isLoading}
                     <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
-                {:else if !$profileQuery.data?.is_private}
+                {:else if !$profileQuery.data?.is_private || $user?.id === userId || isFriend}
                     <TabGroup active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
                         <TabAnchor href="/{username}" selected={path === `/${username}`} >
                             <span>Inventory</span>
