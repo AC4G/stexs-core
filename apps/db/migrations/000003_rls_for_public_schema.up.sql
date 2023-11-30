@@ -83,7 +83,10 @@ CREATE POLICY friends_select
         (
             (
                 auth.grant() = 'password' AND
-                auth.uid() = user_id
+                (
+                    auth.uid() = user_id OR
+                    auth.uid() = friend_id
+                )
             )
             OR
             (

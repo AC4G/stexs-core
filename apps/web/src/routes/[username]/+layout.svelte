@@ -50,13 +50,36 @@
         return data.length > 0;
     }
 
-    async function sendFriendRequest(requester_id: string, addressee_id: string) {
+    async function makeUserFriend(username: string, user_id: string, friend_id: string) {
+        const { error } = await stexs.from('friends').insert([
+            { user_id, friend_id }
+        ]);
+
+        if (error) {
+            $flash = {
+                message: `Could not add ${username} as a friend. Try out again.`,
+                classes: 'variant-ghost-error',
+                timeout: 5000,
+            };
+        } else {
+            isFriend = true;
+            $flash = {
+                message: `${username} is now your friend.`,
+                classes: 'variant-ghost-success',
+                timeout: 5000,
+            };
+        }
+    }
+
+    async function sendFriendRequest(username: string, requester_id: string, addressee_id: string) {
         friendRequestSubmitted = true;
         const { error } = await stexs.from('friend_requests').insert([
             { requester_id, addressee_id }
         ]);
 
-        if (error) {
+        if (error && error.code === '23505') {
+            await makeUserFriend(username, requester_id, addressee_id);
+        } else if (error) {
             $flash = {
                 message: 'Could not send friend request. Try out again.',
                 classes: 'variant-ghost-error',
@@ -126,7 +149,7 @@
                 timeout: 5000,
             };
         } else {
-            friendRequestSend = false;
+            isFriend = false;
             $flash = {
                 message: 'Friend successfully removed.',
                 classes: 'variant-ghost-success',
@@ -184,8 +207,6 @@
 
     $: friendRequestSend = $friendRequestQuery.data;
 
-    $: console.log({ $friendsQuery })
-
     $: setContext('profile', { userId, isPrivate, isFriend, friendsQuery });
 </script>
 
@@ -218,7 +239,7 @@
                             {#if friendRequestSend}
                                 <Button on:click={async () => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
                             {:else if !isFriend}
-                                <Button on:click={async () => await sendFriendRequest($user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
+                                <Button on:click={async () => await sendFriendRequest(username, $user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
                             {:else}
                                 <Button on:click={async () => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
                             {/if}

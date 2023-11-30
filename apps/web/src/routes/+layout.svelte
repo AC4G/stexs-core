@@ -12,7 +12,7 @@
   import { Header, Avatar, Truncated, Confirm } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';
+  import { onMount, setContext } from 'svelte';
   import { getFlash } from 'sveltekit-flash-message';
   import Icon from '@iconify/svelte';
   import { user } from '$lib/stores/user';
@@ -61,6 +61,8 @@
         username: session.user.raw_user_meta_data.username
       })
       signedIn = true;
+
+
     }
   });
 
