@@ -4,7 +4,7 @@ const friendRequestsTopicFromContext = async (_args, context, _resolveInfo) => {
   if (context.jwtClaims.sub) {
     return `graphql:friend_requests:${context.jwtClaims.sub}`;
   } else {
-    throw new Error("You're not logged in");
+    throw new Error("Invalid JWT");
   }
 };
 
@@ -34,7 +34,7 @@ module.exports = makeExtendSchemaPlugin(({ pgSql: sql }) => ({
           sql.fragment`public.friend_requests`,
           (tableAlias, sqlBuilder) => {
             sqlBuilder.where(
-              sql.fragment`${tableAlias}.addressee_id = ${sql.value(context.jwtClaims.sub)}`
+              sql.fragment`${tableAlias}.addressee_id = ${sql.value(_context.jwtClaims.sub)}`
             );
           }
         );
