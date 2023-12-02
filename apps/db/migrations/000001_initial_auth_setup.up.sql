@@ -28,7 +28,8 @@ AS $$
 BEGIN
     RETURN coalesce(
         nullif(current_setting('request.jwt.claim', true), ''),
-        nullif(current_setting('request.jwt.claims', true), '')
+        nullif(current_setting('request.jwt.claims', true), ''),
+        nullif(current_setting('jwt.claims', true), '')
     )::JSONB;
 END;
 $$ LANGUAGE plpgsql;
@@ -40,7 +41,9 @@ AS $$
 BEGIN 
   RETURN coalesce(
     nullif(current_setting('request.jwt.claim.role', true), ''),
-    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'role')
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'role'),
+    nullif(current_setting('jwt.claims.role', true), ''),
+    (nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'role')
   )::TEXT;
 END;
 $$ LANGUAGE plpgsql;
@@ -52,7 +55,9 @@ AS $$
 BEGIN
   RETURN coalesce(
     nullif(current_setting('request.jwt.claim.sub', true), ''),
-    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'sub')
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'sub'),
+    nullif(current_setting('jwt.claims.sub', true), ''),
+    (nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'sub')
   )::UUID;
 END;
 $$ LANGUAGE plpgsql;
@@ -64,7 +69,9 @@ AS $$
 BEGIN
   RETURN coalesce(
     nullif(current_setting('request.jwt.claim.grant_type', true), ''),
-    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'grant_type')
+    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'grant_type'),
+    nullif(current_setting('jwt.claims.grant_type', true), ''),
+    (nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'grant_type')
   )::TEXT;
 END;
 $$ LANGUAGE plpgsql;
@@ -76,7 +83,9 @@ AS $$
 BEGIN
   RETURN coalesce(
     string_to_array(nullif(current_setting('request.jwt.claim.scopes', true), ''), ','),
-    string_to_array(nullif(current_setting('request.jwt.claims', true)::JSONB->>'scopes', ''), ',')
+    string_to_array(nullif(current_setting('request.jwt.claims', true)::JSONB->>'scopes', ''), ','),
+    string_to_array(nullif(current_setting('jwt.claims.scopes', true), ''), ','),
+    string_to_array(nullif(current_setting('jwt.claims', true)::JSONB->>'scopes', ''), ',')
   )::TEXT[];
 END;
 $$ LANGUAGE plpgsql;

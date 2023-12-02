@@ -1,10 +1,9 @@
 <script lang="ts">
     import type { UseQueryStoreResult } from "@sveltestack/svelte-query";
     import { getContext } from "svelte";
-    import Avatar from "ui/src/Avatar.svelte";
+    import { Avatar } from "ui";
     import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
     import { user } from "$lib/stores/user";
-    import { Button } from "ui";
 
     let { userId, friendsQuery }: { userId: string, friendsQuery: UseQueryStoreResult<any, unknown, any, string[]> } = getContext('profile');
 </script>

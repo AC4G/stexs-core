@@ -32,7 +32,7 @@
             {/each}
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
-                <p class="text-[18px] p-4 text-center">{$user?.id === userId ?  'You have no items in your inventory at the moment': 'User has no items in inventory at the moment'}</p>
+                <p class="text-[18px] p-4 text-center">{$user?.id === userId ?  'You have no items in your inventory': 'User has no items in inventory'}</p>
             </div>
         {/if}
     {/if}

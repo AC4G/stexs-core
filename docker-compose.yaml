@@ -85,6 +85,44 @@ services:
     command: server --console-address ":9001" /data
     networks:
       - stexs
+    depends_on:
+      - db
+
+    
+  postgraphile:
+    build: 
+      context: .
+      dockerfile: ./docker/postgraphile/Dockerfile
+    ports: 
+      - 5000:5000
+    restart: on-failure
+    container_name: graphile
+    command:
+      [
+        "--plugins",
+        "@graphile/pg-pubsub",
+        "--append-plugins",
+        "/postgraphile/FriendRequests.js",
+        "--connection",
+        "postgres://authenticator:authenticator@db:5432/postgres",
+        "--port",
+        "5000",
+        "--cors",
+        "--schema",
+        "public",
+        "--default-role",
+        "anon",
+        "--jwt-secret",
+        "${ACCESS_TOKEN_SECRET}",
+        "--jwt-verify-audience",
+        "${AUDIENCE}",
+        "--live",
+        "--subscriptions",
+        "--simple-subscriptions",
+        "--show-error-stack"
+      ]
+    networks:
+      - stexs
   
 networks:
   stexs:
