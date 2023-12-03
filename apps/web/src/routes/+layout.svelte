@@ -21,6 +21,7 @@
   import { Dropdown, DropdownItem, DropdownDivider } from 'flowbite-svelte';
   import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
   import { goto } from '$app/navigation';
+  import { gql } from 'stexs-client';
 
   initializeStores();
   const queryClient = new QueryClient({
@@ -45,6 +46,7 @@
   let signedIn: boolean;
   let avatarMenuOpen: boolean = false;
   $: activeUrl = $page.url.pathname;
+  let friendRequests;
 
   flash.subscribe(($flash) => {
     if (!$flash) return;
@@ -55,15 +57,35 @@
   onMount(async () => {
     const session = stexs.auth.getSession();
 
-    if (session) {
-      user.set({
-        id: session.user.id,
-        username: session.user.raw_user_meta_data.username
-      })
-      signedIn = true;
+    if (!session) return;
 
+    user.set({
+      id: session.user.id,
+      username: session.user.raw_user_meta_data.username
+    })
+    signedIn = true;
+    
+    const subscription = stexs.graphql
+    .subscribe({
+      query: gql`
+        subscription FriendRequestChanged {
+          friendRequestChanged {
+            friendRequests {
+              id
+              requesterId
+              addresseeId
+              createdAt
+            }
+          }
+        }
+      `,
+    });
 
-    }
+    subscription.subscribe({
+      next(data: any) {
+        friendRequests = data;
+      }
+    });
   });
 
   stexs.auth.onAuthStateChange(event => {

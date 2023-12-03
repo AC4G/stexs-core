@@ -4,8 +4,11 @@
     "main": "./src/StexsClient.ts",
     "types": "./src/StexsClient.ts",
     "dependencies": {
+        "@apollo/client": "^3.8.8",
         "@supabase/postgrest-js": "^1.8.5",
         "events": "^3.3.0",
+        "graphql-ws": "^5.14.2",
+        "isomorphic-ws": "^5.0.0",
         "typescript": "latest"
     },
     "devDependencies": {
