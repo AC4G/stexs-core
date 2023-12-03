@@ -99,8 +99,10 @@ services:
     container_name: graphile
     command:
       [
+        "--plugins",
+        "@graphile/pg-pubsub",
         "--append-plugins",
-        "@graphile/subscriptions-lds",
+        "/postgraphile/FriendRequests.js",
         "--connection",
         "postgres://authenticator:authenticator@db:5432/postgres",
         "--port",

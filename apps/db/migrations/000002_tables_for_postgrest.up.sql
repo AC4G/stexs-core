@@ -1,3 +1,27 @@
+CREATE OR REPLACE FUNCTION public.graphql_subscription()
+RETURNS TRIGGER AS $$
+DECLARE
+  event_name TEXT;
+  topic_template TEXT;
+  id_column_name TEXT;
+  id_value TEXT;
+BEGIN
+    event_name := TG_ARGV[0];
+    topic_template := TG_ARGV[1];
+    id_column_name := TG_ARGV[2];
+
+    IF TG_OP = 'INSERT' THEN
+        EXECUTE format('SELECT ($1).%I', id_column_name) INTO id_value USING NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        EXECUTE format('SELECT ($1).%I', id_column_name) INTO id_value USING OLD;
+    END IF;
+
+    PERFORM pg_notify(format('graphql:%s:%s', topic_template, id_value), json_build_object('event', event_name)::TEXT);
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE public.items (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -111,6 +135,11 @@ ON public.friend_requests ((LEAST(requester_id, addressee_id)), (GREATEST(reques
 GRANT INSERT (requester_id, addressee_id) ON TABLE public.friend_requests TO authenticated;
 GRANT DELETE ON TABLE public.friend_requests TO authenticated;
 GRANT SELECT ON TABLE public.friend_requests TO authenticated;
+
+CREATE TRIGGER friend_request_changed_trigger
+  AFTER INSERT OR DELETE ON public.friend_requests
+  FOR EACH ROW
+  EXECUTE FUNCTION public.graphql_subscription('friendRequestChanged', 'friend_requests', 'addressee_id');
 
 
 
