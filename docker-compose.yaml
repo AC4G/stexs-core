@@ -102,7 +102,7 @@ services:
         "--plugins",
         "@graphile/pg-pubsub",
         "--append-plugins",
-        "/postgraphile/FriendRequests.js",
+        "/postgraphile/CustomPlugin.js",
         "--connection",
         "postgres://authenticator:authenticator@db:5432/postgres",
         "--port",
@@ -116,9 +116,7 @@ services:
         "${ACCESS_TOKEN_SECRET}",
         "--jwt-verify-audience",
         "${AUDIENCE}",
-        "--live",
         "--subscriptions",
-        "--simple-subscriptions",
         "--show-error-stack"
       ]
     networks:
