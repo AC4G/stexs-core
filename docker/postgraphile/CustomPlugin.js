@@ -1,7 +1,6 @@
 const { makeExtendSchemaPlugin, gql, embed } = require("graphile-utils");
 
 const friendRequestsTopicFromContext = async (_args, context, _resolveInfo) => {
-  console.log({ context })
   if (context.jwtClaims && context.jwtClaims.sub) {
     return `graphql:friend_requests:${context.jwtClaims.sub}`;
   } else {

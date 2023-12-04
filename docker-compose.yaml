@@ -116,7 +116,6 @@ services:
         "${ACCESS_TOKEN_SECRET}",
         "--jwt-verify-audience",
         "${AUDIENCE}",
-        "--live",
         "--subscriptions",
         "--show-error-stack"
       ]

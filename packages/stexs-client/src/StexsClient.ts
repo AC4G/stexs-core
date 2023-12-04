@@ -1,8 +1,17 @@
 import { StexsAuthClient } from './StexsAuthClient';
-import { PostgrestClient, PostgrestFilterBuilder, PostgrestQueryBuilder } from '@supabase/postgrest-js';
-import { AUTH_URL, REST_URL, GRAPHQL_URL, GRAPHQL_WS_URL } from '../.stexs-client.config';
-import { Session } from './lib/types';
-import { ApolloClient, InMemoryCache, HttpLink, split, gql } from '@apollo/client/core';
+import {
+  PostgrestClient,
+  PostgrestFilterBuilder,
+  PostgrestQueryBuilder,
+} from '@supabase/postgrest-js';
+import type { Session } from './lib/types';
+import {
+  ApolloClient,
+  InMemoryCache,
+  HttpLink,
+  split,
+  gql,
+} from '@apollo/client/core';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
 import { getMainDefinition } from '@apollo/client/utilities';
@@ -16,47 +25,61 @@ export default class StexsClient {
 
   protected rest: PostgrestClient;
 
-  constructor(fetch: typeof fetch) {
-    this.auth = new StexsAuthClient(fetch, AUTH_URL);
-    this.rest = new PostgrestClient(REST_URL, {
+  constructor(
+    fetch: typeof fetch,
+    config: {
+      authUrl: string;
+      restUrl: string;
+      graphQLUrl: string;
+      graphQLWSUrl: string;
+    },
+  ) {
+    this.auth = new StexsAuthClient(fetch, config.authUrl);
+    this.rest = new PostgrestClient(config.restUrl, {
       fetch: this._fetchWithAuth.bind(this, fetch),
     });
 
     const httpLink = new HttpLink({
-      uri: GRAPHQL_URL,
-      fetch: this._fetchWithAuth.bind(this, fetch)
+      uri: config.graphQLUrl,
+      fetch: this._fetchWithAuth.bind(this, fetch),
     });
-    
-    const wsLink = new GraphQLWsLink(createClient({
-      url: GRAPHQL_WS_URL,
-      connectionParams: () => {
-        const token = this._getAccessToken();
 
-        let params = {};
+    const wsLink = new GraphQLWsLink(
+      createClient({
+        url: config.graphQLWSUrl,
+        connectionParams: () => {
+          const token = this._getAccessToken();
 
-        if (token) {
-          params = {
-            ...params,
-            Authorization: `Bearer ${token}`
+          let params = {};
+
+          if (token) {
+            params = {
+              ...params,
+              Authorization: `Bearer ${token}`,
+            };
           }
-        }
-        
-        return params;
-      },
-      webSocketImpl: WebSocket
-    }));
 
-    const splitLink = split(({ query }) => {
-      const definition = getMainDefinition(query);
-      return (
-        definition.kind === 'OperationDefinition' &&
-        definition.operation === 'subscription'
-      );
-    }, wsLink, httpLink);
+          return params;
+        },
+        webSocketImpl: WebSocket,
+      }),
+    );
+
+    const splitLink = split(
+      ({ query }) => {
+        const definition = getMainDefinition(query);
+        return (
+          definition.kind === 'OperationDefinition' &&
+          definition.operation === 'subscription'
+        );
+      },
+      wsLink,
+      httpLink,
+    );
 
     this.graphql = new ApolloClient({
       link: splitLink,
-      cache: new InMemoryCache()
+      cache: new InMemoryCache(),
     });
   }
 
@@ -65,12 +88,13 @@ export default class StexsClient {
   }
 
   rpc(
-    fn: string, 
-    args = {}, 
+    fn: string,
+    args = {},
     options?: {
-      head?: boolean
-      count?: 'exact' | 'planned' | 'estimated'
-  }): PostgrestFilterBuilder {
+      head?: boolean;
+      count?: 'exact' | 'planned' | 'estimated';
+    },
+  ): PostgrestFilterBuilder {
     return this.rest.rpc(fn, args, options);
   }
 

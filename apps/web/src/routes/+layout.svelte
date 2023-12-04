@@ -22,6 +22,8 @@
   import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
   import { goto } from '$app/navigation';
   import { gql } from 'stexs-client';
+  import type { FriendRequestsGQL, FriendRequests } from '$lib/types';
+  import Button from 'ui/src/Button.svelte';
 
   initializeStores();
   const queryClient = new QueryClient({
@@ -44,9 +46,10 @@
     '/recovery',
   ];
   let signedIn: boolean;
-  let avatarMenuOpen: boolean = false;
+  let avatarDropDownOpen: boolean = false;
+  let notificationsDropDownOpen: boolean = false;
   $: activeUrl = $page.url.pathname;
-  let friendRequests;
+  let friendRequests: FriendRequests | [] = [];
 
   flash.subscribe(($flash) => {
     if (!$flash) return;
@@ -65,27 +68,28 @@
     })
     signedIn = true;
     
-    const subscription = stexs.graphql
-    .subscribe({
-      query: gql`
-        subscription FriendRequestChanged {
+    const observable = stexs.graphql
+      .subscribe({
+        query: gql`
+        subscription FriendRequestsSubscription {
           friendRequestChanged {
             friendRequests {
+              profileByRequesterId {
+                username
+                userId
+              }
               id
-              requesterId
-              addresseeId
-              createdAt
             }
           }
         }
       `,
     });
 
-    subscription.subscribe({
-      next(data: any) {
-        friendRequests = data;
+    observable.subscribe({
+      next({ data }: { data: FriendRequestsGQL }) {
+        friendRequests = data?.friendRequestChanged.friendRequests.reverse();
       }
-    });
+    })
   });
 
   stexs.auth.onAuthStateChange(event => {
@@ -104,6 +108,17 @@
       goto('/');
     }
   });
+
+  $: setContext('friendRequests', friendRequests);
+  $: notifications = {
+    friendRequests: {
+      count: friendRequests.length,
+      data: friendRequests
+    },
+    exists: friendRequests.length > 0 
+  };
+
+  $: console.log({ notifications })
 </script>
 
 <svelte:head>
@@ -120,9 +135,48 @@
           <a href="/sign-in" class="btn">Sign-In</a>
           <a href="/sign-up" class="btn variant-filled-primary">Sign-Up</a>
         {:else}
-          <div class="relative inline-block mr-[8px]">
-            <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$user?.id} username={$user?.username} class="avatarMenu w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarMenuOpen && "!border-primary-500"} transition" />
-            <Dropdown triggeredBy=".avatarMenu" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarMenuOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
+          <div class="relative mr-[8px] flex items-center space-x-2 w-full justify-end">
+            <Button class="notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">
+              <div class="relative inline-block">
+                {#if notifications.exists}
+                  <span class="badge-icon variant-filled-primary absolute -top-1 -right-2 z-10 w-[8px] h-[8px]"></span>
+                {/if}
+                <Icon icon="mdi:bell-outline" width="18" />
+              </div>
+            </Button>
+            <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[200px]">
+              <div class="flex justify-evenly">
+                <Button class="hover:bg-surface-500 transition items-center flex">
+                  <Icon icon="octicon:person-add-16" />
+                  <p class="text-[16px]">{notifications.friendRequests.count > 9 ? '+9' : notifications.friendRequests.count}</p>
+                </Button>
+                <Button class="hover:bg-surface-500 transition items-center flex">
+                  <Icon icon="bi:building-add" />
+                  <p class="text-[16px]">{notifications.friendRequests.count > 9 ? '+9' : notifications.friendRequests.count}</p>
+                </Button>
+              </div>
+              <DropdownDivider />
+              <div class="max-h-[200px] overflow-auto">
+                {#if notifications.exists}
+                  {#each notifications.friendRequests.data as friendRequest}
+                    <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
+                      <a href="/{friendRequest.profileByRequesterId.username}">
+                        <Avatar class="w-[40px] h-[40px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} endpoint={PUBLIC_S3_ENDPOINT} />
+                      </a>
+                      <div class="grid grid-rows-2 col-span-2 w-full">
+                        <Truncated text={friendRequest.profileByRequesterId.username} maxLength={12} class="text-[16px] w-[70%] text-left " />
+                        <div class="flex justify-evenly pt-1">
+                          <Button class="p-0 px-1 variant-filled-primary">Accept</Button>
+                          <Button class="p-0 px-1 variant-ringed-surface hover:bg-surface-600">Delete</Button>
+                        </div>
+                      </div>
+                    </div>
+                  {/each}
+                {/if}
+              </div>
+            </Dropdown>
+            <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$user?.id} username={$user?.username} class="avatarDropDown w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
+            <Dropdown triggeredBy=".avatarDropDown" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
               <div class="px-4 py-2 rounded variant-ghost-secondary">
                 <Truncated text={$user?.username || ''} maxLength={8} class="text-[16px]" />
               </div>
