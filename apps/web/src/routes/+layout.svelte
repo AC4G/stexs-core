@@ -18,12 +18,13 @@
   import { user } from '$lib/stores/user';
   import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
   import { browser } from '$app/environment';
-  import { Dropdown, DropdownItem, DropdownDivider } from 'flowbite-svelte';
+  import { Dropdown, DropdownItem, DropdownDivider, Search } from 'flowbite-svelte';
   import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
   import { goto } from '$app/navigation';
   import { gql } from 'stexs-client';
   import type { FriendRequestsGQL, FriendRequests } from '$lib/types';
   import Button from 'ui/src/Button.svelte';
+  import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
 
   initializeStores();
   const queryClient = new QueryClient({
@@ -50,6 +51,8 @@
   let notificationsDropDownOpen: boolean = false;
   $: activeUrl = $page.url.pathname;
   let friendRequests: FriendRequests | [] = [];
+  let selectedNotificationMenu: 'friends' | 'organizations' | 'projects' = 'friends';
+  let friendRequestsSearch: string = '';
 
   flash.subscribe(($flash) => {
     if (!$flash) return;
@@ -115,10 +118,16 @@
       count: friendRequests.length,
       data: friendRequests
     },
+    organizationRequests:{
+      count: 0,
+      data: []
+    },
+    projectRequests: {
+      count: 0,
+      data: []
+    },
     exists: friendRequests.length > 0 
   };
-
-  $: console.log({ notifications })
 </script>
 
 <svelte:head>
@@ -144,36 +153,61 @@
                 <Icon icon="mdi:bell-outline" width="18" />
               </div>
             </Button>
-            <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[200px]">
-              <div class="flex justify-evenly">
-                <Button class="hover:bg-surface-500 transition items-center flex">
+            <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[240px]">
+              <div class="grid grid-cols-3 space-x-1">
+                <Button on:click={() => selectedNotificationMenu = 'friends'} class="hover:bg-surface-500 transition items-center flex {selectedNotificationMenu === 'friends' && 'bg-surface-500'}">
                   <Icon icon="octicon:person-add-16" />
                   <p class="text-[16px]">{notifications.friendRequests.count > 9 ? '+9' : notifications.friendRequests.count}</p>
                 </Button>
-                <Button class="hover:bg-surface-500 transition items-center flex">
+                <Button on:click={() => selectedNotificationMenu = 'organizations'} class="hover:bg-surface-500 transition items-center flex {selectedNotificationMenu === 'organizations' && 'bg-surface-500'}">
                   <Icon icon="bi:building-add" />
-                  <p class="text-[16px]">{notifications.friendRequests.count > 9 ? '+9' : notifications.friendRequests.count}</p>
+                  <p class="text-[16px]">{notifications.organizationRequests.count > 9 ? '+9' : notifications.organizationRequests.count}</p>
+                </Button>
+                <Button on:click={() => selectedNotificationMenu = 'projects'} class="hover:bg-surface-500 transition items-center flex {selectedNotificationMenu === 'projects' && 'bg-surface-500'}">
+                  <Icon icon="octicon:project-symlink-24" />
+                  <p class="text-[16px]">{notifications.projectRequests.count > 9 ? '+9' : notifications.projectRequests.count}</p>
                 </Button>
               </div>
               <DropdownDivider />
-              <div class="max-h-[200px] overflow-auto">
-                {#if notifications.exists}
-                  {#each notifications.friendRequests.data as friendRequest}
-                    <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
-                      <a href="/{friendRequest.profileByRequesterId.username}">
-                        <Avatar class="w-[40px] h-[40px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} endpoint={PUBLIC_S3_ENDPOINT} />
-                      </a>
-                      <div class="grid grid-rows-2 col-span-2 w-full">
-                        <Truncated text={friendRequest.profileByRequesterId.username} maxLength={12} class="text-[16px] w-[70%] text-left " />
-                        <div class="flex justify-evenly pt-1">
-                          <Button class="p-0 px-1 variant-filled-primary">Accept</Button>
-                          <Button class="p-0 px-1 variant-ringed-surface hover:bg-surface-600">Delete</Button>
+              {#if selectedNotificationMenu === 'friends'}
+                <Search size="md" placeholder="Username" bind:value={friendRequestsSearch} class="!bg-surface-500" />
+                <div class="max-h-[200px] overflow-auto">
+                  {#if notifications.friendRequests.data.length > 0}
+                    {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest}
+                      <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
+                        <a href="/{friendRequest.profileByRequesterId.username}">
+                          <Avatar class="w-[44px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} endpoint={PUBLIC_S3_ENDPOINT} />
+                        </a>
+                        <div class="grid grid-rows-2 col-span-2 w-full">
+                          <Truncated text={friendRequest.profileByRequesterId.username} maxLength={12} class="text-[16px] w-[70%] text-left " />
+                          <div class="flex justify-evenly pt-1">
+                            <Button on:click={async (event) => {
+                              event.stopPropagation();
+                              await acceptFriendRequest($user.id, friendRequest.profileByRequesterId.userId, friendRequest.profileByRequesterId.username, flash);
+                            }} class="py-[0.8px] px-2 variant-filled-primary text-[14px]">Accept</Button>
+                            <Button on:click={async (event) => {
+                              event.stopPropagation();
+                              await deleteFriendRequest(friendRequest.profileByRequesterId.userId, $user.id, flash);
+                            }} class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[14px]">Delete</Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  {/each}
-                {/if}
-              </div>
+                    {/each}
+                  {/if}
+                </div>
+                <DropdownDivider />
+                <p class="text-[15px] px-2">Total: {notifications.friendRequests.count}</p>
+              {:else if selectedNotificationMenu === 'organizations'}
+                <Search size="md" placeholder="Organization Name" class="!bg-surface-500" />
+                <div class="max-h-[200px] overflow-auto"></div>
+                <DropdownDivider />
+                <p class="text-[15px] px-2">Total: {notifications.organizationRequests.count}</p>
+              {:else}
+                <Search size="md" placeholder="Project Name" class="!bg-surface-500" />
+                <div class="max-h-[200px] overflow-auto"></div>
+                <DropdownDivider />
+                <p class="text-[15px] px-2">Total: {notifications.projectRequests.count}</p>
+              {/if}
             </Dropdown>
             <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$user?.id} username={$user?.username} class="avatarDropDown w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
             <Dropdown triggeredBy=".avatarDropDown" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
