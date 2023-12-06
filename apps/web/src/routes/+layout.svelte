@@ -12,7 +12,7 @@
   import { Header, Avatar, Truncated, Confirm } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
-  import { onMount, setContext } from 'svelte';
+  import { onMount } from 'svelte';
   import { getFlash } from 'sveltekit-flash-message';
   import Icon from '@iconify/svelte';
   import { user } from '$lib/stores/user';
@@ -112,7 +112,6 @@
     }
   });
 
-  $: setContext('friendRequests', friendRequests);
   $: notifications = {
     friendRequests: {
       count: friendRequests.length,
@@ -154,7 +153,7 @@
               </div>
             </Button>
             <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[240px]">
-              <div class="grid grid-cols-3 space-x-1">
+              <div class="grid grid-cols-3">
                 <Button on:click={() => selectedNotificationMenu = 'friends'} class="hover:bg-surface-500 transition items-center flex {selectedNotificationMenu === 'friends' && 'bg-surface-500'}">
                   <Icon icon="octicon:person-add-16" />
                   <p class="text-[16px]">{notifications.friendRequests.count > 9 ? '+9' : notifications.friendRequests.count}</p>

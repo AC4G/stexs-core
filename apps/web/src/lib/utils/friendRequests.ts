@@ -2,7 +2,8 @@ import type { Writable } from "svelte/store";
 import { stexs } from "../../stexsClient";
 import type { ToastSettings } from "@skeletonlabs/skeleton";
 
-export async function acceptFriendRequest(user_id: string, friend_id: string, username: string, flash: Writable<ToastSettings>) {
+export async function acceptFriendRequest(user_id: string, friend_id: string, username: string, flash: Writable<ToastSettings>): Promise<boolean> {
+    let isFriend: boolean = false;
     const { error } = await stexs.from('friends').insert([
         { user_id, friend_id }
     ]);
@@ -14,12 +15,15 @@ export async function acceptFriendRequest(user_id: string, friend_id: string, us
             timeout: 5000,
         });
     } else {
+        isFriend = true;
         flash.set({
             message: `${username} is now your friend.`,
             classes: 'variant-ghost-success',
             timeout: 5000,
         });
     }
+
+    return isFriend;
 }
 
 export async function deleteFriendRequest(requesterId: string, addresseeId: string, flash: Writable<ToastSettings>) {
