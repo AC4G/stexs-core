@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { getContext } from "svelte";
     import { Avatar } from "ui";
     import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
     import { user } from "$lib/stores/user";
@@ -7,6 +6,11 @@
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
     import { profile } from "$lib/stores/profile";
+    import { Search } from "flowbite-svelte";
+    import type { Friend } from "$lib/types";
+
+    let friendsSearch: string = '';
+    let filteredFriends: Friend[] = [];
 
     async function fetchFriends(userId: string) {
         const { data } = await stexs.from('friends').select('profiles!friends_friend_id_fkey(user_id,username)').eq('user_id', userId);
@@ -19,6 +23,12 @@
         enabled: !!$profile?.userId && ($profile.isPrivate === false || $profile.isFriend)
     });
 
+    $: filteredFriends = $friendsQuery.data
+        ? $friendsQuery.data.filter((friend: Friend) =>
+            friend.profiles.username.toLowerCase().includes(friendsSearch.toLowerCase())
+          )
+        : [];
+
     let paginationSettings: PaginationSettings = {
         page: 0,
         limit: 20,
@@ -26,14 +36,19 @@
         amounts: [20, 50, 100],
     };
 
-    $: paginationSettings.size = $friendsQuery.data?.length;
+    $: paginationSettings.size = filteredFriends.length;
 
-    $: paginatedFriendRequests = $friendsQuery.data?.slice(
+    $: paginatedFriendRequests = filteredFriends.slice(
         paginationSettings.page * paginationSettings.limit,
         paginationSettings.page * paginationSettings.limit + paginationSettings.limit
     );
 </script>
 
+{#if $friendsQuery.data && $friendsQuery.data.length > 0}
+    <div class="mb-[12px] max-w-[220px]">
+        <Search size="lg" placeholder="Username" bind:value={friendsSearch} class="!bg-surface-500" />
+    </div>
+{/if}
 <div class="grid gap-4 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {#if $friendsQuery.isLoading}
         {#each Array(20) as _}
@@ -65,6 +80,7 @@
             showPreviousNextButtons="{true}"
             showNumerals
             amountText="Friends"
+            controlVariant="bg-surface-700 border border-solid border-surface-500"
         />
     </div>
 {/if}
