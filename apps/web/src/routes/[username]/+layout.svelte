@@ -18,6 +18,8 @@
     let friendRequestSubmitted: boolean = false;
     let friendRequestRevocationSubmitted: boolean = false;
     let removeFriendSubmitted: boolean = false;
+    let acceptFriendRequestSubmitted: boolean = false;
+    let deleteFriendRequestSubmitted: boolean = false;
     $: username = $page.params.username;
     $: path = $page.url.pathname;
 
@@ -245,29 +247,34 @@
                 {#if $user && $user.id !== $profileQuery.data?.user_id}
                     <div class="grid pt-[12px] sm:col-start-3 col-span-full">
                         <div class="flex justify-between sm:justify-end">
-                            {#if friendRequestSend}
-                                <Button on:click={async () => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
+                            {#if isFriend}
+                                <Button on:click={() => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
                             {:else if gotFriendRequest}
                                 <div class="flex flex-col mr-2">
                                     <p class="col-span-2">Friend Request:</p>
                                     <div class="mt-[4px]">
-                                        <Button on:click={async () => { 
-                                            //loader true
-                                            isFriend = await acceptFriendRequest($user.id, userId, username, flash);
-                                            if (isFriend) gotFriendRequest = false;
-                                            //loader false
-                                        }} class="variant-filled-primary py-1 px-2">Accept</Button>
                                         <Button on:click={async () => {
-                                            //loader true
-                                            await deleteFriendRequest(userId, $user.id, flash);
-                                            //loader false
-                                        }} class="variant-ghost-error py-1 px-2">Delete</Button>
+                                            acceptFriendRequestSubmitted = true;
+
+                                            isFriend = await acceptFriendRequest($user.id, userId, username, flash);
+
+                                            if (isFriend) gotFriendRequest = false;
+
+                                            acceptFriendRequestSubmitted = false;
+                                        }} submitted={acceptFriendRequestSubmitted} class="variant-filled-primary py-1 px-2">Accept</Button>
+                                        <Button on:click={async () => {
+                                            deleteFriendRequestSubmitted = true;
+
+                                            gotFriendRequest = await deleteFriendRequest(userId, $user.id, flash);
+                                            
+                                            deleteFriendRequestSubmitted = false;
+                                        }} submitted={deleteFriendRequestSubmitted} class="variant-ghost-error py-1 px-2">Delete</Button>
                                     </div>
                                 </div>
-                            {:else if !isFriend}
-                                <Button on:click={async () => await sendFriendRequest(username, $user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
+                            {:else if friendRequestSend}
+                                <Button on:click={async () => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
                             {:else}
-                                <Button on:click={() => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
+                                <Button on:click={async () => await sendFriendRequest(username, $user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
                             {/if}
                             <Button class="w-fit h-fit p-1 group">
                                 <Icon icon="pepicons-pop:dots-y" class="text-[26px] group-hover:text-surface-400 transition" />

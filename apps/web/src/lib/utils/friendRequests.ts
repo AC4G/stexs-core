@@ -27,6 +27,7 @@ export async function acceptFriendRequest(user_id: string, friend_id: string, us
 }
 
 export async function deleteFriendRequest(requesterId: string, addresseeId: string, flash: Writable<ToastSettings>) {
+    let gotFriendRequest: boolean = true;
     const { error } = await stexs.from('friend_requests').delete().eq('requester_id', requesterId).eq('addressee_id', addresseeId);
 
     if (error) {
@@ -36,10 +37,13 @@ export async function deleteFriendRequest(requesterId: string, addresseeId: stri
             timeout: 5000,
         });
     } else {
+        gotFriendRequest = false;
         flash.set({
             message: 'Friend request successfully deleted.',
             classes: 'variant-ghost-success',
             timeout: 5000,
         });
     }
+
+    return gotFriendRequest;
 }
