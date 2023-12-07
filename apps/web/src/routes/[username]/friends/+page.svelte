@@ -31,9 +31,9 @@
 
     let paginationSettings: PaginationSettings = {
         page: 0,
-        limit: 20,
+        limit: 50,
         size: 0,
-        amounts: [20, 50, 100],
+        amounts: [50, 100, 250, 500, 1000],
     };
 
     $: paginationSettings.size = filteredFriends.length;

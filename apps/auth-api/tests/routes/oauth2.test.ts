@@ -1,4 +1,4 @@
-import {expect, jest, describe, afterEach, it} from '@jest/globals';
+import { expect, jest, describe, afterEach, it } from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -12,10 +12,7 @@ import {
   INVALID_UUID,
   REFRESH_TOKEN_REQUIRED,
 } from 'utils-ts/errors';
-import {
-  message,
-  testErrorMessages,
-} from 'utils-ts/messageBuilder';
+import { message, testErrorMessages } from 'utils-ts/messageBuilder';
 
 jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
@@ -110,15 +107,18 @@ describe('OAuth2 Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: CLIENT_ID_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'client_id',
+      testErrorMessages(
+        [
+          {
+            info: CLIENT_ID_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'client_id',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -129,15 +129,18 @@ describe('OAuth2 Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_UUID,
-          data: {
-            location: 'body',
-            path: 'client_id',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_UUID,
+            data: {
+              location: 'body',
+              path: 'client_id',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -178,15 +181,18 @@ describe('OAuth2 Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: REFRESH_TOKEN_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'refresh_token',
+      testErrorMessages(
+        [
+          {
+            info: REFRESH_TOKEN_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'refresh_token',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 

@@ -1,4 +1,12 @@
-import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+import {
+  expect,
+  jest,
+  describe,
+  afterEach,
+  beforeAll,
+  afterAll,
+  it,
+} from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -25,7 +33,9 @@ jest.mock('utils-ts/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
+    next(),
+  ),
 }));
 
 jest.mock('../../src/database', () => {
@@ -54,15 +64,18 @@ describe('Token Route', () => {
 
     expect(response.status).toBe(401);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_TOKEN,
-          data: {
-            location: 'body',
-            path: 'refresh_token',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_TOKEN,
+            data: {
+              location: 'body',
+              path: 'refresh_token',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 

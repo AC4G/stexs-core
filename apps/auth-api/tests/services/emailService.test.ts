@@ -7,7 +7,7 @@ import {
   SMTP_PWD,
   SMTP_EMAIL,
 } from '../../env-config';
-import {expect, jest, describe, it} from '@jest/globals';
+import { expect, jest, describe, it } from '@jest/globals';
 
 jest.mock('nodemailer');
 

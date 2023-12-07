@@ -107,7 +107,7 @@ BEGIN
     FROM public.friends
     WHERE user_id = NEW.user_id;
 
-    IF friend_request_count = 1000 THEN
+    IF friends_count = 1000 THEN
         RAISE sqlstate 'P0001' USING
                 message = 'Friend limit exceeded',
                 detail = 'User has reached 1000 friends',
@@ -190,6 +190,26 @@ CREATE TRIGGER enforce_friend_request_limit_trigger
 BEFORE INSERT ON public.friend_requests
 FOR EACH ROW
 EXECUTE FUNCTION public.check_friend_request_limit();
+
+CREATE OR REPLACE FUNCTION public.check_accept_friend_requests_before_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (
+        (SELECT accept_friend_requests FROM public.profiles WHERE user_id = NEW.addressee_id) = FALSE
+    ) THEN
+        RAISE sqlstate 'P0001' USING
+            message = 'User doesn''t accept friend requests',
+            hint = 'Ask your friend to send a friend request to you instead';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_accept_friend_requests_before_insert_trigger
+BEFORE INSERT ON public.friend_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.check_accept_friend_requests_before_insert();
 
 
 

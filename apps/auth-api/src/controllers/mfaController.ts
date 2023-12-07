@@ -214,7 +214,9 @@ export async function disableTOTP(req: Request, res: Response) {
     }
 
     if (!rows[0].email) {
-      logger.warn(`MFA totp cant be disabled because this is the last active MFA method for user: ${userId}`);
+      logger.warn(
+        `MFA totp cant be disabled because this is the last active MFA method for user: ${userId}`,
+      );
       return res
         .status(400)
         .json(errorMessages([{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }]));
@@ -309,7 +311,9 @@ export async function disableEmail(req: Request, res: Response) {
     }
 
     if (!rows[0].totp) {
-      logger.warn(`MFA email cant be disabled because this is the last active MFA method for user: ${userId}`);
+      logger.warn(
+        `MFA email cant be disabled because this is the last active MFA method for user: ${userId}`,
+      );
       return res
         .status(400)
         .json(errorMessages([{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }]));

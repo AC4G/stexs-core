@@ -1,4 +1,4 @@
-import {expect, jest, describe, afterEach, it} from '@jest/globals';
+import { expect, jest, describe, afterEach, it } from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -34,7 +34,9 @@ jest.mock('utils-ts/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
+    next(),
+  ),
 }));
 
 jest.mock('../../src/database', () => {
@@ -58,15 +60,18 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: IDENTIFIER_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'identifier',
+      testErrorMessages(
+        [
+          {
+            info: IDENTIFIER_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'identifier',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -77,15 +82,18 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: PASSWORD_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'password',
+      testErrorMessages(
+        [
+          {
+            info: PASSWORD_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'password',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -102,18 +110,21 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_CREDENTIALS.code,
-            message: INVALID_CREDENTIALS.messages[0],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_CREDENTIALS.code,
+              message: INVALID_CREDENTIALS.messages[0],
+            },
+            data: {
+              location: 'body',
+              paths: ['identifier', 'password'],
+            },
           },
-          data: {
-            location: 'body',
-            paths: ['identifier', 'password'],
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -230,15 +241,18 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: CODE_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'code',
+      testErrorMessages(
+        [
+          {
+            info: CODE_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'code',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -250,15 +264,18 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: TYPE_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'type',
+      testErrorMessages(
+        [
+          {
+            info: TYPE_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'type',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -270,15 +287,18 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: TOKEN_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'token',
+      testErrorMessages(
+        [
+          {
+            info: TOKEN_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'token',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -291,15 +311,18 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_TYPE,
-          data: {
-            location: 'body',
-            path: 'type',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_TYPE,
+            data: {
+              location: 'body',
+              path: 'type',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 });

@@ -1,4 +1,12 @@
-import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+import {
+  expect,
+  jest,
+  describe,
+  afterEach,
+  beforeAll,
+  afterAll,
+  it,
+} from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -13,10 +21,7 @@ import {
   TOKEN_REQUIRED,
 } from 'utils-ts/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import {
-  message,
-  testErrorMessages,
-} from 'utils-ts/messageBuilder';
+import { message, testErrorMessages } from 'utils-ts/messageBuilder';
 
 jest.mock('../../src/database', () => {
   return {
@@ -47,15 +52,18 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: EMAIL_REQUIRED,
-          data: {
-            location: 'query',
-            path: 'email',
+      testErrorMessages(
+        [
+          {
+            info: EMAIL_REQUIRED,
+            data: {
+              location: 'query',
+              path: 'email',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -66,18 +74,21 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_EMAIL.code,
-            message: INVALID_EMAIL.messages[0],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_EMAIL.code,
+              message: INVALID_EMAIL.messages[0],
+            },
+            data: {
+              location: 'query',
+              path: 'email',
+            },
           },
-          data: {
-            location: 'query',
-            path: 'email',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -88,15 +99,18 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: TOKEN_REQUIRED,
-          data: {
-            location: 'query',
-            path: 'token',
+      testErrorMessages(
+        [
+          {
+            info: TOKEN_REQUIRED,
+            data: {
+              location: 'query',
+              path: 'token',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -207,15 +221,18 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: EMAIL_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'email',
+      testErrorMessages(
+        [
+          {
+            info: EMAIL_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'email',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -226,18 +243,21 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_EMAIL.code,
-            message: INVALID_EMAIL.messages[0],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_EMAIL.code,
+              message: INVALID_EMAIL.messages[0],
+            },
+            data: {
+              location: 'body',
+              path: 'email',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'email',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
