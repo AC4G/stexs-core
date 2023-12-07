@@ -1,7 +1,9 @@
+import {expect, jest, describe, afterEach, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import {
   EMAIL_REQUIRED,
   INVALID_EMAIL,
@@ -11,13 +13,13 @@ import {
   INVALID_USERNAME,
   PASSWORD_REQUIRED,
   USERNAME_REQUIRED,
-} from '../../app/constants/errors';
+} from 'utils-ts/errors';
 import {
   message,
   testErrorMessages,
-} from '../../app/services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -47,7 +49,7 @@ describe('Sign Up', () => {
             path: 'username',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -71,7 +73,7 @@ describe('Sign Up', () => {
             path: 'username',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -105,7 +107,7 @@ describe('Sign Up', () => {
             path: 'username',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -129,7 +131,7 @@ describe('Sign Up', () => {
             path: 'username',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -149,7 +151,7 @@ describe('Sign Up', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -173,7 +175,7 @@ describe('Sign Up', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -193,7 +195,7 @@ describe('Sign Up', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -214,7 +216,7 @@ describe('Sign Up', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -235,12 +237,12 @@ describe('Sign Up', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
   it('should handle sign up with already existing username', async () => {
-    mockQuery.mockRejectedValue({ hint: 'Please choose a different username' });
+    mockQuery.mockRejectedValue({ hint: 'Please choose a different username' } as never);
 
     const response = await request(server).post('/sign-up').send({
       username: 'Test123',
@@ -261,12 +263,12 @@ describe('Sign Up', () => {
             path: 'username',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
   it('should handle sign up with already existing email', async () => {
-    mockQuery.mockRejectedValue({ hint: 'Please choose a different email' });
+    mockQuery.mockRejectedValue({ hint: 'Please choose a different email' } as never);
 
     const response = await request(server).post('/sign-up').send({
       username: 'Test123',
@@ -287,7 +289,7 @@ describe('Sign Up', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -299,7 +301,7 @@ describe('Sign Up', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-up').send({
       username: 'Test123',

@@ -1,7 +1,9 @@
+import {expect, jest, describe, afterEach, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import { NextFunction } from 'express';
 import {
   CLIENT_ID_REQUIRED,
@@ -9,13 +11,13 @@ import {
   CONNECTION_ALREADY_REVOKED,
   INVALID_UUID,
   REFRESH_TOKEN_REQUIRED,
-} from '../../app/constants/errors';
+} from 'utils-ts/errors';
 import {
   message,
   testErrorMessages,
-} from '../../app/services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/middlewares/jwtMiddleware', () => ({
+jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -32,10 +34,10 @@ jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: any) => next()),
 }));
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -74,7 +76,7 @@ describe('OAuth2 Routes', () => {
         },
       ],
       rowCount: 2,
-    });
+    } as never);
 
     const response = await request(server).get('/oauth2/connections');
 
@@ -116,7 +118,7 @@ describe('OAuth2 Routes', () => {
             path: 'client_id',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -135,7 +137,7 @@ describe('OAuth2 Routes', () => {
             path: 'client_id',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -143,7 +145,7 @@ describe('OAuth2 Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .delete('/oauth2/connection')
@@ -151,7 +153,7 @@ describe('OAuth2 Routes', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CONNECTION_ALREADY_DELETED }]),
+      testErrorMessages([{ info: CONNECTION_ALREADY_DELETED }], expect),
     );
   });
 
@@ -159,7 +161,7 @@ describe('OAuth2 Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .delete('/oauth2/connection')
@@ -184,7 +186,7 @@ describe('OAuth2 Routes', () => {
             path: 'refresh_token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -192,7 +194,7 @@ describe('OAuth2 Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .delete('/oauth2/revoke')
@@ -200,7 +202,7 @@ describe('OAuth2 Routes', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CONNECTION_ALREADY_REVOKED }]),
+      testErrorMessages([{ info: CONNECTION_ALREADY_REVOKED }], expect),
     );
   });
 
@@ -208,7 +210,7 @@ describe('OAuth2 Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .delete('/oauth2/revoke')

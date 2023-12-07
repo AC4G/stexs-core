@@ -1,7 +1,9 @@
+import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import { REDIRECT_TO_SIGN_IN } from '../../env-config';
 import {
   EMAIL_ALREADY_VERIFIED,
@@ -9,14 +11,14 @@ import {
   EMAIL_REQUIRED,
   INVALID_EMAIL,
   TOKEN_REQUIRED,
-} from '../../app/constants/errors';
+} from 'utils-ts/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
   message,
   testErrorMessages,
-} from '../../app/services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -53,7 +55,7 @@ describe('Email Verification Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -75,7 +77,7 @@ describe('Email Verification Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -94,7 +96,7 @@ describe('Email Verification Routes', () => {
             path: 'token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -102,7 +104,7 @@ describe('Email Verification Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .get('/verify')
@@ -118,7 +120,7 @@ describe('Email Verification Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .get('/verify')
@@ -139,7 +141,7 @@ describe('Email Verification Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .get('/verify')
@@ -161,7 +163,7 @@ describe('Email Verification Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .get('/verify')
@@ -183,12 +185,12 @@ describe('Email Verification Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .get('/verify')
@@ -213,7 +215,7 @@ describe('Email Verification Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -235,7 +237,7 @@ describe('Email Verification Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -243,7 +245,7 @@ describe('Email Verification Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/verify/resend')
@@ -251,7 +253,7 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: EMAIL_NOT_FOUND }]),
+      testErrorMessages([{ info: EMAIL_NOT_FOUND }], expect),
     );
   });
 
@@ -264,7 +266,7 @@ describe('Email Verification Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/verify/resend')
@@ -272,7 +274,7 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: EMAIL_ALREADY_VERIFIED }]),
+      testErrorMessages([{ info: EMAIL_ALREADY_VERIFIED }], expect),
     );
   });
 
@@ -285,12 +287,12 @@ describe('Email Verification Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const email = 'test@example.com';
 

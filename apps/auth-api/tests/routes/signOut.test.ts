@@ -1,10 +1,12 @@
+import {expect, jest, describe, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import { NextFunction } from 'express';
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 
-jest.mock('../../app/middlewares/jwtMiddleware', () => ({
+jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -21,10 +23,10 @@ jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
 }));
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -38,7 +40,7 @@ describe('Sign Out Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-out');
 
@@ -53,7 +55,7 @@ describe('Sign Out Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-out');
 
@@ -64,7 +66,7 @@ describe('Sign Out Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-out/everywhere');
 
@@ -82,7 +84,7 @@ describe('Sign Out Routes', () => {
         },
       ],
       rowCount: 2,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-out');
 

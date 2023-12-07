@@ -1,7 +1,9 @@
+import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import { NextFunction } from 'express';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
@@ -14,10 +16,10 @@ import {
   INVALID_UUID,
   REDIRECT_URL_REQUIRED,
   SCOPES_REQUIRED,
-} from '../../app/constants/errors';
-import { testErrorMessages } from '../../app/services/messageBuilderService';
+} from 'utils-ts/errors';
+import { testErrorMessages } from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/middlewares/jwtMiddleware', () => ({
+jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -34,10 +36,10 @@ jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
 }));
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -77,7 +79,7 @@ describe('OAuth2 Authorize', () => {
             path: 'client_id',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -100,7 +102,7 @@ describe('OAuth2 Authorize', () => {
             path: 'client_id',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -122,7 +124,7 @@ describe('OAuth2 Authorize', () => {
             path: 'redirect_url',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -145,7 +147,7 @@ describe('OAuth2 Authorize', () => {
             path: 'redirect_url',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -165,7 +167,7 @@ describe('OAuth2 Authorize', () => {
             path: 'scopes',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -186,7 +188,7 @@ describe('OAuth2 Authorize', () => {
             path: 'scopes',
           },
         },
-      ]),
+      ],expect),
     );
   });
 
@@ -207,7 +209,7 @@ describe('OAuth2 Authorize', () => {
             path: 'scopes',
           },
         },
-      ]),
+      ],expect),
     );
   });
 
@@ -215,7 +217,7 @@ describe('OAuth2 Authorize', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/oauth2/authorize')
@@ -235,7 +237,7 @@ describe('OAuth2 Authorize', () => {
             paths: ['client_id', 'redirect_url', 'scopes'],
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -243,12 +245,12 @@ describe('OAuth2 Authorize', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/oauth2/authorize')
@@ -260,7 +262,7 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CLIENT_ALREADY_CONNECTED }]),
+      testErrorMessages([{ info: CLIENT_ALREADY_CONNECTED }], expect),
     );
   });
 
@@ -268,12 +270,12 @@ describe('OAuth2 Authorize', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never );
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -282,12 +284,12 @@ describe('OAuth2 Authorize', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/oauth2/authorize')

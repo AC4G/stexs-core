@@ -8,7 +8,6 @@
     import { TabAnchor, TabGroup, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
     import { goto } from "$app/navigation";
     import { getFlash } from "sveltekit-flash-message/client";
-    import { setContext } from "svelte";
     import Icon from '@iconify/svelte';
     import { Dropdown, DropdownItem } from "flowbite-svelte";
     import { acceptFriendRequest, deleteFriendRequest } from "$lib/utils/friendRequests";
@@ -27,7 +26,7 @@
     async function fetchProfile(username: string) {
         const { data } = await stexs.from('profiles').select('user_id,username,is_private').eq('username', username);
 
-        if (data.length === 0 && username !== undefined) {
+        if (data?.length === 0 && username !== undefined) {
             $flash = {
                 message: 'User or account not found.',
                 classes: 'variant-ghost-error',

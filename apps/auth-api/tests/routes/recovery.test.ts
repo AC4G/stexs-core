@@ -1,7 +1,9 @@
+import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import {
   EMAIL_REQUIRED,
   INVALID_EMAIL,
@@ -13,14 +15,14 @@ import {
   PASSWORD_REQUIRED,
   RECOVERY_LINK_EXPIRED,
   TOKEN_REQUIRED,
-} from '../../app/constants/errors';
+} from 'utils-ts/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
   message,
   testErrorMessages,
-} from '../../app/services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -55,7 +57,7 @@ describe('Recovery Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -77,7 +79,7 @@ describe('Recovery Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -85,7 +87,7 @@ describe('Recovery Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/recovery')
@@ -104,7 +106,7 @@ describe('Recovery Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -116,12 +118,12 @@ describe('Recovery Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/recovery')
@@ -149,7 +151,7 @@ describe('Recovery Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -173,7 +175,7 @@ describe('Recovery Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -193,7 +195,7 @@ describe('Recovery Routes', () => {
             path: 'token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -214,7 +216,7 @@ describe('Recovery Routes', () => {
             path: 'token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -234,7 +236,7 @@ describe('Recovery Routes', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -255,7 +257,7 @@ describe('Recovery Routes', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -276,7 +278,7 @@ describe('Recovery Routes', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -284,7 +286,7 @@ describe('Recovery Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server).post('/recovery/confirm').send({
       email: 'test@example.com',
@@ -302,7 +304,7 @@ describe('Recovery Routes', () => {
             paths: ['email', 'token'],
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -314,7 +316,7 @@ describe('Recovery Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/recovery/confirm').send({
       email: 'test@example.com',
@@ -332,7 +334,7 @@ describe('Recovery Routes', () => {
             path: 'token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -344,7 +346,7 @@ describe('Recovery Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -353,7 +355,7 @@ describe('Recovery Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/recovery/confirm').send({
       email: 'test@example.com',
@@ -371,7 +373,7 @@ describe('Recovery Routes', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -383,7 +385,7 @@ describe('Recovery Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -392,12 +394,12 @@ describe('Recovery Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/recovery/confirm').send({
       email: 'test@example.com',
