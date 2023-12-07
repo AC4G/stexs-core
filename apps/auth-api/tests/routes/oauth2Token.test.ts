@@ -1,7 +1,9 @@
+import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
   CLIENT_ID_REQUIRED,
@@ -17,12 +19,12 @@ import {
   INVALID_UUID,
   NO_CLIENT_SCOPES_SELECTED,
   REFRESH_TOKEN_REQUIRED,
-} from '../../app/constants/errors';
+} from 'utils-ts/errors';
 import { sign } from 'jsonwebtoken';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
-import { testErrorMessages } from '../../app/services/messageBuilderService';
+import { testErrorMessages } from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -58,7 +60,7 @@ describe('OAuth2 Token', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server).post('/oauth2/token').send({
       grant_type: 'refresh_token',
@@ -75,7 +77,7 @@ describe('OAuth2 Token', () => {
             path: 'refresh_token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -92,7 +94,7 @@ describe('OAuth2 Token', () => {
             path: 'grant_type',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -114,7 +116,7 @@ describe('OAuth2 Token', () => {
             path: 'grant_type',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -147,7 +149,7 @@ describe('OAuth2 Token', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -169,7 +171,7 @@ describe('OAuth2 Token', () => {
             path: 'client_id',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -177,7 +179,7 @@ describe('OAuth2 Token', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server).post('/oauth2/token').send({
       grant_type: 'authorization_code',
@@ -196,7 +198,7 @@ describe('OAuth2 Token', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -211,7 +213,7 @@ describe('OAuth2 Token', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/oauth2/token').send({
       grant_type: 'authorization_code',
@@ -230,7 +232,7 @@ describe('OAuth2 Token', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -245,22 +247,22 @@ describe('OAuth2 Token', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/oauth2/token').send({
       grant_type: 'authorization_code',
@@ -304,7 +306,7 @@ describe('OAuth2 Token', () => {
             path: 'client_secret',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -312,7 +314,7 @@ describe('OAuth2 Token', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server).post('/oauth2/token').send({
       grant_type: 'client_credentials',
@@ -330,7 +332,7 @@ describe('OAuth2 Token', () => {
             paths: ['client_id', 'client_secret'],
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -343,7 +345,7 @@ describe('OAuth2 Token', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/oauth2/token').send({
       grant_type: 'client_credentials',
@@ -353,7 +355,7 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]),
+      testErrorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }], expect),
     );
   });
 
@@ -366,12 +368,12 @@ describe('OAuth2 Token', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/oauth2/token').send({
       grant_type: 'client_credentials',
@@ -404,7 +406,7 @@ describe('OAuth2 Token', () => {
             path: 'refresh_token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -434,7 +436,7 @@ describe('OAuth2 Token', () => {
             path: 'refresh_token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -463,7 +465,7 @@ describe('OAuth2 Token', () => {
             path: 'refresh_token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -481,12 +483,12 @@ describe('OAuth2 Token', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/oauth2/token').send({
       grant_type: 'refresh_token',

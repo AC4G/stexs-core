@@ -1,7 +1,9 @@
+import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import { NextFunction } from 'express';
 import {
   CODE_EXPIRED,
@@ -14,21 +16,21 @@ import {
   MFA_EMAIL_ALREADY_DISABLED,
   MFA_EMAIL_ALREADY_ENABLED,
   TYPE_REQUIRED,
-} from '../../app/constants/errors';
+} from 'utils-ts/errors';
 import {
   SERVICE_NAME,
   TOTP_ALGORITHM,
   TOTP_DIGITS,
   TOTP_PERIOD,
 } from '../../env-config';
-import { getTOTPForVerification } from '../../app/services/totpService';
+import { getTOTPForVerification } from '../../src/services/totpService';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
   testErrorMessages,
   message,
-} from '../../app/services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/middlewares/jwtMiddleware', () => ({
+jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -45,10 +47,10 @@ jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
 }));
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -79,7 +81,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).get('/mfa');
 
@@ -99,7 +101,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/enable').send({
       type: 'totp',
@@ -107,7 +109,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: TOTP_ALREADY_ENABLED }]),
+      testErrorMessages([{ info: TOTP_ALREADY_ENABLED }], expect),
     );
   });
 
@@ -120,12 +122,12 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/enable').send({
       type: 'totp',
@@ -155,7 +157,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -168,7 +170,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/disable').send({
       code: 'code',
@@ -177,7 +179,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: TOTP_ALREADY_DISABLED }]),
+      testErrorMessages([{ info: TOTP_ALREADY_DISABLED }], expect),
     );
   });
 
@@ -190,7 +192,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/disable').send({
       code: '34456T',
@@ -207,7 +209,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -224,12 +226,12 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/disable').send({
       code,
@@ -257,7 +259,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -271,7 +273,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/enable').send({
       code: 'code',
@@ -280,7 +282,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: MFA_EMAIL_ALREADY_ENABLED }]),
+      testErrorMessages([{ info: MFA_EMAIL_ALREADY_ENABLED }], expect),
     );
   });
 
@@ -294,7 +296,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/enable').send({
       code: 'invalid-code',
@@ -311,7 +313,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -325,7 +327,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/enable').send({
       code: 'code',
@@ -342,7 +344,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -356,12 +358,12 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/enable').send({
       code: 'code',
@@ -389,7 +391,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -403,7 +405,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/disable').send({
       code: 'code',
@@ -412,7 +414,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: MFA_EMAIL_ALREADY_DISABLED }]),
+      testErrorMessages([{ info: MFA_EMAIL_ALREADY_DISABLED }], expect),
     );
   });
 
@@ -426,7 +428,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/disable').send({
       code: 'invalid-code',
@@ -443,7 +445,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -457,7 +459,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/disable').send({
       code: 'code',
@@ -474,7 +476,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -488,12 +490,12 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/disable').send({
       code: 'code',
@@ -521,7 +523,7 @@ describe('MFA Routes', () => {
             path: 'type',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -541,7 +543,7 @@ describe('MFA Routes', () => {
             path: 'type',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -560,7 +562,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -573,7 +575,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/verify').send({
       code: '45928T',
@@ -582,7 +584,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: TOTP_ALREADY_VERIFIED }]),
+      testErrorMessages([{ info: TOTP_ALREADY_VERIFIED }], expect),
     );
   });
 
@@ -595,7 +597,7 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/verify').send({
       code: '45928T',
@@ -612,7 +614,7 @@ describe('MFA Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -629,12 +631,12 @@ describe('MFA Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/mfa/verify').send({
       code,

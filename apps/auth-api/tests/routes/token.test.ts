@@ -1,12 +1,14 @@
+import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import { NextFunction } from 'express';
 import request from 'supertest';
-import server from '../../app/server';
-import { INVALID_TOKEN } from '../../app/constants/errors';
-import { testErrorMessages } from '../../app/services/messageBuilderService';
+import server from '../../src/server';
+import { INVALID_TOKEN } from 'utils-ts/errors';
+import { testErrorMessages } from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/middlewares/jwtMiddleware', () => ({
+jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -23,10 +25,10 @@ jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
 }));
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -44,7 +46,7 @@ describe('Token Route', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/token')
@@ -60,7 +62,7 @@ describe('Token Route', () => {
             path: 'refresh_token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -72,7 +74,7 @@ describe('Token Route', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/token')

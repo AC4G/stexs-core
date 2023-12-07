@@ -414,3 +414,19 @@ CREATE TRIGGER create_profile_trigger
 AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION auth.create_profile_for_user();
+
+CREATE OR REPLACE FUNCTION auth.update_user_meta_data_after_profile_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE auth.users
+    SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('username', NEW.username)
+    WHERE id = NEW.user_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_user_meta_data_after_profile_update_trigger
+AFTER UPDATE ON public.profiles
+FOR EACH ROW
+EXECUTE FUNCTION auth.update_user_meta_data_after_profile_update();

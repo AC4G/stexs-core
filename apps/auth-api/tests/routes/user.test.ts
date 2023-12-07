@@ -1,8 +1,10 @@
+import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import { NextFunction } from 'express';
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,
@@ -13,14 +15,14 @@ import {
   INVALID_PASSWORD_LENGTH,
   NEW_PASSWORD_EQUALS_CURRENT,
   PASSWORD_REQUIRED,
-} from '../../app/constants/errors';
+} from 'utils-ts/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
   message,
   testErrorMessages,
-} from '../../app/services/messageBuilderService';
+} from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/middlewares/jwtMiddleware', () => ({
+jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -37,10 +39,10 @@ jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
 }));
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -70,28 +72,28 @@ describe('User Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/user/email/verify')
       .send({ code: 'code' });
 
     expect(response.status).toBe(403);
-    expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
+    expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }], expect));
   });
 
   it('should handle email change verification with invalid code', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/user/email/verify')
       .send({ code: 'code' });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
+    expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }], expect));
   });
 
   it('should handle email change with expired verification code', async () => {
@@ -102,14 +104,14 @@ describe('User Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/user/email/verify')
       .send({ code: 'expired-code' });
 
     expect(response.status).toBe(403);
-    expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
+    expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }], expect));
   });
 
   it('should handle email change verification', async () => {
@@ -120,12 +122,12 @@ describe('User Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/user/email/verify')
@@ -149,7 +151,7 @@ describe('User Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).get('/user');
 
@@ -176,7 +178,7 @@ describe('User Routes', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -195,7 +197,7 @@ describe('User Routes', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -207,7 +209,7 @@ describe('User Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/user/password')
@@ -223,7 +225,7 @@ describe('User Routes', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -235,12 +237,12 @@ describe('User Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/user/password')
@@ -260,7 +262,7 @@ describe('User Routes', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/user/password')
@@ -276,7 +278,7 @@ describe('User Routes', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -293,7 +295,7 @@ describe('User Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -315,7 +317,7 @@ describe('User Routes', () => {
             path: 'email',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -323,7 +325,7 @@ describe('User Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server)
       .post('/user/email')
@@ -350,7 +352,7 @@ describe('User Routes', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 });

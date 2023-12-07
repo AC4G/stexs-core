@@ -1,10 +1,8 @@
 <script lang="ts">
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../stexsClient";
-    import { getContext } from "svelte";
     import { user } from "$lib/stores/user";
-
-    let { userId, isPrivate, isFriend }: { userId: string, isPrivate: boolean, isFriend: boolean } = getContext('profile');
+    import { profile } from "$lib/stores/profile";
 
     async function fetchInventory(userId: string) {
         const { data } = await stexs.from('inventories').select('id,item_id,user_id,amount,parameter,created_at,updated_at').eq('user_id', userId);
@@ -12,9 +10,9 @@
     }
 
     $: inventoryQuery = useQuery({
-        queryKey: ['inventories', userId],
-        queryFn: async () => await fetchInventory(userId),
-        enabled: !!userId && (isPrivate === false || !!isFriend)
+        queryKey: ['inventories', $profile?.userId],
+        queryFn: async () => await fetchInventory($profile?.userId!),
+        enabled: !!$profile?.userId && ($profile.isPrivate === false || $profile.isFriend)
     });
 </script>
 
@@ -32,7 +30,7 @@
             {/each}
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
-                <p class="text-[18px] p-4 text-center">{$user?.id === userId ?  'You have no items in your inventory': 'User has no items in inventory'}</p>
+                <p class="text-[18px] p-4 text-center">{$user?.id === $profile?.userId ?  'You have no items in your inventory': 'User has no items in inventory'}</p>
             </div>
         {/if}
     {/if}

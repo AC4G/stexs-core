@@ -6,7 +6,7 @@ const config: Config = {
   collectCoverage: false,
   coverageDirectory: './tests/coverage',
   coverageReporters: ['json', 'html', 'lcov'],
-  collectCoverageFrom: ['./src/**/*.ts'],
+  collectCoverageFrom: ['./src/**/*.ts']
 };
 
 export default config;

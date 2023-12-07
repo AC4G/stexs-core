@@ -8,22 +8,25 @@
     import { TabAnchor, TabGroup, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
     import { goto } from "$app/navigation";
     import { getFlash } from "sveltekit-flash-message/client";
-    import { setContext } from "svelte";
     import Icon from '@iconify/svelte';
     import { Dropdown, DropdownItem } from "flowbite-svelte";
+    import { acceptFriendRequest, deleteFriendRequest } from "$lib/utils/friendRequests";
+    import { profile } from "$lib/stores/profile";
     
     const modalStore = getModalStore();
     const flash = getFlash(page);
     let friendRequestSubmitted: boolean = false;
     let friendRequestRevocationSubmitted: boolean = false;
     let removeFriendSubmitted: boolean = false;
+    let acceptFriendRequestSubmitted: boolean = false;
+    let deleteFriendRequestSubmitted: boolean = false;
     $: username = $page.params.username;
     $: path = $page.url.pathname;
 
     async function fetchProfile(username: string) {
         const { data } = await stexs.from('profiles').select('user_id,username,is_private').eq('username', username);
 
-        if (data.length === 0 && username !== undefined) {
+        if (data?.length === 0 && username !== undefined) {
             $flash = {
                 message: 'User or account not found.',
                 classes: 'variant-ghost-error',
@@ -35,14 +38,15 @@
         return data[0];
     }
 
-    async function fetchIsFriend(userId: string) {
-        const { data } = await stexs.from('friends').select('friend_id').eq('user_id', userId);
-        return data.length === 1;
+    async function fetchIsFriend(userId: string, friendId: string) {
+        const { data } = await stexs.from('friends').select('friend_id').eq('user_id', userId).eq('friend_id', friendId);
+
+        return { result: data.length === 1 };
     }
 
-    async function fetchFriends(userId: string) {
-        const { data } = await stexs.from('friends').select('profiles!friends_friend_id_fkey(user_id,username)').eq('user_id', userId);
-        return data;
+    async function fetchFriendsAmount(userId: string) {
+        const { count } = await stexs.from('friends').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+        return count;
     }
 
     async function fetchFriendRequest(requesterId: string, addresseeId: string) {
@@ -185,29 +189,41 @@
 
     $: isFriendQuery = useQuery({
         queryKey: ['isFriend', $user?.id],
-        queryFn: async () => await fetchIsFriend($user?.id!),
-        enabled: !!$user?.id
+        queryFn: async () => await fetchIsFriend($user?.id!, userId),
+        enabled: !!$user?.id && !!userId && userId !== $user.id
     });
 
-    $: isFriend = $isFriendQuery.data;
+    $: isFriend = $isFriendQuery.data?.result as boolean;
     $: userId = $profileQuery.data?.user_id;
-    $: isPrivate = $profileQuery.data?.is_private;
+    $: isPrivate = $profileQuery.data?.is_private as boolean;
 
-    $: friendsQuery = useQuery({
-        queryKey: ['friends', userId],
-        queryFn: async () => await fetchFriends(userId),
-        enabled: !!userId && (isPrivate === false || !!isFriend)
+    $: friendsAmountQuery = useQuery({
+        queryKey: ['friendsAmount', userId],
+        queryFn: async () => await fetchFriendsAmount(userId),
+        enabled: !!userId && (isPrivate === false || !!isFriend || userId === $user?.id)
     });
+
+    $: gotFriendRequestQuery = useQuery({
+        queryKey: ['gotFriendRequest', userId, $user?.id],
+        queryFn: async () => await fetchFriendRequest(userId, $user?.id!),
+        enabled: !!userId && !!$user?.id && isFriend === false
+    });
+    
+    $: gotFriendRequest = $gotFriendRequestQuery.data;
 
     $: friendRequestQuery = useQuery({
         queryKey: ['profileFriendRequest', userId, $user?.id],
         queryFn: async () => fetchFriendRequest($user?.id!, userId),
-        enabled: !!userId && !!$user && userId !== $user.id && isFriend === false
+        enabled: !!userId && !!$user && userId !== $user.id && isFriend === false && gotFriendRequest === false
     });
 
     $: friendRequestSend = $friendRequestQuery.data;
 
-    $: setContext('profile', { userId, isPrivate, isFriend, friendsQuery });
+    $: profile.set({
+        userId,
+        isPrivate,
+        isFriend
+    });
 </script>
 
 <div class="w-screen h-screen bg-no-repeat bg-top bg-[url('https://cdn.cloudflare.steamstatic.com/steam/clusters/sale_autumn2019_assets/54b5034d397baccb93181cc6/home_header_bg_rainy_english.gif?t=1700618391')]">
@@ -225,10 +241,10 @@
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <p class="text-[20px] w-fit">{$profileQuery.data?.username}</p>
                         {#if !$profileQuery.data?.is_private || $user?.id === $profileQuery.data?.user_id || isFriend}
-                            {#if $friendsQuery.isLoading}
+                            {#if $friendsAmountQuery.isLoading}
                                 <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                             {:else}
-                                <p class="text-[18px]">Friends {$friendsQuery.data?.length ?? 0}</p>
+                                <p class="text-[18px]">Friends {$friendsAmountQuery.data ?? 0}</p>
                             {/if}
                         {/if}
                     </div>
@@ -236,12 +252,34 @@
                 {#if $user && $user.id !== $profileQuery.data?.user_id}
                     <div class="grid pt-[12px] sm:col-start-3 col-span-full">
                         <div class="flex justify-between sm:justify-end">
-                            {#if friendRequestSend}
+                            {#if isFriend}
+                                <Button on:click={() => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
+                            {:else if gotFriendRequest}
+                                <div class="flex flex-col mr-2">
+                                    <p class="col-span-2">Friend Request:</p>
+                                    <div class="mt-[4px]">
+                                        <Button on:click={async () => {
+                                            acceptFriendRequestSubmitted = true;
+
+                                            isFriend = await acceptFriendRequest($user.id, userId, username, flash);
+
+                                            if (isFriend) gotFriendRequest = false;
+
+                                            acceptFriendRequestSubmitted = false;
+                                        }} submitted={acceptFriendRequestSubmitted} class="variant-filled-primary py-1 px-2">Accept</Button>
+                                        <Button on:click={async () => {
+                                            deleteFriendRequestSubmitted = true;
+
+                                            gotFriendRequest = await deleteFriendRequest(userId, $user.id, flash);
+                                            
+                                            deleteFriendRequestSubmitted = false;
+                                        }} submitted={deleteFriendRequestSubmitted} class="variant-ghost-error py-1 px-2">Delete</Button>
+                                    </div>
+                                </div>
+                            {:else if friendRequestSend}
                                 <Button on:click={async () => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
-                            {:else if !isFriend}
-                                <Button on:click={async () => await sendFriendRequest(username, $user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
                             {:else}
-                                <Button on:click={async () => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
+                                <Button on:click={async () => await sendFriendRequest(username, $user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
                             {/if}
                             <Button class="w-fit h-fit p-1 group">
                                 <Icon icon="pepicons-pop:dots-y" class="text-[26px] group-hover:text-surface-400 transition" />
@@ -269,7 +307,7 @@
                             <span>Organizations</span>
                         </TabAnchor>
                         <svelte:fragment slot="panel">
-                            <slot {userId} {isPrivate} {isFriend} />
+                            <slot/>
                         </svelte:fragment>
                     </TabGroup>
                 {:else}

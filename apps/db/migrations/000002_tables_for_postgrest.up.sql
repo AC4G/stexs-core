@@ -229,6 +229,8 @@ GRANT DELETE ON TABLE public.project_members TO authenticated;
 GRANT SELECT ON TABLE public.project_members TO anon;
 GRANT SELECT ON TABLE public.project_members TO authenticated;
 
+
+
 CREATE TABLE public.project_requests (
     id SERIAL PRIMARY KEY,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,

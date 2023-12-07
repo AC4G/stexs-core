@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import sendEmail from '../../app/services/emailService';
+import sendEmail from '../../src/services/emailService';
 import {
   SMTP_HOST,
   SMTP_PORT,
@@ -7,13 +7,14 @@ import {
   SMTP_PWD,
   SMTP_EMAIL,
 } from '../../env-config';
+import {expect, jest, describe, it} from '@jest/globals';
 
 jest.mock('nodemailer');
 
 describe('sendEmail function', () => {
   it('should send an email', async () => {
     const mockCreateTransport = jest.fn().mockReturnValue({
-      sendMail: jest.fn().mockResolvedValue({}),
+      sendMail: jest.fn().mockResolvedValue({} as never),
     });
     nodemailer.createTransport = mockCreateTransport;
 

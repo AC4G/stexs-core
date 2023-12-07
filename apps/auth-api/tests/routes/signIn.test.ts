@@ -1,7 +1,9 @@
+import {expect, jest, describe, afterEach, it} from '@jest/globals';
+
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../app/server';
+import server from '../../src/server';
 import {
   CODE_REQUIRED,
   EMAIL_NOT_VERIFIED,
@@ -11,11 +13,11 @@ import {
   PASSWORD_REQUIRED,
   TOKEN_REQUIRED,
   TYPE_REQUIRED,
-} from '../../app/constants/errors';
+} from 'utils-ts/errors';
 import { NextFunction } from 'express';
-import { testErrorMessages } from '../../app/services/messageBuilderService';
+import { testErrorMessages } from 'utils-ts/messageBuilder';
 
-jest.mock('../../app/middlewares/jwtMiddleware', () => ({
+jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
@@ -32,10 +34,10 @@ jest.mock('../../app/middlewares/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
 }));
 
-jest.mock('../../app/database', () => {
+jest.mock('../../src/database', () => {
   return {
     __esModule: true,
     default: {
@@ -64,7 +66,7 @@ describe('Sign In Route', () => {
             path: 'identifier',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -83,7 +85,7 @@ describe('Sign In Route', () => {
             path: 'password',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -91,7 +93,7 @@ describe('Sign In Route', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-in').send({
       identifier: 'test',
@@ -111,7 +113,7 @@ describe('Sign In Route', () => {
             paths: ['identifier', 'password'],
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -123,7 +125,7 @@ describe('Sign In Route', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-in').send({
       identifier: 'test',
@@ -132,7 +134,7 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: EMAIL_NOT_VERIFIED }]),
+      testErrorMessages([{ info: EMAIL_NOT_VERIFIED }], expect),
     );
   });
 
@@ -146,7 +148,7 @@ describe('Sign In Route', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-in').send({
       identifier: 'test',
@@ -176,7 +178,7 @@ describe('Sign In Route', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-in').send({
       identifier: 'test',
@@ -203,7 +205,7 @@ describe('Sign In Route', () => {
         },
       ],
       rowCount: 1,
-    });
+    } as never);
 
     const response = await request(server).post('/sign-in').send({
       identifier: 'test',
@@ -236,7 +238,7 @@ describe('Sign In Route', () => {
             path: 'code',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -256,7 +258,7 @@ describe('Sign In Route', () => {
             path: 'type',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -276,7 +278,7 @@ describe('Sign In Route', () => {
             path: 'token',
           },
         },
-      ]),
+      ], expect),
     );
   });
 
@@ -297,7 +299,7 @@ describe('Sign In Route', () => {
             path: 'type',
           },
         },
-      ]),
+      ], expect),
     );
   });
 });

@@ -97,7 +97,10 @@ CREATE POLICY friends_select
             OR 
             (
                 auth.grant() = 'password' AND
-                user_id = ANY(SELECT friend_id FROM public.friends_of_current_user)
+                (
+                    user_id = ANY(SELECT friend_id FROM public.friends_of_current_user) OR
+                    friend_id = ANY(SELECT friend_id FROM public.friends_of_current_user)
+                )
             )
             OR 
             (

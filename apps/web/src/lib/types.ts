@@ -22,3 +22,10 @@ export type FriendRequests = Array<{
     username: string;
   }
 }>;
+
+export type Friend = {
+  profiles: {
+    user_id: string,
+    username: string
+  }
+};
