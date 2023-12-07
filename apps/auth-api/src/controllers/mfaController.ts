@@ -7,6 +7,7 @@ import {
   CODE_EXPIRED,
   INTERNAL_ERROR,
   INVALID_CODE,
+  MFA_CANNOT_BE_COMPLETELY_DISABLED,
   MFA_EMAIL_ALREADY_DISABLED,
   MFA_EMAIL_ALREADY_ENABLED,
   TOTP_ALREADY_DISABLED,
@@ -191,7 +192,7 @@ export async function disableTOTP(req: Request, res: Response) {
   try {
     const { rowCount, rows } = await db.query(
       `
-          SELECT totp, totp_secret
+          SELECT totp, email, totp_secret
           FROM auth.mfa
           WHERE user_id = $1::uuid;
       `,
@@ -210,6 +211,13 @@ export async function disableTOTP(req: Request, res: Response) {
       return res
         .status(400)
         .json(errorMessages([{ info: TOTP_ALREADY_DISABLED }]));
+    }
+
+    if (!rows[0].email) {
+      logger.warn(`MFA totp cant be disabled because this is the last active MFA method for user: ${userId}`);
+      return res
+        .status(400)
+        .json(errorMessages([{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }]));
     }
 
     secret = rows[0].totp_secret;
@@ -279,7 +287,7 @@ export async function disableEmail(req: Request, res: Response) {
   try {
     const { rowCount, rows } = await db.query(
       `
-          SELECT email, email_code, email_code_sent_at
+          SELECT email, totp, email_code, email_code_sent_at
           FROM auth.mfa
           WHERE user_id = $1::uuid;
       `,
@@ -298,6 +306,13 @@ export async function disableEmail(req: Request, res: Response) {
       return res
         .status(400)
         .json(errorMessages([{ info: MFA_EMAIL_ALREADY_DISABLED }]));
+    }
+
+    if (!rows[0].totp) {
+      logger.warn(`MFA email cant be disabled because this is the last active MFA method for user: ${userId}`);
+      return res
+        .status(400)
+        .json(errorMessages([{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }]));
     }
 
     if (code !== rows[0].email_code) {
