@@ -250,5 +250,5 @@ export const UNSUPPORTED_FILE_EXTENSION = {
 };
 export const MFA_CANNOT_BE_COMPLETELY_DISABLED = {
   code: 'MFA_CANNOT_BE_COMPLETELY_DISABLED',
-  message: 'MFA cannot be disabled completely from the account.'
+  message: 'MFA cannot be disabled completely from the account.',
 };

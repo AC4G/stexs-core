@@ -10,7 +10,7 @@ export type FriendRequestsGQL = {
       profileByRequesterId: {
         userId: string;
         username: string;
-      }
+      };
     }>;
   };
 };
@@ -20,12 +20,12 @@ export type FriendRequests = Array<{
   profileByRequesterId: {
     userId: string;
     username: string;
-  }
+  };
 }>;
 
 export type Friend = {
   profiles: {
-    user_id: string,
-    username: string
-  }
+    user_id: string;
+    username: string;
+  };
 };

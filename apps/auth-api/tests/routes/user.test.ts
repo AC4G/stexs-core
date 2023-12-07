@@ -1,4 +1,12 @@
-import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+import {
+  expect,
+  jest,
+  describe,
+  afterEach,
+  beforeAll,
+  afterAll,
+  it,
+} from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -17,10 +25,7 @@ import {
   PASSWORD_REQUIRED,
 } from 'utils-ts/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import {
-  message,
-  testErrorMessages,
-} from 'utils-ts/messageBuilder';
+import { message, testErrorMessages } from 'utils-ts/messageBuilder';
 
 jest.mock('utils-ts/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
@@ -39,7 +44,9 @@ jest.mock('utils-ts/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
+    next(),
+  ),
 }));
 
 jest.mock('../../src/database', () => {
@@ -79,7 +86,9 @@ describe('User Routes', () => {
       .send({ code: 'code' });
 
     expect(response.status).toBe(403);
-    expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }], expect));
+    expect(response.body).toEqual(
+      testErrorMessages([{ info: CODE_EXPIRED }], expect),
+    );
   });
 
   it('should handle email change verification with invalid code', async () => {
@@ -93,7 +102,9 @@ describe('User Routes', () => {
       .send({ code: 'code' });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }], expect));
+    expect(response.body).toEqual(
+      testErrorMessages([{ info: INVALID_CODE }], expect),
+    );
   });
 
   it('should handle email change with expired verification code', async () => {
@@ -111,7 +122,9 @@ describe('User Routes', () => {
       .send({ code: 'expired-code' });
 
     expect(response.status).toBe(403);
-    expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }], expect));
+    expect(response.body).toEqual(
+      testErrorMessages([{ info: CODE_EXPIRED }], expect),
+    );
   });
 
   it('should handle email change verification', async () => {
@@ -170,15 +183,18 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: PASSWORD_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'password',
+      testErrorMessages(
+        [
+          {
+            info: PASSWORD_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'password',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -189,15 +205,18 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_PASSWORD,
-          data: {
-            location: 'body',
-            path: 'password',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_PASSWORD,
+            data: {
+              location: 'body',
+              path: 'password',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -217,15 +236,18 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: NEW_PASSWORD_EQUALS_CURRENT,
-          data: {
-            location: 'body',
-            path: 'password',
+      testErrorMessages(
+        [
+          {
+            info: NEW_PASSWORD_EQUALS_CURRENT,
+            data: {
+              location: 'body',
+              path: 'password',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -270,15 +292,18 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_PASSWORD_LENGTH,
-          data: {
-            location: 'body',
-            path: 'password',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_PASSWORD_LENGTH,
+            data: {
+              location: 'body',
+              path: 'password',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -287,15 +312,18 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: EMAIL_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'email',
+      testErrorMessages(
+        [
+          {
+            info: EMAIL_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'email',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -306,18 +334,21 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_EMAIL.code,
-            message: INVALID_EMAIL.messages[0],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_EMAIL.code,
+              message: INVALID_EMAIL.messages[0],
+            },
+            data: {
+              location: 'body',
+              path: 'email',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'email',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -344,15 +375,18 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: CODE_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'code',
+      testErrorMessages(
+        [
+          {
+            info: CODE_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'code',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 });

@@ -1,4 +1,4 @@
-import {expect, jest, describe, afterEach, it} from '@jest/globals';
+import { expect, jest, describe, afterEach, it } from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -14,10 +14,7 @@ import {
   PASSWORD_REQUIRED,
   USERNAME_REQUIRED,
 } from 'utils-ts/errors';
-import {
-  message,
-  testErrorMessages,
-} from 'utils-ts/messageBuilder';
+import { message, testErrorMessages } from 'utils-ts/messageBuilder';
 
 jest.mock('../../src/database', () => {
   return {
@@ -41,15 +38,18 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: USERNAME_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'username',
+      testErrorMessages(
+        [
+          {
+            info: USERNAME_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'username',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -62,18 +62,21 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_USERNAME.code,
-            message: INVALID_USERNAME.messages[0],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_USERNAME.code,
+              message: INVALID_USERNAME.messages[0],
+            },
+            data: {
+              location: 'body',
+              path: 'username',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'username',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -86,28 +89,31 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_USERNAME.code,
-            message: INVALID_USERNAME.messages[2],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_USERNAME.code,
+              message: INVALID_USERNAME.messages[2],
+            },
+            data: {
+              location: 'body',
+              path: 'username',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'username',
+          {
+            info: {
+              code: INVALID_USERNAME.code,
+              message: INVALID_USERNAME.messages[1],
+            },
+            data: {
+              location: 'body',
+              path: 'username',
+            },
           },
-        },
-        {
-          info: {
-            code: INVALID_USERNAME.code,
-            message: INVALID_USERNAME.messages[1],
-          },
-          data: {
-            location: 'body',
-            path: 'username',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -120,18 +126,21 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_USERNAME.code,
-            message: INVALID_USERNAME.messages[2],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_USERNAME.code,
+              message: INVALID_USERNAME.messages[2],
+            },
+            data: {
+              location: 'body',
+              path: 'username',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'username',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -143,15 +152,18 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: EMAIL_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'email',
+      testErrorMessages(
+        [
+          {
+            info: EMAIL_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'email',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -164,18 +176,21 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_EMAIL.code,
-            message: INVALID_EMAIL.messages[0],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_EMAIL.code,
+              message: INVALID_EMAIL.messages[0],
+            },
+            data: {
+              location: 'body',
+              path: 'email',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'email',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -187,15 +202,18 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: PASSWORD_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'password',
+      testErrorMessages(
+        [
+          {
+            info: PASSWORD_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'password',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -208,15 +226,18 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_PASSWORD,
-          data: {
-            location: 'body',
-            path: 'password',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_PASSWORD,
+            data: {
+              location: 'body',
+              path: 'password',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -229,20 +250,25 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_PASSWORD_LENGTH,
-          data: {
-            location: 'body',
-            path: 'password',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_PASSWORD_LENGTH,
+            data: {
+              location: 'body',
+              path: 'password',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
   it('should handle sign up with already existing username', async () => {
-    mockQuery.mockRejectedValue({ hint: 'Please choose a different username' } as never);
+    mockQuery.mockRejectedValue({
+      hint: 'Please choose a different username',
+    } as never);
 
     const response = await request(server).post('/sign-up').send({
       username: 'Test123',
@@ -252,23 +278,28 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_INPUT_DATA.code,
-            message: 'Please choose a different username.',
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_INPUT_DATA.code,
+              message: 'Please choose a different username.',
+            },
+            data: {
+              location: 'body',
+              path: 'username',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'username',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
   it('should handle sign up with already existing email', async () => {
-    mockQuery.mockRejectedValue({ hint: 'Please choose a different email' } as never);
+    mockQuery.mockRejectedValue({
+      hint: 'Please choose a different email',
+    } as never);
 
     const response = await request(server).post('/sign-up').send({
       username: 'Test123',
@@ -278,18 +309,21 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_INPUT_DATA.code,
-            message: 'Please choose a different email.',
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_INPUT_DATA.code,
+              message: 'Please choose a different email.',
+            },
+            data: {
+              location: 'body',
+              path: 'email',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'email',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 

@@ -1,4 +1,4 @@
-import {expect, jest, describe, it} from '@jest/globals';
+import { expect, jest, describe, it } from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -23,7 +23,9 @@ jest.mock('utils-ts/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) => next()),
+  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
+    next(),
+  ),
 }));
 
 jest.mock('../../src/database', () => {

@@ -218,6 +218,7 @@ CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
     is_private BOOLEAN NOT NULL DEFAULT FALSE,
+    accept_friend_requests BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -418,9 +419,11 @@ EXECUTE FUNCTION auth.create_profile_for_user();
 CREATE OR REPLACE FUNCTION auth.update_user_meta_data_after_profile_update()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE auth.users
-    SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('username', NEW.username)
-    WHERE id = NEW.user_id;
+    IF NEW.username <> (raw_user_meta_data->>'username') THEN
+        UPDATE auth.users
+        SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('username', NEW.username)
+        WHERE id = NEW.user_id;
+    END IF;
 
     RETURN NEW;
 END;

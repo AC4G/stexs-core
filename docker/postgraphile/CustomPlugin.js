@@ -84,7 +84,7 @@ module.exports = makeExtendSchemaPlugin(({ pgSql: sql }) => ({
       }
     },
     OrganizationJoinRequestSubscriptionPayload: {
-      async friendRequests(
+      async organizationRequests(
         event,
         _args,
         _context,
@@ -102,7 +102,7 @@ module.exports = makeExtendSchemaPlugin(({ pgSql: sql }) => ({
       }
     },
     ProjectJoinRequestSubscriptionPayload: {
-      async friendRequests(
+      async projectRequests(
         event,
         _args,
         _context,

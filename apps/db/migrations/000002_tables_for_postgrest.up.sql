@@ -98,6 +98,31 @@ AFTER INSERT ON public.friends
 FOR EACH ROW 
 EXECUTE FUNCTION public.friend_insert();
 
+CREATE OR REPLACE FUNCTION public.check_friends_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  friends_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO friends_count
+    FROM public.friends
+    WHERE user_id = NEW.user_id;
+
+    IF friends_count = 1000 THEN
+        RAISE sqlstate 'P0001' USING
+                message = 'Friend limit exceeded',
+                detail = 'User has reached 1000 friends',
+                hint = 'Remove some friends for new ones';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_friends_limit_trigger
+BEFORE INSERT ON public.friends
+FOR EACH ROW
+EXECUTE FUNCTION public.check_friends_limit();
+
 CREATE OR REPLACE FUNCTION public.friend_delete()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -140,6 +165,51 @@ CREATE TRIGGER friend_request_changed_trigger
   AFTER INSERT OR DELETE ON public.friend_requests
   FOR EACH ROW
   EXECUTE FUNCTION public.graphql_subscription('friendRequestChanged', 'friend_requests', 'addressee_id');
+
+CREATE OR REPLACE FUNCTION public.check_friend_request_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  friend_request_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO friend_request_count
+  FROM public.friend_requests
+  WHERE addressee_id = NEW.addressee_id;
+
+  IF friend_request_count = 100 THEN
+    RAISE sqlstate 'P0001' USING
+            message = 'Friend request limit exceeded',
+            detail = 'User has 100 friend requests',
+            hint = 'Ask your friend to make place for your friend request';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_friend_request_limit_trigger
+BEFORE INSERT ON public.friend_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.check_friend_request_limit();
+
+CREATE OR REPLACE FUNCTION public.check_accept_friend_requests_before_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (
+        (SELECT accept_friend_requests FROM public.profiles WHERE user_id = NEW.addressee_id) = FALSE
+    ) THEN
+        RAISE sqlstate 'P0001' USING
+            message = 'User doesn''t accept friend requests',
+            hint = 'Ask your friend to send a friend request to you instead';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_accept_friend_requests_before_insert_trigger
+BEFORE INSERT ON public.friend_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.check_accept_friend_requests_before_insert();
 
 
 

@@ -1,4 +1,12 @@
-import {expect, jest, describe, afterEach, beforeAll, afterAll, it} from '@jest/globals';
+import {
+  expect,
+  jest,
+  describe,
+  afterEach,
+  beforeAll,
+  afterAll,
+  it,
+} from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -69,15 +77,18 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_REFRESH_TOKEN,
-          data: {
-            location: 'body',
-            path: 'refresh_token',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_REFRESH_TOKEN,
+            data: {
+              location: 'body',
+              path: 'refresh_token',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -86,15 +97,18 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: GRANT_TYPE_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'grant_type',
+      testErrorMessages(
+        [
+          {
+            info: GRANT_TYPE_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'grant_type',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -105,18 +119,21 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_GRANT_TYPE.code,
-            message: INVALID_GRANT_TYPE.messages[1],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_GRANT_TYPE.code,
+              message: INVALID_GRANT_TYPE.messages[1],
+            },
+            data: {
+              location: 'body',
+              path: 'grant_type',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'grant_type',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -127,29 +144,32 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: CLIENT_ID_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'client_id',
+      testErrorMessages(
+        [
+          {
+            info: CLIENT_ID_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'client_id',
+            },
           },
-        },
-        {
-          info: CLIENT_SECRET_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'client_secret',
+          {
+            info: CLIENT_SECRET_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'client_secret',
+            },
           },
-        },
-        {
-          info: CODE_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'code',
+          {
+            info: CODE_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'code',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -163,15 +183,18 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_UUID,
-          data: {
-            location: 'body',
-            path: 'client_id',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_UUID,
+            data: {
+              location: 'body',
+              path: 'client_id',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -190,15 +213,18 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_AUTHORIZATION_CODE,
-          data: {
-            location: 'body',
-            path: 'code',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_AUTHORIZATION_CODE,
+            data: {
+              location: 'body',
+              path: 'code',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -224,15 +250,18 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: CODE_EXPIRED,
-          data: {
-            location: 'body',
-            path: 'code',
+      testErrorMessages(
+        [
+          {
+            info: CODE_EXPIRED,
+            data: {
+              location: 'body',
+              path: 'code',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -291,22 +320,25 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: CLIENT_ID_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'client_id',
+      testErrorMessages(
+        [
+          {
+            info: CLIENT_ID_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'client_id',
+            },
           },
-        },
-        {
-          info: CLIENT_SECRET_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'client_secret',
+          {
+            info: CLIENT_SECRET_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'client_secret',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -324,15 +356,18 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_CLIENT_CREDENTIALS,
-          data: {
-            location: 'body',
-            paths: ['client_id', 'client_secret'],
+      testErrorMessages(
+        [
+          {
+            info: INVALID_CLIENT_CREDENTIALS,
+            data: {
+              location: 'body',
+              paths: ['client_id', 'client_secret'],
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -398,15 +433,18 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: REFRESH_TOKEN_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'refresh_token',
+      testErrorMessages(
+        [
+          {
+            info: REFRESH_TOKEN_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'refresh_token',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -428,15 +466,18 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: INVALID_TOKEN,
-          data: {
-            location: 'body',
-            path: 'refresh_token',
+      testErrorMessages(
+        [
+          {
+            info: INVALID_TOKEN,
+            data: {
+              location: 'body',
+              path: 'refresh_token',
+            },
           },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
@@ -454,18 +495,21 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: {
-            code: INVALID_GRANT_TYPE.code,
-            message: INVALID_GRANT_TYPE.messages[0],
+      testErrorMessages(
+        [
+          {
+            info: {
+              code: INVALID_GRANT_TYPE.code,
+              message: INVALID_GRANT_TYPE.messages[0],
+            },
+            data: {
+              location: 'body',
+              path: 'refresh_token',
+            },
           },
-          data: {
-            location: 'body',
-            path: 'refresh_token',
-          },
-        },
-      ], expect),
+        ],
+        expect,
+      ),
     );
   });
 
