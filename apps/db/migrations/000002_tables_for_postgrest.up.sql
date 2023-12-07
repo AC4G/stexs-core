@@ -141,6 +141,31 @@ CREATE TRIGGER friend_request_changed_trigger
   FOR EACH ROW
   EXECUTE FUNCTION public.graphql_subscription('friendRequestChanged', 'friend_requests', 'addressee_id');
 
+CREATE OR REPLACE FUNCTION public.check_friend_request_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  friend_request_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO friend_request_count
+  FROM friend_requests
+  WHERE addressee_id = NEW.addressee_id;
+
+  IF friend_request_count >= 100 THEN
+    RAISE sqlstate 'P0001' USING
+            message = 'Friend request limit exceeded',
+            detail = 'User has 100 friend requests',
+            hint = 'Ask your friend to make place for your friend request';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_friend_request_limit_trigger
+BEFORE INSERT ON public.friend_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.check_friend_request_limit();
+
 
 
 CREATE TABLE public.blocked (

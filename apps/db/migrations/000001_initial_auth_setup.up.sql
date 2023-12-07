@@ -418,9 +418,11 @@ EXECUTE FUNCTION auth.create_profile_for_user();
 CREATE OR REPLACE FUNCTION auth.update_user_meta_data_after_profile_update()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE auth.users
-    SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('username', NEW.username)
-    WHERE id = NEW.user_id;
+    IF NEW.username <> (raw_user_meta_data->>'username') THEN
+        UPDATE auth.users
+        SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('username', NEW.username)
+        WHERE id = NEW.user_id;
+    END IF;
 
     RETURN NEW;
 END;
