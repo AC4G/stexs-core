@@ -12,6 +12,7 @@
     import Icon from '@iconify/svelte';
     import { Dropdown, DropdownItem } from "flowbite-svelte";
     import { acceptFriendRequest, deleteFriendRequest } from "$lib/utils/friendRequests";
+    import { profile } from "$lib/stores/profile";
     
     const modalStore = getModalStore();
     const flash = getFlash(page);
@@ -40,12 +41,13 @@
 
     async function fetchIsFriend(userId: string, friendId: string) {
         const { data } = await stexs.from('friends').select('friend_id').eq('user_id', userId).eq('friend_id', friendId);
-        return data.length === 1;
+
+        return { result: data.length === 1 };
     }
 
-    async function fetchFriends(userId: string) {
-        const { data } = await stexs.from('friends').select('profiles!friends_friend_id_fkey(user_id,username)').eq('user_id', userId);
-        return data;
+    async function fetchFriendsAmount(userId: string) {
+        const { count } = await stexs.from('friends').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+        return count;
     }
 
     async function fetchFriendRequest(requesterId: string, addresseeId: string) {
@@ -192,13 +194,13 @@
         enabled: !!$user?.id && !!userId && userId !== $user.id
     });
 
-    $: isFriend = $isFriendQuery.data;
+    $: isFriend = $isFriendQuery.data?.result as boolean;
     $: userId = $profileQuery.data?.user_id;
-    $: isPrivate = $profileQuery.data?.is_private;
+    $: isPrivate = $profileQuery.data?.is_private as boolean;
 
-    $: friendsQuery = useQuery({
-        queryKey: ['friends', userId],
-        queryFn: async () => await fetchFriends(userId),
+    $: friendsAmountQuery = useQuery({
+        queryKey: ['friendsAmount', userId],
+        queryFn: async () => await fetchFriendsAmount(userId),
         enabled: !!userId && (isPrivate === false || !!isFriend || userId === $user?.id)
     });
 
@@ -218,7 +220,11 @@
 
     $: friendRequestSend = $friendRequestQuery.data;
 
-    $: setContext('profile', { userId, isPrivate, isFriend, friendsQuery });
+    $: profile.set({
+        userId,
+        isPrivate,
+        isFriend
+    });
 </script>
 
 <div class="w-screen h-screen bg-no-repeat bg-top bg-[url('https://cdn.cloudflare.steamstatic.com/steam/clusters/sale_autumn2019_assets/54b5034d397baccb93181cc6/home_header_bg_rainy_english.gif?t=1700618391')]">
@@ -236,10 +242,10 @@
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <p class="text-[20px] w-fit">{$profileQuery.data?.username}</p>
                         {#if !$profileQuery.data?.is_private || $user?.id === $profileQuery.data?.user_id || isFriend}
-                            {#if $friendsQuery.isLoading}
+                            {#if $friendsAmountQuery.isLoading}
                                 <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                             {:else}
-                                <p class="text-[18px]">Friends {$friendsQuery.data?.length ?? 0}</p>
+                                <p class="text-[18px]">Friends {$friendsAmountQuery.data ?? 0}</p>
                             {/if}
                         {/if}
                     </div>
@@ -302,7 +308,7 @@
                             <span>Organizations</span>
                         </TabAnchor>
                         <svelte:fragment slot="panel">
-                            <slot {userId} {isPrivate} {isFriend} />
+                            <slot/>
                         </svelte:fragment>
                     </TabGroup>
                 {:else}
