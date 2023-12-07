@@ -98,6 +98,31 @@ AFTER INSERT ON public.friends
 FOR EACH ROW 
 EXECUTE FUNCTION public.friend_insert();
 
+CREATE OR REPLACE FUNCTION public.check_friends_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  friends_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO friends_count
+    FROM public.friends
+    WHERE user_id = NEW.user_id;
+
+    IF friend_request_count = 1000 THEN
+        RAISE sqlstate 'P0001' USING
+                message = 'Friend limit exceeded',
+                detail = 'User has reached 1000 friends',
+                hint = 'Remove some friends for new ones';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_friends_limit_trigger
+BEFORE INSERT ON public.friends
+FOR EACH ROW
+EXECUTE FUNCTION public.check_friends_limit();
+
 CREATE OR REPLACE FUNCTION public.friend_delete()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -147,10 +172,10 @@ DECLARE
   friend_request_count INTEGER;
 BEGIN
   SELECT COUNT(*) INTO friend_request_count
-  FROM friend_requests
+  FROM public.friend_requests
   WHERE addressee_id = NEW.addressee_id;
 
-  IF friend_request_count >= 100 THEN
+  IF friend_request_count = 100 THEN
     RAISE sqlstate 'P0001' USING
             message = 'Friend request limit exceeded',
             detail = 'User has 100 friend requests',
