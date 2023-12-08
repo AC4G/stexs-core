@@ -203,6 +203,8 @@
         enabled: !!userId && (isPrivate === false || !!isFriend || userId === $user?.id)
     });
 
+    $: totalFriends = $friendsAmountQuery.data ?? 0;
+
     $: gotFriendRequestQuery = useQuery({
         queryKey: ['gotFriendRequest', userId, $user?.id],
         queryFn: async () => await fetchFriendRequest(userId, $user?.id!),
@@ -222,7 +224,8 @@
     $: profile.set({
         userId,
         isPrivate,
-        isFriend
+        isFriend,
+        totalFriends
     });
 </script>
 

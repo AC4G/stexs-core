@@ -4,4 +4,5 @@ export const profile = writable<{
   userId: string;
   isPrivate: boolean;
   isFriend: boolean;
+  totalFriends: number;
 } | null>(null);
