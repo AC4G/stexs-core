@@ -103,7 +103,7 @@ RETURNS TRIGGER AS $$
 DECLARE
   friends_count INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO friends_count
+    SELECT COUNT(1) INTO friends_count
     FROM public.friends
     WHERE user_id = NEW.user_id;
 
@@ -171,7 +171,7 @@ RETURNS TRIGGER AS $$
 DECLARE
   friend_request_count INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO friend_request_count
+  SELECT COUNT(1) INTO friend_request_count
   FROM public.friend_requests
   WHERE addressee_id = NEW.addressee_id;
 
@@ -263,6 +263,31 @@ GRANT UPDATE (role) ON TABLE public.organization_requests TO authenticated;
 GRANT DELETE ON TABLE public.organization_requests TO authenticated;
 GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.check_organization_request_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  organization_request_count INTEGER;
+BEGIN
+  SELECT COUNT(1) INTO organization_request_count
+  FROM public.organization_requests
+  WHERE addressee_id = NEW.addressee_id;
+
+  IF organization_request_count = 100 THEN
+    RAISE sqlstate 'P0001' USING
+            message = 'Organization join request limit exceeded',
+            detail = 'User has 100 organization join requests',
+            hint = 'Ask the user to make place for your organization join request';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_organization_request_limit_trigger
+BEFORE INSERT ON public.organization_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.check_organization_request_limit();
+
 CREATE OR REPLACE FUNCTION public.make_organization_creator_as_owner()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -316,6 +341,31 @@ GRANT INSERT (project_id, addressee_id, role) ON TABLE public.project_requests T
 GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
 GRANT DELETE ON TABLE public.project_requests TO authenticated;
 GRANT SELECT ON TABLE public.project_requests TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.check_project_request_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  project_request_count INTEGER;
+BEGIN
+  SELECT COUNT(1) INTO project_request_count
+  FROM public.project_requests
+  WHERE addressee_id = NEW.addressee_id;
+
+  IF project_request_count = 100 THEN
+    RAISE sqlstate 'P0001' USING
+            message = 'Project join request limit exceeded',
+            detail = 'User has 100 project join requests',
+            hint = 'Ask the user to make place for your project join request';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_project_request_limit_trigger
+BEFORE INSERT ON public.project_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.check_project_request_limit();
 
 CREATE OR REPLACE FUNCTION public.make_project_creator_a_member()
 RETURNS TRIGGER AS $$

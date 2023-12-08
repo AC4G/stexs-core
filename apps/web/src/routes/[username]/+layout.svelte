@@ -45,7 +45,7 @@
     }
 
     async function fetchFriendsAmount(userId: string) {
-        const { count } = await stexs.from('friends').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+        const { count } = await stexs.from('friends').select('id', { count: 'exact', head: true }).eq('user_id', userId);
         return count;
     }
 

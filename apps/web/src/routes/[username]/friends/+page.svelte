@@ -8,6 +8,7 @@
     import { profile } from "$lib/stores/profile";
     import { Search } from "flowbite-svelte";
     import type { Friend } from "$lib/types";
+    import Truncated from "ui/src/Truncated.svelte";
 
     let friendsSearch: string = '';
     let filteredFriends: Friend[] = [];
@@ -62,7 +63,7 @@
             {#each paginatedFriendRequests as friend}
                 <a href="/{friend.profiles.username}" class="flex h-full w-full items-center justify-between p-2 rounded-md hover:bg-surface-500 transition">
                     <Avatar class="w-[40px] h-[40px]" userId={friend.profiles.user_id} username={friend.profiles.username} endpoint={PUBLIC_S3_ENDPOINT} />
-                    <p class="text-[18px] w-[70%] text-left">{friend.profiles.username}</p>
+                    <Truncated text={friend.profiles.username} maxLength={12} class="text-[14px] w-[70%] text-left pl-2" />
                 </a>
             {/each}
         {:else}
