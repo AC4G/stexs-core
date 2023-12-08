@@ -23,10 +23,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TABLE public.items (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
-    project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
+    id SERIAL PRIMARY KEY,/friendsic.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     is_private BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -263,6 +260,11 @@ GRANT UPDATE (role) ON TABLE public.organization_requests TO authenticated;
 GRANT DELETE ON TABLE public.organization_requests TO authenticated;
 GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 
+CREATE TRIGGER organization_request_changed_trigger
+  AFTER INSERT OR DELETE ON public.organization_requests
+  FOR EACH ROW
+  EXECUTE FUNCTION public.graphql_subscription('organizationJoinRequestChanged', 'organization_requests', 'addressee_id');
+
 CREATE OR REPLACE FUNCTION public.check_organization_request_limit()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -341,6 +343,11 @@ GRANT INSERT (project_id, addressee_id, role) ON TABLE public.project_requests T
 GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
 GRANT DELETE ON TABLE public.project_requests TO authenticated;
 GRANT SELECT ON TABLE public.project_requests TO authenticated;
+
+CREATE TRIGGER project_request_changed_trigger
+  AFTER INSERT OR DELETE ON public.project_requests
+  FOR EACH ROW
+  EXECUTE FUNCTION public.graphql_subscription('projectJoinRequestChanged', 'project_requests', 'addressee_id');
 
 CREATE OR REPLACE FUNCTION public.check_project_request_limit()
 RETURNS TRIGGER AS $$
