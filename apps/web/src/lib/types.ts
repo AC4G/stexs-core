@@ -6,7 +6,6 @@ export type MFAMethod = {
 export type FriendRequestsGQL = {
   friendRequestChanged: {
     friendRequests: Array<{
-      id: number;
       profileByRequesterId: {
         userId: string;
         username: string;
@@ -16,7 +15,6 @@ export type FriendRequestsGQL = {
 };
 
 export type FriendRequests = Array<{
-  id: number;
   profileByRequesterId: {
     userId: string;
     username: string;
@@ -29,3 +27,45 @@ export type Friend = {
     username: string;
   };
 };
+
+export type OrganizationRequestsGQL = {
+  organizationJoinRequestChanged: {
+    organizationRequests: Array<{
+      organizationByOrganizationId: {
+        id: number;
+        name: string;
+      };
+    }>;
+  };
+};
+
+export type OrganizationRequests = Array<{
+  organizationByOrganizationId: {
+    id: number;
+    name: string;
+  }
+}>;
+
+export type ProjectRequestsGQL = {
+  projectJoinRequestChanged: {
+    projectRequests: Array<{
+      projectByProjectId: {
+        id: number;
+        name: string;
+        organizationByOrganizationId: {
+          name: string
+        };
+      };
+    }> | null;
+  };
+};
+
+export type ProjectRequests = Array<{
+  projectByProjectId: {
+    id: number;
+    name: string;
+    organizationByOrganizationId: {
+      name: string
+    };
+  };
+}>;

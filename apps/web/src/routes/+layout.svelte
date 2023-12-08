@@ -22,7 +22,7 @@
   import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
   import { goto } from '$app/navigation';
   import { gql } from 'stexs-client';
-  import type { FriendRequestsGQL, FriendRequests } from '$lib/types';
+  import type { FriendRequestsGQL, FriendRequests, OrganizationRequests, OrganizationRequestsGQL, ProjectRequestsGQL, ProjectRequests } from '$lib/types';
   import Button from 'ui/src/Button.svelte';
   import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
 
@@ -50,9 +50,13 @@
   let avatarDropDownOpen: boolean = false;
   let notificationsDropDownOpen: boolean = false;
   $: activeUrl = $page.url.pathname;
-  let friendRequests: FriendRequests | [] = [];
   let selectedNotificationMenu: 'friends' | 'organizations' | 'projects' = 'friends';
+  let friendRequests: FriendRequests | [] = [];
   let friendRequestsSearch: string = '';
+  let organizationRequests: OrganizationRequests | [] = [];
+  let organizationRequestsSearch: string = '';
+  let projectRequests: ProjectRequests | [] = [];
+  let projectRequestsSearch: string = '';
 
   flash.subscribe(($flash) => {
     if (!$flash) return;
@@ -71,7 +75,7 @@
     })
     signedIn = true;
     
-    const observable = stexs.graphql
+    stexs.graphql
       .subscribe({
         query: gql`
         subscription FriendRequestsSubscription {
@@ -81,18 +85,59 @@
                 username
                 userId
               }
-              id
             }
           }
         }
       `,
-    });
-
-    observable.subscribe({
+    }).subscribe({
       next({ data }: { data: FriendRequestsGQL }) {
         friendRequests = data?.friendRequestChanged.friendRequests.reverse();
       }
-    })
+    });
+
+    stexs.graphql
+      .subscribe({
+        query: gql`
+        subscription OrganizationJoinRequestsSubscription {
+          organizationJoinRequestChanged {
+            organizationRequests {
+              organizationByOrganizationId {
+                id
+                name
+              }
+            }
+          }
+        }
+      `,
+    }).subscribe({
+      next({ data }: { data: OrganizationRequestsGQL }) {
+        if (data?.organizationJoinRequestChanged.organizationRequests) {
+          organizationRequests = data?.organizationJoinRequestChanged.organizationRequests.reverse();
+        }
+      }
+    });
+
+    stexs.graphql
+      .subscribe({
+        query: gql`
+        subscription ProjectJoinRequestsSubscription {
+        projectJoinRequestChanged {
+          projectRequests {
+            projectByProjectId {
+              id
+              name
+            }
+          }
+        }
+      }
+      `,
+    }).subscribe({
+      next({ data }: { data: ProjectRequestsGQL }) {
+        if (data?.projectJoinRequestChanged.projectRequests) {
+          projectRequests = data?.projectJoinRequestChanged.projectRequests.reverse();
+        }
+      }
+    });
   });
 
   stexs.auth.onAuthStateChange(event => {
@@ -118,14 +163,16 @@
       data: friendRequests
     },
     organizationRequests:{
-      count: 0,
-      data: []
+      count: organizationRequests.length,
+      data: organizationRequests
     },
     projectRequests: {
-      count: 0,
-      data: []
+      count: projectRequests.length,
+      data: projectRequests
     },
-    exists: friendRequests.length > 0 
+    exists: friendRequests.length > 0 || 
+      organizationRequests.length > 0 || 
+      projectRequests.length > 0
   };
 </script>
 
@@ -171,7 +218,7 @@
               {#if selectedNotificationMenu === 'friends'}
                 <Search size="md" placeholder="Username" bind:value={friendRequestsSearch} class="!bg-surface-500" />
                 <div class="max-h-[200px] overflow-auto">
-                  {#if notifications.friendRequests.data.length > 0}
+                  {#if notifications.friendRequests.count > 0}  
                     {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest}
                       <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
                         <a href="/{friendRequest.profileByRequesterId.username}">
@@ -197,13 +244,25 @@
                 <DropdownDivider />
                 <p class="text-[15px] px-2">Total: {notifications.friendRequests.count}</p>
               {:else if selectedNotificationMenu === 'organizations'}
-                <Search size="md" placeholder="Organization Name" class="!bg-surface-500" />
-                <div class="max-h-[200px] overflow-auto"></div>
+                <Search size="md" placeholder="Organization Name" bind:value={organizationRequestsSearch} class="!bg-surface-500" />
+                <div class="max-h-[200px] overflow-auto">
+                  {#if notifications.friendRequests.count > 0}
+                    {#each notifications.organizationRequests.data.filter(organizationRequest => organizationRequest.organizationByOrganizationId.name.toLowerCase().includes(organizationRequestsSearch.toLowerCase())) as organizationRequest}
+                      {organizationRequest.organizationByOrganizationId.name}
+                    {/each}
+                  {/if}
+                </div>
                 <DropdownDivider />
                 <p class="text-[15px] px-2">Total: {notifications.organizationRequests.count}</p>
               {:else}
-                <Search size="md" placeholder="Project Name" class="!bg-surface-500" />
-                <div class="max-h-[200px] overflow-auto"></div>
+                <Search size="md" placeholder="Project Name" bind:value={organizationRequestsSearch} class="!bg-surface-500" />
+                <div class="max-h-[200px] overflow-auto">
+                  {#if notifications.projectRequests.count > 0}
+                    {#each notifications.projectRequests.data.filter(projectRequest => projectRequest.projectByProjectId.name.toLowerCase().includes(projectRequestsSearch.toLowerCase())) as projectRequest}
+                      {projectRequest.projectByProjectId.organizationByOrganizationId.name}/{projectRequest.projectByProjectId.name}
+                    {/each}
+                  {/if}
+                </div>
                 <DropdownDivider />
                 <p class="text-[15px] px-2">Total: {notifications.projectRequests.count}</p>
               {/if}
