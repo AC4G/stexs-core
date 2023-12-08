@@ -218,7 +218,7 @@
               {#if selectedNotificationMenu === 'friends'}
                 <Search size="md" placeholder="Username" bind:value={friendRequestsSearch} class="!bg-surface-500" />
                 <div class="max-h-[200px] overflow-auto">
-                  {#if notifications.friendRequests.count > 0}
+                  {#if notifications.friendRequests.count > 0}  
                     {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest}
                       <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
                         <a href="/{friendRequest.profileByRequesterId.username}">

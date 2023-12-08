@@ -3,3 +3,5 @@ INSERT INTO public.organizations (
 ) VALUES (
     1, 'STEXS'
 );
+
+
