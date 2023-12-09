@@ -5,8 +5,21 @@ CREATE POLICY blocked_select
     AS PERMISSIVE
     FOR SELECT
     USING (
-        auth.grant() = 'password' AND 
-        auth.uid() = blocker_id
+        (
+            (
+                auth.uid() = blocker_id OR
+                auth.uid() = blocked_id
+            )
+        ) AND 
+        (
+            (
+                auth.grant() = 'password'
+            ) OR 
+            (
+                auth.grant() = 'authorization_code' AND
+                'blocked.read' = ANY(auth.scopes())
+            )
+        )
     );
 
 CREATE POLICY blocked_delete
@@ -14,8 +27,14 @@ CREATE POLICY blocked_delete
     AS PERMISSIVE
     FOR DELETE
     USING (
-        auth.grant() = 'password' AND 
-        auth.uid() = blocker_id
+        auth.uid() = blocker_id AND
+        (
+            auth.grant() = 'password' OR
+            (
+                auth.grant() = 'authorization_code' AND
+                'blocked.delete' = ANY(auth.scopes())
+            )
+        )
     );
 
 CREATE POLICY blocked_insert
@@ -23,8 +42,14 @@ CREATE POLICY blocked_insert
     AS PERMISSIVE
     FOR INSERT
     WITH CHECK (
-        auth.grant() = 'password' AND 
-        auth.uid() = blocker_id
+        auth.uid() = blocker_id AND
+        (
+            auth.grant() = 'password' OR
+            (
+                auth.grant() = 'authorization_code' AND
+                'blocked.write' = ANY(auth.scopes())
+            )
+        )
     );  
 
 
@@ -36,8 +61,14 @@ CREATE POLICY friend_requests_select
     AS PERMISSIVE
     FOR SELECT
     USING (
-        auth.grant() = 'password' AND
-        (auth.uid() = requester_id OR auth.uid() = addressee_id)
+        (auth.uid() = requester_id OR auth.uid() = addressee_id) AND
+        (
+            auth.grant() = 'password' OR
+            (
+                auth.grant() = 'authorization_code' AND
+                'friend.requests.read' = ANY(auth.scopes())
+            )
+        )
     );
 
 CREATE POLICY friend_requests_delete
@@ -45,21 +76,33 @@ CREATE POLICY friend_requests_delete
     AS PERMISSIVE
     FOR DELETE
     USING (
-        auth.grant() = 'password' AND
-        (auth.uid() = requester_id OR auth.uid() = addressee_id)
+        (auth.uid() = requester_id OR auth.uid() = addressee_id) AND
+        (
+            auth.grant() = 'password' OR
+            (
+                auth.grant() = 'authorization_code' AND
+                'friend.requests.delete' = ANY(auth.scopes())
+            )
+        )
     );
 
 CREATE POLICY friend_requests_insert
     ON public.friend_requests
     AS PERMISSIVE
     FOR INSERT
-    WITH CHECK (
-        auth.grant() = 'password' AND 
+    WITH CHECK ( 
         auth.uid() <> addressee_id AND
         NOT EXISTS (
             SELECT 1
             FROM public.friends
             WHERE user_id = auth.uid() AND friend_id = addressee_id
+        ) AND 
+        (
+            auth.grant() = 'password' OR
+            (
+                auth.grant() = 'authorization_code' AND
+                'friend.requests.write' = ANY(auth.scopes())
+            )
         )
     );
 
@@ -120,8 +163,14 @@ CREATE POLICY friends_delete
     AS PERMISSIVE
     FOR DELETE
     USING (
-        auth.grant() = 'password' AND
-        (auth.uid() = user_id OR auth.uid() = friend_id)
+        (auth.uid() = user_id OR auth.uid() = friend_id) AND
+        (
+            auth.grant() = 'password' OR
+            (
+                auth.grant() = 'authorization_code' AND
+                'friends.delete' = ANY(auth.scopes())
+            )
+        )
     );
 
 CREATE POLICY friends_insert
@@ -129,7 +178,6 @@ CREATE POLICY friends_insert
     AS PERMISSIVE
     FOR INSERT
     WITH CHECK (
-        auth.grant() = 'password' AND
         (auth.uid() = user_id OR auth.uid() = friend_id) AND
         EXISTS (
             SELECT 1
@@ -141,6 +189,13 @@ CREATE POLICY friends_insert
             FROM public.friend_requests
             WHERE
                 addressee_id = auth.uid() AND requester_id = user_id
+        ) AND
+        (
+            auth.grant() = 'password' OR
+            (
+                auth.grant() = 'authorization_code' AND
+                'friends.write' = ANY(auth.scopes())
+            )
         )
     );
 
@@ -225,7 +280,7 @@ CREATE POLICY inventories_insert
     WITH CHECK (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        'inventory.insert' = ANY(auth.scopes()) AND
+        'inventory.write' = ANY(auth.scopes()) AND
         (SELECT project_id FROM public.items WHERE id = item_id) = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
     );
 
@@ -311,7 +366,7 @@ CREATE POLICY items_insert
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'items.insert' = ANY(auth.scopes()) AND
+                'items.write' = ANY(auth.scopes()) AND
                 project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR
@@ -783,7 +838,7 @@ CREATE POLICY organization_requests_insert
                 OR 
                 (
                     auth.grant() = 'client_credentials' AND
-                    'organization.requests.insert' = ANY(auth.scopes()) AND
+                    'organization.requests.write' = ANY(auth.scopes()) AND
                     organization_id = (auth.jwt()->>'organization_id')::INT AND
                     role NOT IN ('Admin', 'Moderator')
                 )
@@ -1059,7 +1114,7 @@ CREATE POLICY project_requests_insert
                 OR
                 (
                     auth.grant() = 'client_credentials' AND
-                    'project.requests.insert' = ANY(auth.scopes()) AND
+                    'project.requests.write' = ANY(auth.scopes()) AND
                     project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
                     role NOT IN ('Admin', 'Moderator')
                 )
