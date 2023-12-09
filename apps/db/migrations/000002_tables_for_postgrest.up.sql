@@ -23,7 +23,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TABLE public.items (
-    id SERIAL PRIMARY KEY,/friendsic.projects(id) ON DELETE CASCADE NOT NULL,
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
+    project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     is_private BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -215,13 +218,15 @@ CREATE TABLE public.blocked (
     blocker_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     blocked_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT unique_blocked_combination UNIQUE (blocker_id, blocked_id),
     CHECK (blocker_id <> blocked_id)
 );
 
 GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
 GRANT DELETE ON TABLE public.blocked TO authenticated;
 GRANT SELECT ON TABLE public.blocked TO authenticated;
+
+CREATE UNIQUE INDEX unique_blocked_combination
+ON public.blocked ((LEAST(blocker_id, blocked_id)), (GREATEST(blocker_id, blocked_id)));
 
 
 

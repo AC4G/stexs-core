@@ -103,6 +103,15 @@ CREATE POLICY friend_requests_insert
                 auth.grant() = 'authorization_code' AND
                 'friend.requests.write' = ANY(auth.scopes())
             )
+        ) AND 
+        NOT EXISTS (
+            SELECT 1
+            FROM public.blocked AS b
+            WHERE b.blocker_id = addressee_id AND b.blocked_id = requester_id
+            UNION
+            SELECT 1
+            FROM public.blocked AS b
+            WHERE b.blocker_id = requester_id AND b.blocked_id = addressee_id
         )
     );
 
@@ -153,6 +162,23 @@ CREATE POLICY friends_select
                     FROM public.profiles AS p
                     WHERE (p.user_id = user_id AND p.is_private = FALSE) AND
                           (p.user_id = friend_id AND p.is_private = FALSE)
+                ) AND
+                NOT EXISTS (
+                    SELECT 1
+                    FROM public.blocked AS b
+                    WHERE b.blocker_id = user_id AND b.blocked_id = auth.uid()
+                    UNION
+                    SELECT 1
+                    FROM public.blocked AS b
+                    WHERE b.blocker_id = auth.uid() AND b.blocked_id = user_id
+                    UNION
+                    SELECT 1
+                    FROM public.blocked AS b
+                    WHERE b.blocker_id = friend_id AND b.blocked_id = auth.uid()
+                    UNION
+                    SELECT 1
+                    FROM public.blocked AS b
+                    WHERE b.blocker_id = auth.uid() AND b.blocked_id = friend_id
                 )
             )
         )
@@ -235,6 +261,15 @@ CREATE POLICY inventories_select
                     SELECT 1
                     FROM public.profiles AS p
                     WHERE p.user_id = user_id AND p.is_private = FALSE
+                ) AND
+                NOT EXISTS (
+                    SELECT 1
+                    FROM public.blocked AS b
+                    WHERE b.blocker_id = user_id AND b.blocked_id = auth.uid()
+                    UNION
+                    SELECT 1
+                    FROM public.blocked AS b
+                    WHERE b.blocker_id = auth.uid() AND b.blocked_id = user_id
                 )
             )
         )
