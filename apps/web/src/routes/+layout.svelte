@@ -139,7 +139,7 @@
       }
     });
   });
-
+ 
   stexs.auth.onAuthStateChange(event => {
     if (event === 'SIGNED_IN') {
       const session = stexs.auth.getSession();
@@ -218,50 +218,44 @@
               {#if selectedNotificationMenu === 'friends'}
                 <Search size="md" placeholder="Username" bind:value={friendRequestsSearch} class="!bg-surface-500" />
                 <div class="max-h-[200px] overflow-auto">
-                  {#if notifications.friendRequests.count > 0}  
-                    {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest}
-                      <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
-                        <a href="/{friendRequest.profileByRequesterId.username}">
-                          <Avatar class="w-[44px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} endpoint={PUBLIC_S3_ENDPOINT} />
-                        </a>
-                        <div class="grid grid-rows-2 col-span-2 w-full">
-                          <Truncated text={friendRequest.profileByRequesterId.username} maxLength={12} class="text-[16px] w-[70%] text-left " />
-                          <div class="flex justify-evenly pt-1">
-                            <Button on:click={async (event) => {
-                              event.stopPropagation();
-                              await acceptFriendRequest($user.id, friendRequest.profileByRequesterId.userId, friendRequest.profileByRequesterId.username, flash);
-                            }} class="py-[0.8px] px-2 variant-filled-primary text-[14px]">Accept</Button>
-                            <Button on:click={async (event) => {
-                              event.stopPropagation();
-                              await deleteFriendRequest(friendRequest.profileByRequesterId.userId, $user.id, flash);
-                            }} class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[14px]">Delete</Button>
-                          </div>
+                  {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest}
+                    <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
+                      <a href="/{friendRequest.profileByRequesterId.username}">
+                        <Avatar class="w-[44px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} endpoint={PUBLIC_S3_ENDPOINT} />
+                      </a>
+                      <div class="grid grid-rows-2 col-span-2 w-full">
+                        <Truncated text={friendRequest.profileByRequesterId.username} maxLength={12} class="text-[16px] w-[70%] text-left " />
+                        <div class="flex justify-evenly pt-1">
+                          <Button on:click={async (event) => {
+                            event.stopPropagation();
+                            await acceptFriendRequest($user.id, friendRequest.profileByRequesterId.userId, friendRequest.profileByRequesterId.username, flash);
+                          }} class="py-[0.8px] px-2 variant-filled-primary text-[14px]">Accept</Button>
+                          <Button on:click={async (event) => {
+                            event.stopPropagation();
+                            await deleteFriendRequest(friendRequest.profileByRequesterId.userId, $user.id, flash);
+                          }} class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[14px]">Delete</Button>
                         </div>
                       </div>
-                    {/each}
-                  {/if}
+                    </div>
+                  {/each}
                 </div>
                 <DropdownDivider />
                 <p class="text-[15px] px-2">Total: {notifications.friendRequests.count}</p>
               {:else if selectedNotificationMenu === 'organizations'}
                 <Search size="md" placeholder="Organization Name" bind:value={organizationRequestsSearch} class="!bg-surface-500" />
                 <div class="max-h-[200px] overflow-auto">
-                  {#if notifications.friendRequests.count > 0}
-                    {#each notifications.organizationRequests.data.filter(organizationRequest => organizationRequest.organizationByOrganizationId.name.toLowerCase().includes(organizationRequestsSearch.toLowerCase())) as organizationRequest}
-                      {organizationRequest.organizationByOrganizationId.name}
-                    {/each}
-                  {/if}
+                  {#each notifications.organizationRequests.data.filter(organizationRequest => organizationRequest.organizationByOrganizationId.name.toLowerCase().includes(organizationRequestsSearch.toLowerCase())) as organizationRequest}
+                    {organizationRequest.organizationByOrganizationId.name}
+                  {/each}
                 </div>
                 <DropdownDivider />
                 <p class="text-[15px] px-2">Total: {notifications.organizationRequests.count}</p>
               {:else}
                 <Search size="md" placeholder="Project Name" bind:value={organizationRequestsSearch} class="!bg-surface-500" />
                 <div class="max-h-[200px] overflow-auto">
-                  {#if notifications.projectRequests.count > 0}
-                    {#each notifications.projectRequests.data.filter(projectRequest => projectRequest.projectByProjectId.name.toLowerCase().includes(projectRequestsSearch.toLowerCase())) as projectRequest}
-                      {projectRequest.projectByProjectId.organizationByOrganizationId.name}/{projectRequest.projectByProjectId.name}
-                    {/each}
-                  {/if}
+                  {#each notifications.projectRequests.data.filter(projectRequest => projectRequest.projectByProjectId.name.toLowerCase().includes(projectRequestsSearch.toLowerCase())) as projectRequest}
+                    {projectRequest.projectByProjectId.organizationByOrganizationId.name}/{projectRequest.projectByProjectId.name}
+                  {/each}
                 </div>
                 <DropdownDivider />
                 <p class="text-[15px] px-2">Total: {notifications.projectRequests.count}</p>

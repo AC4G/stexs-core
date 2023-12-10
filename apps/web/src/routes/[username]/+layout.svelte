@@ -12,6 +12,7 @@
     import { Dropdown, DropdownItem } from "flowbite-svelte";
     import { acceptFriendRequest, deleteFriendRequest } from "$lib/utils/friendRequests";
     import { profile } from "$lib/stores/profile";
+    import { invalidateAll } from "$app/navigation";
     
     const modalStore = getModalStore();
     const flash = getFlash(page);
@@ -28,7 +29,7 @@
 
         if (data?.length === 0 && username !== undefined) {
             $flash = {
-                message: 'User or account not found.',
+                message: 'User not found.',
                 classes: 'variant-ghost-error',
                 timeout: 5000,
             };
@@ -36,6 +37,17 @@
         }
 
         return data[0];
+    }
+
+    async function fetchBlocked(userId: string, currentUserId: string) {
+        const filters = `and(blocker_id.eq.${userId},blocked_id.eq.${currentUserId}),and(blocker_id.eq.${currentUserId},blocked_id.eq.${userId})`;
+
+        const { data } = await stexs
+            .from('blocked')
+            .select('blocker_id')
+            .or(filters);
+
+        return data;
     }
 
     async function fetchIsFriend(userId: string, friendId: string) {
@@ -181,16 +193,92 @@
         modalStore.set([modal]);
     }
 
+    async function blockUser(params: { blocked_id: string, blocker_id: string, username: string }) {
+        const { blocked_id, blocker_id, username } = params;
+        const { error } = await stexs.from('blocked').insert([
+            { blocker_id, blocked_id }
+        ]);
+
+        if (error) {
+            $flash = {
+                message: `Could not block ${username}. Try out again.`,
+                classes: 'variant-ghost-error',
+                timeout: 5000,
+            };
+        } else {
+            location.reload();
+        }
+    }
+
+    function blockUserModal(userId: string, currentUserId: string, username: string) {
+        const modal: ModalSettings = {
+            type: 'component',
+            component: 'confirm',
+            meta: {
+                text: `Do you really want to block ${username}?`,
+                function: blockUser,
+                fnParams: {
+                    blocked_id: userId,
+                    blocker_id: currentUserId,
+                    username
+                },
+                fnAsync: true
+            }
+        };
+        modalStore.set([modal]);
+    }
+
+    async function unblockUser(params: { userId: string, currentUserId: string, username: string }) {
+        const { userId, currentUserId, username } = params;
+        const { error } = await stexs.from('blocked').delete().eq('blocked_id', userId).eq('blocker_id', currentUserId);
+
+        if (error) {
+            $flash = {
+                message: `Could not unblock ${username}. Try out again.`,
+                classes: 'variant-ghost-error',
+                timeout: 5000,
+            };
+        } else {
+            location.reload();
+        }
+    }
+
+    function unblockUserModal(userId: string, currentUserId: string, username: string) {
+        const modal: ModalSettings = {
+            type: 'component',
+            component: 'confirm',
+            meta: {
+                text: `Do you really want to unblock ${username}?`,
+                function: unblockUser,
+                fnParams: {
+                    userId,
+                    currentUserId,
+                    username
+                },
+                fnAsync: true
+            }
+        };
+        modalStore.set([modal]);
+    }
+
     $: profileQuery = useQuery({
         queryKey: ['userProfile', username],
         queryFn: async () => await fetchProfile(username),
         enabled: !!username
     });
 
-    $: isFriendQuery = useQuery({
-        queryKey: ['isFriend', $user?.id],
-        queryFn: async () => await fetchIsFriend($user?.id!, userId),
+    $: blockedQuery = useQuery({
+        queryKey: ['blockedProfile', $user?.id, userId],
+        queryFn: async () => await fetchBlocked(userId, $user?.id!),
         enabled: !!$user?.id && !!userId && userId !== $user.id
+    });
+
+    $: isCurrentUserBlocker = $blockedQuery.data?.filter((blocked: { blocker_id: string }) => blocked.blocker_id === $user?.id).length > 0;
+
+    $: isFriendQuery = useQuery({
+        queryKey: ['isFriend', $user?.id, $profile?.isFriend],
+        queryFn: async () => await fetchIsFriend($user?.id!, userId),
+        enabled: !!$user?.id && !!userId && userId !== $user.id && !!$blockedQuery.data && $blockedQuery.data.length === 0
     });
 
     $: isFriend = $isFriendQuery.data?.result as boolean;
@@ -200,7 +288,7 @@
     $: friendsAmountQuery = useQuery({
         queryKey: ['friendsAmount', userId],
         queryFn: async () => await fetchFriendsAmount(userId),
-        enabled: !!userId && (isPrivate === false || !!isFriend || userId === $user?.id)
+        enabled: !!userId && ((!isPrivate && $blockedQuery.data?.length === 0) || !!isFriend || userId === $user?.id)
     });
 
     $: totalFriends = $friendsAmountQuery.data ?? 0;
@@ -208,7 +296,7 @@
     $: gotFriendRequestQuery = useQuery({
         queryKey: ['gotFriendRequest', userId, $user?.id],
         queryFn: async () => await fetchFriendRequest(userId, $user?.id!),
-        enabled: !!userId && !!$user?.id && isFriend === false
+        enabled: !!userId && !!$user?.id && !isFriend
     });
     
     $: gotFriendRequest = $gotFriendRequestQuery.data;
@@ -216,7 +304,7 @@
     $: friendRequestQuery = useQuery({
         queryKey: ['profileFriendRequest', userId, $user?.id],
         queryFn: async () => fetchFriendRequest($user?.id!, userId),
-        enabled: !!userId && !!$user && userId !== $user.id && isFriend === false && gotFriendRequest === false
+        enabled: !!userId && !!$user && userId !== $user.id && !isFriend && !gotFriendRequest
     });
 
     $: friendRequestSend = $friendRequestQuery.data;
@@ -243,7 +331,7 @@
                     <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$profileQuery.data?.user_id} {username} class="mx-auto w-[120px] sm:w-[148px]" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <p class="text-[20px] w-fit">{$profileQuery.data?.username}</p>
-                        {#if !$profileQuery.data?.is_private || $user?.id === $profileQuery.data?.user_id || isFriend}
+                        {#if (!isPrivate || $user?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
                             {#if $friendsAmountQuery.isLoading}
                                 <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                             {:else}
@@ -255,68 +343,90 @@
                 {#if $user && $user.id !== $profileQuery.data?.user_id}
                     <div class="grid pt-[12px] sm:col-start-3 col-span-full">
                         <div class="flex justify-between sm:justify-end">
-                            {#if isFriend}
-                                <Button on:click={() => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
-                            {:else if gotFriendRequest}
-                                <div class="flex flex-col mr-2">
-                                    <p class="col-span-2">Friend Request:</p>
-                                    <div class="mt-[4px]">
-                                        <Button on:click={async () => {
-                                            acceptFriendRequestSubmitted = true;
+                            {#if $blockedQuery.data?.length === 0}
+                                {#if isFriend}
+                                    <Button on:click={() => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
+                                {:else if gotFriendRequest}
+                                    <div class="flex flex-col mr-2">
+                                        <p class="col-span-2">Friend Request:</p>
+                                        <div class="mt-[4px]">
+                                            <Button on:click={async () => {
+                                                acceptFriendRequestSubmitted = true;
 
-                                            isFriend = await acceptFriendRequest($user.id, userId, username, flash);
+                                                isFriend = await acceptFriendRequest($user.id, userId, username, flash);
 
-                                            if (isFriend) gotFriendRequest = false;
+                                                if (isFriend) gotFriendRequest = false;
 
-                                            acceptFriendRequestSubmitted = false;
-                                        }} submitted={acceptFriendRequestSubmitted} class="variant-filled-primary py-1 px-2">Accept</Button>
-                                        <Button on:click={async () => {
-                                            deleteFriendRequestSubmitted = true;
+                                                acceptFriendRequestSubmitted = false;
+                                            }} submitted={acceptFriendRequestSubmitted} class="variant-filled-primary py-1 px-2">Accept</Button>
+                                            <Button on:click={async () => {
+                                                deleteFriendRequestSubmitted = true;
 
-                                            gotFriendRequest = await deleteFriendRequest(userId, $user.id, flash);
-                                            
-                                            deleteFriendRequestSubmitted = false;
-                                        }} submitted={deleteFriendRequestSubmitted} class="variant-ghost-error py-1 px-2">Delete</Button>
+                                                gotFriendRequest = await deleteFriendRequest(userId, $user.id, flash);
+                                                
+                                                deleteFriendRequestSubmitted = false;
+                                            }} submitted={deleteFriendRequestSubmitted} class="variant-ghost-error py-1 px-2">Delete</Button>
+                                        </div>
                                     </div>
-                                </div>
-                            {:else if friendRequestSend}
-                                <Button on:click={async () => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
-                            {:else}
-                                <Button on:click={async () => await sendFriendRequest(username, $user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
+                                {:else if friendRequestSend}
+                                    <Button on:click={() => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
+                                {:else}
+                                    <Button on:click={async () => await sendFriendRequest(username, $user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
+                                {/if}
                             {/if}
                             <Button class="w-fit h-fit p-1 group">
                                 <Icon icon="pepicons-pop:dots-y" class="text-[26px] group-hover:text-surface-400 transition" />
                             </Button>
                             <Dropdown class="absolute right-[-6px] rounded-md bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
                                 <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-600">Report</DropdownItem>
-                                <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
+                                {#if isCurrentUserBlocker}
+                                    <DropdownItem on:click={() => unblockUserModal(userId, $user.id, username)} class="hover:!bg-surface-500 rounded transition text-primary-500">Unblock</DropdownItem>
+                                {:else}
+                                    <DropdownItem on:click={() => blockUserModal(userId, $user?.id, username)} class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
+                                {/if}
                             </Dropdown>
                         </div>
                     </div>
                 {/if}
             </div>
             <div class="grid grid-rows-1 mt-[28px]">
-                {#if $profileQuery.isLoading}
+                {#if $blockedQuery.isLoading}
                     <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
-                {:else if !$profileQuery.data?.is_private || $user?.id === userId || isFriend}
-                    <TabGroup active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
-                        <TabAnchor href="/{username}" selected={path === `/${username}`} >
-                            <span>Inventory</span>
-                        </TabAnchor>
-                        <TabAnchor href="/{username}/friends" selected={path.endsWith('/friends')} >
-                            <span>Friends</span>
-                        </TabAnchor>
-                        <TabAnchor href="/{username}/organizations" selected={path.endsWith('/organizations')} >
-                            <span>Organizations</span>
-                        </TabAnchor>
-                        <svelte:fragment slot="panel">
-                            <slot/>
-                        </svelte:fragment>
-                    </TabGroup>
                 {:else}
-                    <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
-                        <p class="text-[20px] text-center">User is private</p>
-                    </div>
+                    {#if $blockedQuery.data?.length > 0}
+                        <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
+                            <p class="text-[20px] text-center">
+                                {#if isCurrentUserBlocker}
+                                    Blocked
+                                {:else}
+                                    User blocked you
+                                {/if}
+                            </p>
+                        </div>
+                    {:else}
+                        {#if $profileQuery.isLoading}
+                            <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
+                        {:else if !$profileQuery.data?.is_private || $user?.id === userId || isFriend}
+                            <TabGroup active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
+                                <TabAnchor href="/{username}" selected={path === `/${username}`} >
+                                    <span>Inventory</span>
+                                </TabAnchor>
+                                <TabAnchor href="/{username}/friends" selected={path.endsWith('/friends')} >
+                                    <span>Friends</span>
+                                </TabAnchor>
+                                <TabAnchor href="/{username}/organizations" selected={path.endsWith('/organizations')} >
+                                    <span>Organizations</span>
+                                </TabAnchor>
+                                <svelte:fragment slot="panel">
+                                    <slot/>
+                                </svelte:fragment>
+                            </TabGroup>
+                        {:else}
+                            <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
+                                <p class="text-[20px] text-center">User is private</p>
+                            </div>
+                        {/if}
+                    {/if}
                 {/if}
             </div>
         </div>
