@@ -218,15 +218,13 @@ CREATE TABLE public.blocked (
     blocker_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     blocked_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT unique_blocked_combination UNIQUE (blocker_id, blocked_id),
     CHECK (blocker_id <> blocked_id)
 );
 
 GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
 GRANT DELETE ON TABLE public.blocked TO authenticated;
 GRANT SELECT ON TABLE public.blocked TO authenticated;
-
-CREATE UNIQUE INDEX unique_blocked_combination
-ON public.blocked ((LEAST(blocker_id, blocked_id)), (GREATEST(blocker_id, blocked_id)));
 
 
 
