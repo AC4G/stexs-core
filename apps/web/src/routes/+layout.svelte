@@ -139,7 +139,7 @@
       }
     });
   });
-
+ 
   stexs.auth.onAuthStateChange(event => {
     if (event === 'SIGNED_IN') {
       const session = stexs.auth.getSession();

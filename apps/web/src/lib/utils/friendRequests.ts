@@ -1,6 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { stexs } from '../../stexsClient';
 import type { ToastSettings } from '@skeletonlabs/skeleton';
+import { profile } from '$lib/stores/profile';
 
 export async function acceptFriendRequest(
   user_id: string,
@@ -21,6 +22,7 @@ export async function acceptFriendRequest(
     });
   } else {
     isFriend = true;
+    profile.set({ isFriend: true });
     flash.set({
       message: `${username} is now your friend.`,
       classes: 'variant-ghost-success',

@@ -276,7 +276,7 @@
     $: isCurrentUserBlocker = $blockedQuery.data?.filter((blocked: { blocker_id: string }) => blocked.blocker_id === $user?.id).length > 0;
 
     $: isFriendQuery = useQuery({
-        queryKey: ['isFriend', $user?.id],
+        queryKey: ['isFriend', $user?.id, $profile?.isFriend],
         queryFn: async () => await fetchIsFriend($user?.id!, userId),
         enabled: !!$user?.id && !!userId && userId !== $user.id && !!$blockedQuery.data && $blockedQuery.data.length === 0
     });
@@ -288,7 +288,7 @@
     $: friendsAmountQuery = useQuery({
         queryKey: ['friendsAmount', userId],
         queryFn: async () => await fetchFriendsAmount(userId),
-        enabled: !!userId && ((!isPrivate&& $blockedQuery.data?.length === 0) || !!isFriend || userId === $user?.id)
+        enabled: !!userId && ((!isPrivate && $blockedQuery.data?.length === 0) || !!isFriend || userId === $user?.id)
     });
 
     $: totalFriends = $friendsAmountQuery.data ?? 0;
@@ -331,7 +331,7 @@
                     <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$profileQuery.data?.user_id} {username} class="mx-auto w-[120px] sm:w-[148px]" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <p class="text-[20px] w-fit">{$profileQuery.data?.username}</p>
-                        {#if (!isPrivate || $user?.id === userId || isFriend) && $blockedQuery.data?.length === 0}
+                        {#if (!isPrivate || $user?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
                             {#if $friendsAmountQuery.isLoading}
                                 <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                             {:else}
