@@ -5,4 +5,5 @@ export const profile = writable<{
   isPrivate?: boolean;
   isFriend?: boolean;
   totalFriends?: number;
-} | null>(null);
+  refetchTrigger?: boolean;
+}>({});

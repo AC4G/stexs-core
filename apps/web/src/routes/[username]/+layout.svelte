@@ -276,7 +276,7 @@
     $: isCurrentUserBlocker = $blockedQuery.data?.filter((blocked: { blocker_id: string }) => blocked.blocker_id === $user?.id).length > 0;
 
     $: isFriendQuery = useQuery({
-        queryKey: ['isFriend', $user?.id, $profile?.isFriend],
+        queryKey: ['isFriend', $user?.id, $profile?.refetchTrigger],
         queryFn: async () => await fetchIsFriend($user?.id!, userId),
         enabled: !!$user?.id && !!userId && userId !== $user.id && !!$blockedQuery.data && $blockedQuery.data.length === 0
     });

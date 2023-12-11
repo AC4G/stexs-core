@@ -22,7 +22,9 @@ export async function acceptFriendRequest(
     });
   } else {
     isFriend = true;
-    profile.set({ isFriend: true });
+    profile.update(($profile) => {
+      return { ...$profile, refetchTrigger: !!$profile.refetchTrigger };
+    });
     flash.set({
       message: `${username} is now your friend.`,
       classes: 'variant-ghost-success',

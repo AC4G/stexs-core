@@ -66,7 +66,7 @@
     $: friendsQuery = useQuery({
         queryKey: ['friends', $profile?.userId, paginationSettings.page, paginationSettings.limit],
         queryFn: async () => await fetchFriends($profile?.userId!, search, paginationSettings.page, paginationSettings.limit),
-        enabled: !!$profile?.userId && ($profile.isPrivate === false || $profile.isFriend)
+        enabled: !!$profile?.userId && ($profile?.isPrivate === false || $profile?.isFriend || $user?.id === $profile.userId)
     });
 </script>
 
