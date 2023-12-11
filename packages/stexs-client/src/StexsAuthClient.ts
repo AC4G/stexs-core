@@ -334,13 +334,19 @@ export class StexsAuthClient {
    * Updates the password of the authenticated user.
    *
    * @param {string} password - The new password to set.
+   * @param {string} code - The authentication code from the selected MFA method (either email code or TOTP secret).
+   * @param {string} type - The MFA method to be used for authentication.
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
-  async updatePassword(password: string): Promise<Response> {
+  async updatePassword(password: string, code: string, type: 'totp' | 'email'): Promise<Response> {
     return await this._request({
       path: 'user/password',
       method: 'POST',
-      body: { password },
+      body: { 
+        password,
+        code, 
+        type
+      },
     });
   }
 
@@ -348,13 +354,19 @@ export class StexsAuthClient {
    * Initiates the process of changing the email for the authenticated user.
    *
    * @param {string} email - The new email address to be set.
+   * @param {string} code - The authentication code from the selected MFA method (either email code or TOTP secret).
+   * @param {string} type - The MFA method to be used for authentication.
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
-  async changeEmail(email: string): Promise<Response> {
+  async changeEmail(email: string, code: string, type: 'totp' | 'email'): Promise<Response> {
     return await this._request({
       path: 'user/email',
       method: 'POST',
-      body: { email },
+      body: { 
+        email,
+        code,
+        type
+      },
     });
   }
 
@@ -575,7 +587,7 @@ export class StexsAuthClient {
   }
 
   private async _scheduleTokenRefresh() {
-    const refreshThresholdMs = 10000;
+    const refreshThresholdMs = 60000;
 
     while (true) {
       const session: Session = this._getSession();
