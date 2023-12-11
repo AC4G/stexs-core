@@ -105,24 +105,6 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    if (types.length === 0) {
-      try {
-        const body = await generateAccessToken({
-          sub: uuid,
-        });
-
-        logger.info(`New access token generated for user: ${uuid}`);
-
-        res.json(body);
-      } catch (e) {
-        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-      }
-
-      logger.info(`Sign-in successful for user: ${uuid}`);
-
-      return;
-    }
-
     const { token, expires } = generateSignInConfirmToken(uuid, types);
 
     logger.info(`Sign-in initialized for user: ${identifier}`);

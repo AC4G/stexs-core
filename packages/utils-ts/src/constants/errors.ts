@@ -228,6 +228,10 @@ export const TOTP_ALREADY_VERIFIED = {
   code: 'TOTP_ALREADY_VERIFIED',
   message: 'TOTP MFA is already verified.',
 };
+export const TOTP_DISABLED = {
+  code: 'TOTP_DISABLED',
+  message: "You can't use the MFA TOTP method because it is disabled.",
+};
 export const MFA_EMAIL_ALREADY_ENABLED = {
   code: 'MFA_EMAIL_ALREADY_ENABLED',
   message: 'Email MFA is already enabled.',
@@ -235,6 +239,10 @@ export const MFA_EMAIL_ALREADY_ENABLED = {
 export const MFA_EMAIL_ALREADY_DISABLED = {
   code: 'MFA_EMAIL_ALREADY_DISABLED',
   message: 'Email MFA is already disabled.',
+};
+export const MFA_EMAIL_DISABLED = {
+  code: 'MFA_EMAIL_DISABLED',
+  message: "You can't use the MFA email method because it is disabled.",
 };
 export const RATE_LIMIT_EXCEEDED = {
   code: 'RATE_LIMIT_EXCEEDED',
