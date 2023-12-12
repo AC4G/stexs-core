@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { body } from 'express-validator';
+import { query } from 'express-validator';
 import {
   FILE_EXTENSION_REQUIRED,
   INTERNAL_ERROR,
@@ -19,13 +19,13 @@ import { Request } from 'express-jwt';
 
 const router = Router();
 
-router.post(
-  '',
+router.get(
+  '/presigned-url',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
     transformJwtErrorMessages(logger),
-    body('fileExtension')
+    query('fileExtension')
       .notEmpty()
       .withMessage(FILE_EXTENSION_REQUIRED)
       .custom((value: string) => {
@@ -40,7 +40,7 @@ router.post(
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub!;
-    const { fileExtension } = req.body;
+    const { fileExtension } = req.query;
 
     try {
       const { KeyCount, Contents } = await avatarsClient
@@ -100,7 +100,7 @@ router.post(
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
-  },
+  }
 );
 
 router.delete(
@@ -144,7 +144,7 @@ router.delete(
     }
 
     return res.status(204).json();
-  },
+  }
 );
 
 export default router;
