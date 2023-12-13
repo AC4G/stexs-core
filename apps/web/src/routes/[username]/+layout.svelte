@@ -317,7 +317,7 @@
     });
 </script>
 
-<div class="w-screen h-screen bg-no-repeat bg-top bg-[url('https://cdn.cloudflare.steamstatic.com/steam/clusters/sale_autumn2019_assets/54b5034d397baccb93181cc6/home_header_bg_rainy_english.gif?t=1700618391')]">
+<div class="w-screen h-screen bg-no-repeat bg-top">
     <div class="grid place-items-center">
         <div class="rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px]">
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 gap-y-8">
@@ -345,7 +345,7 @@
                         <div class="flex justify-between sm:justify-end">
                             {#if $blockedQuery.data?.length === 0}
                                 {#if isFriend}
-                                    <Button on:click={() => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
+                                    <Button on:click={() => removeFriendModal(username, $user.id, userId)} submitted={removeFriendSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600">Remove Friend</Button>
                                 {:else if gotFriendRequest}
                                     <div class="flex flex-col mr-2">
                                         <p class="col-span-2">Friend Request:</p>
@@ -365,11 +365,11 @@
                                                 gotFriendRequest = await deleteFriendRequest(userId, $user.id, flash);
                                                 
                                                 deleteFriendRequestSubmitted = false;
-                                            }} submitted={deleteFriendRequestSubmitted} class="variant-ghost-error py-1 px-2">Delete</Button>
+                                            }} submitted={deleteFriendRequestSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600 py-1 px-2">Delete</Button>
                                         </div>
                                     </div>
                                 {:else if friendRequestSend}
-                                    <Button on:click={() => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-700 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
+                                    <Button on:click={() => revokeFriendRequestModal($user.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
                                 {:else}
                                     <Button on:click={async () => await sendFriendRequest(username, $user.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
                                 {/if}

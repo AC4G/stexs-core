@@ -318,6 +318,9 @@ importers:
       '@types/node':
         specifier: ^20.8.7
         version: 20.9.0
+      '@types/pg':
+        specifier: ^8.10.2
+        version: 8.10.5
       '@types/response-time':
         specifier: ^2.3.5
         version: 2.3.6
@@ -2188,7 +2191,7 @@ packages:
   /@types/pg@8.10.5:
     resolution: {integrity: sha512-GS3ebGcSJQqKSnq4/WnSH1XQvx0vTDLEmqLENk7onKvTnry9BWPsZiZeUMJlEPw+5bCQDzfxZFhxlUztpNCKgQ==}
     dependencies:
-      '@types/node': 20.9.0
+      '@types/node': 20.10.4
       pg-protocol: 1.6.0
       pg-types: 4.0.1
     dev: true

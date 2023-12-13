@@ -11,7 +11,6 @@
 
     let search: string = '';
     let previousSearch: string = '';
-
     let paginationSettings: PaginationSettings = {
         page: 0,
         limit: 50,
@@ -27,7 +26,12 @@
             page = 0;
 
             const { count } = await stexs.from('friends')
-                .select('id,profiles!friends_friend_id_fkey(user_id,username)', { count: 'exact', head: true })
+                .select(`
+                    profiles!friends_friend_id_fkey(
+                        user_id,
+                        username
+                    )
+                `, { count: 'exact', head: true })
                 .eq('user_id', userId)
                 .ilike('profiles.username', `%${search}%`)
                 .not('profiles', 'is', null);
@@ -40,25 +44,31 @@
         const end = start + limit - 1;
 
         const { data } = await stexs.from('friends')
-            .select('id,profiles!friends_friend_id_fkey(user_id,username)')
+            .select(`
+                id,
+                profiles!friends_friend_id_fkey(
+                    user_id,
+                    username
+                )
+            `)
             .eq('user_id', userId)
             .ilike('profiles.username', `%${search}%`)
             .not('profiles', 'is', null)
             .range(start, end);
 
-            data.sort((a: { 
-                profiles: {
-                    username: string
-                } }, b: {
-                profiles: {
-                    username: string
-                }
-            }) => {
-                const usernameA = a.profiles.username;
-                const usernameB = b.profiles.username;
+        data.sort((a: { 
+            profiles: {
+                username: string
+            } }, b: {
+            profiles: {
+                username: string
+            }
+        }) => {
+            const usernameA = a.profiles.username;
+            const usernameB = b.profiles.username;
 
-                return usernameA.localeCompare(usernameB, undefined, { sensitivity: 'base' });
-            });
+            return usernameA.localeCompare(usernameB, undefined, { sensitivity: 'base' });
+        });
 
         return data;
     }
@@ -66,7 +76,7 @@
     $: friendsQuery = useQuery({
         queryKey: ['friends', $profile?.userId, paginationSettings.page, paginationSettings.limit],
         queryFn: async () => await fetchFriends($profile?.userId!, search, paginationSettings.page, paginationSettings.limit),
-        enabled: !!$profile?.userId && ($profile?.isPrivate === false || $profile?.isFriend || $user?.id === $profile.userId)
+        enabled: !!$profile?.userId
     });
 </script>
 
@@ -84,7 +94,7 @@
             </div>
         {/each}
     {:else}
-        {#if $friendsQuery.data && $friendsQuery.data.length > 0}
+        {#if $friendsQuery.data.length > 0}
             {#each $friendsQuery.data as friend}
                 <a href="/{friend.profiles.username}" class="flex h-full w-full items-center justify-between p-2 rounded-md hover:bg-surface-500 transition">
                     <Avatar class="w-[40px] h-[40px]" userId={friend.profiles.user_id} username={friend.profiles.username} endpoint={PUBLIC_S3_ENDPOINT} />
@@ -110,7 +120,8 @@
             showPreviousNextButtons="{true}"
             showNumerals
             amountText="Friends"
-            controlVariant="bg-surface-700 border border-solid border-surface-500"
+            select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
+            controlVariant="bg-surface-500 border border-solid border-gray-600"
         />
     </div>
 {/if}

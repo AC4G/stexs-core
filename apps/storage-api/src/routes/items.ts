@@ -1,4 +1,4 @@
-import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from 'env-config';
+import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
 import { Router, Response } from 'express';
 import { checkTokenGrantType, transformJwtErrorMessages, validateAccessToken } from 'utils-ts/jwtMiddleware';
 import logger from '../loggers/logger';
