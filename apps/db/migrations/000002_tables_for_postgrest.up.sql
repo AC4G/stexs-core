@@ -59,6 +59,28 @@ GRANT DELETE ON TABLE public.inventories TO authenticated;
 GRANT SELECT ON TABLE public.inventories TO anon;
 GRANT SELECT ON TABLE public.inventories TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.distinct_projects_from_inventory(user_id_param UUID)
+RETURNS TABLE (project_id INT, project_name CITEXT)
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT DISTINCT ON (projects.id)
+        projects.id AS project_id,
+        projects.name AS project_name
+    FROM
+        inventories
+    JOIN
+        items ON inventories.item_id = items.id
+    JOIN
+        projects ON items.project_id = projects.id
+    WHERE
+        inventories.user_id = user_id_param;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) TO anon;
+GRANT EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) TO authenticated;
+
 
 
 CREATE TABLE public.friends (
@@ -316,10 +338,8 @@ EXECUTE FUNCTION public.check_organization_request_limit();
 CREATE OR REPLACE FUNCTION public.make_organization_creator_as_owner()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF (auth.uid() IS NOT NULL) THEN
-        INSERT INTO public.organization_members (organization_id, member_id, role)
-        VALUES (NEW.id, auth.uid(), 'Owner');
-    END IF;
+    INSERT INTO public.organization_members (organization_id, member_id, role)
+    VALUES (NEW.id, auth.uid(), 'Owner');
 
     RETURN NEW;
 END;

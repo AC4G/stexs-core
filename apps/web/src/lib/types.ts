@@ -43,7 +43,7 @@ export type OrganizationRequests = Array<{
   organizationByOrganizationId: {
     id: number;
     name: string;
-  }
+  };
 }>;
 
 export type ProjectRequestsGQL = {
@@ -53,7 +53,7 @@ export type ProjectRequestsGQL = {
         id: number;
         name: string;
         organizationByOrganizationId: {
-          name: string
+          name: string;
         };
       };
     }> | null;
@@ -65,7 +65,7 @@ export type ProjectRequests = Array<{
     id: number;
     name: string;
     organizationByOrganizationId: {
-      name: string
+      name: string;
     };
   };
 }>;

@@ -15,8 +15,10 @@ import {
   INVALID_CODE,
   INVALID_CREDENTIALS,
   INVALID_TYPE,
+  MFA_EMAIL_DISABLED,
   PASSWORD_REQUIRED,
   TOKEN_REQUIRED,
+  TOTP_DISABLED,
   TYPE_REQUIRED,
   UNSUPPORTED_TYPE,
 } from 'utils-ts/errors';
@@ -105,24 +107,6 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    if (types.length === 0) {
-      try {
-        const body = await generateAccessToken({
-          sub: uuid,
-        });
-
-        logger.info(`New access token generated for user: ${uuid}`);
-
-        res.json(body);
-      } catch (e) {
-        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-      }
-
-      logger.info(`Sign-in successful for user: ${uuid}`);
-
-      return;
-    }
-
     const { token, expires } = generateSignInConfirmToken(uuid, types);
 
     logger.info(`Sign-in initialized for user: ${identifier}`);
@@ -181,13 +165,13 @@ router.post(
       try {
         const { rowCount, rows } = await db.query(
           `
-                SELECT email_code, email_code_sent_at
+                SELECT email, email_code, email_code_sent_at
                 FROM auth.mfa
                 WHERE user_id = $1::uuid;
             `,
           [userId],
         );
-
+ 
         if (rowCount === 0) {
           logger.error(
             `Failed to fetch MFA email code and timestamp for user: ${userId}`,
@@ -195,6 +179,13 @@ router.post(
           return res
             .status(500)
             .json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
+
+        if (!rows[0].email) {
+          logger.warn(`MFA email is disabled for user: ${userId}`);
+          return res
+            .status(400)
+            .json(errorMessages([{ info: MFA_EMAIL_DISABLED }]));
         }
 
         if (code !== rows[0].email_code) {
@@ -258,7 +249,7 @@ router.post(
       try {
         const { rowCount, rows } = await db.query(
           `
-                SELECT totp_secret 
+                SELECT totp, totp_secret 
                 FROM auth.mfa
                 WHERE user_id = $1::uuid;
             `,
@@ -270,6 +261,11 @@ router.post(
           return res
             .status(500)
             .json(errorMessages([{ info: INTERNAL_ERROR }]));
+        }
+
+        if (!rows[0].totp) {
+          logger.warn(`MFA TOTP is disabled for user: ${userId}`);
+          return res.status(400).json(errorMessages([{ info: TOTP_DISABLED }]));
         }
 
         const totp = getTOTPForVerification(rows[0].totp_secret);

@@ -7,6 +7,7 @@ import { ENV, SERVER_PORT } from '../env-config';
 import { errorMessages } from 'utils-ts/messageBuilder';
 import { ROUTE_NOT_FOUND } from 'utils-ts/errors';
 import avatarsRouter from './routes/avatars';
+import itemsRouter from './routes/items';
 
 process.on('uncaughtException', (err) => {
   logger.error(`Uncaught Exception: ${err.message}`);
@@ -27,6 +28,7 @@ server.use((req, res, next) => {
 });
 
 server.use('/avatars', avatarsRouter);
+server.use('/items', itemsRouter);
 
 server.use((req, res, next) => {
   logger.warn(`Route not found: ${req.method} ${req.path}`);
