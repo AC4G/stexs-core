@@ -1,5 +1,9 @@
 import S3 from 'aws-sdk/clients/s3';
-import { S3_ENDPOINT, S3_ITEMS_ACCESS_KEY, S3_ITEMS_SECRET_KEY } from '../env-config';
+import {
+  S3_ENDPOINT,
+  S3_ITEMS_ACCESS_KEY,
+  S3_ITEMS_SECRET_KEY,
+} from '../env-config';
 import { S3_AVATARS_ACCESS_KEY, S3_AVATARS_SECRET_KEY } from '../env-config';
 
 export const avatarsClient = new S3({

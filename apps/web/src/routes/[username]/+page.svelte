@@ -21,7 +21,10 @@
 
     async function fetchTotalAmountFromInventory(userId: string) {
         const { count } = await stexs.from('inventories')
-            .select('id', { count: 'exact', head: true })
+            .select('id', { 
+                count: 'exact', 
+                head: true 
+            })
             .eq('user_id', userId);
 
         return count;
@@ -107,8 +110,6 @@
             .not('items.projects', 'is', null)
             .range(start, end);
 
-        console.log({ selectedProject })
-
         if (selectedProject !== undefined && typeof selectedProject == 'number') {
             query.eq('items.projects.id', selectedProject);
         }
@@ -126,7 +127,7 @@
 </script>
 
 {#if $itemsAmountQuery?.data > 0}
-    <div class="flex flex-col md:flex-row justify-between mb-[12px] space-y-2 md:space-y-0">
+    <div class="flex flex-col md:flex-row justify-between mb-[18px] space-y-2 md:space-y-0">
         <div class="md:max-w-[220px]">
             <Search size="lg" placeholder="Item Name" bind:value={search} class="!bg-surface-500" />
         </div>
@@ -154,7 +155,7 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data as inventory}
-                <div class="h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 p-2">
+                <div class="aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 p-2">
                     {inventory.items.name}
                 </div>
             {/each}
@@ -170,7 +171,7 @@
     {/if}
 </div>
 {#if $itemsAmountQuery?.data > 0}
-    <div class="mx-auto mt-[12px]">
+    <div class="mx-auto mt-[18px]">
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{false}"

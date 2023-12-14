@@ -100,7 +100,7 @@ router.get(
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
-  }
+  },
 );
 
 router.delete(
@@ -144,7 +144,7 @@ router.delete(
     }
 
     return res.status(204).json();
-  }
+  },
 );
 
 export default router;

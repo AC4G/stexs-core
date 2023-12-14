@@ -12,7 +12,6 @@
     import { Dropdown, DropdownItem } from "flowbite-svelte";
     import { acceptFriendRequest, deleteFriendRequest } from "$lib/utils/friendRequests";
     import { profile } from "$lib/stores/profile";
-    import { invalidateAll } from "$app/navigation";
     
     const modalStore = getModalStore();
     const flash = getFlash(page);
@@ -25,7 +24,13 @@
     $: path = $page.url.pathname;
 
     async function fetchProfile(username: string) {
-        const { data } = await stexs.from('profiles').select('user_id,username,is_private').eq('username', username);
+        const { data } = await stexs.from('profiles')
+            .select(`
+                user_id,
+                username,
+                is_private
+            `)
+            .eq('username', username);
 
         if (data?.length === 0 && username !== undefined) {
             $flash = {
@@ -51,25 +56,41 @@
     }
 
     async function fetchIsFriend(userId: string, friendId: string) {
-        const { data } = await stexs.from('friends').select('friend_id').eq('user_id', userId).eq('friend_id', friendId);
+        const { data } = await stexs.from('friends')
+            .select('friend_id')
+            .eq('user_id', userId)
+            .eq('friend_id', friendId);
 
-        return { result: data.length === 1 };
+        return { 
+            result: data.length === 1 
+        };
     }
 
     async function fetchFriendsAmount(userId: string) {
-        const { count } = await stexs.from('friends').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+        const { count } = await stexs.from('friends')
+            .select('id', { 
+                count: 'exact',
+                head: true 
+            })
+            .eq('user_id', userId);
+
         return count;
     }
 
     async function fetchFriendRequest(requesterId: string, addresseeId: string) {
-        const { data } = await stexs.from('friend_requests').select('id').eq('requester_id', requesterId).eq('addressee_id', addresseeId);
+        const { data } = await stexs.from('friend_requests')
+            .select('id')
+            .eq('requester_id', requesterId)
+            .eq('addressee_id', addresseeId);
+
         return data.length > 0;
     }
 
     async function makeUserFriend(username: string, user_id: string, friend_id: string) {
-        const { error } = await stexs.from('friends').insert([
-            { user_id, friend_id }
-        ]);
+        const { error } = await stexs.from('friends')
+            .insert([
+                { user_id, friend_id }
+            ]);
 
         if (error) {
             $flash = {
@@ -89,9 +110,10 @@
 
     async function sendFriendRequest(username: string, requester_id: string, addressee_id: string) {
         friendRequestSubmitted = true;
-        const { error } = await stexs.from('friend_requests').insert([
-            { requester_id, addressee_id }
-        ]);
+        const { error } = await stexs.from('friend_requests')
+            .insert([
+                { requester_id, addressee_id }
+            ]);
 
         if (error && error.code === '23505') {
             await makeUserFriend(username, requester_id, addressee_id);
@@ -116,7 +138,10 @@
     async function revokeFriendRequest(params: { requesterId: string, addresseeId: string }) {
         friendRequestRevocationSubmitted = true;
         const { requesterId, addresseeId } = params;
-        const { error } = await stexs.from('friend_requests').delete().eq('requester_id', requesterId).eq('addressee_id', addresseeId);
+        const { error } = await stexs.from('friend_requests')
+            .delete()
+            .eq('requester_id', requesterId)
+            .eq('addressee_id', addresseeId);
 
         if (error) {
             $flash = {
@@ -156,7 +181,10 @@
     async function removeFriend(params: { userId: string, friendId: string }) {
         removeFriendSubmitted = true;
         const { userId, friendId } = params;
-        const { error } = await stexs.from('friends').delete().eq('user_id', userId).eq('friend_id', friendId);
+        const { error } = await stexs.from('friends')
+            .delete()
+            .eq('user_id', userId)
+            .eq('friend_id', friendId);
 
         if (error) {
             $flash = {
@@ -195,9 +223,10 @@
 
     async function blockUser(params: { blocked_id: string, blocker_id: string, username: string }) {
         const { blocked_id, blocker_id, username } = params;
-        const { error } = await stexs.from('blocked').insert([
-            { blocker_id, blocked_id }
-        ]);
+        const { error } = await stexs.from('blocked')
+            .insert([
+                { blocker_id, blocked_id }
+            ]);
 
         if (error) {
             $flash = {
@@ -230,7 +259,10 @@
 
     async function unblockUser(params: { userId: string, currentUserId: string, username: string }) {
         const { userId, currentUserId, username } = params;
-        const { error } = await stexs.from('blocked').delete().eq('blocked_id', userId).eq('blocker_id', currentUserId);
+        const { error } = await stexs.from('blocked')
+            .delete()
+            .eq('blocked_id', userId)
+            .eq('blocker_id', currentUserId);
 
         if (error) {
             $flash = {
@@ -322,7 +354,7 @@
         <div class="rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px]">
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 gap-y-8">
                 {#if $profileQuery.isLoading}
-                    <div class="placeholder-circle animate-pulse w-[148px]" />
+                    <div class="placeholder-circle animate-pulse mx-auto w-[120px] sm:w-[148px]" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <div class="placeholder animate-pulse w-[120px] h-[20px]" />
                         <div class="placeholder animate-pulse w-[100px] h-[20px]" />
@@ -365,7 +397,7 @@
                                                 gotFriendRequest = await deleteFriendRequest(userId, $user.id, flash);
                                                 
                                                 deleteFriendRequestSubmitted = false;
-                                            }} submitted={deleteFriendRequestSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600 py-1 px-2">Delete</Button>
+                                            }} submitted={deleteFriendRequestSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600">Delete</Button>
                                         </div>
                                     </div>
                                 {:else if friendRequestSend}

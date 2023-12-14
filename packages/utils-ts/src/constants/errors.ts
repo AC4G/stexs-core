@@ -262,5 +262,5 @@ export const MFA_CANNOT_BE_COMPLETELY_DISABLED = {
 };
 export const UNAUTHORIZED_ACCESS = {
   code: 'UNAUTHORIZED_ACCESS',
-  message: 'You are not authorized to access this endpoint.'
+  message: 'You are not authorized to access this endpoint.',
 };

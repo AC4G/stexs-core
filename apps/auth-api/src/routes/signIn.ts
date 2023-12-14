@@ -171,7 +171,7 @@ router.post(
             `,
           [userId],
         );
- 
+
         if (rowCount === 0) {
           logger.error(
             `Failed to fetch MFA email code and timestamp for user: ${userId}`,

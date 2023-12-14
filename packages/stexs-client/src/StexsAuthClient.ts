@@ -338,14 +338,18 @@ export class StexsAuthClient {
    * @param {string} type - The MFA method to be used for authentication.
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
-  async updatePassword(password: string, code: string, type: 'totp' | 'email'): Promise<Response> {
+  async updatePassword(
+    password: string,
+    code: string,
+    type: 'totp' | 'email',
+  ): Promise<Response> {
     return await this._request({
       path: 'user/password',
       method: 'POST',
-      body: { 
+      body: {
         password,
-        code, 
-        type
+        code,
+        type,
       },
     });
   }
@@ -358,14 +362,18 @@ export class StexsAuthClient {
    * @param {string} type - The MFA method to be used for authentication.
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
-  async changeEmail(email: string, code: string, type: 'totp' | 'email'): Promise<Response> {
+  async changeEmail(
+    email: string,
+    code: string,
+    type: 'totp' | 'email',
+  ): Promise<Response> {
     return await this._request({
       path: 'user/email',
       method: 'POST',
-      body: { 
+      body: {
         email,
         code,
-        type
+        type,
       },
     });
   }
