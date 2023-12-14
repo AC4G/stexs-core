@@ -31,7 +31,10 @@
                         user_id,
                         username
                     )
-                `, { count: 'exact', head: true })
+                `, { 
+                    count: 'exact', 
+                    head: true 
+                })
                 .eq('user_id', userId)
                 .ilike('profiles.username', `%${search}%`)
                 .not('profiles', 'is', null);
@@ -81,7 +84,7 @@
 </script>
 
 {#if $profile && $profile.totalFriends > 0}
-    <div class="mb-[12px] md:max-w-[220px]">
+    <div class="mb-[18px] md:max-w-[220px]">
         <Search size="lg" placeholder="Username" bind:value={search} class="!bg-surface-500" />
     </div>
 {/if}
@@ -113,7 +116,7 @@
     {/if}
 </div>
 {#if $profile && $profile.totalFriends > 0}
-    <div class="mx-auto mt-[12px]">
+    <div class="mx-auto mt-[18px]">
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{false}"
