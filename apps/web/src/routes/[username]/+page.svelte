@@ -3,14 +3,20 @@
     import { stexs } from "../../stexsClient";
     import { user } from "$lib/stores/user";
     import { profile } from "$lib/stores/profile";
-    import { Dropdown, Radio, Search } from "flowbite-svelte";
-    import { Paginator, type PaginationSettings } from "@skeletonlabs/skeleton";
+    import { Dropdown, Search } from "flowbite-svelte";
+    import { Paginator, type PaginationSettings, RadioGroup, RadioItem } from "@skeletonlabs/skeleton";
     import { Button } from "ui";
     import Icon from "@iconify/svelte";
 
     let search: string = '';
     let previousSearch: string = '';
+    let projectSearch: string = '';
+    $: searchedProjects = $projectsQuery?.data.filter((project: { id: number, name: string }) => project.name.toLowerCase().includes(projectSearch.toLowerCase()));
     let selectedProject: number;
+    $: selectedProjectName = selectedProject === undefined || 
+        typeof selectedProject === 'string' 
+            ? 'All' 
+            : $projectsQuery?.data.filter((project: { id: number, name: string }) => project.id === selectedProject)[0].name;
     let paginationSettings: PaginationSettings = {
         page: 0,
         limit: 50,
@@ -77,7 +83,7 @@
             .not('items', 'is', null)
             .not('items.projects', 'is', null);
 
-            if (selectedProject !== undefined) {
+            if (selectedProject !== undefined && typeof selectedProject == 'number') {
                 query.eq('items.projects.id', selectedProject);
             }
 
@@ -131,17 +137,23 @@
         <div class="md:max-w-[220px]">
             <Search size="lg" placeholder="Item Name" bind:value={search} class="!bg-surface-500" />
         </div>
-        <div class="">
-            <Button class="bg-surface-500 border border-solid border-gray-600">Projects<Icon
+        <div class="w-fit flex items-center space-x-4">
+            <p class="text-[18px]">Items: {paginationSettings.size}</p>
+            <Button class="bg-surface-500 border border-solid border-gray-600">{selectedProjectName}<Icon
                 icon="iconamoon:arrow-down-2-duotone"
                 class="text-[24px]"
               /></Button>
-            <Dropdown class="absolute left-[-20px] rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
-                <Radio bind:group={selectedProject} value={undefined}>All</Radio>
-                {#if $projectsQuery?.data.length > 0}
-                    {#each $projectsQuery.data as project}
-                        <Radio bind:group={selectedProject} value={project.id}>{project.name}</Radio>
-                    {/each}
+            <Dropdown class="left-[-20px] rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                <div class="md:max-w-[132px]">
+                    <Search size="md" placeholder="Project" bind:value={projectSearch} class="!bg-surface-500" />
+                </div>
+                <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
+                {#if searchedProjects.length > 0 }
+                    <RadioGroup class="max-h-[200px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
+                        {#each searchedProjects as project}
+                            <RadioItem bind:group={selectedProject} name="project" value={project.id}>{project.name}</RadioItem>
+                        {/each}
+                    </RadioGroup>
                 {/if}
             </Dropdown>
         </div>
@@ -154,9 +166,9 @@
         {/each}
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
-            {#each $inventoryQuery.data as inventory}
-                <div class="aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 p-2">
-                    {inventory.items.name}
+            {#each $inventoryQuery.data.reverse() as inventory}
+                <div class="aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600">
+                    <img class="h-full w-full object-cover" src="http://localhost:9000/items/thumbnails/Bayonet_Autotronic.webp" alt="item" onerror='this.style.display = "none"' />
                 </div>
             {/each}
         {:else if $itemsAmountQuery?.data > 0 && search.length > 0}
