@@ -4,10 +4,11 @@
     import { user } from "$lib/stores/user";
     import { profile } from "$lib/stores/profile";
     import { Dropdown, Search } from "flowbite-svelte";
-    import { Paginator, type PaginationSettings, RadioGroup, RadioItem } from "@skeletonlabs/skeleton";
+    import { Paginator, type PaginationSettings, RadioGroup, RadioItem, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
     import { Button } from "ui";
     import Icon from "@iconify/svelte";
 
+    const modalStore = getModalStore();
     let search: string = '';
     let previousSearch: string = '';
     let projectSearch: string = '';
@@ -73,6 +74,7 @@
                 created_at,
                 updated_at,
                 items(
+                    id
                     name,
                     projects(
                         id
@@ -100,11 +102,8 @@
         const query = stexs.from('inventories')
             .select(`
                 id,
-                amount,
-                parameter,
-                created_at,
-                updated_at,
                 items(
+                    id,
                     name,
                     projects(
                         id
@@ -123,6 +122,41 @@
         const { data } = await query;
 
         return data;
+    }
+
+    async function fetchItemFromInventory(userId: string, itemId: number) {
+        const { data } = await stexs.from('inventories')
+            .select(`
+                amount,
+                parameter,
+                updated_at,
+                items(
+                    name,
+                    description,
+                    projects(
+                        name,
+                        organizations(
+                            name
+                        )
+                    )
+                )`)
+            .eq('user_id', userId)
+            .eq('item_id', itemId)
+            .single();
+
+        return data;
+    }
+
+    async function openModal(params: { [key: string]: any }) {
+        const modal: ModalSettings = {
+            type: 'component',
+            component: 'inventoryItem',
+            meta: {
+                data: params,
+                fn: fetchItemFromInventory($profile?.userId!, params.items.id)
+            }
+        };
+        modalStore.set([modal]);
     }
 
     $: inventoryQuery = useQuery({
@@ -159,7 +193,7 @@
         </div>
     </div>
 {/if}
-<div class="grid gap-4 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+<div class="grid gap-3 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {#if $inventoryQuery.isLoading}
         {#each Array(20) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-full" />
@@ -167,9 +201,9 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data.reverse() as inventory}
-                <div class="aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600">
-                    <img class="h-full w-full object-cover" src="http://localhost:9000/items/thumbnails/Bayonet_Autotronic.webp" alt="item" onerror='this.style.display = "none"' />
-                </div>
+                <Button class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
+                    <img class="h-full w-full object-cover" draggable="false" src="http://localhost:9000/items/thumbnails/{inventory.items.id}.webp" alt={inventory.items.name} />
+                </Button>
             {/each}
         {:else if $itemsAmountQuery?.data > 0 && search.length > 0}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">

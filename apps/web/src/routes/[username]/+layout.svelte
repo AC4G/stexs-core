@@ -360,7 +360,7 @@
                         <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                     </div>
                 {:else}
-                    <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$profileQuery.data?.user_id} {username} class="mx-auto w-[120px] sm:w-[148px]" />
+                    <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$profileQuery.data?.user_id} {username} class="mx-auto w-[120px] sm:w-[148px]" draggable="false" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <p class="text-[20px] w-fit">{$profileQuery.data?.username}</p>
                         {#if (!isPrivate || $user?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}

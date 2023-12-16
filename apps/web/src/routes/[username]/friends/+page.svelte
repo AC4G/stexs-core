@@ -88,7 +88,7 @@
         <Search size="lg" placeholder="Username" bind:value={search} class="!bg-surface-500" />
     </div>
 {/if}
-<div class="grid gap-4 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+<div class="grid gap-3 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {#if $friendsQuery.isLoading}
         {#each Array(20) as _}
             <div class="flex h-full w-full items-center justify-between">
