@@ -103,14 +103,14 @@ GRANT EXECUTE ON FUNCTION auth.scopes() TO authenticated;
 CREATE TABLE auth.users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     email CITEXT NOT NULL UNIQUE,
-    encrypted_password VARCHAR(255) NOT NULL,
+    encrypted_password VARCHAR(60) NOT NULL,
     email_verified_at TIMESTAMPTZ,
     verification_token UUID,
     verification_sent_at TIMESTAMPTZ,
     raw_user_meta_data JSONB DEFAULT '{}'::JSONB NOT NULL,
     is_super_admin BOOLEAN DEFAULT FALSE NOT NULL,
     banned_until TIMESTAMPTZ,
-    email_change VARCHAR(255),
+    email_change VARCHAR(8),
     email_change_sent_at TIMESTAMPTZ,
     email_change_token UUID,
     recovery_token UUID,
@@ -124,7 +124,7 @@ CREATE TABLE auth.mfa (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email BOOLEAN DEFAULT TRUE NOT NULL,
     totp BOOLEAN DEFAULT FALSE NOT NULL,
-    totp_secret VARCHAR(255),
+    totp_secret VARCHAR(32),
     totp_verified_at TIMESTAMPTZ,
     email_code VARCHAR(8),
     email_code_sent_at TIMESTAMPTZ
@@ -219,7 +219,8 @@ CREATE TABLE public.profiles (
     username CITEXT NOT NULL UNIQUE,
     is_private BOOLEAN NOT NULL DEFAULT FALSE,
     accept_friend_requests BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT username_max_length CHECK (length(username) <= 20)
 );
 
 GRANT UPDATE (username, is_private) ON TABLE public.profiles TO authenticated;
@@ -231,13 +232,15 @@ GRANT SELECT ON TABLE public.profiles TO authenticated;
 CREATE TABLE public.organizations (
     id SERIAL PRIMARY KEY,
     name CITEXT NOT NULL UNIQUE,
-    display_name VARCHAR(255),
-    description TEXT,
-    readme TEXT,
-    email VARCHAR(255),
-    url VARCHAR(255),
+    display_name CITEXT,
+    description VARCHAR(250),
+    readme VARCHAR(10000),
+    email VARCHAR(254),
+    url VARCHAR(200),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMPTZ
+    updated_at TIMESTAMPTZ,
+    CONSTRAINT name_max_length CHECK (length(name) <= 50),
+    CONSTRAINT display_name_max_length CHECK (length(display_name) <= 50)
 );
 
 GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
@@ -252,13 +255,14 @@ CREATE TABLE public.projects (
     id SERIAL PRIMARY KEY,
     name CITEXT NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
-    description TEXT,
-    readme TEXT,
-    email VARCHAR(255),
-    url VARCHAR(255),
+    description VARCHAR(250),
+    readme VARCHAR(10000),
+    email VARCHAR(254),
+    url VARCHAR(200),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT unique_project_combination UNIQUE (name, organization_id)
+    CONSTRAINT unique_project_combination UNIQUE (name, organization_id),
+    CONSTRAINT name_max_length CHECK (length(name) <= 50)
 );
 
 GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
@@ -271,16 +275,17 @@ GRANT SELECT ON TABLE public.projects TO authenticated;
 
 CREATE TABLE public.oauth2_apps (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name CITEXT NOT NULL,
     client_id UUID NOT NULL UNIQUE,
-    client_secret VARCHAR(255) NOT NULL,
+    client_secret VARCHAR(64) NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
-    description TEXT,
-    homepage_url VARCHAR(255),
-    redirect_url VARCHAR(255) NOT NULL,
+    description VARCHAR(250),
+    homepage_url VARCHAR(100),
+    redirect_url VARCHAR(200) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id)
+    CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id),
+    CONSTRAINT name_max_length CHECK (length(name) <= 50)
 );
 
 GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
@@ -305,8 +310,7 @@ GRANT SELECT ON public.oauth2_apps_public TO authenticated;
 CREATE OR REPLACE FUNCTION public.generate_client_credentials()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.client_id := uuid_generate_v4();
-    NEW.client_secret := md5(random()::text || clock_timestamp()::text);
+    NEW.client_secret := encode(digest(random()::text || clock_timestamp()::text, 'sha256'), 'hex');
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -346,9 +350,9 @@ GRANT EXECUTE ON FUNCTION public.generate_new_client_secret(INT) TO authenticate
 
 CREATE TABLE public.scopes (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(200) NOT NULL UNIQUE,
     description TEXT NOT NULL,
-    type VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ
 );

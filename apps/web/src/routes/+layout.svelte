@@ -25,6 +25,7 @@
   import type { FriendRequestsGQL, FriendRequests, OrganizationRequests, OrganizationRequestsGQL, ProjectRequestsGQL, ProjectRequests } from '$lib/types';
   import Button from 'ui/src/Button.svelte';
   import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
+    import InventoryItem from 'ui/src/modals/InventoryItem.svelte';
 
   initializeStores();
   const queryClient = new QueryClient({
@@ -38,7 +39,8 @@
   const toastStore = getToastStore();
   const flash = getFlash(page);
   const modalRegistry: Record<string, ModalComponent> = {
-    confirm: { ref: Confirm }
+    confirm: { ref: Confirm },
+    inventoryItem: { ref: InventoryItem }
   };
   const excludeRoutes = [
     '/sign-in',

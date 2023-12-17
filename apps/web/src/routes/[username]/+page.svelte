@@ -3,14 +3,21 @@
     import { stexs } from "../../stexsClient";
     import { user } from "$lib/stores/user";
     import { profile } from "$lib/stores/profile";
-    import { Dropdown, Radio, Search } from "flowbite-svelte";
-    import { Paginator, type PaginationSettings } from "@skeletonlabs/skeleton";
+    import { Dropdown, Search } from "flowbite-svelte";
+    import { Paginator, type PaginationSettings, RadioGroup, RadioItem, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
     import { Button } from "ui";
     import Icon from "@iconify/svelte";
 
+    const modalStore = getModalStore();
     let search: string = '';
     let previousSearch: string = '';
+    let projectSearch: string = '';
+    $: searchedProjects = $projectsQuery?.data.filter((project: { id: number, name: string }) => project.name.toLowerCase().includes(projectSearch.toLowerCase()));
     let selectedProject: number;
+    $: selectedProjectName = selectedProject === undefined || 
+        typeof selectedProject === 'string' 
+            ? 'All' 
+            : $projectsQuery?.data.filter((project: { id: number, name: string }) => project.id === selectedProject)[0].name;
     let paginationSettings: PaginationSettings = {
         page: 0,
         limit: 50,
@@ -34,6 +41,8 @@
         const { data } = await stexs.rpc('distinct_projects_from_inventory', {
             user_id_param: userId
         });
+
+        console.log({ data })
 
         return data;
     }
@@ -62,11 +71,8 @@
             const query = stexs.from('inventories')
             .select(`
                 id,
-                amount,
-                parameter,
-                created_at,
-                updated_at,
                 items(
+                    id,
                     name,
                     projects(
                         id
@@ -77,7 +83,7 @@
             .not('items', 'is', null)
             .not('items.projects', 'is', null);
 
-            if (selectedProject !== undefined) {
+            if (selectedProject !== undefined && typeof selectedProject == 'number') {
                 query.eq('items.projects.id', selectedProject);
             }
 
@@ -94,11 +100,8 @@
         const query = stexs.from('inventories')
             .select(`
                 id,
-                amount,
-                parameter,
-                created_at,
-                updated_at,
                 items(
+                    id,
                     name,
                     projects(
                         id
@@ -119,6 +122,41 @@
         return data;
     }
 
+    async function fetchItemFromInventory(userId: string, itemId: number) {
+        const { data } = await stexs.from('inventories')
+            .select(`
+                amount,
+                parameter,
+                updated_at,
+                items(
+                    name,
+                    description,
+                    projects(
+                        name,
+                        organizations(
+                            name
+                        )
+                    )
+                )`)
+            .eq('user_id', userId)
+            .eq('item_id', itemId)
+            .single();
+
+        return data;
+    }
+
+    async function openModal(params: { [key: string]: any }) {
+        const modal: ModalSettings = {
+            type: 'component',
+            component: 'inventoryItem',
+            meta: {
+                data: params,
+                fn: fetchItemFromInventory($profile?.userId!, params.items.id)
+            }
+        };
+        modalStore.set([modal]);
+    }
+
     $: inventoryQuery = useQuery({
         queryKey: ['inventories', $profile?.userId],
         queryFn: async () => await fetchInventory($profile?.userId!, search, selectedProject, paginationSettings.page, paginationSettings.limit),
@@ -131,33 +169,50 @@
         <div class="md:max-w-[220px]">
             <Search size="lg" placeholder="Item Name" bind:value={search} class="!bg-surface-500" />
         </div>
-        <div class="">
-            <Button class="bg-surface-500 border border-solid border-gray-600">Projects<Icon
+        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+            <Button class="bg-surface-500 border border-solid border-gray-600 w-full md:w-fit">{selectedProjectName}<Icon
                 icon="iconamoon:arrow-down-2-duotone"
                 class="text-[24px]"
               /></Button>
-            <Dropdown class="absolute left-[-20px] rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
-                <Radio bind:group={selectedProject} value={undefined}>All</Radio>
-                {#if $projectsQuery?.data.length > 0}
-                    {#each $projectsQuery.data as project}
-                        <Radio bind:group={selectedProject} value={project.id}>{project.name}</Radio>
-                    {/each}
+            <Dropdown class="left-[-20px] rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                <div class="">
+                    <Search size="md" placeholder="Project" bind:value={projectSearch} class="!bg-surface-500" />
+                </div>
+                <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
+                {#if searchedProjects.length > 0 }
+                    <RadioGroup class="max-h-[200px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
+                        {#each searchedProjects as project}
+                            <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
+                                <div class="flex flex-row space-x-2">
+                                    <div class="w-[48px] h-[48px] bg-surface-600 transition border border-solid border-gray-600 rounded-md">
+                                            <Icon icon="uil:image-question" class="text-[46px] variant-filled-surface rounded-md" />
+                                            <img src="http://localhost:9000/projects/{project.id}.webp" draggable="false" alt={project.name} class="h-full w-full object-cover aspect-square" onerror='this.style.display = "none"' />
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <p class="text-[14px]">{project.name}</p>
+                                        <p class="text-[14px]">{project.organization_name}</p>
+                                    </div>
+                                </div>
+                            </RadioItem>
+                        {/each}
+                    </RadioGroup>
                 {/if}
             </Dropdown>
+            <p class="text-[18px]">Items: {paginationSettings.size}</p>
         </div>
     </div>
 {/if}
-<div class="grid gap-4 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+<div class="grid gap-3 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {#if $inventoryQuery.isLoading}
         {#each Array(20) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-full" />
         {/each}
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
-            {#each $inventoryQuery.data as inventory}
-                <div class="aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 p-2">
-                    {inventory.items.name}
-                </div>
+            {#each $inventoryQuery.data.reverse() as inventory}
+                <Button class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
+                    <img class="h-full w-full object-cover" draggable="false" src="http://localhost:9000/items/thumbnails/{inventory.items.id}.webp" alt={inventory.items.name} />
+                </Button>
             {/each}
         {:else if $itemsAmountQuery?.data > 0 && search.length > 0}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
