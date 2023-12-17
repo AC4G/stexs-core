@@ -63,19 +63,22 @@ GRANT SELECT ON TABLE public.inventories TO anon;
 GRANT SELECT ON TABLE public.inventories TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.distinct_projects_from_inventory(user_id_param UUID)
-RETURNS TABLE (id INT, name CITEXT)
+RETURNS TABLE (id INT, name CITEXT, organization_name CITEXT)
 AS $$
 BEGIN
     RETURN QUERY
     SELECT DISTINCT ON (projects.id)
         projects.id AS id,
         projects.name AS name
+        organizations.name AS organization_name
     FROM
         inventories
     JOIN
         items ON inventories.item_id = items.id
     JOIN
         projects ON items.project_id = projects.id
+    JOIN
+        organizations ON projects.organization_id = organizations.id
     WHERE
         inventories.user_id = user_id_param;
 END;
