@@ -26,6 +26,7 @@ CREATE TABLE public.items (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
+    description TEXT,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     is_private BOOLEAN DEFAULT FALSE NOT NULL,
@@ -49,8 +50,7 @@ CREATE TABLE public.inventories (
     amount INT DEFAULT '0'::BIGINT NOT NULL,
     parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMPTZ,
-    CONSTRAINT unique_inventories_combination UNIQUE (item_id, user_id)
+    updated_at TIMESTAMPTZ
 );
 
 GRANT INSERT (item_id, user_id, amount, parameter) ON TABLE public.inventories TO authenticated;

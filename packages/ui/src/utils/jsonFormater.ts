@@ -7,9 +7,9 @@ export default function format(obj: { [key: string]: Value }, indent = 0): strin
         const indentation = '  '.repeat(indent);
   
         if (Array.isArray(value)) {
-          return `${indentation}<b>${key}:</b>\n${value.map(item => `${indentation}  • ${item}`).join('\n')}`;
+          return `${indentation}${key}:\n${value.map(item => `${indentation}  • ${item}`).join('\n')}`;
         } else if (typeof value === 'object' && value !== null) {
-          return `${indentation}<b>${key}:</b>\n${format(value, indent + 1)}`;
+          return `${indentation}${key}:\n${format(value, indent + 1)}`;
         } else {
           return `${indentation}${key}: ${value}`;
         }
