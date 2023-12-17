@@ -24,15 +24,17 @@ $$ LANGUAGE plpgsql;
 
 CREATE TABLE public.items (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name CITEXT NOT NULL,
     parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
-    description TEXT,
+    description VARCHAR(800),
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     is_private BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT unique_items_combination UNIQUE (name, project_id)
+    CONSTRAINT unique_items_combination UNIQUE (name, project_id),
+    CONSTRAINT name_max_length CHECK (length(name) <= 50),
+    CONSTRAINT parameter_size_limit CHECK (pg_column_size(parameter) <= 1048576)
 );
 
 GRANT INSERT (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
@@ -47,10 +49,11 @@ CREATE TABLE public.inventories (
     id SERIAL PRIMARY KEY,
     item_id INT REFERENCES public.items(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-    amount INT DEFAULT '0'::BIGINT NOT NULL,
+    amount BIGINT DEFAULT 0 NOT NULL,
     parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMPTZ
+    updated_at TIMESTAMPTZ,
+    CONSTRAINT parameter_size_limit CHECK(pg_column_size(parameter) <= 1048576)
 );
 
 GRANT INSERT (item_id, user_id, amount, parameter) ON TABLE public.inventories TO authenticated;
@@ -274,7 +277,7 @@ CREATE TABLE public.organization_members (
     id SERIAL PRIMARY KEY,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
     member_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-    role VARCHAR(255) DEFAULT 'Member' NOT NULL,
+    role VARCHAR(100) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_organization_members_combination UNIQUE (organization_id, member_id),
@@ -293,7 +296,7 @@ CREATE TABLE public.organization_requests (
     id SERIAL PRIMARY KEY,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-    role VARCHAR(255) DEFAULT 'Member' NOT NULL,
+    role VARCHAR(100) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_organization_requests_combination UNIQUE (organization_id, addressee_id),
@@ -356,7 +359,7 @@ CREATE TABLE public.project_members (
     id SERIAL PRIMARY KEY,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     member_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-    role VARCHAR(255) DEFAULT 'Member' NOT NULL,
+    role VARCHAR(100) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_project_members_combination UNIQUE (project_id, member_id),
@@ -375,7 +378,7 @@ CREATE TABLE public.project_requests (
     id SERIAL PRIMARY KEY,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     addressee_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-    role VARCHAR(255) DEFAULT 'Member' NOT NULL,
+    role VARCHAR(100) DEFAULT 'Member' NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_project_requests_combination UNIQUE (project_id, addressee_id),
