@@ -59,7 +59,7 @@
             .not('profiles', 'is', null)
             .range(start, end);
 
-        data.sort((a: { 
+        data?.sort((a: { 
             profiles: {
                 username: string
             } }, b: {
@@ -97,7 +97,7 @@
             </div>
         {/each}
     {:else}
-        {#if $friendsQuery.data.length > 0}
+        {#if $friendsQuery.data?.length > 0}
             {#each $friendsQuery.data as friend}
                 <a href="/{friend.profiles.username}" class="flex h-full w-full items-center justify-between p-2 rounded-md hover:bg-surface-500 transition">
                     <Avatar class="w-[40px] h-[40px]" userId={friend.profiles.user_id} username={friend.profiles.username} endpoint={PUBLIC_S3_ENDPOINT} />

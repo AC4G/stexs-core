@@ -12,7 +12,7 @@
     let search: string = '';
     let previousSearch: string = '';
     let projectSearch: string = '';
-    $: searchedProjects = $projectsQuery?.data.filter((project: { id: number, name: string }) => project.name.toLowerCase().includes(projectSearch.toLowerCase()));
+    $: searchedProjects = $projectsQuery?.data?.filter((project: { id: number, name: string }) => project.name.toLowerCase().includes(projectSearch.toLowerCase()));
     let selectedProject: number;
     $: selectedProjectName = selectedProject === undefined || 
         typeof selectedProject === 'string' 
@@ -41,8 +41,6 @@
         const { data } = await stexs.rpc('distinct_projects_from_inventory', {
             user_id_param: userId
         });
-
-        console.log({ data })
 
         return data;
     }
