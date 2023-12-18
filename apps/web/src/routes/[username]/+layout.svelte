@@ -13,6 +13,7 @@
     import { acceptFriendRequest, deleteFriendRequest } from "$lib/utils/friendRequests";
     import { profile } from "$lib/stores/profile";
     
+    const isSSR = import.meta.env.SSR;
     const modalStore = getModalStore();
     const flash = getFlash(page);
     let friendRequestSubmitted: boolean = false;
@@ -30,7 +31,8 @@
                 username,
                 is_private
             `)
-            .eq('username', username);
+            .eq('username', username)
+            .single();
 
         if (data?.length === 0 && username !== undefined) {
             $flash = {
@@ -38,10 +40,11 @@
                 classes: 'variant-ghost-error',
                 timeout: 5000,
             };
+            
             return goto('/');
         }
 
-        return data[0];
+        return data;
     }
 
     async function fetchBlocked(userId: string, currentUserId: string) {
@@ -296,7 +299,7 @@
     $: profileQuery = useQuery({
         queryKey: ['userProfile', username],
         queryFn: async () => await fetchProfile(username),
-        enabled: !!username
+        enabled: !!username && !isSSR
     });
 
     $: blockedQuery = useQuery({

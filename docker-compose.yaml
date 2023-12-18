@@ -3,7 +3,7 @@ version: '3.7'
 services:  
   rest:
     image: postgrest/postgrest:latest
-    restart: on-failure
+    restart: unless-stopped
     ports:
       - 3000:3000
     environment:
@@ -39,7 +39,7 @@ services:
     image: haproxy:latest 
     ports:
       - 443:443
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - ./docker/haproxy:/etc/haproxy
     environment:
@@ -57,7 +57,7 @@ services:
     ports:
       - 1025:1025
       - 8025:8025
-    restart: on-failure
+    restart: unless-stopped
     container_name: mailpit
 
 
@@ -78,7 +78,7 @@ services:
     ports: 
       - 9000:9000
       - 9001:9001
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - ./docker/minio/data:/data
     container_name: minio
@@ -95,7 +95,7 @@ services:
       dockerfile: ./docker/postgraphile/Dockerfile
     ports: 
       - 5000:5000
-    restart: on-failure
+    restart: unless-stopped
     container_name: graphile
     command:
       [
@@ -119,6 +119,16 @@ services:
         "--subscriptions",
         "--show-error-stack"
       ]
+    networks:
+      - stexs
+
+  redis:
+    image: redis/redis-stack:latest
+    ports: 
+      - 6379:6379
+      - 8001:8001
+    container_name: redis
+    restart: unless-stopped
     networks:
       - stexs
   

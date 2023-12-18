@@ -116,7 +116,7 @@ export default class StexsClient {
   private _getAccessToken(): string | null {
     if (typeof window === 'undefined') {
       return null;
-    }    
+    }
 
     const session: Session = this.auth.getSession();
     return session?.access_token;

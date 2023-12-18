@@ -134,6 +134,16 @@ CREATE POLICY friends_select
     USING (
         (
             (
+                auth.grant() IS NULL AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE (p.user_id = user_id AND p.is_private = FALSE) AND
+                        (p.user_id = friend_id AND p.is_private = FALSE)
+                )
+            )
+            OR
+            (
                 auth.grant() = 'password' AND
                 (
                     auth.uid() = user_id OR
@@ -156,7 +166,7 @@ CREATE POLICY friends_select
             )
             OR 
             (
-                auth.grant() NOT IN ('client_credentials', 'authorization_code') AND
+                auth.grant() = 'password' AND
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
@@ -233,6 +243,7 @@ FROM public.projects
 WHERE organization_id = (auth.jwt()->>'organization_id')::INT;
 
 GRANT SELECT ON public.project_ids_by_jwt_organization TO authenticated;
+GRANT SELECT ON public.project_ids_by_jwt_organization TO anon;
 
 
 
@@ -245,6 +256,15 @@ CREATE POLICY inventories_select
     USING (
         (
             (
+                auth.grant() IS NULL AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE p.user_id = user_id AND p.is_private = FALSE
+                )
+            )
+            OR
+            (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
                 'inventory.read' = ANY(auth.scopes())
@@ -256,7 +276,7 @@ CREATE POLICY inventories_select
             )
             OR
             (
-                auth.grant() NOT IN ('client_credentials', 'authorization_code') AND
+                auth.grant() = 'password' AND
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
@@ -336,7 +356,8 @@ CREATE POLICY items_select
             )
             OR
             (
-                auth.grant() NOT IN ('client_credentials', 'authorization_code')
+                auth.grant() = 'password' OR
+                auth.grant() IS NULL
             )
         )
     );
@@ -892,7 +913,8 @@ CREATE POLICY organizations_select
     USING (
         (
             (
-                auth.grant() NOT IN ('client_credentials', 'authorization_code')
+                auth.grant() = 'password' OR
+                auth.grant() IS NULL
             )
             OR
             (
@@ -1338,7 +1360,8 @@ CREATE POLICY projects_select
     USING (
         (
             (
-                auth.grant() NOT IN ('client_credentials', 'authorization_code')
+                auth.grant() = 'password' OR
+                auth.grant() IS NULL
             )
             OR 
             (

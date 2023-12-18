@@ -5,14 +5,21 @@
     import { profile } from "$lib/stores/profile";
     import { Dropdown, Search } from "flowbite-svelte";
     import { Paginator, type PaginationSettings, RadioGroup, RadioItem, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
-    import { Button } from "ui";
+    import { Button, hideImg } from "ui";
     import Icon from "@iconify/svelte";
 
     const modalStore = getModalStore();
     let search: string = '';
     let previousSearch: string = '';
     let projectSearch: string = '';
-    $: searchedProjects = $projectsQuery?.data?.filter((project: { id: number, name: string }) => project.name.toLowerCase().includes(projectSearch.toLowerCase()));
+    $: searchedProjects = $projectsQuery?.data?.filter((project: { id: number, name: string, organization_name: string }) => {
+        const searchTerms = projectSearch.toLowerCase().split(' ');
+
+        return searchTerms.some(term =>
+            project.name.toLowerCase().includes(term) ||
+            project.organization_name.toLowerCase().includes(term)
+        );
+    });
     let selectedProject: number;
     $: selectedProjectName = selectedProject === undefined || 
         typeof selectedProject === 'string' 
@@ -68,9 +75,7 @@
 
             const query = stexs.from('inventories')
             .select(`
-                id,
                 items(
-                    id,
                     name,
                     projects(
                         id
@@ -127,7 +132,6 @@
                 parameter,
                 updated_at,
                 items(
-                    name,
                     description,
                     projects(
                         name,
@@ -177,22 +181,40 @@
                     <Search size="md" placeholder="Project" bind:value={projectSearch} class="!bg-surface-500" />
                 </div>
                 <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
-                {#if searchedProjects.length > 0 }
-                    <RadioGroup class="max-h-[200px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
-                        {#each searchedProjects as project}
-                            <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
-                                <div class="flex flex-row space-x-2">
-                                    <div class="w-[48px] h-[48px] bg-surface-600 transition border border-solid border-gray-600 rounded-md">
-                                            <Icon icon="uil:image-question" class="text-[46px] variant-filled-surface rounded-md" />
-                                            <img src="http://localhost:9000/projects/{project.id}.webp" draggable="false" alt={project.name} class="h-full w-full object-cover aspect-square" onerror='this.style.display = "none"' />
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <p class="text-[14px]">{project.name}</p>
-                                        <p class="text-[14px]">{project.organization_name}</p>
-                                    </div>
+                {#if $projectsQuery.isLoading }
+                    <RadioGroup class="max-h-[280px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
+                        {#each Array(10) as _}
+                            <div class="flex flex-row space-x-2 px-4 py-1">
+                                <div class="placeholder animate-pulse w-[48px] h-[48px]" />
+                                <div class="flex flex-col space-y-2 w-[130px]">
+                                    <div class="placeholder animate-pulse h-[20px]" />
+                                    <div class="placeholder animate-pulse h-[20px]" />
                                 </div>
-                            </RadioItem>
+                            </div>
                         {/each}
+                    </RadioGroup>
+                {:else}
+                    <RadioGroup class="max-h-[200px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
+                        {#if searchedProjects && searchedProjects.length > 0 }
+                            {#each searchedProjects as project}
+                                <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
+                                    <div class="flex flex-row space-x-2">
+                                        <div class="w-[48px] h-[48px] bg-surface-600 transition border border-solid border-gray-600 rounded-md">
+                                                <Icon icon="uil:image-question" class="text-[46px] variant-filled-surface rounded-md" />
+                                                <img src="http://localhost:9000/projects/{project.id}.webp" draggable="false" alt={project.name} class="h-full w-full object-cover aspect-square" on:error={hideImg} />
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <p class="text-[14px]">{project.name}</p>
+                                            <p class="text-[14px]">{project.organization_name}</p>
+                                        </div>
+                                    </div>
+                                </RadioItem>
+                            {/each}
+                        {:else if searchedProjects?.length ===  0}
+                            <div class="h-[56px] px-4 p-1 flex justify-center items-center">
+                                <p class="text-[18px]">No projects found</p>
+                            </div>
+                        {/if}
                     </RadioGroup>
                 {/if}
             </Dropdown>
@@ -209,7 +231,7 @@
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data.reverse() as inventory}
                 <Button class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
-                    <img class="h-full w-full object-cover" draggable="false" src="http://localhost:9000/items/thumbnails/{inventory.items.id}.webp" alt={inventory.items.name} />
+                    <img class="h-full w-full object-cover rounded-none" draggable="false" src="http://localhost:9000/items/thumbnails/{inventory.items.id}.webp" alt={inventory.items.name} />
                 </Button>
             {/each}
         {:else if $itemsAmountQuery?.data > 0 && search.length > 0}

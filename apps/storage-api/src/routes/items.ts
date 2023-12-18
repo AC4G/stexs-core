@@ -28,12 +28,12 @@ router.get(
     try {
       const { rowCount } = await db.query(
         `
-                    SELECT 1
-                    FROM public.project_members pm
-                    JOIN public.profiles p ON pm.member_id = p.user_id
-                    JOIN public.items i ON pm.project_id = i.project_id
-                    WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner')
-                `,
+          SELECT 1
+          FROM public.project_members pm
+          JOIN public.profiles p ON pm.member_id = p.user_id
+          JOIN public.items i ON pm.project_id = i.project_id
+          WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner')
+        `,
         [itemId, userId],
       );
 

@@ -4,6 +4,7 @@
     import formatJSON from '../utils/jsonFormater';
     import Icon from "@iconify/svelte";
     import Button from '../Button.svelte';
+    import { hideImg } from '../utils/image';
 
     export let parent: SvelteComponent;
 
@@ -59,7 +60,7 @@
                 <div class="w-[48px] h-[48px] bg-surface-600 hover:bg-surface-700 transition border border-solid border-gray-600 hover:border-gray-700 rounded-md">
                     <a href="/organizations/{data.items.projects.organizations.name}/{data.items.projects.name}" class="group flex">
                         <Icon icon="uil:image-question" class="text-[46px] group-hover:text-gray-500 transition" />
-                        <img src="http://localhost:9000/projects/{data.items.projects.id}.webp" draggable="false" alt={data.items.projects.name} class="h-full w-full object-cover aspect-square" onerror='this.style.display = "none"' />
+                        <img src="http://localhost:9000/projects/{data.items.projects.id}.webp" draggable="false" alt={data.items.projects.name} class="h-full w-full object-cover aspect-square" on:error={hideImg} />
                     </a>
                 </div>
                 <div class="flex flex-col">
