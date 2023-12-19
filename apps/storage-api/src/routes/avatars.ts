@@ -3,7 +3,7 @@ import { param } from 'express-validator';
 import {
   INTERNAL_ERROR,
   INVALID_UUID,
-  USERID_REQUIRED,
+  USER_ID_REQUIRED,
 } from 'utils-ts/errors';
 import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
 import validate from 'utils-ts/validatorMiddleware';
@@ -26,7 +26,7 @@ router.get(
   [
     param('userId')
       .notEmpty()
-      .withMessage(USERID_REQUIRED)
+      .withMessage(USER_ID_REQUIRED)
       .bail()
       .custom((value) => {
         if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
@@ -35,7 +35,7 @@ router.get(
       }),
     validate(logger)
   ],async (req: Request, res: Response) => {
-  const userId = req.params.userId;
+  const { userId } = req.params;
 
   const url = await redis.get(`avatars:${userId}`);
 

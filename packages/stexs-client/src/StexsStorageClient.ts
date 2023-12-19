@@ -11,10 +11,23 @@ export class StexsStorageClient {
      * Returns presigned url for avatar of the given user id
      *       
      * @param userId - user id of the user which the avatar is requested
+     * @returns {Promise<Response>}
      */
     async getAvatarUrl(userId: string) {
         return await this._request({ 
             path: `avatars/${userId}` 
+        });
+    }
+
+    /**
+     * Returns a presigned url for item thumbnail of the given item id
+     * 
+     * @param itemId - item id for requesting the thumbnail url
+     * @returns {Promise<Response>}
+     */
+    async getItemThumbnailUrl(itemId: string) {
+        return await this._request({ 
+            path: `items/thumbnail/${itemId}` 
         });
     }
 

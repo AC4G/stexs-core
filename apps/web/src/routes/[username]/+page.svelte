@@ -7,6 +7,7 @@
     import { Paginator, type PaginationSettings, RadioGroup, RadioItem, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
     import { Button, hideImg } from "ui";
     import Icon from "@iconify/svelte";
+    import ItemThumbnail from "ui/src/ItemThumbnail.svelte";
 
     const modalStore = getModalStore();
     let search: string = '';
@@ -231,7 +232,7 @@
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data.reverse() as inventory}
                 <Button class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
-                    <img class="h-full w-full object-cover rounded-none" draggable="false" src="http://localhost:9000/items/thumbnails/{inventory.items.id}.webp" alt={inventory.items.name} />
+                    <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
             {/each}
         {:else if $itemsAmountQuery?.data > 0 && search.length > 0}

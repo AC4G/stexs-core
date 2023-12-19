@@ -6,15 +6,13 @@
     export let userId: string;
     export let username: string|undefined;
 
-    async function fetchUrl(userId: string) {
-        return { 
-            url: (await (await stexs.storage.getAvatarUrl(userId)).json()).url
-        };
-    } 
-
     $: query = useQuery({
         queryKey: ['avatar', userId],
-        queryFn: async () => await fetchUrl(userId),
+        queryFn: async () => {
+            return { 
+                url: (await (await stexs.storage.getAvatarUrl(userId)).json()).url
+            };
+        },
         enabled: !!userId
     });
 </script>
