@@ -10,7 +10,7 @@ import { Request } from 'express-jwt';
 import db from '../database';
 import { errorMessages } from 'utils-ts/messageBuilder';
 import { INTERNAL_ERROR, UNAUTHORIZED_ACCESS } from 'utils-ts/errors';
-import { itemsClient } from '../s3';
+import s3 from '../s3';
 
 const router = Router();
 
@@ -55,10 +55,10 @@ router.get(
     }
 
     try {
-      const signedPost = await itemsClient.createPresignedPost({
-        Bucket: 'items',
+      const signedPost = await s3.createPresignedPost({
+        Bucket: 'stexs',
         Fields: {
-          key: 'thumbnails/' + itemId + '.webp',
+          key: 'items/thumbnails/' + itemId + '.webp',
           'Content-Type': `image/webp`,
         },
         Conditions: [

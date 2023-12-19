@@ -1,34 +1,21 @@
 <script lang="ts">
 	import { useQuery } from '@sveltestack/svelte-query';
     import { Avatar } from '@skeletonlabs/skeleton';
-    import { XMLParser } from 'fast-xml-parser';
 
-    const parser = new XMLParser();
-
-    export let userId: string|undefined;
+    export let stexs: any;
     export let username: string|undefined;
-    export let endpoint: string;
 
-    async function fetchObjectKey(userId: string) {
-        const response = await fetch(`${endpoint}/avatars/?list-type=2&prefix=${userId}`);
-        const data = await response.text();
+    async function fetchUrl(username: string) {
+        const { url }  = await (await stexs.storage.getAvatarUrl(username)).json();
 
-        const doc = parser.parse(data);
-
-        let key;
-
-        if (doc.ListBucketResult.Contents && doc.ListBucketResult.Contents.Key) {
-            key = doc.ListBucketResult.Contents.Key
-        }
-
-        return { key };
-    }
+        return { url };
+    } 
 
     $: query = useQuery({
-        queryKey: ['avatar', userId],
-        queryFn: async () => await fetchObjectKey(userId),
-        enabled: !!userId
+        queryKey: ['avatar', username],
+        queryFn: async () => await fetchUrl(username),
+        enabled: !!username
     });
 </script>
 
-<Avatar src={$query.data?.key ? `${endpoint}/avatars/${$query.data.key}` : undefined} initials={username} {...$$restProps} />
+<Avatar src={$query.data?.url} initials={username} {...$$restProps} />
