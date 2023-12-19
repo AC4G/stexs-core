@@ -8,13 +8,13 @@ export class StexsStorageClient {
     }
 
     /**
-     * Returns presigned url for avatar of the given username
+     * Returns presigned url for avatar of the given user id
      *       
-     * @param username - username of the user which the avatar is requested
+     * @param userId - user id of the user which the avatar is requested
      */
-    async getAvatarUrl(username: string) {
+    async getAvatarUrl(userId: string) {
         return await this._request({ 
-            path: `avatars/${username}` 
+            path: `avatars/${userId}` 
         });
     }
 

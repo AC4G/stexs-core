@@ -80,6 +80,8 @@
         queryFn: async () => await fetchFriends($profile?.userId!, search, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profile?.userId
     });
+
+    $: console.log({ friends: $friendsQuery.data })
 </script>
 
 {#if $profile && $profile.totalFriends > 0}
@@ -99,7 +101,7 @@
         {#if $friendsQuery.data?.length > 0}
             {#each $friendsQuery.data as friend}
                 <a href="/{friend.profiles.username}" class="flex h-full w-full items-center justify-between p-2 rounded-md hover:bg-surface-500 transition">
-                    <Avatar class="w-[40px] h-[40px]" username={friend.profiles.username} {stexs} />
+                    <Avatar class="w-[40px] h-[40px]" userId={friend.profiles.user_id} username={friend.profiles.username} {stexs} />
                     <Truncated text={friend.profiles.username} maxLength={12} class="text-[14px] w-[70%] text-left pl-2" />
                 </a>
             {/each}

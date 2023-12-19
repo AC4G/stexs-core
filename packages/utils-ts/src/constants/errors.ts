@@ -2,6 +2,10 @@ export const USERNAME_REQUIRED = {
   code: 'USERNAME_REQUIRED',
   message: 'Please provide a username.',
 };
+export const USERID_REQUIRED = {
+  code: 'USERID_REQUIRED',
+  message: 'Please provide a user id.',
+};
 export const INVALID_USERNAME = {
   code: 'INVALID_USERNAME',
   messages: [

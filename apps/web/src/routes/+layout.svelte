@@ -17,11 +17,23 @@
   import Icon from '@iconify/svelte';
   import { user } from '$lib/stores/user';
   import { browser } from '$app/environment';
-  import { Dropdown, DropdownItem, DropdownDivider, Search } from 'flowbite-svelte';
+  import { 
+    Dropdown, 
+    DropdownItem, 
+    DropdownDivider, 
+    Search 
+  } from 'flowbite-svelte';
   import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
   import { goto } from '$app/navigation';
   import { gql } from 'stexs-client';
-  import type { FriendRequestsGQL, FriendRequests, OrganizationRequests, OrganizationRequestsGQL, ProjectRequestsGQL, ProjectRequests } from '$lib/types';
+  import type { 
+    FriendRequestsGQL, 
+    FriendRequests, 
+    OrganizationRequests, 
+    OrganizationRequestsGQL, 
+    ProjectRequestsGQL, 
+    ProjectRequests 
+  } from '$lib/types';
   import Button from 'ui/src/Button.svelte';
   import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
   import InventoryItem from 'ui/src/modals/InventoryItem.svelte';
@@ -222,7 +234,7 @@
                   {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest}
                     <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
                       <a href="/{friendRequest.profileByRequesterId.username}">
-                        <Avatar class="w-[44px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" {stexs} username={friendRequest.profileByRequesterId.username} />
+                        <Avatar class="w-[44px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" {stexs} userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} />
                       </a>
                       <div class="grid grid-rows-2 col-span-2 w-full">
                         <Truncated text={friendRequest.profileByRequesterId.username} maxLength={12} class="text-[16px] w-[70%] text-left " />
@@ -262,7 +274,7 @@
                 <p class="text-[15px] px-2">Total: {notifications.projectRequests.count}</p>
               {/if}
             </Dropdown>
-            <Avatar {stexs} username={$user?.username} class="avatarDropDown w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
+            <Avatar {stexs} username={$user?.username} userId={$user.id} class="avatarDropDown w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
             <Dropdown triggeredBy=".avatarDropDown" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
               <div class="px-4 py-2 rounded variant-ghost-secondary">
                 <Truncated text={$user?.username || ''} maxLength={8} class="text-[16px]" />

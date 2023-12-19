@@ -297,7 +297,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/utils-ts
       uuid:
-        specifier: ^9.0.0
+        specifier: ^9.0.1
         version: 9.0.1
       winston:
         specifier: ^3.11.0
@@ -327,6 +327,9 @@ importers:
       '@types/response-time':
         specifier: ^2.3.5
         version: 2.3.6
+      '@types/uuid':
+        specifier: ^9.0.2
+        version: 9.0.5
       concurrently:
         specifier: ^8.2.1
         version: 8.2.1

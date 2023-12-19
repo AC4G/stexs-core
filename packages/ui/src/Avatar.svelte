@@ -3,18 +3,19 @@
     import { Avatar } from '@skeletonlabs/skeleton';
 
     export let stexs: any;
+    export let userId: string;
     export let username: string|undefined;
 
-    async function fetchUrl(username: string) {
-        const { url }  = await (await stexs.storage.getAvatarUrl(username)).json();
-
-        return { url };
+    async function fetchUrl(userId: string) {
+        return { 
+            url: (await (await stexs.storage.getAvatarUrl(userId)).json()).url
+        };
     } 
 
     $: query = useQuery({
-        queryKey: ['avatar', username],
-        queryFn: async () => await fetchUrl(username),
-        enabled: !!username
+        queryKey: ['avatar', userId],
+        queryFn: async () => await fetchUrl(userId),
+        enabled: !!userId
     });
 </script>
 
