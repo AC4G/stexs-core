@@ -2,7 +2,6 @@
     import { page } from "$app/stores";
     import { Avatar, Button } from "ui";
     import { user } from "$lib/stores/user";
-    import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
     import { stexs } from "../../stexsClient";
     import { useQuery } from '@sveltestack/svelte-query'
     import { TabAnchor, TabGroup, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
@@ -13,6 +12,7 @@
     import { acceptFriendRequest, deleteFriendRequest } from "$lib/utils/friendRequests";
     import { profile } from "$lib/stores/profile";
     
+    const isSSR = import.meta.env.SSR;
     const modalStore = getModalStore();
     const flash = getFlash(page);
     let friendRequestSubmitted: boolean = false;
@@ -30,7 +30,8 @@
                 username,
                 is_private
             `)
-            .eq('username', username);
+            .eq('username', username)
+            .single();
 
         if (data?.length === 0 && username !== undefined) {
             $flash = {
@@ -38,10 +39,11 @@
                 classes: 'variant-ghost-error',
                 timeout: 5000,
             };
+            
             return goto('/');
         }
 
-        return data[0];
+        return data;
     }
 
     async function fetchBlocked(userId: string, currentUserId: string) {
@@ -296,7 +298,7 @@
     $: profileQuery = useQuery({
         queryKey: ['userProfile', username],
         queryFn: async () => await fetchProfile(username),
-        enabled: !!username
+        enabled: !!username && !isSSR
     });
 
     $: blockedQuery = useQuery({
@@ -360,7 +362,7 @@
                         <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                     </div>
                 {:else}
-                    <Avatar endpoint={PUBLIC_S3_ENDPOINT} userId={$profileQuery.data?.user_id} {username} class="mx-auto w-[120px] sm:w-[148px]" draggable="false" />
+                    <Avatar {userId} {stexs} {username} class="mx-auto w-[120px] sm:w-[148px]" draggable="false" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <p class="text-[20px] w-fit">{$profileQuery.data?.username}</p>
                         {#if (!isPrivate || $user?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}

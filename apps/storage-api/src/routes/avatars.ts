@@ -1,92 +1,93 @@
 import { Router, Response } from 'express';
-import { query } from 'express-validator';
+import { param } from 'express-validator';
 import {
-  FILE_EXTENSION_REQUIRED,
   INTERNAL_ERROR,
-  UNSUPPORTED_FILE_EXTENSION,
+  INVALID_UUID,
+  USER_ID_REQUIRED,
 } from 'utils-ts/errors';
 import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
 import validate from 'utils-ts/validatorMiddleware';
-import { avatarsClient } from '../s3';
+import s3 from '../s3';
 import logger from '../loggers/logger';
 import {
   validateAccessToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
 } from 'utils-ts/jwtMiddleware';
-import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
+import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER, BUCKET } from '../../env-config';
+import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
+import redis from '../redis';
 
 const router = Router();
 
 router.get(
-  '/presigned-url',
+  '/:userId', 
   [
-    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
-    transformJwtErrorMessages(logger),
-    query('fileExtension')
+    param('userId')
       .notEmpty()
-      .withMessage(FILE_EXTENSION_REQUIRED)
-      .custom((value: string) => {
-        const supportedFileExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-
-        if (!supportedFileExtensions.includes(value))
-          throw new CustomValidationError(UNSUPPORTED_FILE_EXTENSION);
+      .withMessage(USER_ID_REQUIRED)
+      .bail()
+      .custom((value) => {
+        if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
 
         return true;
       }),
-    validate(logger),
+    validate(logger)
+  ],async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  const url = await redis.get(`avatars:${userId}`);
+
+  if (url) {
+    return res.json({ url });
+  }
+
+  const time = 60 * 60 * 24 * 7; // 7 days in seconds
+
+  const signedUrl = await s3.getSignedUrl('getObject', {
+    Bucket: BUCKET,
+    Key: `avatars/${userId}`,
+    Expires: time
+  });
+
+  try {
+    await redis.set(`avatars:${userId}`, signedUrl, {
+      EX: time
+    });
+  } catch (e) {
+    logger.error(
+      `Error while setting signed url for avatar into cache. Error: Error: ${
+        e instanceof Error ? e.message : e
+      }`,
+    );
+  }
+
+  return res.json({
+    url: signedUrl
+  });
+});
+
+router.post(
+  '',
+  [
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+    checkTokenGrantType('password'),
+    transformJwtErrorMessages(logger)
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub!;
-    const { fileExtension } = req.query;
 
     try {
-      const { KeyCount, Contents } = await avatarsClient
-        .listObjectsV2({
-          Bucket: 'avatars',
-          MaxKeys: 1,
-          Prefix: userId,
-        })
-        .promise();
-
-      if (
-        KeyCount &&
-        KeyCount > 0 &&
-        Contents &&
-        Contents[0].Key !== userId + '.' + fileExtension
-      ) {
-        await avatarsClient
-          .deleteObjects({
-            Bucket: 'avatars',
-            Delete: {
-              Objects: [{ Key: Contents[0].Key as string }],
-            },
-          })
-          .promise();
-
-        logger.info(`Deleted avatar from user: ${userId}`);
-      }
-    } catch (e) {
-      logger.error(
-        `Error while fetching list of objects or delete object in avatars bucket. Error: Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
-
-    try {
-      const signedPost = await avatarsClient.createPresignedPost({
-        Bucket: 'avatars',
+      const signedPost = await s3.createPresignedPost({
+        Bucket: BUCKET,
         Fields: {
-          key: userId + '.' + fileExtension,
-          'Content-Type': `image/${fileExtension}`,
+          key: 'avatars/' + userId,
+          'Content-Type': `image/webp`,
         },
         Conditions: [
           ['content-length-range', 0, 1024 * 1024],
-          ['eq', '$Content-Type', `image/${fileExtension}`],
+          ['eq', '$Content-Type', `image/webp`],
         ],
         Expires: 60,
       });
@@ -114,26 +115,16 @@ router.delete(
     const userId = req.auth?.sub!;
 
     try {
-      const { KeyCount, Contents } = await avatarsClient
-        .listObjectsV2({
-          Bucket: 'avatars',
-          MaxKeys: 1,
-          Prefix: userId,
+      await s3
+        .deleteObjects({
+          Bucket: 'stexs',
+          Delete: {
+            Objects: [{ Key: 'avatars/' + userId }],
+          },
         })
         .promise();
 
-      if (KeyCount && KeyCount > 0 && Contents) {
-        await avatarsClient
-          .deleteObjects({
-            Bucket: 'avatars',
-            Delete: {
-              Objects: [{ Key: Contents[0].Key as string }],
-            },
-          })
-          .promise();
-
-        logger.info(`Deleted avatar from user: ${userId}`);
-      }
+      logger.info(`Deleted avatar from user: ${userId}`);
     } catch (e) {
       logger.error(
         `Error while fetching list of objects or delete object in avatars bucket. Error: Error: ${

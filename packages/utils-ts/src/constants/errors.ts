@@ -2,6 +2,10 @@ export const USERNAME_REQUIRED = {
   code: 'USERNAME_REQUIRED',
   message: 'Please provide a username.',
 };
+export const USER_ID_REQUIRED = {
+  code: 'USER_ID_REQUIRED',
+  message: 'Please provide a user id.',
+};
 export const INVALID_USERNAME = {
   code: 'INVALID_USERNAME',
   messages: [
@@ -263,4 +267,12 @@ export const MFA_CANNOT_BE_COMPLETELY_DISABLED = {
 export const UNAUTHORIZED_ACCESS = {
   code: 'UNAUTHORIZED_ACCESS',
   message: 'You are not authorized to access this endpoint.',
+};
+export const ITEM_ID_REQUIRED = {
+  code: 'ITEM_ID_REQUIRED',
+  message: 'Please provide a item id.'
+};
+export const ITEM_ID_NOT_NUMERIC = { 
+  code: 'ITEM_ID_NOT_NUMERIC',
+  message: 'Item id needs to be a number.'
 };

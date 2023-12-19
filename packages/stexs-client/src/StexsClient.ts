@@ -1,4 +1,5 @@
 import { StexsAuthClient } from './StexsAuthClient';
+import { StexsStorageClient } from './StexsStorageClient';
 import {
   PostgrestClient,
   PostgrestFilterBuilder,
@@ -22,6 +23,7 @@ export { gql };
 export default class StexsClient {
   auth: StexsAuthClient;
   graphql: ApolloClient;
+  storage: StexsStorageClient;
 
   protected rest: PostgrestClient;
 
@@ -30,6 +32,7 @@ export default class StexsClient {
     config: {
       authUrl: string;
       restUrl: string;
+      storageURL: string;
       graphQLUrl: string;
       graphQLWSUrl: string;
     },
@@ -38,6 +41,7 @@ export default class StexsClient {
     this.rest = new PostgrestClient(config.restUrl, {
       fetch: this._fetchWithAuth.bind(this, fetch),
     });
+    this.storage = new StexsStorageClient(this._fetchWithAuth.bind(this, fetch), config.storageURL);
 
     const httpLink = new HttpLink({
       uri: config.graphQLUrl,
@@ -114,6 +118,10 @@ export default class StexsClient {
   }
 
   private _getAccessToken(): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
     const session: Session = this.auth.getSession();
     return session?.access_token;
   }

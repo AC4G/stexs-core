@@ -86,7 +86,7 @@ $$ LANGUAGE plpgsql;
 
 GRANT EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) TO anon;
 GRANT EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) TO authenticated;
-
+ 
 
 
 CREATE TABLE public.friends (
@@ -253,6 +253,7 @@ CREATE TABLE public.blocked (
 GRANT INSERT (blocker_id, blocked_id) ON TABLE public.blocked TO authenticated;
 GRANT DELETE ON TABLE public.blocked TO authenticated;
 GRANT SELECT ON TABLE public.blocked TO authenticated;
+GRANT SELECT ON TABLE public.blocked TO anon;
 
 CREATE OR REPLACE FUNCTION public.delete_friend_request_or_friend_if_exists()
 RETURNS TRIGGER AS $$

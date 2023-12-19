@@ -1,4 +1,4 @@
-import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
+import { ACCESS_TOKEN_SECRET, AUDIENCE, BUCKET, ISSUER } from '../../env-config';
 import { Router, Response } from 'express';
 import {
   checkTokenGrantType,
@@ -9,13 +9,64 @@ import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
 import db from '../database';
 import { errorMessages } from 'utils-ts/messageBuilder';
-import { INTERNAL_ERROR, UNAUTHORIZED_ACCESS } from 'utils-ts/errors';
-import { itemsClient } from '../s3';
+import { 
+  INTERNAL_ERROR, 
+  ITEM_ID_NOT_NUMERIC, 
+  ITEM_ID_REQUIRED, 
+  UNAUTHORIZED_ACCESS 
+} from 'utils-ts/errors';
+import s3 from '../s3';
+import { param } from 'express-validator';
+import redis from '../redis';
 
 const router = Router();
 
 router.get(
-  '/thumbnail/presigned-url/:itemId',
+  '/thumbnail/:itemId',
+  [
+    param('itemId')
+      .notEmpty()
+      .withMessage(ITEM_ID_REQUIRED)
+      .bail()
+      .isNumeric()
+      .withMessage(ITEM_ID_NOT_NUMERIC)
+  ],
+  async (req: Request, res: Response) => {
+    const { itemId } = req.params;
+
+    const url = await redis.get(`items:${itemId}`);
+
+    if (url) {
+      return res.json({ url });
+    }
+
+    const time = 60 * 60 * 24 * 7; // 7 days in seconds
+
+    const signedUrl = await s3.getSignedUrl('getObject', {
+      Bucket: BUCKET,
+      Key: `items/thumbnails/${itemId}`,
+      Expires: time
+    });
+  
+    try {
+      await redis.set(`items:${itemId}`, signedUrl, {
+        EX: time
+      });
+    } catch (e) {
+      logger.error(
+        `Error while setting signed url for item thumbnail into cache. Item id: ${itemId}. Error: Error: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+    }
+  
+    return res.json({
+      url: signedUrl
+    });
+});
+
+router.post(
+  '/thumbnail/:itemId',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType('password'),
@@ -28,12 +79,12 @@ router.get(
     try {
       const { rowCount } = await db.query(
         `
-                    SELECT 1
-                    FROM public.project_members pm
-                    JOIN public.profiles p ON pm.member_id = p.user_id
-                    JOIN public.items i ON pm.project_id = i.project_id
-                    WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner')
-                `,
+          SELECT 1
+          FROM public.project_members pm
+          JOIN public.profiles p ON pm.member_id = p.user_id
+          JOIN public.items i ON pm.project_id = i.project_id
+          WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner')
+        `,
         [itemId, userId],
       );
 
@@ -55,10 +106,10 @@ router.get(
     }
 
     try {
-      const signedPost = await itemsClient.createPresignedPost({
-        Bucket: 'items',
+      const signedPost = await s3.createPresignedPost({
+        Bucket: 'stexs',
         Fields: {
-          key: 'thumbnails/' + itemId + '.webp',
+          key: 'items/thumbnails/' + itemId,
           'Content-Type': `image/webp`,
         },
         Conditions: [

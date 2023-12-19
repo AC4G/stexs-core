@@ -1,6 +1,5 @@
 <script lang="ts">
     import { Avatar } from "ui";
-    import { PUBLIC_S3_ENDPOINT } from '$env/static/public';
     import { user } from "$lib/stores/user";
     import { Paginator, type PaginationSettings } from "@skeletonlabs/skeleton";
     import { useQuery } from "@sveltestack/svelte-query";
@@ -59,7 +58,7 @@
             .not('profiles', 'is', null)
             .range(start, end);
 
-        data.sort((a: { 
+        data?.sort((a: { 
             profiles: {
                 username: string
             } }, b: {
@@ -81,6 +80,8 @@
         queryFn: async () => await fetchFriends($profile?.userId!, search, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profile?.userId
     });
+
+    $: console.log({ friends: $friendsQuery.data })
 </script>
 
 {#if $profile && $profile.totalFriends > 0}
@@ -97,10 +98,10 @@
             </div>
         {/each}
     {:else}
-        {#if $friendsQuery.data.length > 0}
+        {#if $friendsQuery.data?.length > 0}
             {#each $friendsQuery.data as friend}
                 <a href="/{friend.profiles.username}" class="flex h-full w-full items-center justify-between p-2 rounded-md hover:bg-surface-500 transition">
-                    <Avatar class="w-[40px] h-[40px]" userId={friend.profiles.user_id} username={friend.profiles.username} endpoint={PUBLIC_S3_ENDPOINT} />
+                    <Avatar class="w-[40px] h-[40px]" userId={friend.profiles.user_id} username={friend.profiles.username} {stexs} />
                     <Truncated text={friend.profiles.username} maxLength={12} class="text-[14px] w-[70%] text-left pl-2" />
                 </a>
             {/each}
