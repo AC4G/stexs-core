@@ -4,6 +4,7 @@ import {
   INTERNAL_ERROR,
   INVALID_UUID,
   USER_ID_REQUIRED,
+  USER_NOT_FOUND,
 } from 'utils-ts/errors';
 import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
 import validate from 'utils-ts/validatorMiddleware';
@@ -18,6 +19,7 @@ import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER, BUCKET } from '../../env-config'
 import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
 import redis from '../redis';
+import db from '../database';
 
 const router = Router();
 
@@ -43,17 +45,50 @@ router.get(
     return res.json({ url });
   }
 
-  const time = 60 * 60 * 24 * 7; // 7 days in seconds
+  try {
+    const { rowCount } = await db.query(
+      `
+        SELECT 1
+        FROM auth.users
+        WHERE id = $1::uuid;
+      `,
+      [userId]
+    );
+
+    if (rowCount === 0) {
+      logger.warn(`User not found for user id: ${userId}`);
+      return res.status(404).json(
+        errorMessages([
+          {
+            info: USER_NOT_FOUND,
+            data: {
+              location: 'params',
+              path: 'userId',
+            },
+          },
+        ]),
+      );
+    }
+  } catch (e) {
+    logger.error(
+      `Error while checking user for existence: ${userId}. Error: Error: ${
+        e instanceof Error ? e.message : e
+      }`,
+    );
+    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+  }
+
+  const expires = 60 * 60 * 24 * 7; // 7 days in seconds
 
   const signedUrl = await s3.getSignedUrl('getObject', {
     Bucket: BUCKET,
     Key: `avatars/${userId}`,
-    Expires: time
+    Expires: expires
   });
 
   try {
     await redis.set(`avatars:${userId}`, signedUrl, {
-      EX: time
+      EX: expires - 10
     });
   } catch (e) {
     logger.error(

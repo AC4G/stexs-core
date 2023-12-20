@@ -1,14 +1,16 @@
 <script lang="ts">
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../stexsClient";
-    import { user } from "$lib/stores/user";
-    import { profile } from "$lib/stores/profile";
+    import { getUserStore } from "$lib/stores/user";
+    import { getProfileStore } from "$lib/stores/profile";
     import { Dropdown, Search } from "flowbite-svelte";
     import { Paginator, type PaginationSettings, RadioGroup, RadioItem, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
     import { Button, hideImg } from "ui";
     import Icon from "@iconify/svelte";
     import ItemThumbnail from "ui/src/ItemThumbnail.svelte";
 
+    const profileStore = getProfileStore();
+    const userStore = getUserStore();
     const modalStore = getModalStore();
     let search: string = '';
     let previousSearch: string = '';
@@ -54,9 +56,9 @@
     }
 
     $: itemsAmountQuery = useQuery({
-        queryKey: ['itemsAmountInventory', $profile?.userId],
-        queryFn: async () => await fetchTotalAmountFromInventory($profile?.userId!),
-        enabled: !!$profile?.userId
+        queryKey: ['itemsAmountInventory', $profileStore?.userId],
+        queryFn: async () => await fetchTotalAmountFromInventory($profileStore?.userId!),
+        enabled: !!$profileStore?.userId
     });
 
     $: {
@@ -64,9 +66,9 @@
     };
 
     $: projectsQuery = useQuery({
-        queryKey: ['projectsInInventory', $profile?.userId],
-        queryFn: async () => await fetchProjectsInUsersInventory($profile?.userId!),
-        enabled: !!$profile?.userId
+        queryKey: ['projectsInInventory', $profileStore?.userId],
+        queryFn: async () => await fetchProjectsInUsersInventory($profileStore?.userId!),
+        enabled: !!$profileStore?.userId
     });
 
     async function fetchInventory(userId: string, search: string, selectedProject: number | undefined, page: number, limit: number) {
@@ -154,16 +156,17 @@
             component: 'inventoryItem',
             meta: {
                 data: params,
-                fn: fetchItemFromInventory($profile?.userId!, params.items.id)
+                fn: fetchItemFromInventory($profileStore?.userId!, params.items.id),
+                stexsClient: stexs
             }
         };
         modalStore.set([modal]);
     }
 
     $: inventoryQuery = useQuery({
-        queryKey: ['inventories', $profile?.userId],
-        queryFn: async () => await fetchInventory($profile?.userId!, search, selectedProject, paginationSettings.page, paginationSettings.limit),
-        enabled: !!$profile?.userId
+        queryKey: ['inventories', $profileStore?.userId],
+        queryFn: async () => await fetchInventory($profileStore?.userId!, search, selectedProject, paginationSettings.page, paginationSettings.limit),
+        enabled: !!$profileStore?.userId
     });
 </script>
 
@@ -241,7 +244,7 @@
             </div>
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
-                <p class="text-[18px] p-4 text-center">{$user?.id === $profile?.userId ?  'You have no items in your inventory': 'User has no items in inventory'}</p>
+                <p class="text-[18px] p-4 text-center">{$userStore?.id === $profileStore?.userId ?  'You have no items in your inventory': 'User has no items in inventory'}</p>
             </div>
         {/if}
     {/if}

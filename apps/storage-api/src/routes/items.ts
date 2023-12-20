@@ -13,6 +13,7 @@ import {
   INTERNAL_ERROR, 
   ITEM_ID_NOT_NUMERIC, 
   ITEM_ID_REQUIRED, 
+  ITEM_NOT_FOUND, 
   UNAUTHORIZED_ACCESS 
 } from 'utils-ts/errors';
 import s3 from '../s3';
@@ -40,6 +41,39 @@ router.get(
       return res.json({ url });
     }
 
+    try {
+      const { rowCount } = await db.query(
+        `
+          SELECT 1
+          FROM public.items
+          WHERE id = $1::integer;
+        `,
+        [itemId]
+      );
+  
+      if (rowCount === 0) {
+        logger.warn(`Item not found for item id: ${itemId}`);
+        return res.status(404).json(
+          errorMessages([
+            {
+              info: ITEM_NOT_FOUND,
+              data: {
+                location: 'params',
+                path: 'itemId',
+              },
+            },
+          ]),
+        );
+      }
+    } catch (e) {
+      logger.error(
+        `Error while checking item for existence: ${itemId}. Error: Error: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    }
+
     const time = 60 * 60 * 24 * 7; // 7 days in seconds
 
     const signedUrl = await s3.getSignedUrl('getObject', {
@@ -50,7 +84,7 @@ router.get(
   
     try {
       await redis.set(`items:${itemId}`, signedUrl, {
-        EX: time
+        EX: time - 10
       });
     } catch (e) {
       logger.error(
@@ -83,7 +117,7 @@ router.post(
           FROM public.project_members pm
           JOIN public.profiles p ON pm.member_id = p.user_id
           JOIN public.items i ON pm.project_id = i.project_id
-          WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner')
+          WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner');
         `,
         [itemId, userId],
       );

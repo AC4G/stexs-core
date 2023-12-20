@@ -1,13 +1,15 @@
 <script lang="ts">
     import { Avatar } from "ui";
-    import { user } from "$lib/stores/user";
+    import { getUserStore } from "$lib/stores/user";
     import { Paginator, type PaginationSettings } from "@skeletonlabs/skeleton";
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
-    import { profile } from "$lib/stores/profile";
+    import { getProfileStore } from "$lib/stores/profile";
     import { Search } from "flowbite-svelte";
     import Truncated from "ui/src/Truncated.svelte";
 
+    const profileStore = getProfileStore();
+    const userStore = getUserStore();
     let search: string = '';
     let previousSearch: string = '';
     let paginationSettings: PaginationSettings = {
@@ -17,7 +19,7 @@
         amounts: [50, 100, 250, 500, 1000],
     };
 
-    $: paginationSettings.size = $profile?.totalFriends!;
+    $: paginationSettings.size = $profileStore?.totalFriends!;
 
     async function fetchFriends(userId: string, search: string, page: number, limit: number) {
         if (search !== previousSearch) {
@@ -76,15 +78,13 @@
     }
 
     $: friendsQuery = useQuery({
-        queryKey: ['friends', $profile?.userId, paginationSettings.page, paginationSettings.limit],
-        queryFn: async () => await fetchFriends($profile?.userId!, search, paginationSettings.page, paginationSettings.limit),
-        enabled: !!$profile?.userId
+        queryKey: ['friends', $profileStore?.userId, paginationSettings.page, paginationSettings.limit],
+        queryFn: async () => await fetchFriends($profileStore?.userId!, search, paginationSettings.page, paginationSettings.limit),
+        enabled: !!$profileStore?.userId
     });
-
-    $: console.log({ friends: $friendsQuery.data })
 </script>
 
-{#if $profile && $profile.totalFriends > 0}
+{#if $profileStore && $profileStore.totalFriends > 0}
     <div class="mb-[18px] md:max-w-[220px]">
         <Search size="lg" placeholder="Username" bind:value={search} class="!bg-surface-500" />
     </div>
@@ -105,18 +105,18 @@
                     <Truncated text={friend.profiles.username} maxLength={12} class="text-[14px] w-[70%] text-left pl-2" />
                 </a>
             {/each}
-        {:else if $profile && $profile.totalFriends > 0 && search.length > 0}
+        {:else if $profileStore && $profileStore.totalFriends > 0 && search.length > 0}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
                 <p class="text-[18px] p-4 text-center">No friends found</p>
             </div>
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
-                <p class="text-[18px] p-4 text-center">{$user?.id === $profile?.userId ? 'You have no friends' : 'User has no friends'}</p>
+                <p class="text-[18px] p-4 text-center">{$userStore?.id === $profileStore?.userId ? 'You have no friends' : 'User has no friends'}</p>
             </div>
         {/if}
     {/if}
 </div>
-{#if $profile && $profile.totalFriends > 0}
+{#if $profileStore && $profileStore.totalFriends > 0}
     <div class="mx-auto mt-[18px]">
         <Paginator
             bind:settings={paginationSettings}

@@ -5,12 +5,14 @@
     import Icon from "@iconify/svelte";
     import Button from '../Button.svelte';
     import { hideImg } from '../utils/image';
+    import ItemThumbnail from '../ItemThumbnail.svelte';
 
     export let parent: SvelteComponent;
 
     let loading: boolean = true;
     const modalStore = getModalStore();
     let data = $modalStore[0].meta.data;
+    let stexs = $modalStore[0].meta.stexsClient;
 
     onMount(async () => {
         const additionalData = await $modalStore[0].meta.fn;
@@ -38,7 +40,7 @@
                 <Icon icon="ph:x-bold" />
             </Button>
         </div>
-        <img class="h-full w-full max-w-[380px] object-cover rounded-md" draggable="false" src="http://localhost:9000/items/thumbnails/{data.items.id}.webp" alt={data.items.name} />
+        <ItemThumbnail {stexs} itemId={data.items.id} itemName={data.items.name} />
         {#if loading}
             <div class="space-y-6">
                 <div class="placeholder animate-pulse h-[24px] max-w-[280px]" />

@@ -276,3 +276,7 @@ export const ITEM_ID_NOT_NUMERIC = {
   code: 'ITEM_ID_NOT_NUMERIC',
   message: 'Item id needs to be a number.'
 };
+export const ITEM_NOT_FOUND = {
+  code: 'ITEM_NOT_FOUND',
+  message: 'Item was not been found.'
+};

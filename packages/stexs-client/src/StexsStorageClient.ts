@@ -13,7 +13,7 @@ export class StexsStorageClient {
      * @param userId - user id of the user which the avatar is requested
      * @returns {Promise<Response>}
      */
-    async getAvatarUrl(userId: string) {
+    async getAvatarUrl(userId: string): Promise<Response> {
         return await this._request({ 
             path: `avatars/${userId}` 
         });
@@ -25,7 +25,7 @@ export class StexsStorageClient {
      * @param itemId - item id for requesting the thumbnail url
      * @returns {Promise<Response>}
      */
-    async getItemThumbnailUrl(itemId: string) {
+    async getItemThumbnailUrl(itemId: string): Promise<Response> {
         return await this._request({ 
             path: `items/thumbnail/${itemId}` 
         });

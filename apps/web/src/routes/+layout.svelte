@@ -15,7 +15,7 @@
   import { onMount } from 'svelte';
   import { getFlash } from 'sveltekit-flash-message';
   import Icon from '@iconify/svelte';
-  import { user } from '$lib/stores/user';
+  import { createUserStore } from '$lib/stores/user';
   import { browser } from '$app/environment';
   import { 
     Dropdown, 
@@ -37,8 +37,11 @@
   import Button from 'ui/src/Button.svelte';
   import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
   import InventoryItem from 'ui/src/modals/InventoryItem.svelte';
+  import { createProfileStore } from '$lib/stores/profile';
 
   initializeStores();
+  const profileStore = createProfileStore();
+  const userStore = createUserStore();
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -82,7 +85,7 @@
 
     if (!session) return;
 
-    user.set({
+    userStore.set({
       id: session.user.id,
       username: session.user.raw_user_meta_data.username
     })
@@ -156,7 +159,7 @@
   stexs.auth.onAuthStateChange(event => {
     if (event === 'SIGNED_IN') {
       const session = stexs.auth.getSession();
-      user.set({
+      userStore.set({
         id: session.user.id,
         username: session.user.raw_user_meta_data.username
       })
@@ -164,7 +167,7 @@
     }
 
     if (event === 'SIGNED_OUT') {
-      user.set(null);
+      userStore.set(null);
       signedIn = false;
       goto('/');
     }
@@ -241,11 +244,11 @@
                         <div class="flex justify-evenly pt-1">
                           <Button on:click={async (event) => {
                             event.stopPropagation();
-                            await acceptFriendRequest($user.id, friendRequest.profileByRequesterId.userId, friendRequest.profileByRequesterId.username, flash);
+                            await acceptFriendRequest($userStore.id, friendRequest.profileByRequesterId.userId, friendRequest.profileByRequesterId.username, flash, profileStore);
                           }} class="py-[0.8px] px-2 variant-filled-primary text-[14px]">Accept</Button>
                           <Button on:click={async (event) => {
                             event.stopPropagation();
-                            await deleteFriendRequest(friendRequest.profileByRequesterId.userId, $user.id, flash);
+                            await deleteFriendRequest(friendRequest.profileByRequesterId.userId, $userStore.id, flash);
                           }} class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[14px]">Delete</Button>
                         </div>
                       </div>
@@ -274,13 +277,13 @@
                 <p class="text-[15px] px-2">Total: {notifications.projectRequests.count}</p>
               {/if}
             </Dropdown>
-            <Avatar {stexs} username={$user?.username} userId={$user.id} class="avatarDropDown w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
+            <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
             <Dropdown triggeredBy=".avatarDropDown" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
               <div class="px-4 py-2 rounded variant-ghost-secondary">
-                <Truncated text={$user?.username || ''} maxLength={8} class="text-[16px]" />
+                <Truncated text={$userStore?.username || ''} maxLength={8} class="text-[16px]" />
               </div>
               <DropdownDivider />
-              <DropdownItem href="/{$user?.username}" class="hover:!bg-surface-500 transition rounded text-[16px]">Profile</DropdownItem>
+              <DropdownItem href="/{$userStore?.username}" class="hover:!bg-surface-500 transition rounded text-[16px]">Profile</DropdownItem>
               <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]">Settings</DropdownItem>
               <DropdownDivider />
               <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]" on:click={async () => { await stexs.auth.signOut() }} >Sign out</DropdownItem>

@@ -5,9 +5,9 @@ import { goto } from '$app/navigation';
 export const previousPage = writable<string>('/');
 
 export function redirectToPreviousPage() {
-  let path;
+  let path: string;
 
-  const unsubscribe = previousPage.subscribe((currentPath) => {
+  const unsubscribe = previousPage.subscribe((currentPath: string) => {
     path = currentPath;
   });
 
