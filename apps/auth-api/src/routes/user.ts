@@ -42,7 +42,7 @@ router.get(
   '/',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
@@ -81,7 +81,7 @@ router.post(
   '/password',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     body('password')
       .notEmpty()
@@ -299,7 +299,7 @@ router.post(
   '/email',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     body('email')
       .notEmpty()
@@ -500,7 +500,7 @@ router.post(
   '/email/verify',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     body('code').notEmpty().withMessage(CODE_REQUIRED),
     validate(logger),

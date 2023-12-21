@@ -11,8 +11,7 @@
             return { 
                 url: (await (await stexs.storage.getItemThumbnailUrl(itemId)).json()).url
             };
-        },
-        enabled: !!itemId
+        }
     });
 </script>
 

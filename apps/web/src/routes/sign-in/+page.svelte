@@ -5,7 +5,6 @@
   import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
   import type { Session, SignInInit } from 'stexs-client/src/lib/types';
-  import { redirectToPreviousPage } from '$lib/stores/previousPage';
   import { useQuery } from '@sveltestack/svelte-query';
   import { page } from '$app/stores';
   import { getFlash } from 'sveltekit-flash-message/client';
@@ -57,8 +56,6 @@
     ).json();
 
     if (response.token) return goto('/sign-in-confirm');
-
-    if (response.access_token) return redirectToPreviousPage();
 
     response.errors.forEach((error: { message: string }) => {
       $errors._errors === undefined

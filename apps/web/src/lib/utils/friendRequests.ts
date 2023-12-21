@@ -1,13 +1,14 @@
 import type { Writable } from 'svelte/store';
 import { stexs } from '../../stexsClient';
 import type { ToastSettings } from '@skeletonlabs/skeleton';
-import { profile } from '$lib/stores/profile';
+import type { Profile } from '$lib/stores/profile';
 
 export async function acceptFriendRequest(
   user_id: string,
   friend_id: string,
   username: string,
   flash: Writable<ToastSettings>,
+  profileStore: Writable<Profile | null>
 ): Promise<boolean> {
   let isFriend: boolean = false;
   const { error } = await stexs
@@ -22,8 +23,11 @@ export async function acceptFriendRequest(
     });
   } else {
     isFriend = true;
-    profile.update(($profile) => {
-      return { ...$profile, refetchTrigger: !!$profile.refetchTrigger };
+    profileStore.update((profile: Profile | null) => {
+      return {
+        ...profile!,
+        refetchTrigger: !!profile!.refetchTrigger
+      };
     });
     flash.set({
       message: `${username} is now your friend.`,

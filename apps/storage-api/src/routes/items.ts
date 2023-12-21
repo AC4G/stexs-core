@@ -1,4 +1,9 @@
-import { ACCESS_TOKEN_SECRET, AUDIENCE, BUCKET, ISSUER } from '../../env-config';
+import { 
+  ACCESS_TOKEN_SECRET, 
+  AUDIENCE, 
+  BUCKET, 
+  ISSUER 
+} from '../../env-config';
 import { Router, Response } from 'express';
 import {
   checkTokenGrantType,
@@ -13,11 +18,13 @@ import {
   INTERNAL_ERROR, 
   ITEM_ID_NOT_NUMERIC, 
   ITEM_ID_REQUIRED, 
+  ITEM_NOT_FOUND, 
   UNAUTHORIZED_ACCESS 
 } from 'utils-ts/errors';
 import s3 from '../s3';
 import { param } from 'express-validator';
 import redis from '../redis';
+import validate from 'utils-ts/validatorMiddleware';
 
 const router = Router();
 
@@ -29,7 +36,8 @@ router.get(
       .withMessage(ITEM_ID_REQUIRED)
       .bail()
       .isNumeric()
-      .withMessage(ITEM_ID_NOT_NUMERIC)
+      .withMessage(ITEM_ID_NOT_NUMERIC),
+    validate(logger)
   ],
   async (req: Request, res: Response) => {
     const { itemId } = req.params;
@@ -37,7 +45,41 @@ router.get(
     const url = await redis.get(`items:${itemId}`);
 
     if (url) {
+      logger.info(`Item thumbnail presigned url fetched from cache: ${itemId}`);
       return res.json({ url });
+    }
+
+    try {
+      const { rowCount } = await db.query(
+        `
+          SELECT 1
+          FROM public.items
+          WHERE id = $1::integer;
+        `,
+        [itemId]
+      );
+  
+      if (rowCount === 0) {
+        logger.warn(`Item not found for item id: ${itemId}`);
+        return res.status(404).json(
+          errorMessages([
+            {
+              info: ITEM_NOT_FOUND,
+              data: {
+                location: 'params',
+                path: 'itemId',
+              },
+            },
+          ]),
+        );
+      }
+    } catch (e) {
+      logger.error(
+        `Error while checking item for existence: ${itemId}. Error: Error: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     const time = 60 * 60 * 24 * 7; // 7 days in seconds
@@ -47,10 +89,12 @@ router.get(
       Key: `items/thumbnails/${itemId}`,
       Expires: time
     });
+
+    logger.info(`Generated new presigned url for item thumbnail: ${itemId}`);
   
     try {
       await redis.set(`items:${itemId}`, signedUrl, {
-        EX: time
+        EX: time - 10
       });
     } catch (e) {
       logger.error(
@@ -69,7 +113,7 @@ router.post(
   '/thumbnail/:itemId',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
@@ -83,14 +127,14 @@ router.post(
           FROM public.project_members pm
           JOIN public.profiles p ON pm.member_id = p.user_id
           JOIN public.items i ON pm.project_id = i.project_id
-          WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner')
+          WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner');
         `,
         [itemId, userId],
       );
 
       if (rowCount === 0) {
         logger.error(
-          `User is not authorized to updated the thumbnail of an item: ${userId}`,
+          `User is not authorized to upload/update the thumbnail of an item: ${itemId}. User: ${userId}`,
         );
         return res
           .status(401)
@@ -98,36 +142,29 @@ router.post(
       }
     } catch (e) {
       logger.error(
-        `Error while checking the current user if authorized for updating item thumbnail. Error: Error: ${
+        `Error while checking the current user if authorized for uploading/updating item thumbnail. Error: Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    try {
-      const signedPost = await s3.createPresignedPost({
-        Bucket: 'stexs',
-        Fields: {
-          key: 'items/thumbnails/' + itemId,
-          'Content-Type': `image/webp`,
-        },
-        Conditions: [
-          ['content-length-range', 0, 1024 * 1024],
-          ['eq', '$Content-Type', `image/webp`],
-        ],
-        Expires: 60,
-      });
+    const signedPost = await s3.createPresignedPost({
+      Bucket: BUCKET,
+      Fields: {
+        key: 'items/thumbnails/' + itemId,
+        'Content-Type': `image/webp`,
+      },
+      Conditions: [
+        ['content-length-range', 0, 1024 * 1024],
+        ['eq', '$Content-Type', `image/webp`],
+      ],
+      Expires: 60,
+    });
 
-      return res.json(signedPost);
-    } catch (e) {
-      logger.error(
-        `Error while generating a signed url for item thumbnail upload for item: ${itemId}. Error: Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+    logger.info(`Created signed post url for item thumbnail: ${itemId}`);
+
+    return res.json(signedPost);
   },
 );
 

@@ -164,11 +164,11 @@ export function validateSignInConfirmOrAccessToken(
   };
 }
 
-export function checkTokenGrantType(grantType: string) {
+export function checkTokenGrantType(grantTypes: string[]) {
   return (req: JWTRequest, res: Response, next: NextFunction) => {
     const token = req.auth;
 
-    if (token?.grant_type === grantType) {
+    if (grantTypes.includes(token?.grant_type)) {
       return next();
     }
 

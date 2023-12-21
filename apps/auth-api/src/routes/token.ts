@@ -26,7 +26,7 @@ router.post(
     body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
     validate(logger),
     validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {

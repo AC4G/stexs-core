@@ -138,7 +138,7 @@ router.post(
     body('token').notEmpty().withMessage(TOKEN_REQUIRED),
     validate(logger),
     validateSignInConfirmToken(SIGN_IN_CONFIRM_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('sign_in_confirm'),
+    checkTokenGrantType(['sign_in_confirm']),
     transformJwtErrorMessages(logger),
   ],
   async (req: JWTRequest, res: Response) => {

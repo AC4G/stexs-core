@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getPreviousPageStore } from '$lib/stores/previousPage';
   import { Button } from 'ui';
   import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
@@ -13,11 +14,13 @@
   import { Dropdown, Radio } from 'flowbite-svelte';
   import { useQuery } from '@sveltestack/svelte-query';
 
+  const flash = getFlash(page);
+  const previousPageStore = getPreviousPageStore();
+
   let signInInit: SignInInit;
   let type: string;
   let submitted: boolean = false;
   let requested: boolean = false;
-  const flash = getFlash(page);
 
   const descriptions: { [key: string]: string } = {
     _selection: 'Select an authentication method.',
@@ -97,7 +100,7 @@
       await stexs.auth.signInConfirm(type, $form.code)
     ).json();
 
-    if (response.access_token) return redirectToPreviousPage();
+    if (response.access_token) return redirectToPreviousPage(previousPageStore);
 
     response.errors.forEach((error: { message: string }) => {
       $errors._errors === undefined
