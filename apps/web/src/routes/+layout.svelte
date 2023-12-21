@@ -38,10 +38,15 @@
   import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
   import InventoryItem from 'ui/src/modals/InventoryItem.svelte';
   import { createProfileStore } from '$lib/stores/profile';
+  import { createPreviousPageStore } from '$lib/stores/previousPage';
 
   initializeStores();
+  const previousPageStore = createPreviousPageStore();
   const profileStore = createProfileStore();
   const userStore = createUserStore();
+  const toastStore = getToastStore();
+  const flash = getFlash(page);
+
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -50,8 +55,6 @@
     },
   });
 
-  const toastStore = getToastStore();
-  const flash = getFlash(page);
   const modalRegistry: Record<string, ModalComponent> = {
     confirm: { ref: Confirm },
     inventoryItem: { ref: InventoryItem }
@@ -62,10 +65,12 @@
     '/sign-in-confirm',
     '/recovery',
   ];
+
+  $: activeUrl = $page.url.pathname;
+
   let signedIn: boolean;
   let avatarDropDownOpen: boolean = false;
   let notificationsDropDownOpen: boolean = false;
-  $: activeUrl = $page.url.pathname;
   let selectedNotificationMenu: 'friends' | 'organizations' | 'projects' = 'friends';
   let friendRequests: FriendRequests | [] = [];
   let friendRequestsSearch: string = '';
