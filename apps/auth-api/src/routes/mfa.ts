@@ -39,7 +39,7 @@ router.get(
   '/',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
@@ -80,7 +80,7 @@ router.post(
   '/enable',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     body('type')
       .notEmpty()
@@ -125,7 +125,7 @@ router.post(
   '/disable',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     body('type')
       .notEmpty()
@@ -161,7 +161,7 @@ router.post(
   '/verify',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     body('type')
       .notEmpty()

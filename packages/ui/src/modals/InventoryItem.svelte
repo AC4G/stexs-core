@@ -6,6 +6,7 @@
     import Button from '../Button.svelte';
     import { hideImg } from '../utils/image';
     import ItemThumbnail from '../ItemThumbnail.svelte';
+    import ProjectLogo from '../ProjectLogo.svelte';
 
     export let parent: SvelteComponent;
 
@@ -35,8 +36,8 @@
 
 {#if $modalStore[0]}
     <div class="card p-5 space-y-6 flex flex-col max-w-[380px] w-full relative">
-        <div class="absolute right-[-10px] top-[-10px]">
-            <Button on:click={parent.onClose} class="bg-surface-500 border border-solid border-gray-600 rounded-full p-3">
+        <div class="absolute right-[8px] top-[8px]">
+            <Button on:click={parent.onClose} class="p-3 hover:text-gray-600 ">
                 <Icon icon="ph:x-bold" />
             </Button>
         </div>
@@ -59,12 +60,9 @@
         {:else}
             <a href="/items/{data.items.id}" class="text-[24px] hover:text-secondary-400 transition">{data.items.name}</a>
             <div class="flex flex-row space-x-2">
-                <div class="w-[48px] h-[48px] bg-surface-600 hover:bg-surface-700 transition border border-solid border-gray-600 hover:border-gray-700 rounded-md">
-                    <a href="/organizations/{data.items.projects.organizations.name}/{data.items.projects.name}" class="group flex">
-                        <Icon icon="uil:image-question" class="text-[46px] group-hover:text-gray-500 transition" />
-                        <img src="http://localhost:9000/projects/{data.items.projects.id}.webp" draggable="false" alt={data.items.projects.name} class="h-full w-full object-cover aspect-square" on:error={hideImg} />
-                    </a>
-                </div>
+                <a href="/organizations/{data.items.projects.organizations.name}/{data.items.projects.name}">
+                    <ProjectLogo {stexs} projectId={data.items.projects.id} alt={data.items.projects.name} />
+                </a>
                 <div class="flex flex-col">
                     <a href="/organizations/{data.items.projects.organizations.name}/{data.items.projects.name}" class="text-[14px] text-gray-500 hover:text-secondary-400 transition">{data.items.projects.name}</a>
                     <a href="/organizations/{data.items.projects.organizations.name}" class="text-[14px] text-gray-500 hover:text-secondary-400 transition">{data.items.projects.organizations.name}</a>

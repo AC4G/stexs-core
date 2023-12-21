@@ -56,7 +56,7 @@ router.post(
   '/authorize',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     body('client_id')
       .notEmpty()
@@ -381,7 +381,7 @@ router.get(
   '/connections',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     paginate.middleware(10, 50),
   ],
@@ -441,7 +441,7 @@ router.delete(
   '/connection',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
     body('client_id')
       .notEmpty()
@@ -505,7 +505,7 @@ router.delete(
     body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
     validate(logger),
     validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('authorization_code'),
+    checkTokenGrantType(['authorization_code']),
     transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {

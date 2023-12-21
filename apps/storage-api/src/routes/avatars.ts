@@ -15,7 +15,12 @@ import {
   checkTokenGrantType,
   transformJwtErrorMessages,
 } from 'utils-ts/jwtMiddleware';
-import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER, BUCKET } from '../../env-config';
+import { 
+  ACCESS_TOKEN_SECRET, 
+  AUDIENCE, 
+  ISSUER, 
+  BUCKET 
+} from '../../env-config';
 import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
 import redis from '../redis';
@@ -42,6 +47,7 @@ router.get(
   const url = await redis.get(`avatars:${userId}`);
 
   if (url) {
+    logger.info(`Avatar presigned url fetched from cache: ${userId}`);
     return res.json({ url });
   }
 
@@ -86,6 +92,8 @@ router.get(
     Expires: expires
   });
 
+  logger.info(`Generated new presigned url for avatar: ${userId}`);
+
   try {
     await redis.set(`avatars:${userId}`, signedUrl, {
       EX: expires - 10
@@ -107,35 +115,28 @@ router.post(
   '',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger)
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub!;
 
-    try {
-      const signedPost = await s3.createPresignedPost({
-        Bucket: BUCKET,
-        Fields: {
-          key: 'avatars/' + userId,
-          'Content-Type': `image/webp`,
-        },
-        Conditions: [
-          ['content-length-range', 0, 1024 * 1024],
-          ['eq', '$Content-Type', `image/webp`],
-        ],
-        Expires: 60,
-      });
+    const signedPost = await s3.createPresignedPost({
+      Bucket: BUCKET,
+      Fields: {
+        key: 'avatars/' + userId,
+        'Content-Type': `image/webp`,
+      },
+      Conditions: [
+        ['content-length-range', 0, 1024 * 1024],
+        ['eq', '$Content-Type', `image/webp`],
+      ],
+      Expires: 60,
+    });
 
-      return res.json(signedPost);
-    } catch (e) {
-      logger.error(
-        `Error while generating a signed url for avatar upload for user: ${userId}. Error: Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+    logger.info(`Created signed post url for avatar: ${userId}`);
+
+    return res.json(signedPost);
   },
 );
 
@@ -143,7 +144,7 @@ router.delete(
   '',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType('password'),
+    checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
@@ -152,7 +153,7 @@ router.delete(
     try {
       await s3
         .deleteObjects({
-          Bucket: 'stexs',
+          Bucket: BUCKET,
           Delete: {
             Objects: [{ Key: 'avatars/' + userId }],
           },

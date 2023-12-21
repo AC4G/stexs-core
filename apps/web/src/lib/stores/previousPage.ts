@@ -14,7 +14,7 @@ export function getPreviousPageStore(): Writable<string> {
 }
 
 export function redirectToPreviousPage(previousPageStore: Writable<string>) {
-  let path: string;
+  let path: string = '/';
 
   const unsubscribe = previousPageStore.subscribe((currentPath: string) => {
     path = currentPath;

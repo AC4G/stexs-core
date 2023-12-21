@@ -69,7 +69,6 @@ export class StexsAuthClient {
     return await this._baseSignIn(
       {
         path: 'sign-in',
-        method: 'POST',
         body: {
           identifier,
           password,
@@ -111,7 +110,6 @@ export class StexsAuthClient {
     const response = await this._baseSignIn(
       {
         path: 'sign-in/confirm',
-        method: 'POST',
         body: {
           code,
           type,
@@ -145,12 +143,14 @@ export class StexsAuthClient {
   private async _baseSignIn(
     requestParameter: {
       path: string;
-      method: string;
-      body: object;
+      body: Record<string, any>;
     },
     continuousAutoRefresh: boolean,
   ): Promise<Response> {
-    const response = await this._request(requestParameter);
+    const response = await this._request({ 
+      ...requestParameter,
+      method: 'POST' 
+    });
 
     if (response.ok) {
       const clonedResponse = response.clone();
@@ -691,8 +691,8 @@ export class StexsAuthClient {
     headers = {},
   }: {
     path: string;
-    method?: string;
-    body?: object;
+    method?: 'GET' | 'POST' | 'DELETE' | 'PUT';
+    body?: Record<string, any>;
     headers?: Record<string, string>;
   }): Promise<Response> {
     try {

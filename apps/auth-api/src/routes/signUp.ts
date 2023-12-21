@@ -46,6 +46,7 @@ router.post(
 
         return true;
       })
+
       .custom((value: string) => {
         if (/^\w+([-]?\w+)*@\w+([-]?\w+)*(\.\w{2,3})+$/.test(value))
           throw new CustomValidationError({

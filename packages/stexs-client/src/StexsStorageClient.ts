@@ -8,7 +8,7 @@ export class StexsStorageClient {
     }
 
     /**
-     * Returns presigned url for avatar of the given user id
+     * Retrieves presigned url for avatar by the given user id
      *       
      * @param userId - user id of the user which the avatar is requested
      * @returns {Promise<Response>}
@@ -20,7 +20,35 @@ export class StexsStorageClient {
     }
 
     /**
-     * Returns a presigned url for item thumbnail of the given item id
+     * Retrieves presigned post url for uploading a new avatar
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @returns {Promise<Response>}
+     */
+    async getAvatarPostUrl(): Promise<Response> {
+        return await this._request({
+            path: `avatars`,
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Deletes the current avatar
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @returns {Promise<Response>}
+     */
+    async deleteAvatar(): Promise<Response> {
+        return await this._request({
+            path: 'avatars',
+            method: 'DELETE'
+        });
+    }
+
+    /**
+     * Retrieves presigned url for item thumbnail by the given item id
      * 
      * @param itemId - item id for requesting the thumbnail url
      * @returns {Promise<Response>}
@@ -31,6 +59,64 @@ export class StexsStorageClient {
         });
     }
 
+    /**
+     * Retrieves presigned post url for item thumbnail by the given item id
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @param itemId - item id for requesting the thumbnail post url
+     * @returns {Promise<Response>}
+     */
+    async getItemThumbnailPostUrl(itemId: string): Promise<Response> {
+        return await this._request({
+            path: `items/thumbnail/${itemId}`,
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Retrieves presigned url for project logo by the given project id 
+     * 
+     * @param projectId - project id for requesting the logo url
+     * @returns {Promise<Response>}
+     */
+    async getProjectLogoUrl(projectId: string): Promise<Response> {
+        return await this._request({
+            path: `projects/${projectId}`,
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Retrieves presigned post url for project logo by the given project id 
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @param projectId - project id for requesting the logo post url
+     * @returns {Promise<Response>}
+     */
+    async getProjectLogoPostUrl(projectId: string): Promise<Response> {
+        return await this._request({
+            path: `projects/${projectId}`,
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Deletes the projects logo by the given project id
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @param projectId - id of the project from which the logo needs to be deleted
+     * @returns {Promise<Response>}
+     */
+    async deleteProjectLogo(projectId: string): Promise<Response> {
+        return await this._request({
+            path: `projects/${projectId}`,
+            method: 'DELETE'
+        });
+    }
+
     private async _request({
         path,
         method = 'GET',
@@ -38,8 +124,8 @@ export class StexsStorageClient {
         headers = {},
       }: {
         path: string;
-        method?: string;
-        body?: object;
+        method?: 'GET' | 'POST' | 'DELETE' | 'PUT';
+        body?: Record<string, any>;
         headers?: Record<string, string>;
       }): Promise<Response> {
         try {

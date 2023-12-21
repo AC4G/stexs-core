@@ -10,7 +10,7 @@
     import Icon from '@iconify/svelte';
     import { Dropdown, DropdownItem } from "flowbite-svelte";
     import { acceptFriendRequest, deleteFriendRequest } from "$lib/utils/friendRequests";
-    import { createProfileStore, getProfileStore } from "$lib/stores/profile";
+    import { getProfileStore } from "$lib/stores/profile";
     
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -357,7 +357,7 @@
     <div class="grid place-items-center">
         <div class="rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px]">
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 gap-y-8">
-                {#if $profileQuery.isLoading}
+                {#if $profileQuery.isLoading || !$profileQuery.data}
                     <div class="placeholder-circle animate-pulse mx-auto w-[120px] sm:w-[148px]" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <div class="placeholder animate-pulse w-[120px] h-[20px]" />
@@ -376,7 +376,7 @@
                         {/if}
                     </div>
                 {/if}
-                {#if $userStore && $userStore.id !== $profileQuery.data?.user_id}
+                {#if $userStore && $profileQuery.data && $userStore.id !== $profileQuery.data.user_id}
                     <div class="grid pt-[12px] sm:col-start-3 col-span-full">
                         <div class="flex justify-between sm:justify-end">
                             {#if $blockedQuery.data?.length === 0}
@@ -426,7 +426,7 @@
                 {/if}
             </div>
             <div class="grid grid-rows-1 mt-[28px]">
-                {#if $blockedQuery.isLoading}
+                {#if $blockedQuery.isLoading || !$blockedQuery.data}
                     <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
                 {:else}
                     {#if $blockedQuery.data?.length > 0}

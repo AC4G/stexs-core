@@ -23,8 +23,11 @@ export async function acceptFriendRequest(
     });
   } else {
     isFriend = true;
-    profileStore.update(($profileStore) => {
-      return { ...$profileStore, refetchTrigger: !!$profileStore.refetchTrigger };
+    profileStore.update((profile: Profile | null) => {
+      return {
+        ...profile!,
+        refetchTrigger: !!profile!.refetchTrigger
+      };
     });
     flash.set({
       message: `${username} is now your friend.`,
