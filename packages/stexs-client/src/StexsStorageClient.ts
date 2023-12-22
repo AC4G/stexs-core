@@ -50,7 +50,7 @@ export class StexsStorageClient {
     /**
      * Retrieves presigned url for item thumbnail by the given item id
      * 
-     * @param itemId - item id for requesting the thumbnail url
+     * @param itemId - id of the item which the thumbnail url is requested
      * @returns {Promise<Response>}
      */
     async getItemThumbnailUrl(itemId: string): Promise<Response> {
@@ -64,7 +64,7 @@ export class StexsStorageClient {
      * 
      * Note: action available for authenticated users only
      * 
-     * @param itemId - item id for requesting the thumbnail post url
+     * @param itemId - id of the item which the thumbnail post url is requested
      * @returns {Promise<Response>}
      */
     async getItemThumbnailPostUrl(itemId: string): Promise<Response> {
@@ -77,13 +77,12 @@ export class StexsStorageClient {
     /**
      * Retrieves presigned url for project logo by the given project id 
      * 
-     * @param projectId - project id for requesting the logo url
+     * @param projectId - id of the project which the logo url is requested
      * @returns {Promise<Response>}
      */
     async getProjectLogoUrl(projectId: string): Promise<Response> {
         return await this._request({
-            path: `projects/${projectId}`,
-            method: 'GET'
+            path: `projects/${projectId}`
         });
     }
 
@@ -92,7 +91,7 @@ export class StexsStorageClient {
      * 
      * Note: action available for authenticated users only
      * 
-     * @param projectId - project id for requesting the logo post url
+     * @param projectId - id of the project which the logo post url is requested
      * @returns {Promise<Response>}
      */
     async getProjectLogoPostUrl(projectId: string): Promise<Response> {
@@ -113,6 +112,48 @@ export class StexsStorageClient {
     async deleteProjectLogo(projectId: string): Promise<Response> {
         return await this._request({
             path: `projects/${projectId}`,
+            method: 'DELETE'
+        });
+    }
+
+    /**
+     * Retrieves presigned url for organization logo by the given organization id
+     * 
+     * @param organizationId - id of the organization which the presigned url is requested
+     * @returns {Promise<Response>}
+     */
+    async getOrganizationLogoUrl(organizationId: string): Promise<Response> {
+        return await this._request({
+            path: `organizations/${organizationId}`
+        });
+    }
+
+    /**
+     * Retrieves presigned post url for organization logo by the given organization id
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @param organizationId - id of the organization which the logo post ulr is requested
+     * @returns {Promise<Response>}
+     */
+    async getOrganizationLogoPostUrl(organizationId: string): Promise<Response> {
+        return await this._request({
+            path: `organizations/${organizationId}`,
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Deletes the organizations logo by the given organization id
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @param organizationId - id of the organization from which the logo needs to be deleted
+     * @returns {Promise<Response>}
+     */
+    async deleteOrganizationLogo(organizationId: string): Promise<Response> {
+        return await this._request({
+            path: `organizations/${organizationId}`,
             method: 'DELETE'
         });
     }

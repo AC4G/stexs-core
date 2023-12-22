@@ -292,3 +292,15 @@ export const PROJECT_NOT_FOUND = {
   code: 'PROJECT_NOT_FOUND',
   message: 'Project was not been found.'
 };
+export const ORGANIZATION_ID_REQUIRED = {
+  code: 'ORGANIZATION_ID_REQUIRED',
+  message: 'Please provide a organization id.'
+};
+export const ORGANIZATION_ID_NOT_NUMERIC = {
+  code: 'ORGANIZATION_ID_NOT_NUMERIC',
+  message: 'Organization id needs to be a number.'
+};
+export const ORGANIZATION_NOT_FOUND = {
+  code: 'ORGANIZATION_NOT_FOUND',
+  message: 'Organization was not been found.'
+};

@@ -77,7 +77,7 @@ router.get(
     }
   } catch (e) {
     logger.error(
-      `Error while checking user for existence: ${userId}. Error: Error: ${
+      `Error while checking user for existence: ${userId}. Error: ${
         e instanceof Error ? e.message : e
       }`,
     );
@@ -100,7 +100,7 @@ router.get(
     });
   } catch (e) {
     logger.error(
-      `Error while setting signed url for avatar into cache. Error: Error: ${
+      `Error while setting signed url for avatar into cache. Error: ${
         e instanceof Error ? e.message : e
       }`,
     );
@@ -163,7 +163,7 @@ router.delete(
       logger.info(`Deleted avatar from user: ${userId}`);
     } catch (e) {
       logger.error(
-        `Error while fetching list of objects or delete object in avatars bucket. Error: Error: ${
+        `Error while deleting avatar. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );

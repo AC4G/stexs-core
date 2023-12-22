@@ -75,7 +75,7 @@ router.get(
       }
     } catch (e) {
       logger.error(
-        `Error while checking item for existence: ${itemId}. Error: Error: ${
+        `Error while checking item for existence: ${itemId}. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
@@ -98,7 +98,7 @@ router.get(
       });
     } catch (e) {
       logger.error(
-        `Error while setting signed url for item thumbnail into cache. Item id: ${itemId}. Error: Error: ${
+        `Error while setting signed url for item thumbnail into cache. Item id: ${itemId}. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
@@ -142,7 +142,7 @@ router.post(
       }
     } catch (e) {
       logger.error(
-        `Error while checking the current user if authorized for uploading/updating item thumbnail. Error: Error: ${
+        `Error while checking the current user if authorized for uploading/updating item thumbnail. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
