@@ -10,7 +10,7 @@
         queryKey: ['avatar', userId],
         queryFn: async () => {
             return { 
-                url: (await (await stexs.storage.getAvatarUrl(userId)).json()).url
+                url: await stexs.storage.getAvatarUrl(userId)
             };
         },
         enabled: !!userId

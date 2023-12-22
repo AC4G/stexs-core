@@ -4,7 +4,6 @@ import {
   INTERNAL_ERROR,
   INVALID_UUID,
   USER_ID_REQUIRED,
-  USER_NOT_FOUND,
 } from 'utils-ts/errors';
 import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
 import validate from 'utils-ts/validatorMiddleware';
@@ -23,7 +22,6 @@ import {
 } from '../../env-config';
 import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
-import db from '../database';
 
 const router = Router();
 
@@ -43,7 +41,7 @@ router.get(
   ],async (req: Request, res: Response) => {
   const { userId } = req.params;
 
-  const expires = 60 * 60 * 24 * 7; // 7 days in seconds
+  const expires = 60 * 60 * 24; // 1 day in seconds
 
   const signedUrl = await s3.getSignedUrl('getObject', {
     Bucket: BUCKET,
@@ -78,7 +76,7 @@ router.post(
         ['content-length-range', 0, 1024 * 1024],
         ['eq', '$Content-Type', `image/webp`],
       ],
-      Expires: 60,
+      Expires: 60 * 5, // 5 minutes in seconds
     });
 
     logger.info(`Created signed post url for avatar: ${userId}`);

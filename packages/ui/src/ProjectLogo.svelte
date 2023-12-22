@@ -11,7 +11,7 @@
         queryKey: ['projectLogo', projectId],
         queryFn: async () => {
             return { 
-                url: (await (await stexs.storage.getProjectLogoUrl(projectId)).json()).url
+                url: await stexs.storage.getProjectLogoUrl(projectId)
             };
         }
     });

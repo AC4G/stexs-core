@@ -18,7 +18,6 @@ import {
   INTERNAL_ERROR, 
   ITEM_ID_NOT_NUMERIC, 
   ITEM_ID_REQUIRED, 
-  ITEM_NOT_FOUND, 
   UNAUTHORIZED_ACCESS 
 } from 'utils-ts/errors';
 import s3 from '../s3';
@@ -41,7 +40,7 @@ router.get(
   async (req: Request, res: Response) => {
     const { itemId } = req.params;
 
-    const time = 60 * 60 * 24 * 7; // 7 days in seconds
+    const time = 60 * 60 * 24; // 1 day in seconds
 
     const signedUrl = await s3.getSignedUrl('getObject', {
       Bucket: BUCKET,
@@ -106,7 +105,7 @@ router.post(
         ['content-length-range', 0, 1024 * 1024],
         ['eq', '$Content-Type', `image/webp`],
       ],
-      Expires: 60,
+      Expires: 60 * 5, // 5 minutes in seconds
     });
 
     logger.info(`Created signed post url for item thumbnail: ${itemId}`);

@@ -1,3 +1,5 @@
+import { SignedUrl } from "./lib/types";
+
 export class StexsStorageClient {
     private storageUrl: string;
     private fetch: typeof fetch;
@@ -11,12 +13,10 @@ export class StexsStorageClient {
      * Retrieves presigned url for avatar by the given user id
      *       
      * @param userId - user id of the user which the avatar is requested
-     * @returns {Promise<Response>}
+     * @returns {Promise<string | undefined>} - returns the presinged url or undefined
      */
-    async getAvatarUrl(userId: string): Promise<Response> {
-        return await this._request({ 
-            path: `avatars/${userId}` 
-        });
+    async getAvatarUrl(userId: string): Promise<string | undefined> {
+        return await this._getSignedUrl(`avatars:${userId}`, `avatars/${userId}`);
     }
 
     /**
@@ -51,12 +51,10 @@ export class StexsStorageClient {
      * Retrieves presigned url for item thumbnail by the given item id
      * 
      * @param itemId - id of the item which the thumbnail url is requested
-     * @returns {Promise<Response>}
+     * @returns {Promise<string | undefined>} - returns the presinged url or undefined
      */
-    async getItemThumbnailUrl(itemId: string): Promise<Response> {
-        return await this._request({ 
-            path: `items/thumbnail/${itemId}` 
-        });
+    async getItemThumbnailUrl(itemId: string): Promise<string | undefined> {
+        return await this._getSignedUrl(`items:${itemId}`, `items/thumbnail/${itemId}`);
     }
 
     /**
@@ -78,12 +76,10 @@ export class StexsStorageClient {
      * Retrieves presigned url for project logo by the given project id 
      * 
      * @param projectId - id of the project which the logo url is requested
-     * @returns {Promise<Response>}
+     * @returns {Promise<string | undefined>} - returns the presinged url or undefined
      */
-    async getProjectLogoUrl(projectId: string): Promise<Response> {
-        return await this._request({
-            path: `projects/${projectId}`
-        });
+    async getProjectLogoUrl(projectId: string): Promise<string | undefined> {
+        return await this._getSignedUrl(`projects:${projectId}`, `projects/${projectId}`);
     }
 
     /**
@@ -120,12 +116,10 @@ export class StexsStorageClient {
      * Retrieves presigned url for organization logo by the given organization id
      * 
      * @param organizationId - id of the organization which the presigned url is requested
-     * @returns {Promise<Response>}
+     * @returns {Promise<string | undefined>} - returns the presinged url or undefined
      */
-    async getOrganizationLogoUrl(organizationId: string): Promise<Response> {
-        return await this._request({
-            path: `organizations/${organizationId}`
-        });
+    async getOrganizationLogoUrl(organizationId: string): Promise<string | undefined> {
+        return await this._getSignedUrl(`organizations:${organizationId}`, `organizations/${organizationId}`);
     }
 
     /**
@@ -156,6 +150,45 @@ export class StexsStorageClient {
             path: `organizations/${organizationId}`,
             method: 'DELETE'
         });
+    }
+
+    private async _getSignedUrl(key: string, path: string) {
+        const session = sessionStorage.getItem(key);
+
+        if (session) {
+            const signed = JSON.parse(session) as SignedUrl;
+
+            if (signed.expires * 1000 > new Date().getTime()) {
+                return signed.url;
+            }
+        }
+
+        const response = await (await this._request({
+            path
+        })).json();
+
+        const url = response.url;
+
+        if (url) {
+            const searchParams = new URLSearchParams(url);
+
+            try {
+                sessionStorage.setItem(key, JSON.stringify({
+                    url,
+                    expires: searchParams.get('Expires')
+                }));
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+                    sessionStorage.clear();
+                    sessionStorage.setItem(key, JSON.stringify({
+                        url,
+                        expires: searchParams.get('Expires')
+                    }));
+                }
+            }
+        }
+
+        return url;
     }
 
     private async _request({

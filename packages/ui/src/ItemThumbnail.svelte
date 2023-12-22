@@ -9,7 +9,7 @@
         queryKey: ['itemThumbnail', itemId],
         queryFn: async () => {
             return { 
-                url: (await (await stexs.storage.getItemThumbnailUrl(itemId)).json()).url
+                url: await stexs.storage.getItemThumbnailUrl(itemId)
             };
         }
     });

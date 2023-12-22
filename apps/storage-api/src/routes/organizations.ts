@@ -7,7 +7,6 @@ import {
     INTERNAL_ERROR,
     ORGANIZATION_ID_NOT_NUMERIC, 
     ORGANIZATION_ID_REQUIRED, 
-    ORGANIZATION_NOT_FOUND,
     UNAUTHORIZED_ACCESS
 } from 'utils-ts/errors';
 import { 
@@ -41,7 +40,7 @@ router.get(
     async (req: Request, res: Response) => {
         const { organizationId } = req.params;
 
-        const time = 60 * 60 * 24 * 7; // 7 days in seconds
+        const time = 60 * 60 * 24; // 1 day in seconds
 
         const signedUrl = await s3.getSignedUrl('getObject', {
             Bucket: BUCKET,
@@ -114,7 +113,7 @@ router.post(
                 ['content-length-range', 0, 1024 * 1024],
                 ['eq', '$Content-Type', `image/webp`],
             ],
-            Expires: 60,
+            Expires: 60 * 5, // 5 minutes in seconds
         });
       
         logger.info(`Created signed post url for organization logo: ${organizationId}`);
