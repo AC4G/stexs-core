@@ -1,7 +1,6 @@
 import { Router, Response } from 'express';
 import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
-import redis from '../redis';
 import { param } from 'express-validator';
 import validate from 'utils-ts/validatorMiddleware';
 import { 
@@ -42,46 +41,6 @@ router.get(
     async (req: Request, res: Response) => {
         const { organizationId } = req.params;
 
-        const url = await redis.get(`organizations:${organizationId}`);
-
-        if (url) {
-            logger.info(`Organization logo presigned url fetched from cache: ${organizationId}`);
-            return res.json({ url });
-        }
-
-        try {
-            const { rowCount } = await db.query(
-                `
-                    SELECT 1
-                    FROM public.organizations
-                    WHERE id = $1::integer;
-                `,
-                [organizationId]
-            );
-        
-            if (rowCount === 0) {
-                logger.warn(`Organization not found for organization id: ${organizationId}`);
-                return res.status(404).json(
-                    errorMessages([
-                        {
-                            info: ORGANIZATION_NOT_FOUND,
-                            data: {
-                            location: 'params',
-                            path: 'organizationId',
-                            },
-                        },
-                    ]),
-                );
-            }
-        } catch (e) {
-            logger.error(
-                `Error while checking organization for existence: ${organizationId}. Error: ${
-                    e instanceof Error ? e.message : e
-                }`,
-            );
-            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-        } 
-
         const time = 60 * 60 * 24 * 7; // 7 days in seconds
 
         const signedUrl = await s3.getSignedUrl('getObject', {
@@ -91,18 +50,6 @@ router.get(
         });
         
         logger.info(`Generated new presigned url for organization logo: ${organizationId}`);
-        
-        try {
-            await redis.set(`organizations:${organizationId}`, signedUrl, {
-                EX: time - 10
-            });
-        } catch (e) {
-            logger.error(
-                `Error while setting signed url for organization logo into cache. Organization id: ${organizationId}. Error: ${
-                    e instanceof Error ? e.message : e
-                }`,
-            );
-        }
         
         return res.json({
             url: signedUrl

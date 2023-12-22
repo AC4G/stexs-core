@@ -10,7 +10,6 @@ import {
     PROJECT_NOT_FOUND, 
     UNAUTHORIZED_ACCESS 
 } from 'utils-ts/errors';
-import redis from '../redis';
 import db from '../database';
 import { errorMessages } from 'utils-ts/messageBuilder';
 import { 
@@ -40,47 +39,7 @@ router.get(
         validate(logger)
     ], 
     async (req: Request, res: Response) => {
-        const { projectId } = req.params;
-
-        const url = await redis.get(`projects:${projectId}`);
-
-        if (url) {
-            logger.info(`Project logo presigned url fetched from cache: ${projectId}`);
-            return res.json({ url });
-        }
-
-        try {
-            const { rowCount } = await db.query(
-                `
-                    SELECT 1
-                    FROM public.projects
-                    WHERE id = $1::integer;
-                `,
-                [projectId]
-            );
-        
-            if (rowCount === 0) {
-                logger.warn(`Project not found for project id: ${projectId}`);
-                return res.status(404).json(
-                    errorMessages([
-                        {
-                            info: PROJECT_NOT_FOUND,
-                            data: {
-                            location: 'params',
-                            path: 'projectId',
-                            },
-                        },
-                    ]),
-                );
-            }
-        } catch (e) {
-            logger.error(
-                `Error while checking project for existence: ${projectId}. Error: ${
-                    e instanceof Error ? e.message : e
-                }`,
-            );
-            return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }  
+        const { projectId } = req.params; 
 
         const time = 60 * 60 * 24 * 7; // 7 days in seconds
 
@@ -91,18 +50,6 @@ router.get(
         });
         
         logger.info(`Generated new presigned url for project logo: ${projectId}`);
-        
-        try {
-            await redis.set(`projects:${projectId}`, signedUrl, {
-                EX: time - 10
-            });
-        } catch (e) {
-            logger.error(
-                `Error while setting signed url for project logo into cache. Project id: ${projectId}. Error: ${
-                    e instanceof Error ? e.message : e
-                }`,
-            );
-        }
         
         return res.json({
             url: signedUrl
