@@ -8,11 +8,9 @@
     $: query = useQuery({
         queryKey: ['itemThumbnail', itemId],
         queryFn: async () => {
-            return { 
-                url: await stexs.storage.getItemThumbnailUrl(itemId)
-            };
+            return await stexs.storage.getItemThumbnailUrl(itemId)
         }
     });
 </script>
 
-<img class="h-full w-full object-cover rounded-none" draggable="false" src={$query.data?.url} alt={itemName} />
+<img class="h-full w-full object-cover rounded-none" draggable="false" src={$query.data} alt={itemName} />

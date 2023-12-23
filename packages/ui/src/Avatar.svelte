@@ -9,12 +9,10 @@
     $: query = useQuery({
         queryKey: ['avatar', userId],
         queryFn: async () => {
-            return { 
-                url: await stexs.storage.getAvatarUrl(userId)
-            };
+            return await stexs.storage.getAvatarUrl(userId)
         },
         enabled: !!userId
     });
 </script>
 
-<Avatar src={$query.data?.url} initials={username} {...$$restProps} />
+<Avatar src={$query.data} initials={username} {...$$restProps} />

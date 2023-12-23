@@ -10,14 +10,12 @@
     const query = useQuery({
         queryKey: ['projectLogo', projectId],
         queryFn: async () => {
-            return { 
-                url: await stexs.storage.getProjectLogoUrl(projectId)
-            };
+            return await stexs.storage.getProjectLogoUrl(projectId)
         }
     });
 </script>
 
 <div class="w-[48px] h-[48px] bg-surface-600 transition border border-solid border-gray-600 rounded-md flex">
     <Icon icon="uil:image-question" class="text-[46px] variant-filled-surface rounded-md" />
-    <img src={$query.data?.url} draggable="false" class="h-full w-full object-cover aspect-square rounded-md" {alt} on:error={hideImg} />
+    <img src={$query.data} draggable="false" class="h-full w-full object-cover aspect-square rounded-md" {alt} on:error={hideImg} />
 </div>

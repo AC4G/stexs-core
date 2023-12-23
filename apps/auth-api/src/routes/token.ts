@@ -54,7 +54,7 @@ router.post(
             },
           ]),
         );
-      }
+      } 
 
       logger.info(
         `Refresh token successfully processed for user: ${token?.sub} (Revoked)`,

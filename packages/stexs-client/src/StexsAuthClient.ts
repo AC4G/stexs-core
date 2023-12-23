@@ -595,7 +595,7 @@ export class StexsAuthClient {
   }
 
   private async _scheduleTokenRefresh() {
-    const refreshThresholdMs = 60000;
+    let timeoutId: number | null = null;
 
     while (true) {
       const session: Session = this._getSession();
@@ -603,20 +603,20 @@ export class StexsAuthClient {
       if (session && session.expires) {
         const expiresInMs = session.expires * 1000 - Date.now();
 
-        if (expiresInMs > refreshThresholdMs) {
-          const delayMs = expiresInMs - refreshThresholdMs;
-
-          setTimeout(async () => {
-            const session: Session = this._getSession();
-
-            if (session) {
-              await this._refreshAccessToken();
-            }
-          }, delayMs);
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
         }
 
-        if (expiresInMs < refreshThresholdMs) {
+        if (expiresInMs < 60000) {
           await this._refreshAccessToken();
+        } else {
+          timeoutId = setTimeout(async () => {
+            const session = this._getSession();
+        
+            if (session && (session.expires * 1000 - 60000) < Date.now()) {
+              await this._refreshAccessToken();
+            }
+          }, expiresInMs - 60000);
         }
       }
 
