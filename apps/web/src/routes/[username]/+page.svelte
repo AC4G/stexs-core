@@ -12,7 +12,7 @@
         getModalStore, 
         type ModalSettings 
     } from "@skeletonlabs/skeleton";
-    import { Button, hideImg } from "ui";
+    import { Button } from "ui";
     import Icon from "@iconify/svelte";
     import ItemThumbnail from "ui/src/ItemThumbnail.svelte";
     import ProjectLogo from "ui/src/ProjectLogo.svelte";

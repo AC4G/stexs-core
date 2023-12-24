@@ -18,12 +18,10 @@ import {
   INTERNAL_ERROR, 
   ITEM_ID_NOT_NUMERIC, 
   ITEM_ID_REQUIRED, 
-  ITEM_NOT_FOUND, 
   UNAUTHORIZED_ACCESS 
 } from 'utils-ts/errors';
 import s3 from '../s3';
 import { param } from 'express-validator';
-import redis from '../redis';
 import validate from 'utils-ts/validatorMiddleware';
 
 const router = Router();
@@ -42,47 +40,7 @@ router.get(
   async (req: Request, res: Response) => {
     const { itemId } = req.params;
 
-    const url = await redis.get(`items:${itemId}`);
-
-    if (url) {
-      logger.info(`Item thumbnail presigned url fetched from cache: ${itemId}`);
-      return res.json({ url });
-    }
-
-    try {
-      const { rowCount } = await db.query(
-        `
-          SELECT 1
-          FROM public.items
-          WHERE id = $1::integer;
-        `,
-        [itemId]
-      );
-  
-      if (rowCount === 0) {
-        logger.warn(`Item not found for item id: ${itemId}`);
-        return res.status(404).json(
-          errorMessages([
-            {
-              info: ITEM_NOT_FOUND,
-              data: {
-                location: 'params',
-                path: 'itemId',
-              },
-            },
-          ]),
-        );
-      }
-    } catch (e) {
-      logger.error(
-        `Error while checking item for existence: ${itemId}. Error: Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
-
-    const time = 60 * 60 * 24 * 7; // 7 days in seconds
+    const time = 60 * 60 * 24; // 1 day in seconds
 
     const signedUrl = await s3.getSignedUrl('getObject', {
       Bucket: BUCKET,
@@ -91,18 +49,6 @@ router.get(
     });
 
     logger.info(`Generated new presigned url for item thumbnail: ${itemId}`);
-  
-    try {
-      await redis.set(`items:${itemId}`, signedUrl, {
-        EX: time - 10
-      });
-    } catch (e) {
-      logger.error(
-        `Error while setting signed url for item thumbnail into cache. Item id: ${itemId}. Error: Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-    }
   
     return res.json({
       url: signedUrl
@@ -142,7 +88,7 @@ router.post(
       }
     } catch (e) {
       logger.error(
-        `Error while checking the current user if authorized for uploading/updating item thumbnail. Error: Error: ${
+        `Error while checking the current user if authorized for uploading/updating item thumbnail. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
@@ -159,7 +105,7 @@ router.post(
         ['content-length-range', 0, 1024 * 1024],
         ['eq', '$Content-Type', `image/webp`],
       ],
-      Expires: 60,
+      Expires: 60 * 5, // 5 minutes in seconds
     });
 
     logger.info(`Created signed post url for item thumbnail: ${itemId}`);

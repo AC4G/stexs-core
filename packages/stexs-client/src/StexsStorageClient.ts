@@ -1,3 +1,5 @@
+import { SignedUrl } from "./lib/types";
+
 export class StexsStorageClient {
     private storageUrl: string;
     private fetch: typeof fetch;
@@ -11,12 +13,10 @@ export class StexsStorageClient {
      * Retrieves presigned url for avatar by the given user id
      *       
      * @param userId - user id of the user which the avatar is requested
-     * @returns {Promise<Response>}
+     * @returns {Promise<string | undefined>} - returns the presinged url or undefined
      */
-    async getAvatarUrl(userId: string): Promise<Response> {
-        return await this._request({ 
-            path: `avatars/${userId}` 
-        });
+    async getAvatarUrl(userId: string): Promise<string | undefined> {
+        return await this._getSignedUrl(`avatars:${userId}`, `avatars/${userId}`);
     }
 
     /**
@@ -50,13 +50,11 @@ export class StexsStorageClient {
     /**
      * Retrieves presigned url for item thumbnail by the given item id
      * 
-     * @param itemId - item id for requesting the thumbnail url
-     * @returns {Promise<Response>}
+     * @param itemId - id of the item which the thumbnail url is requested
+     * @returns {Promise<string | undefined>} - returns the presinged url or undefined
      */
-    async getItemThumbnailUrl(itemId: string): Promise<Response> {
-        return await this._request({ 
-            path: `items/thumbnail/${itemId}` 
-        });
+    async getItemThumbnailUrl(itemId: string): Promise<string | undefined> {
+        return await this._getSignedUrl(`items:${itemId}`, `items/thumbnail/${itemId}`);
     }
 
     /**
@@ -64,7 +62,7 @@ export class StexsStorageClient {
      * 
      * Note: action available for authenticated users only
      * 
-     * @param itemId - item id for requesting the thumbnail post url
+     * @param itemId - id of the item which the thumbnail post url is requested
      * @returns {Promise<Response>}
      */
     async getItemThumbnailPostUrl(itemId: string): Promise<Response> {
@@ -77,14 +75,11 @@ export class StexsStorageClient {
     /**
      * Retrieves presigned url for project logo by the given project id 
      * 
-     * @param projectId - project id for requesting the logo url
-     * @returns {Promise<Response>}
+     * @param projectId - id of the project which the logo url is requested
+     * @returns {Promise<string | undefined>} - returns the presinged url or undefined
      */
-    async getProjectLogoUrl(projectId: string): Promise<Response> {
-        return await this._request({
-            path: `projects/${projectId}`,
-            method: 'GET'
-        });
+    async getProjectLogoUrl(projectId: string): Promise<string | undefined> {
+        return await this._getSignedUrl(`projects:${projectId}`, `projects/${projectId}`);
     }
 
     /**
@@ -92,7 +87,7 @@ export class StexsStorageClient {
      * 
      * Note: action available for authenticated users only
      * 
-     * @param projectId - project id for requesting the logo post url
+     * @param projectId - id of the project which the logo post url is requested
      * @returns {Promise<Response>}
      */
     async getProjectLogoPostUrl(projectId: string): Promise<Response> {
@@ -115,6 +110,85 @@ export class StexsStorageClient {
             path: `projects/${projectId}`,
             method: 'DELETE'
         });
+    }
+
+    /**
+     * Retrieves presigned url for organization logo by the given organization id
+     * 
+     * @param organizationId - id of the organization which the presigned url is requested
+     * @returns {Promise<string | undefined>} - returns the presinged url or undefined
+     */
+    async getOrganizationLogoUrl(organizationId: string): Promise<string | undefined> {
+        return await this._getSignedUrl(`organizations:${organizationId}`, `organizations/${organizationId}`);
+    }
+
+    /**
+     * Retrieves presigned post url for organization logo by the given organization id
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @param organizationId - id of the organization which the logo post ulr is requested
+     * @returns {Promise<Response>}
+     */
+    async getOrganizationLogoPostUrl(organizationId: string): Promise<Response> {
+        return await this._request({
+            path: `organizations/${organizationId}`,
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Deletes the organizations logo by the given organization id
+     * 
+     * Note: action available for authenticated users only
+     * 
+     * @param organizationId - id of the organization from which the logo needs to be deleted
+     * @returns {Promise<Response>}
+     */
+    async deleteOrganizationLogo(organizationId: string): Promise<Response> {
+        return await this._request({
+            path: `organizations/${organizationId}`,
+            method: 'DELETE'
+        });
+    }
+
+    private async _getSignedUrl(key: string, path: string) {
+        const session = sessionStorage.getItem(key);
+
+        if (session) {
+            const signed = JSON.parse(session) as SignedUrl;
+
+            if (signed.expires * 1000 > new Date().getTime()) {
+                return signed.url;
+            }
+        }
+
+        const response = await (await this._request({
+            path
+        })).json();
+
+        const url = response.url;
+
+        if (url) {
+            const searchParams = new URLSearchParams(url);
+
+            try {
+                sessionStorage.setItem(key, JSON.stringify({
+                    url,
+                    expires: searchParams.get('Expires')
+                }));
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+                    sessionStorage.clear();
+                    sessionStorage.setItem(key, JSON.stringify({
+                        url,
+                        expires: searchParams.get('Expires')
+                    }));
+                }
+            }
+        }
+
+        return url;
     }
 
     private async _request({

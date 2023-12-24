@@ -276,10 +276,6 @@ export const ITEM_ID_NOT_NUMERIC = {
   code: 'ITEM_ID_NOT_NUMERIC',
   message: 'Item id needs to be a number.'
 };
-export const ITEM_NOT_FOUND = {
-  code: 'ITEM_NOT_FOUND',
-  message: 'Item was not been found.'
-};
 export const PROJECT_ID_REQUIRED = {
   code: 'PROJECT_ID_REQUIRED',
   message: 'Please provide a project id.'
@@ -288,7 +284,11 @@ export const PROJECT_ID_NOT_NUMERIC = {
   code: 'PROJECT_ID_NOT_NUMERIC',
   message: 'Project id needs to be a number.'
 };
-export const PROJECT_NOT_FOUND = { 
-  code: 'PROJECT_NOT_FOUND',
-  message: 'Project was not been found.'
+export const ORGANIZATION_ID_REQUIRED = {
+  code: 'ORGANIZATION_ID_REQUIRED',
+  message: 'Please provide a organization id.'
+};
+export const ORGANIZATION_ID_NOT_NUMERIC = {
+  code: 'ORGANIZATION_ID_NOT_NUMERIC',
+  message: 'Organization id needs to be a number.'
 };

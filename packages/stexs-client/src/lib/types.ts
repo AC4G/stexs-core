@@ -52,3 +52,8 @@ export interface SignInInit {
   token: string;
   types: string[];
 }
+
+export interface SignedUrl {
+  url: string;
+  expires: number;
+}

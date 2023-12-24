@@ -426,7 +426,7 @@
                 {/if}
             </div>
             <div class="grid grid-rows-1 mt-[28px]">
-                {#if $blockedQuery.isLoading || !$blockedQuery.data}
+                {#if $blockedQuery.isLoading || !$userStore || !$profileStore || ((!$blockedQuery.data && $userStore.id !== $profileStore.userId))}
                     <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
                 {:else}
                     {#if $blockedQuery.data?.length > 0}

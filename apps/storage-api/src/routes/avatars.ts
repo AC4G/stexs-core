@@ -4,7 +4,6 @@ import {
   INTERNAL_ERROR,
   INVALID_UUID,
   USER_ID_REQUIRED,
-  USER_NOT_FOUND,
 } from 'utils-ts/errors';
 import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
 import validate from 'utils-ts/validatorMiddleware';
@@ -23,8 +22,6 @@ import {
 } from '../../env-config';
 import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
-import redis from '../redis';
-import db from '../database';
 
 const router = Router();
 
@@ -44,47 +41,7 @@ router.get(
   ],async (req: Request, res: Response) => {
   const { userId } = req.params;
 
-  const url = await redis.get(`avatars:${userId}`);
-
-  if (url) {
-    logger.info(`Avatar presigned url fetched from cache: ${userId}`);
-    return res.json({ url });
-  }
-
-  try {
-    const { rowCount } = await db.query(
-      `
-        SELECT 1
-        FROM auth.users
-        WHERE id = $1::uuid;
-      `,
-      [userId]
-    );
-
-    if (rowCount === 0) {
-      logger.warn(`User not found for user id: ${userId}`);
-      return res.status(404).json(
-        errorMessages([
-          {
-            info: USER_NOT_FOUND,
-            data: {
-              location: 'params',
-              path: 'userId',
-            },
-          },
-        ]),
-      );
-    }
-  } catch (e) {
-    logger.error(
-      `Error while checking user for existence: ${userId}. Error: Error: ${
-        e instanceof Error ? e.message : e
-      }`,
-    );
-    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
-
-  const expires = 60 * 60 * 24 * 7; // 7 days in seconds
+  const expires = 60 * 60 * 24; // 1 day in seconds
 
   const signedUrl = await s3.getSignedUrl('getObject', {
     Bucket: BUCKET,
@@ -93,18 +50,6 @@ router.get(
   });
 
   logger.info(`Generated new presigned url for avatar: ${userId}`);
-
-  try {
-    await redis.set(`avatars:${userId}`, signedUrl, {
-      EX: expires - 10
-    });
-  } catch (e) {
-    logger.error(
-      `Error while setting signed url for avatar into cache. Error: Error: ${
-        e instanceof Error ? e.message : e
-      }`,
-    );
-  }
 
   return res.json({
     url: signedUrl
@@ -131,7 +76,7 @@ router.post(
         ['content-length-range', 0, 1024 * 1024],
         ['eq', '$Content-Type', `image/webp`],
       ],
-      Expires: 60,
+      Expires: 60 * 5, // 5 minutes in seconds
     });
 
     logger.info(`Created signed post url for avatar: ${userId}`);
@@ -163,7 +108,7 @@ router.delete(
       logger.info(`Deleted avatar from user: ${userId}`);
     } catch (e) {
       logger.error(
-        `Error while fetching list of objects or delete object in avatars bucket. Error: Error: ${
+        `Error while deleting avatar. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
