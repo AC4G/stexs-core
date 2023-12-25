@@ -82,16 +82,25 @@
         queryFn: async () => await fetchFriends($profileStore?.userId!, search, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
+
+    $: friendsLoaded = $profileStore && 
+        ($profileStore.totalFriends > 0 && search.length > 0 ||
+        $profileStore.totalFriends > 0) ||
+        $friendsQuery.isLoading || !$friendsQuery.data;
 </script>
 
-{#if $profileStore && $profileStore.totalFriends > 0}
-    <div class="mb-[18px] md:max-w-[220px]">
-        <Search size="lg" placeholder="Username" bind:value={search} class="!bg-surface-500" />
-    </div>
-{/if}
+<div class="{friendsLoaded ? 'mb-[18px]' : ''} md:max-w-[220px]">
+    {#if $friendsQuery.isLoading || !$friendsQuery.data}
+        <div class="placeholder animate-pulse max-w-[220px] w-full h-[44px] rounded-lg" />
+    {:else if $profileStore && $profileStore.totalFriends > 0}
+        <div class="mb-[18px] md:max-w-[220px]">
+            <Search size="lg" placeholder="Username" bind:value={search} class="!bg-surface-500" />
+        </div>
+    {/if}
+</div>
 <div class="grid gap-3 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-    {#if $friendsQuery.isLoading}
-        {#each Array(20) as _}
+    {#if $friendsQuery.isLoading || !$friendsQuery.data}
+        {#each Array(50) as _}
             <div class="flex h-full w-full items-center justify-between">
                 <div class="placeholder-circle animate-pulse w-[40px] h-[40px]" />
                 <div class="placeholder animate-pulse w-[70%]" />
@@ -116,8 +125,13 @@
         {/if}
     {/if}
 </div>
-{#if $profileStore && $profileStore.totalFriends > 0}
-    <div class="mx-auto mt-[18px]">
+<div class="mx-auto {friendsLoaded ? 'mt-[18px]' : ''}">
+    {#if $friendsQuery.isLoading || !$friendsQuery.data}
+        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
+            <div class="placeholder animate-pulse h-[38px] w-[120px]" />
+        </div>
+    {:else if $profileStore && $profileStore.totalFriends > 0}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{false}"
@@ -127,5 +141,5 @@
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
             controlVariant="bg-surface-500 border border-solid border-gray-600"
         />
-    </div>
-{/if}
+    {/if}
+</div>

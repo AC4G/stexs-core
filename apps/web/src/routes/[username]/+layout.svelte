@@ -385,7 +385,7 @@
                                 {:else if gotFriendRequest}
                                     <div class="flex flex-col mr-2">
                                         <p class="col-span-2">Friend Request:</p>
-                                        <div class="mt-[4px]">
+                                        <div class="flex flex-row mt-[4px] space-x-2">
                                             <Button on:click={async () => {
                                                 acceptFriendRequestSubmitted = true;
 
@@ -401,7 +401,7 @@
                                                 gotFriendRequest = await deleteFriendRequest(userId, $userStore.id, flash);
                                                 
                                                 deleteFriendRequestSubmitted = false;
-                                            }} submitted={deleteFriendRequestSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600">Delete</Button>
+                                            }} submitted={deleteFriendRequestSubmitted} loaderMeter="stroke-red-500" loaderTrack="stroke-red-500/20" class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600">Delete</Button>
                                         </div>
                                     </div>
                                 {:else if friendRequestSend}
@@ -426,42 +426,38 @@
                 {/if}
             </div>
             <div class="grid grid-rows-1 mt-[28px]">
-                {#if $blockedQuery.isLoading || !$userStore || !$profileStore || ((!$blockedQuery.data && $userStore.id !== $profileStore.userId))}
-                    <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
+                {#if $blockedQuery.data?.length > 0}
+                    <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
+                        <p class="text-[20px] text-center">
+                            {#if isCurrentUserBlocker}
+                                Blocked
+                            {:else}
+                                User blocked you
+                            {/if}
+                        </p>
+                    </div>
                 {:else}
-                    {#if $blockedQuery.data?.length > 0}
-                        <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
-                            <p class="text-[20px] text-center">
-                                {#if isCurrentUserBlocker}
-                                    Blocked
-                                {:else}
-                                    User blocked you
-                                {/if}
-                            </p>
-                        </div>
+                    {#if $profileQuery.isLoading && !$profileQuery.data}
+                        <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
+                    {:else if !$profileQuery.data?.is_private || $userStore?.id === userId || isFriend}
+                        <TabGroup active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
+                            <TabAnchor href="/{username}" selected={path === `/${username}`} >
+                                <span>Inventory</span>
+                            </TabAnchor>
+                            <TabAnchor href="/{username}/friends" selected={path.endsWith('/friends')} >
+                                <span>Friends</span>
+                            </TabAnchor>
+                            <TabAnchor href="/{username}/organizations" selected={path.endsWith('/organizations')} >
+                                <span>Organizations</span>
+                            </TabAnchor>
+                            <svelte:fragment slot="panel">
+                                <slot/>
+                            </svelte:fragment>
+                        </TabGroup>
                     {:else}
-                        {#if $profileQuery.isLoading}
-                            <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
-                        {:else if !$profileQuery.data?.is_private || $userStore?.id === userId || isFriend}
-                            <TabGroup active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
-                                <TabAnchor href="/{username}" selected={path === `/${username}`} >
-                                    <span>Inventory</span>
-                                </TabAnchor>
-                                <TabAnchor href="/{username}/friends" selected={path.endsWith('/friends')} >
-                                    <span>Friends</span>
-                                </TabAnchor>
-                                <TabAnchor href="/{username}/organizations" selected={path.endsWith('/organizations')} >
-                                    <span>Organizations</span>
-                                </TabAnchor>
-                                <svelte:fragment slot="panel">
-                                    <slot/>
-                                </svelte:fragment>
-                            </TabGroup>
-                        {:else}
-                            <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
-                                <p class="text-[20px] text-center">User is private</p>
-                            </div>
-                        {/if}
+                        <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
+                            <p class="text-[20px] text-center">User is private</p>
+                        </div>
                     {/if}
                 {/if}
             </div>

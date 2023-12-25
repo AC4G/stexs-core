@@ -4,6 +4,8 @@
   export let submitted: boolean = $$restProps.submitted || false;
   export let type: 'button' | 'submit' | 'reset' = 'button';
   export let title: string | undefined = undefined;
+  export let loaderMeter: string = 'stroke-surface-50';
+  export let loaderTrack: string = '';
 </script>
 
 <button
@@ -20,7 +22,7 @@
   {...$$restProps.disabled ? { disabled: true } : {}}
 >
   {#if submitted}
-    <ProgressRadial stroke={40} strokeLinecap="round" class="w-[24px]" />
+    <ProgressRadial stroke={40} strokeLinecap="round" meter={loaderMeter} track={loaderTrack} class="w-[24px]" />
   {:else}
     <slot />
   {/if}
