@@ -12,10 +12,9 @@
         getModalStore, 
         type ModalSettings 
     } from "@skeletonlabs/skeleton";
-    import { Button } from "ui";
+    import { Button, ProjectLogo } from "ui";
     import Icon from "@iconify/svelte";
     import ItemThumbnail from "ui/src/ItemThumbnail.svelte";
-    import ProjectLogo from "ui/src/ProjectLogo.svelte";
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -133,7 +132,7 @@
 
         const { data } = await query;
 
-        return data;
+        return data.reverse();
     }
 
     async function fetchItemFromInventory(userId: string, itemId: number) {
@@ -178,67 +177,74 @@
     });
 </script>
 
-{#if $itemsAmountQuery?.data > 0}
-    <div class="flex flex-col md:flex-row justify-between mb-[18px] space-y-2 md:space-y-0">
-        <div class="md:max-w-[220px]">
-            <Search size="lg" placeholder="Item Name" bind:value={search} class="!bg-surface-500" />
-        </div>
+<div class="flex flex-col md:flex-row justify-between mb-[18px] space-y-2 md:space-y-0">
+    {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
+        <div class="placeholder animate-pulse md:max-w-[220px] w-full h-[42px] rounded-lg" />
         <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
-            <Button class="bg-surface-500 border border-solid border-gray-600 w-full md:w-fit">{selectedProjectName}<Icon
-                icon="iconamoon:arrow-down-2-duotone"
-                class="text-[24px]"
-              /></Button>
-            <Dropdown class="left-[-20px] rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
-                <div class="">
-                    <Search size="md" placeholder="Project Name" bind:value={projectSearch} class="!bg-surface-500" />
-                </div>
-                <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
-                {#if $projectsQuery.isLoading }
-                    <RadioGroup class="max-h-[280px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
-                        {#each Array(10) as _}
-                            <div class="flex flex-row space-x-2 px-4 py-1">
-                                <div class="placeholder animate-pulse w-[48px] h-[48px]" />
-                                <div class="flex flex-col space-y-2 w-[130px]">
-                                    <div class="placeholder animate-pulse h-[20px]" />
-                                    <div class="placeholder animate-pulse h-[20px]" />
-                                </div>
-                            </div>
-                        {/each}
-                    </RadioGroup>
-                {:else}
-                    <RadioGroup class="max-h-[200px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
-                        {#if searchedProjects && searchedProjects.length > 0 }
-                            {#each searchedProjects as project}
-                                <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
-                                    <div class="flex flex-row space-x-2">
-                                        <ProjectLogo {stexs} projectId={project.id} alt={project.name} />
-                                        <div class="flex flex-col">
-                                            <p class="text-[14px]">{project.name}</p>
-                                            <p class="text-[14px]">{project.organization_name}</p>
-                                        </div>
-                                    </div>
-                                </RadioItem>
-                            {/each}
-                        {:else if searchedProjects?.length ===  0}
-                            <div class="h-[56px] px-4 p-1 flex justify-center items-center">
-                                <p class="text-[18px]">No projects found</p>
-                            </div>
-                        {/if}
-                    </RadioGroup>
-                {/if}
-            </Dropdown>
-            <p class="text-[18px]">Items: {paginationSettings.size}</p>
+            <div class="placeholder animate-pulse w-full md:w-[80px] h-[44px]" />
+            <div class="placeholder animate-pulse w-full md:w-[80px] h-[24px]" />
         </div>
+    {/if}
+    {#if $itemsAmountQuery.data > 0}
+    <div class="md:max-w-[220px]">
+        <Search size="lg" placeholder="Item Name" bind:value={search} class="!bg-surface-500" />
+    </div>
+    <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+        <Button class="bg-surface-500 border border-solid border-gray-600 w-full md:w-fit">{selectedProjectName}<Icon
+            icon="iconamoon:arrow-down-2-duotone"
+            class="text-[24px]"
+            /></Button>
+        <Dropdown class="left-[-20px] rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+            <div class="">
+                <Search size="md" placeholder="Project Name" bind:value={projectSearch} class="!bg-surface-500" />
+            </div>
+            <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
+            {#if $projectsQuery.isLoading }
+                <RadioGroup class="max-h-[280px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
+                    {#each Array(10) as _}
+                        <div class="flex flex-row space-x-2 px-4 py-1">
+                            <div class="placeholder animate-pulse w-[48px] h-[48px]" />
+                            <div class="flex flex-col space-y-2 w-[130px]">
+                                <div class="placeholder animate-pulse h-[20px]" />
+                                <div class="placeholder animate-pulse h-[20px]" />
+                            </div>
+                        </div>
+                    {/each}
+                </RadioGroup>
+            {:else}
+                <RadioGroup class="max-h-[200px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
+                    {#if searchedProjects && searchedProjects.length > 0 }
+                        {#each searchedProjects as project}
+                            <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
+                                <div class="flex flex-row space-x-2">
+                                    <ProjectLogo {stexs} projectId={project.id} alt={project.name} />
+                                    <div class="flex flex-col">
+                                        <p class="text-[14px]">{project.name}</p>
+                                        <p class="text-[14px]">{project.organization_name}</p>
+                                    </div>
+                                </div>
+                            </RadioItem>
+                        {/each}
+                    {:else if searchedProjects?.length ===  0}
+                        <div class="h-[56px] px-4 p-1 flex justify-center items-center">
+                            <p class="text-[18px]">No projects found</p>
+                        </div>
+                    {/if}
+                </RadioGroup>
+            {/if}
+        </Dropdown>
+        <p class="text-[18px]">Items: {paginationSettings.size}</p>
     </div>
 {/if}
+</div>
 <div class="grid gap-3 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-    {#if $inventoryQuery.isLoading}
-        {#each Array(20) as _}
+    {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
+        {#each Array(50) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-full" />
         {/each}
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
-            {#each $inventoryQuery.data.reverse() as inventory}
+            {#each $inventoryQuery.data as inventory (inventory.id)}
                 <Button class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
@@ -254,8 +260,13 @@
         {/if}
     {/if}
 </div>
-{#if $itemsAmountQuery?.data > 0}
-    <div class="mx-auto mt-[18px]">
+<div class="mx-auto mt-[18px]">
+    {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
+        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
+            <div class="placeholder animate-pulse h-[38px] w-[120px]" />
+        </div>
+    {:else if $itemsAmountQuery?.data > 0}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{false}"
@@ -265,5 +276,5 @@
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
             controlVariant="bg-surface-500 border border-solid border-gray-600"
         />
-    </div>
-{/if}
+    {/if}
+</div>
