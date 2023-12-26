@@ -12,10 +12,9 @@
         getModalStore, 
         type ModalSettings 
     } from "@skeletonlabs/skeleton";
-    import { Button } from "ui";
+    import { Button, ProjectLogo } from "ui";
     import Icon from "@iconify/svelte";
     import ItemThumbnail from "ui/src/ItemThumbnail.svelte";
-    import ProjectLogo from "ui/src/ProjectLogo.svelte";
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -133,7 +132,7 @@
 
         const { data } = await query;
 
-        return data;
+        return data.reverse();
     }
 
     async function fetchItemFromInventory(userId: string, itemId: number) {
@@ -245,7 +244,7 @@
         {/each}
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
-            {#each $inventoryQuery.data.reverse() as inventory}
+            {#each $inventoryQuery.data as inventory (inventory.id)}
                 <Button class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
@@ -262,7 +261,7 @@
     {/if}
 </div>
 <div class="mx-auto mt-[18px]">
-    {#if !$itemsAmountQuery.data}
+    {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
             <div class="placeholder animate-pulse h-[38px] w-[120px]" />

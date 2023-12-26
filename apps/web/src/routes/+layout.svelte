@@ -9,7 +9,7 @@
     Modal,
     type ModalComponent
   } from '@skeletonlabs/skeleton';
-  import { Header, Avatar, Truncated, Confirm } from 'ui';
+  import { Header, Avatar, Truncated, Confirm, Button, InventoryItem } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
@@ -34,9 +34,7 @@
     ProjectRequestsGQL, 
     ProjectRequests 
   } from '$lib/types';
-  import Button from 'ui/src/Button.svelte';
   import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
-  import InventoryItem from 'ui/src/modals/InventoryItem.svelte';
   import { createProfileStore } from '$lib/stores/profile';
   import { createPreviousPageStore } from '$lib/stores/previousPage';
 
@@ -239,7 +237,7 @@
               {#if selectedNotificationMenu === 'friends'}
                 <Search size="md" placeholder="Username" bind:value={friendRequestsSearch} class="!bg-surface-500" />
                 <div class="max-h-[200px] overflow-auto">
-                  {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest}
+                  {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest, index (friendRequest.profileByRequesterId.userId)}
                     <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
                       <a href="/{friendRequest.profileByRequesterId.username}">
                         <Avatar class="w-[44px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" {stexs} userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} />

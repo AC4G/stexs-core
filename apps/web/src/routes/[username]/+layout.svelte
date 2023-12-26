@@ -355,7 +355,7 @@
 
 <div class="w-screen h-screen bg-no-repeat bg-top">
     <div class="grid place-items-center">
-        <div class="rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px]">
+        <div class="rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 gap-y-8">
                 {#if $profileQuery.isLoading || !$profileQuery.data}
                     <div class="placeholder-circle animate-pulse mx-auto w-[120px] sm:w-[148px]" />
