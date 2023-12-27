@@ -47,6 +47,17 @@ export class StexsAuthClient {
       localStorage.removeItem('sign_in_init');
     }
 
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden) {
+        const session = this.getSession();
+
+        if (session && (session.expires * 1000 - 120000) <= Date.now()) {
+          console.log('refreshing from visiblity')
+          await this._refreshAccessToken();
+        }
+      }
+    });
+
     this._scheduleTokenRefresh();
   }
 
@@ -596,11 +607,11 @@ export class StexsAuthClient {
 
   private async _scheduleTokenRefresh() {
     let timeoutId: number | null = null;
-    const refreshThreshold = 60000;
+    const refreshThreshold = 120000;
 
     while (true) {
-      const session: Session = this._getSession();
-
+      const session = this.getSession();
+          
       if (session && session.expires) {
         const expiresInMs = session.expires * 1000 - Date.now();
 
@@ -608,14 +619,16 @@ export class StexsAuthClient {
           clearTimeout(timeoutId);
         }
 
-        if (expiresInMs < refreshThreshold) {
-          await this._refreshAccessToken();
+        if (expiresInMs <= refreshThreshold) {
+          console.log('automatic refresh without timer');
+          this._refreshAccessToken();
         } else {
           timeoutId = setTimeout(async () => {
-            const session = this._getSession();
-        
-            if (session && (session.expires * 1000 - refreshThreshold) < Date.now()) {
-              await this._refreshAccessToken();
+            const session = this.getSession();
+
+            if (session && (session.expires * 1000 - refreshThreshold) <= Date.now()) {
+              console.log('automatic refresh with timer');
+              this._refreshAccessToken();
             }
           }, expiresInMs - refreshThreshold);
         }

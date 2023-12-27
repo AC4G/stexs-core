@@ -12,9 +12,8 @@
         getModalStore, 
         type ModalSettings 
     } from "@skeletonlabs/skeleton";
-    import { Button, ProjectLogo } from "ui";
+    import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";
-    import ItemThumbnail from "ui/src/ItemThumbnail.svelte";
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -214,7 +213,7 @@
             {:else}
                 <RadioGroup class="max-h-[200px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
                     {#if searchedProjects && searchedProjects.length > 0 }
-                        {#each searchedProjects as project}
+                        {#each searchedProjects as project (project.id)}
                             <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
                                 <div class="flex flex-row space-x-2">
                                     <ProjectLogo {stexs} projectId={project.id} alt={project.name} />
