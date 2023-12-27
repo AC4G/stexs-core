@@ -12,6 +12,7 @@ export class StexsAuthClient {
   oauth;
 
   private refreshTimeoutId: number | null = null;
+  private refreshThreshhold = 120 * 1000; // 120s
 
   constructor(fetch: typeof fetch, authUrl: string) {
     this.authUrl = authUrl;
@@ -53,7 +54,7 @@ export class StexsAuthClient {
       if (!document.hidden) {
         const session = this.getSession();
 
-        if (session && (session.expires * 1000 - 120000) <= Date.now()) {
+        if (session && (session.expires * 1000 - this.refreshThreshhold) <= Date.now()) {
           if (this.refreshTimeoutId !== null) {
             clearTimeout(this.refreshTimeoutId);
           }
@@ -611,8 +612,6 @@ export class StexsAuthClient {
   }
 
   private async _scheduleTokenRefresh() {
-    const refreshThreshold = 120000;
-
     while (true) {
       const session = this.getSession();
           
@@ -623,16 +622,16 @@ export class StexsAuthClient {
           clearTimeout(this.refreshTimeoutId);
         }
 
-        if (expiresInMs <= refreshThreshold) {
+        if (expiresInMs <= this.refreshThreshhold) {
           this._refreshAccessToken();
         } else {
           this.refreshTimeoutId = setTimeout(async () => {
             const session = this.getSession();
 
-            if (session && (session.expires * 1000 - refreshThreshold) <= Date.now()) {
+            if (session && (session.expires * 1000 - this.refreshThreshhold) <= Date.now()) {
               this._refreshAccessToken();
             }
-          }, expiresInMs - refreshThreshold);
+          }, expiresInMs - this.refreshThreshhold);
         }
       }
 

@@ -64,7 +64,7 @@ router.post(
     transformJwtErrorMessages(logger)
   ],
   async (req: Request, res: Response) => {
-    const userId = req.auth?.sub!;
+    const userId = req.auth?.sub;
 
     const signedPost = await s3.createPresignedPost({
       Bucket: BUCKET,
@@ -93,7 +93,7 @@ router.delete(
     transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
-    const userId = req.auth?.sub!;
+    const userId = req.auth?.sub;
 
     try {
       await s3

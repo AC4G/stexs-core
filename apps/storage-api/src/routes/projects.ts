@@ -19,6 +19,7 @@ import {
 } from '../../env-config';
 import s3 from '../s3';
 import { 
+    checkScopes,
     checkTokenGrantType, 
     transformJwtErrorMessages, 
     validateAccessToken 
@@ -61,8 +62,9 @@ router.post(
         validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
         checkTokenGrantType([
             'password',
-            //'client_credentials'
+            'client_credentials'
         ]),
+        checkScopes(['project.logo.write']),
         transformJwtErrorMessages(logger),
         param('projectId')
             .notEmpty()
@@ -73,8 +75,9 @@ router.post(
         validate(logger)
     ],
     async (req: Request, res: Response) => {
-      const userId = req.auth?.sub!;
+      const userId = req.auth?.sub;
       const { projectId } = req.params;
+      const grantType = req.auth?.grant_type;
   
       try {
         const { rowCount } = await db.query(
@@ -128,8 +131,9 @@ router.delete(
         validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
         checkTokenGrantType([
             'password',
-            //'client_credentials'
+            'client_credentials'
         ]),
+        checkScopes(['project.logo.delete']),
         transformJwtErrorMessages(logger),
         param('projectId')
             .notEmpty()
@@ -140,8 +144,9 @@ router.delete(
         validate(logger)
     ],
     async (req: Request, res: Response) => {
-        const userId = req.auth?.sub!;
+        const userId = req.auth?.sub;
         const { projectId } = req.params;
+        const grantType = req.auth?.grant_type;
 
         try {
             const { rowCount } = await db.query(
