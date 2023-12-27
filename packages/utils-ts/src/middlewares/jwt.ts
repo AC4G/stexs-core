@@ -4,6 +4,7 @@ import { errorMessages } from '../messageBuilder';
 import {
   CREDENTIALS_BAD_FORMAT,
   CREDENTIALS_REQUIRED,
+  INSUFFICIENT_SCOPES,
   INVALID_GRANT_TYPE,
   INVALID_TOKEN,
 } from '../constants/errors';
@@ -168,9 +169,7 @@ export function checkTokenGrantType(grantTypes: string[]) {
   return (req: JWTRequest, res: Response, next: NextFunction) => {
     const token = req.auth;
 
-    if (grantTypes.includes(token?.grant_type)) {
-      return next();
-    }
+    if (grantTypes.includes(token?.grant_type)) return next();
 
     throw new JWTError(
       {
@@ -180,6 +179,34 @@ export function checkTokenGrantType(grantTypes: string[]) {
       403,
     );
   };
+}
+
+export function checkScopes(requiredScopes: string[]) {
+  return (req: JWTRequest, res: Response, next: NextFunction) => {
+    const grantType = req.auth?.grant_type;
+    const allowedGrantTypes = [
+      'authorization_code',
+      'client_credentials'
+    ];
+
+    if (!allowedGrantTypes.includes(grantType)) return next();
+
+    const scopes = req.auth?.scopes;
+
+    const hasRequiredScope = requiredScopes.some(requiredScope =>
+      scopes.includes(requiredScope)
+    );
+
+    if (hasRequiredScope) return next();
+
+    throw new JWTError(
+      INSUFFICIENT_SCOPES,
+      401,
+      {
+        requiredScopes
+      }
+    );
+  }
 }
 
 export function transformJwtErrorMessages(logger: Logger) {
