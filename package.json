@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "build": "turbo run build",
+    "build": "dotenv -- turbo run build",
     "build:main": "turbo run build:main",
     "build:module": "turbo run build:module",
     "lint": "turbo run lint",
@@ -16,7 +16,8 @@
     "test": "dotenv -- turbo run test",
     "test:coverage": "turbo run test:coverage",
     "test:watch": "turbo run test:watch",
-    "format": "prettier --write '{apps,packages}/**/*.ts'"
+    "format": "prettier --write '{apps,packages}/**/*.ts'",
+    "preview": "turbo run preview"
   },
   "workspaces": [
     "packages/*",
