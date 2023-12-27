@@ -11,6 +11,8 @@ export class StexsAuthClient {
   mfa;
   oauth;
 
+  private refreshTimeoutId: number | null = null;
+
   constructor(fetch: typeof fetch, authUrl: string) {
     this.authUrl = authUrl;
     this.fetch = fetch;
@@ -52,7 +54,10 @@ export class StexsAuthClient {
         const session = this.getSession();
 
         if (session && (session.expires * 1000 - 120000) <= Date.now()) {
-          console.log('refreshing from visiblity')
+          if (this.refreshTimeoutId !== null) {
+            clearTimeout(this.refreshTimeoutId);
+          }
+
           await this._refreshAccessToken();
         }
       }
@@ -606,7 +611,6 @@ export class StexsAuthClient {
   }
 
   private async _scheduleTokenRefresh() {
-    let timeoutId: number | null = null;
     const refreshThreshold = 120000;
 
     while (true) {
@@ -615,19 +619,17 @@ export class StexsAuthClient {
       if (session && session.expires) {
         const expiresInMs = session.expires * 1000 - Date.now();
 
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId);
+        if (this.refreshTimeoutId !== null) {
+          clearTimeout(this.refreshTimeoutId);
         }
 
         if (expiresInMs <= refreshThreshold) {
-          console.log('automatic refresh without timer');
           this._refreshAccessToken();
         } else {
-          timeoutId = setTimeout(async () => {
+          this.refreshTimeoutId = setTimeout(async () => {
             const session = this.getSession();
 
             if (session && (session.expires * 1000 - refreshThreshold) <= Date.now()) {
-              console.log('automatic refresh with timer');
               this._refreshAccessToken();
             }
           }, expiresInMs - refreshThreshold);
