@@ -437,9 +437,7 @@
                         </p>
                     </div>
                 {:else}
-                    {#if $profileQuery.isLoading && !$profileQuery.data}
-                        <div class="placeholder animate-pulse rounded-md h-[140px] col-span-full" />
-                    {:else if !$profileQuery.data?.is_private || $userStore?.id === userId || isFriend}
+                    {#if ($profileQuery.isLoading || !$profileQuery.data || ($profileQuery.data.is_private && ($isFriendQuery.isLoading || (!$isFriendQuery.data && $userStore)))) || ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
                         <TabGroup active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
                             <TabAnchor href="/{username}" selected={path === `/${username}`} >
                                 <span>Inventory</span>
@@ -454,7 +452,7 @@
                                 <slot/>
                             </svelte:fragment>
                         </TabGroup>
-                    {:else}
+                    {:else if $profileQuery.data && $profileQuery.data.is_private}
                         <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
                             <p class="text-[20px] text-center">User is private</p>
                         </div>

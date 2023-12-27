@@ -135,11 +135,11 @@ CREATE POLICY friends_select
         (
             (
                 auth.grant() IS NULL AND
-                EXISTS (
+                NOT EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE (p.user_id = user_id AND p.is_private = FALSE) AND
-                        (p.user_id = friend_id AND p.is_private = FALSE)
+                    WHERE (p.user_id = user_id AND p.is_private = TRUE) OR
+                        (p.user_id = friend_id AND p.is_private = TRUE)
                 )
             )
             OR
@@ -257,10 +257,10 @@ CREATE POLICY inventories_select
         (
             (
                 auth.grant() IS NULL AND
-                EXISTS (
+                NOT EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = user_id AND p.is_private = FALSE
+                    WHERE p.user_id = user_id AND p.is_private = TRUE
                 )
             )
             OR
