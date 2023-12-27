@@ -154,11 +154,12 @@ export class StexsStorageClient {
 
     private async _getSignedUrl(key: string, path: string) {
         const session = sessionStorage.getItem(key);
+        const threshhold = 10 * 1000; // 10s 
 
         if (session) {
             const signed = JSON.parse(session) as SignedUrl;
 
-            if (signed.expires * 1000 > new Date().getTime()) {
+            if (signed.expires * 1000 - threshhold >= new Date().getTime()) {
                 return signed.url;
             }
         }

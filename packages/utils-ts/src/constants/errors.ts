@@ -292,3 +292,7 @@ export const ORGANIZATION_ID_NOT_NUMERIC = {
   code: 'ORGANIZATION_ID_NOT_NUMERIC',
   message: 'Organization id needs to be a number.'
 };
+export const INSUFFICIENT_SCOPES = {
+  code: 'INSUFFICIENT_SCOPES',
+  message: 'Provided token has insufficient scopes for accessing the requested endpoint.'
+};

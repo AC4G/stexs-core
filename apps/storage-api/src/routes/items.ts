@@ -6,6 +6,7 @@ import {
 } from '../../env-config';
 import { Router, Response } from 'express';
 import {
+  checkScopes,
   checkTokenGrantType,
   transformJwtErrorMessages,
   validateAccessToken,
@@ -59,29 +60,82 @@ router.post(
   '/thumbnail/:itemId',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType(['password']),
+    checkTokenGrantType([
+      'password',
+      'client_credentials'
+    ]),
+    checkScopes(['item.thumbnail.write']),
     transformJwtErrorMessages(logger),
+    param('itemId')
+      .notEmpty()
+      .withMessage(ITEM_ID_REQUIRED)
+      .bail()
+      .isNumeric()
+      .withMessage(ITEM_ID_NOT_NUMERIC),
+    validate(logger)
   ],
   async (req: Request, res: Response) => {
-    const userId = req.auth?.sub!;
+    const sub = req.auth?.sub;
     const { itemId } = req.params;
+    const grantType = req.auth?.grant_type;
 
     try {
-      const { rowCount } = await db.query(
-        `
-          SELECT 1
-          FROM public.project_members pm
-          JOIN public.profiles p ON pm.member_id = p.user_id
-          JOIN public.items i ON pm.project_id = i.project_id
-          WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner');
-        `,
-        [itemId, userId],
-      );
-
-      if (rowCount === 0) {
-        logger.error(
-          `User is not authorized to upload/update the thumbnail of an item: ${itemId}. User: ${userId}`,
+      let rowsFound = false;
+      
+      if (grantType === 'password') {
+        const { rowCount } = await db.query(
+          `
+            SELECT 1
+            FROM public.project_members pm
+            JOIN public.profiles p ON pm.member_id = p.user_id
+            JOIN public.items i ON pm.project_id = i.project_id
+            WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner');
+          `,
+          [itemId, sub],
         );
+
+        if (rowCount) rowsFound = true;
+      } else {
+        const { rowCount } = await db.query(
+          `
+            WITH ItemProjectOrganization AS (
+              SELECT
+                  i.id AS item_id,
+                  p.id AS project_id,
+                  o.id AS organization_id
+              FROM
+                  public.items i
+              JOIN public.projects p ON i.project_id = p.id
+              JOIN public.organizations o ON p.organization_id = o.id
+              WHERE
+                  i.id = $1::integer
+            )
+            SELECT 1
+            FROM
+                public.oauth2_apps oa
+            WHERE
+                oa.client_id = $2::uuid
+                AND EXISTS (
+                    SELECT 1
+                    FROM
+                        ItemProjectOrganization ipo
+                    WHERE
+                        oa.organization_id = ipo.organization_id
+                );
+          `,
+          [itemId, sub],
+        );
+
+        if (rowCount) rowsFound = true;
+      }
+
+      if (!rowsFound) {
+        const consumer = grantType === 'password' ? 'User' : 'Client';
+
+        logger.error(
+          `${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${sub}`,
+        );
+        
         return res
           .status(401)
           .json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));

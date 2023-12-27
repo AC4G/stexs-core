@@ -135,11 +135,11 @@ CREATE POLICY friends_select
         (
             (
                 auth.grant() IS NULL AND
-                EXISTS (
+                NOT EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE (p.user_id = user_id AND p.is_private = FALSE) AND
-                        (p.user_id = friend_id AND p.is_private = FALSE)
+                    WHERE (p.user_id = user_id AND p.is_private = TRUE) OR
+                        (p.user_id = friend_id AND p.is_private = TRUE)
                 )
             )
             OR
@@ -257,10 +257,10 @@ CREATE POLICY inventories_select
         (
             (
                 auth.grant() IS NULL AND
-                EXISTS (
+                NOT EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = user_id AND p.is_private = FALSE
+                    WHERE p.user_id = user_id AND p.is_private = TRUE
                 )
             )
             OR
@@ -351,7 +351,7 @@ CREATE POLICY items_select
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'items.read' = ANY(auth.scopes()) AND
+                'item.read' = ANY(auth.scopes()) AND
                 project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR
@@ -370,7 +370,7 @@ CREATE POLICY items_update
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'items.update' = ANY(auth.scopes()) AND
+                'item.update' = ANY(auth.scopes()) AND
                 project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR
@@ -396,7 +396,7 @@ CREATE POLICY items_delete
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'items.delete' = ANY(auth.scopes()) AND
+                'item.delete' = ANY(auth.scopes()) AND
                 project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR
@@ -422,7 +422,7 @@ CREATE POLICY items_insert
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'items.write' = ANY(auth.scopes()) AND
+                'item.write' = ANY(auth.scopes()) AND
                 project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
             )
             OR

@@ -10,6 +10,7 @@ import {
     UNAUTHORIZED_ACCESS
 } from 'utils-ts/errors';
 import { 
+    checkScopes,
     checkTokenGrantType, 
     transformJwtErrorMessages, 
     validateAccessToken 
@@ -61,8 +62,9 @@ router.post(
         validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
         checkTokenGrantType([
             'password',
-            //'client_credentials'
+            'client_credentials'
         ]),
+        checkScopes(['organization.logo.write']),
         transformJwtErrorMessages(logger),
         param('organizationId')
             .notEmpty()
@@ -73,22 +75,42 @@ router.post(
         validate(logger)
     ],
     async (req: Request, res: Response) => {
-        const userId = req.auth?.sub!;
+        const sub = req.auth?.sub;
         const { organizationId } = req.params;
+        const grantType = req.auth?.grant_type;
 
         try {
-            const { rowCount } = await db.query(
-                `
-                    SELECT 1
-                    FROM public.organization_members
-                    WHERE member_id = $1::uuid AND organization_id = $2::integer AND role IN ('Admin', 'Owner');
-                `,
-                [userId, organizationId],
-            );
+            let rowsFound = false;
+
+            if (grantType === 'password') {
+                const { rowCount } = await db.query(
+                    `
+                        SELECT 1
+                        FROM public.organization_members
+                        WHERE member_id = $1::uuid AND organization_id = $2::integer AND role IN ('Admin', 'Owner');
+                    `,
+                    [sub, organizationId],
+                );
+
+                if (rowCount) rowsFound = true;
+            } else {
+                const { rowCount } = await db.query(
+                    `
+                        SELECT 1
+                        FROM public.oauth2_apps
+                        WHERE client_id = $1::uuid AND organization_id = $2::integer;
+                    `,
+                    [sub, organizationId],
+                );
+
+                if (rowCount) rowsFound = true;
+            }
       
-            if (rowCount === 0) {
+            if (!rowsFound) {
+                const consumer = grantType === 'password' ? 'User' : 'Client';
+
                 logger.error(
-                    `User is not authorized to upload/update the logo of the given organization: ${organizationId}. User: ${userId}`,
+                    `${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${sub}`,
                 );
                 return res
                     .status(401)
@@ -123,12 +145,13 @@ router.post(
 
 router.delete(
     '/:organizationId',
-    [
+    [ 
         validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
         checkTokenGrantType([
             'password',
-            //'client_credentials'
+            'client_credentials'
         ]),
+        checkScopes(['organization.logo.delete']),
         transformJwtErrorMessages(logger),
         param('organizationId')
             .notEmpty()
@@ -139,22 +162,42 @@ router.delete(
         validate(logger)
     ],
     async (req: Request, res: Response) => {
-        const userId = req.auth?.sub!;
+        const sub = req.auth?.sub;
         const { organizationId } = req.params;
+        const grantType = req.auth?.grant_type;
 
         try {
-            const { rowCount } = await db.query(
-                `
-                    SELECT 1
-                    FROM public.organization_members
-                    WHERE member_id = $1::uuid AND organization_id = $2::integer AND role IN ('Admin', 'Owner');
-                `,
-                [userId, organizationId],
-            );
+            let rowsFound = false;
+
+            if (grantType === 'password') {
+                const { rowCount } = await db.query(
+                    `
+                        SELECT 1
+                        FROM public.organization_members
+                        WHERE member_id = $1::uuid AND organization_id = $2::integer AND role IN ('Admin', 'Owner');
+                    `,
+                    [sub, organizationId],
+                );
+
+                if (rowCount) rowsFound = true;
+            } else {
+                const { rowCount } = await db.query(
+                    `
+                        SELECT 1
+                        FROM public.oauth2_apps
+                        WHERE client_id = $1::uuid AND organization_id = $2::integer;
+                    `,
+                    [sub, organizationId],
+                );
+
+                if (rowCount) rowsFound = true;
+            }
       
-            if (rowCount === 0) {
+            if (!rowsFound) {
+                const consumer = grantType === 'password' ? 'User' : 'Client';
+
                 logger.error(
-                    `User is not authorized to delete the logo of the given organization: ${organizationId}. User: ${userId}`,
+                    `${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${sub}`,
                 );
                 return res
                     .status(401)
