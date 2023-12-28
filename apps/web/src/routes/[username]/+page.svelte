@@ -42,17 +42,6 @@
     };
     let previousProject: number | undefined;
 
-    async function fetchTotalAmountFromInventory(userId: string) {
-        const { count } = await stexs.from('inventories')
-            .select('id', { 
-                count: 'exact', 
-                head: true 
-            })
-            .eq('user_id', userId);
-
-        return count;
-    }
-
     async function fetchProjectsInUsersInventory(userId: string) {
         const { data } = await stexs.rpc('distinct_projects_from_inventory', {
             user_id_param: userId
@@ -63,7 +52,16 @@
 
     $: itemsAmountQuery = useQuery({
         queryKey: ['itemsAmountInventory', $profileStore?.userId],
-        queryFn: async () => await fetchTotalAmountFromInventory($profileStore?.userId!),
+        queryFn: async () => {
+            const { count } = await stexs.from('inventories')
+            .select('id', { 
+                count: 'exact', 
+                head: true 
+            })
+            .eq('user_id', $profileStore?.userId);
+
+            return count;
+        },
         enabled: !!$profileStore?.userId
     });
 
@@ -181,7 +179,7 @@
         <div class="placeholder animate-pulse md:max-w-[220px] w-full h-[42px] rounded-lg" />
         <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse w-full md:w-[80px] h-[44px]" />
-            <div class="placeholder animate-pulse w-full md:w-[80px] h-[24px]" />
+            <div class="placeholder animate-pulse w-full md:w-[70px] h-[24px]" />
         </div>
     {:else if $itemsAmountQuery.data > 0}
         <div class="md:max-w-[220px]">
@@ -197,7 +195,7 @@
                     <Search size="md" placeholder="Project Name" bind:value={projectSearch} class="!bg-surface-500" />
                 </div>
                 <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
-                {#if $projectsQuery.isLoading }
+                {#if $projectsQuery.isLoading || !$projectsQuery.data}
                     <RadioGroup class="max-h-[280px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500 transition" display="flex-col space-y-1">
                         {#each Array(10) as _}
                             <div class="flex flex-row space-x-2 px-4 py-1">
@@ -215,7 +213,9 @@
                             {#each searchedProjects as project (project.id)}
                                 <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
                                     <div class="flex flex-row space-x-2">
-                                        <ProjectLogo {stexs} projectId={project.id} alt={project.name} />
+                                        <div class="w-[48px] h-[48px] bg-surface-600 transition border border-solid border-gray-600 rounded-md inline-flex items-center justify-center text-center">
+                                            <ProjectLogo {stexs} projectId={project.id} alt={project.name} class="rounded-md" />
+                                        </div>
                                         <div class="flex flex-col">
                                             <p class="text-[14px]">{project.name}</p>
                                             <p class="text-[14px]">{project.organization_name}</p>
@@ -231,7 +231,7 @@
                     </RadioGroup>
                 {/if}
             </Dropdown>
-            <p class="text-[18px]">Items: {paginationSettings.size}</p>
+            <p class="text-[18px]">Items {paginationSettings.size}</p>
         </div>
     {/if}
 </div>
@@ -243,7 +243,7 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data as inventory (inventory.id)}
-                <Button class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
+                <Button title={inventory.items.name} class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
             {/each}
@@ -262,7 +262,7 @@
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[38px] w-[120px]" />
+            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
         </div>
     {:else if $itemsAmountQuery?.data > 0}
         <Paginator

@@ -14,7 +14,7 @@
     let previousSearch: string = '';
     let paginationSettings: PaginationSettings = {
         page: 0,
-        limit: 50,
+        limit: 50, 
         size: 0,
         amounts: [50, 100, 250, 500, 1000],
     };
@@ -129,7 +129,7 @@
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[38px] w-[120px]" />
+            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
         </div>
     {:else if $profileStore && $profileStore.totalFriends > 0}
         <Paginator

@@ -41,7 +41,7 @@ router.get(
     async (req: Request, res: Response) => {
         const { projectId } = req.params; 
 
-        const time = 60 * 60 * 24; // 1 day in seconds
+        const time = 60 * 60 * 24; // 1 day
 
         const signedUrl = await s3.getSignedUrl('getObject', {
             Bucket: BUCKET,
@@ -75,24 +75,45 @@ router.post(
         validate(logger)
     ],
     async (req: Request, res: Response) => {
-      const userId = req.auth?.sub;
+      const sub = req.auth?.sub;
       const { projectId } = req.params;
       const grantType = req.auth?.grant_type;
   
       try {
-        const { rowCount } = await db.query(
-            `
-                SELECT 1
-                FROM public.project_members
-                WHERE member_id = $1::uuid AND project_id = $2::integer AND role IN ('Admin', 'Owner');
-            `,
-            [userId, projectId],
-        );
-  
-        if (rowCount === 0) {
-            logger.error(
-                `User is not authorized to upload/update the logo of the given project: ${projectId}. User: ${userId}`,
+        let rowsFound = false;
+
+        if (grantType === 'password') {
+            const { rowCount } = await db.query(
+                `
+                    SELECT 1
+                    FROM public.project_members
+                    WHERE member_id = $1::uuid AND project_id = $2::integer AND role IN ('Admin', 'Owner');
+                `,
+                [sub, projectId],
             );
+
+            if (rowCount) rowsFound = true; 
+        } else {
+            const { rowCount } = await db.query(
+                `
+                    SELECT 1
+                    FROM public.oauth2_apps oa
+                    JOIN public.projects p ON p.organization_id = oa.organization_id
+                    WHERE oa.client_id = $1::uuid AND p.id = $2::integer;
+                `,
+                [sub, projectId],
+            );
+
+            if (rowCount) rowsFound = true; 
+        }
+  
+        if (!rowsFound) {
+            const consumer = grantType === 'password' ? 'User' : 'Client';
+
+            logger.error(
+                `${consumer} is not authorized to upload/update the logo of the given project: ${projectId}. ${consumer}: ${sub}`,
+            );
+
             return res
                 .status(401)
                 .json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
@@ -116,7 +137,7 @@ router.post(
             ['content-length-range', 0, 1024 * 1024],
             ['eq', '$Content-Type', `image/webp`],
         ],
-        Expires: 60 * 5, // 5 minutes in seconds
+        Expires: 60 * 5, // 5 minutes
       });
   
       logger.info(`Created signed post url for project logo: ${projectId}`);
@@ -144,24 +165,45 @@ router.delete(
         validate(logger)
     ],
     async (req: Request, res: Response) => {
-        const userId = req.auth?.sub;
+        const sub = req.auth?.sub;
         const { projectId } = req.params;
         const grantType = req.auth?.grant_type;
 
         try {
-            const { rowCount } = await db.query(
-                `
-                    SELECT 1
-                    FROM public.project_members
-                    WHERE member_id = $1::uuid AND project_id = $2::integer AND role IN ('Admin', 'Owner');
-                `,
-                [userId, projectId],
-            );
-      
-            if (rowCount === 0) {
-                logger.error(
-                    `User is not authorized to delete the logo of the given project: ${projectId}. User: ${userId}`,
+            let rowsFound = false;
+
+            if (grantType === 'password') {
+                const { rowCount } = await db.query(
+                    `
+                        SELECT 1
+                        FROM public.project_members
+                        WHERE member_id = $1::uuid AND project_id = $2::integer AND role IN ('Admin', 'Owner');
+                    `,
+                    [sub, projectId],
                 );
+
+                if (rowCount) rowsFound = true;
+            } else {
+                const { rowCount } = await db.query(
+                    `
+                        SELECT 1
+                        FROM public.oauth2_apps oa
+                        JOIN public.projects p ON p.organization_id = oa.organization_id
+                        WHERE oa.client_id = $1::uuid AND p.id = $2::integer;
+                    `,
+                    [sub, projectId],
+                );
+
+                if (rowCount) rowsFound = true;
+            }
+      
+            if (!rowsFound) {
+                const consumer = grantType === 'password' ? 'User' : 'Client';
+
+                logger.error(
+                    `${consumer} is not authorized to delete the logo of the given project: ${projectId}. ${consumer}: ${sub}`,
+                );
+
                 return res
                     .status(401)
                     .json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));

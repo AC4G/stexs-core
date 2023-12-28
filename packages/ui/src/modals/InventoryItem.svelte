@@ -61,7 +61,9 @@
             <a href="/items/{data.items.id}" class="text-[24px] hover:text-secondary-400 transition">{data.items.name}</a>
             <div class="flex flex-row space-x-2">
                 <a href="/organizations/{data.items.projects.organizations.name}/{data.items.projects.name}">
-                    <ProjectLogo {stexs} projectId={data.items.projects.id} alt={data.items.projects.name} />
+                    <div class="w-[48px] h-[48px] bg-surface-600 transition border border-solid border-gray-600 rounded-md inline-flex items-center justify-center text-center">
+                        <ProjectLogo {stexs} projectId={data.items.projects.id} alt={data.items.projects.name} class="rounded-md" />
+                    </div>
                 </a>
                 <div class="flex flex-col">
                     <a href="/organizations/{data.items.projects.organizations.name}/{data.items.projects.name}" class="text-[14px] text-gray-500 hover:text-secondary-400 transition">{data.items.projects.name}</a>

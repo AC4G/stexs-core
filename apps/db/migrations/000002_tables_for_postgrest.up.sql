@@ -367,7 +367,7 @@ CREATE TABLE public.project_members (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_project_members_combination UNIQUE (project_id, member_id),
-    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator', 'Owner'))
+    CHECK (role IN ('Member', 'Admin', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (project_id, member_id, role) ON TABLE public.project_members TO authenticated;
@@ -386,7 +386,7 @@ CREATE TABLE public.project_requests (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_project_requests_combination UNIQUE (project_id, addressee_id),
-    CHECK (role IN ('Member', 'Admin', 'Editor', 'Moderator', 'Owner'))
+    CHECK (role IN ('Member', 'Admin', 'Moderator', 'Owner'))
 );
 
 GRANT INSERT (project_id, addressee_id, role) ON TABLE public.project_requests TO authenticated;
