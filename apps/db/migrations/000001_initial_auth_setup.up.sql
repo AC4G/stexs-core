@@ -351,7 +351,6 @@ GRANT EXECUTE ON FUNCTION public.generate_new_client_secret(INT) TO authenticate
 CREATE TABLE public.scopes (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL UNIQUE,
-    description TEXT NOT NULL,
     type VARCHAR(50) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ

@@ -41,7 +41,7 @@ router.get(
     async (req: Request, res: Response) => {
         const { organizationId } = req.params;
 
-        const time = 60 * 60 * 24; // 1 day in seconds
+        const time = 60 * 60 * 24; // 1 day
 
         const signedUrl = await s3.getSignedUrl('getObject', {
             Bucket: BUCKET,
@@ -135,13 +135,13 @@ router.post(
                 ['content-length-range', 0, 1024 * 1024],
                 ['eq', '$Content-Type', `image/webp`],
             ],
-            Expires: 60 * 5, // 5 minutes in seconds
+            Expires: 60 * 5, // 5 minutes
         });
       
         logger.info(`Created signed post url for organization logo: ${organizationId}`);
       
         return res.json(signedPost);
-});
+}); 
 
 router.delete(
     '/:organizationId',

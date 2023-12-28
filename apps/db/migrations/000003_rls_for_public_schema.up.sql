@@ -382,7 +382,7 @@ CREATE POLICY items_update
                     WHERE
                         pm.project_id = project_id AND
                         pm.member_id = auth.uid() AND
-                        pm.role IN ('Admin', 'Editor', 'Moderator')
+                        pm.role IN ('Admin', 'Moderator')
                 )
             )
         )
@@ -408,7 +408,7 @@ CREATE POLICY items_delete
                     WHERE
                         pm.project_id = project_id AND
                         pm.member_id = auth.uid() AND
-                        pm.role IN ('Admin', 'Editor', 'Moderator')
+                        pm.role IN ('Admin', 'Moderator')
                 )
             )
         )
@@ -434,7 +434,7 @@ CREATE POLICY items_insert
                     WHERE
                         pm.project_id = project_id AND
                         pm.member_id = auth.uid() AND
-                        pm.role IN ('Admin', 'Editor', 'Moderator')
+                        pm.role IN ('Admin', 'Moderator')
                 )
             )
         )

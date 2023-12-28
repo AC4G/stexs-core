@@ -41,7 +41,7 @@ router.get(
   async (req: Request, res: Response) => {
     const { itemId } = req.params;
 
-    const time = 60 * 60 * 24; // 1 day in seconds
+    const time = 60 * 60 * 24; // 1 day
 
     const signedUrl = await s3.getSignedUrl('getObject', {
       Bucket: BUCKET,
@@ -89,7 +89,7 @@ router.post(
             FROM public.project_members pm
             JOIN public.profiles p ON pm.member_id = p.user_id
             JOIN public.items i ON pm.project_id = i.project_id
-            WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Editor', 'Owner');
+            WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Owner');
           `,
           [itemId, sub],
         );
@@ -159,7 +159,7 @@ router.post(
         ['content-length-range', 0, 1024 * 1024],
         ['eq', '$Content-Type', `image/webp`],
       ],
-      Expires: 60 * 5, // 5 minutes in seconds
+      Expires: 60 * 5, // 5 minutes
     });
 
     logger.info(`Created signed post url for item thumbnail: ${itemId}`);

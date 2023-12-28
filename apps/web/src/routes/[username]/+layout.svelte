@@ -452,7 +452,7 @@
                                 <slot/>
                             </svelte:fragment>
                         </TabGroup>
-                    {:else if $profileQuery.data && $profileQuery.data.is_private}
+                    {:else}
                         <div class="grid row-start-2 col-span-full place-items-center bg-surface-800 rounded-md py-10">
                             <p class="text-[20px] text-center">User is private</p>
                         </div>
