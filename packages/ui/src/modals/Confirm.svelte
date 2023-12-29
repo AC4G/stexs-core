@@ -3,11 +3,14 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import Button from '../Button.svelte';
 
+    const modalStore = getModalStore();
+
     let submitted: boolean = false;
+    let confirmBtnClass: string = $modalStore[0].meta.confirmBtnClass ?? 'variant-filled-primary';
+    let confirmBtnLoaderMeter: string = $modalStore[0].meta.confirmBtnLoaderMeter ?? 'stroke-surface-50';
+    let confirmBtnLoaderTrack: string = $modalStore[0].meta.confirmBtnLoaderTrack ?? '';
 
     export let parent: SvelteComponent;
-
-    const modalStore = getModalStore();
 </script>
 
 {#if $modalStore[0]}
@@ -20,13 +23,13 @@
                     submitted = true;
                     await $modalStore[0].meta.function($modalStore[0].meta.fnParams);
                     modalStore.close();
-                }} class="variant-filled-primary" {submitted}>Confirm</Button>
+                }} class={confirmBtnClass} loaderMeter={confirmBtnLoaderMeter} loaderTrack={confirmBtnLoaderTrack} {submitted}>{$modalStore[0].meta.confirmBtnText ? $modalStore[0].meta.confirmBtnText : 'Confirm'}</Button>
             {:else}
                 <Button on:click={() => {
                     submitted = true;
                     $modalStore[0].meta.function($modalStore[0].meta.fnParams);
                     modalStore.close();
-                }} class="variant-filled-primary" {submitted} >Confirm</Button>
+                }} class="variant-filled-primary" {submitted} loaderMeter={confirmBtnLoaderMeter} loaderTrack={confirmBtnLoaderTrack} >Confirm</Button>
             {/if}
         </div>
     </div>

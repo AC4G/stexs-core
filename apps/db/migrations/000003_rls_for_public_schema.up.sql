@@ -661,12 +661,12 @@ CREATE POLICY organization_members_delete
                         om.organization_id = organization_id AND
                         om.member_id = auth.uid() AND
                         (
-                            (om.role <> 'Admin') OR
+                            (om.role <> 'Owner') OR
                             (
-                                om.role = 'Admin' AND
+                                om.role = 'Owner' AND
                                 (SELECT COUNT(*) FROM public.organization_members omc
                                 WHERE omc.organization_id = organization_id
-                                AND omc.role = 'Admin') > 1
+                                AND omc.role = 'Owner') > 1
                             )
                         )
                 )
@@ -679,7 +679,7 @@ CREATE POLICY organization_members_delete
                     FROM public.organization_members om
                     WHERE
                         om.organization_id = organization_id AND
-                        om.role = 'Admin'
+                        om.role = 'Owner'
                 )
             )
             OR 
@@ -690,16 +690,16 @@ CREATE POLICY organization_members_delete
                     FROM public.organization_members om
                     WHERE
                         om.organization_id = organization_id AND
-                        om.role = 'Moderator'
+                        om.role = 'Admin'
                 ) AND
-                role NOT IN ('Admin', 'Moderator')
+                role NOT IN ('Owner', 'Admin')
             )
             OR
             (
                 auth.grant() = 'client_credentials' AND
                 'organization.members.delete' = ANY(auth.scopes()) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
-                role NOT IN ('Admin', 'Moderator')
+                role NOT IN ('Owner', 'Admin')
             )
         )
     );

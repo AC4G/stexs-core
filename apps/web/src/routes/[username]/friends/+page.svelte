@@ -57,22 +57,9 @@
             `)
             .eq('user_id', userId)
             .ilike('profiles.username', `%${search}%`)
+            .order('profiles(username)', { ascending: true })
             .not('profiles', 'is', null)
             .range(start, end);
-
-        data?.sort((a: { 
-            profiles: {
-                username: string
-            } }, b: {
-            profiles: {
-                username: string
-            }
-        }) => {
-            const usernameA = a.profiles.username;
-            const usernameB = b.profiles.username;
-
-            return usernameA.localeCompare(usernameB, undefined, { sensitivity: 'base' });
-        });
 
         return data;
     }

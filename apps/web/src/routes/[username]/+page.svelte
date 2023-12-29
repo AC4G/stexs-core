@@ -65,9 +65,7 @@
         enabled: !!$profileStore?.userId
     });
 
-    $: {
-        if (paginationSettings.size === 0 && $itemsAmountQuery.data !== undefined) paginationSettings.size = $itemsAmountQuery.data;
-    };
+    $: paginationSettings.size = $itemsAmountQuery.data;
 
     $: projectsQuery = useQuery({
         queryKey: ['projectsInInventory', $profileStore?.userId],
@@ -121,6 +119,7 @@
             .ilike('items.name', `%${search}%`)
             .not('items', 'is', null)
             .not('items.projects', 'is', null)
+            .order('id', { ascending: false })
             .range(start, end);
 
         if (selectedProject !== undefined && typeof selectedProject == 'number') {
@@ -129,7 +128,7 @@
 
         const { data } = await query;
 
-        return data.reverse();
+        return data;
     }
 
     async function fetchItemFromInventory(userId: string, itemId: number) {
@@ -154,7 +153,7 @@
         return data;
     }
 
-    async function openModal(params: { [key: string]: any }) {
+    function openItemModal(params: { [key: string]: any }) {
         const modal: ModalSettings = {
             type: 'component',
             component: 'inventoryItem',
@@ -243,7 +242,7 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data as inventory (inventory.id)}
-                <Button title={inventory.items.name} class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openModal(inventory)}>
+                <Button title={inventory.items.name} class="p-0 aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openItemModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
             {/each}
