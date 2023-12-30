@@ -248,25 +248,13 @@ export const MFA_EMAIL_DISABLED = {
   code: 'MFA_EMAIL_DISABLED',
   message: "You can't use the MFA email method because it is disabled.",
 };
-export const RATE_LIMIT_EXCEEDED = {
-  code: 'RATE_LIMIT_EXCEEDED',
-  message: 'Rate limit exceeded. Please try again later.',
-};
-export const FILE_EXTENSION_REQUIRED = {
-  code: 'FILE_EXTENSION_REQUIRED',
-  message: 'Please provide a file extension.',
-};
-export const UNSUPPORTED_FILE_EXTENSION = {
-  code: 'INVALID_FILE_EXTENSION',
-  message: 'Supported file extensions are jpg, jpeg, png, gif and webp.',
-};
 export const MFA_CANNOT_BE_COMPLETELY_DISABLED = {
   code: 'MFA_CANNOT_BE_COMPLETELY_DISABLED',
   message: 'MFA cannot be disabled completely from the account.',
 };
 export const UNAUTHORIZED_ACCESS = {
   code: 'UNAUTHORIZED_ACCESS',
-  message: 'You are not authorized to access this endpoint.',
+  message: 'You are not authorized to access this resource.',
 };
 export const ITEM_ID_REQUIRED = {
   code: 'ITEM_ID_REQUIRED',

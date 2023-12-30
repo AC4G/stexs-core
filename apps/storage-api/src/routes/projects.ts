@@ -78,9 +78,10 @@ router.post(
       const sub = req.auth?.sub;
       const { projectId } = req.params;
       const grantType = req.auth?.grant_type;
+      const organizationId = req.auth?.organization_id;
   
       try {
-        let rowsFound = false;
+        let isAllowed = false;
 
         if (grantType === 'password') {
             const { rowCount } = await db.query(
@@ -92,22 +93,21 @@ router.post(
                 [sub, projectId],
             );
 
-            if (rowCount) rowsFound = true; 
+            if (rowCount) isAllowed = true; 
         } else {
             const { rowCount } = await db.query(
                 `
                     SELECT 1
-                    FROM public.oauth2_apps oa
-                    JOIN public.projects p ON p.organization_id = oa.organization_id
-                    WHERE oa.client_id = $1::uuid AND p.id = $2::integer;
+                    FROM public.projects
+                    WHERE organization_id = $1::integer AND id = $2::integer;
                 `,
-                [sub, projectId],
+                [organizationId, projectId],
             );
 
-            if (rowCount) rowsFound = true; 
+            if (rowCount) isAllowed = true; 
         }
   
-        if (!rowsFound) {
+        if (!isAllowed) {
             const consumer = grantType === 'password' ? 'User' : 'Client';
 
             logger.error(
@@ -168,6 +168,7 @@ router.delete(
         const sub = req.auth?.sub;
         const { projectId } = req.params;
         const grantType = req.auth?.grant_type;
+        const organizationId = req.auth?.organization_id;
 
         try {
             let rowsFound = false;
@@ -187,11 +188,10 @@ router.delete(
                 const { rowCount } = await db.query(
                     `
                         SELECT 1
-                        FROM public.oauth2_apps oa
-                        JOIN public.projects p ON p.organization_id = oa.organization_id
-                        WHERE oa.client_id = $1::uuid AND p.id = $2::integer;
+                        FROM public.projects
+                        WHERE organization_id = $1::integer AND id = $2::integer;
                     `,
-                    [sub, projectId],
+                    [organizationId, projectId],
                 );
 
                 if (rowCount) rowsFound = true;

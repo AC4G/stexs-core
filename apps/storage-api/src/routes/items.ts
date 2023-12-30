@@ -78,9 +78,10 @@ router.post(
     const sub = req.auth?.sub;
     const { itemId } = req.params;
     const grantType = req.auth?.grant_type;
+    const organizationId = req.auth?.organization_id;
 
     try {
-      let rowsFound = false;
+      let isAllowed = false;
       
       if (grantType === 'password') {
         const { rowCount } = await db.query(
@@ -94,7 +95,7 @@ router.post(
           [itemId, sub],
         );
 
-        if (rowCount) rowsFound = true;
+        if (rowCount) isAllowed = true;
       } else {
         const { rowCount } = await db.query(
           `
@@ -112,24 +113,17 @@ router.post(
             )
             SELECT 1
             FROM
-                public.oauth2_apps oa
+                ItemProjectOrganization ipo
             WHERE
-                oa.client_id = $2::uuid
-                AND EXISTS (
-                    SELECT 1
-                    FROM
-                        ItemProjectOrganization ipo
-                    WHERE
-                        oa.organization_id = ipo.organization_id
-                );
+                ipo.organization_id = $2::integer;
           `,
-          [itemId, sub],
+          [itemId, organizationId],
         );
 
-        if (rowCount) rowsFound = true;
+        if (rowCount) isAllowed = true;
       }
 
-      if (!rowsFound) {
+      if (!isAllowed) {
         const consumer = grantType === 'password' ? 'User' : 'Client';
 
         logger.error(

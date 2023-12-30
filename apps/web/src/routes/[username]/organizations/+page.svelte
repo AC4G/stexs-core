@@ -4,12 +4,21 @@
     import { getProfileStore } from "$lib/stores/profile";
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
-    import { Paginator, type PaginationSettings } from "@skeletonlabs/skeleton";
+    import { 
+        Paginator, 
+        type PaginationSettings, 
+        type ModalSettings, 
+        getModalStore 
+    } from "@skeletonlabs/skeleton";
     import { Search } from "flowbite-svelte";
     import { Button } from 'ui';
+    import { getFlash } from 'sveltekit-flash-message/client';
+    import { page } from '$app/stores';
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
+    const modalStore = getModalStore();
+    const flash = getFlash(page);
     let search: string = '';
     let previousSearch: string = '';
     let paginationSettings: PaginationSettings = {
@@ -36,25 +45,123 @@
         enabled: !!$profileStore?.userId
     });
 
-    $: {
-        if (paginationSettings.size === 0 && $organizationAmountQuery.data !== undefined) paginationSettings.size = $organizationAmountQuery.data;
-    };
+    $: paginationSettings.size = $organizationAmountQuery.data;
 
-    $: organizationsMemberQuery = useQuery({
-        queryKey: ['organizationsProfile', $profileStore?.userId],
-        queryFn: async () => {
-            const { data } = await stexs.from('organization_members')
+    async function fetchOrganizations(userId: string, search: string, page: number, limit: number) {
+        if (search !== previousSearch) {
+            paginationSettings.page = 0;
+            page = 0;
+
+            const { count } = await stexs.from('organization_members')
                 .select(`
                     organizations(
                         id,
                         name
-                    ),
-                    role
-                `)
-                .eq('member_id', $profileStore?.userId);
+                    )
+                `, { 
+                    count: 'exact', 
+                    head: true 
+                })
+                .eq('member_id', userId)
+                .ilike('organizations.name', `%${search}%`)
+                .not('organizations', 'is', null);
 
-            return data;
-        },
+            paginationSettings.size = count;
+            previousSearch = search;
+        }
+
+        const start = page * limit;
+        const end = start + limit - 1;
+
+        const { data } = await stexs.from('organization_members')
+            .select(`
+                organizations(
+                    id,
+                    name
+                ),
+                role
+            `)
+            .eq('member_id', userId)
+            .ilike('organizations.name', `%${search}%`)
+            .not('organizations', 'is', null)
+            .order('organizations(name)', { ascending: true })
+            .range(start, end);
+
+        return data;
+    }
+    
+    async function leaveOrganization(params: { userId: string, organizationId: string, organizationName: string, role: string }) {
+        const { userId, organizationId, organizationName, role } = params;
+
+        if (role === 'Owner') {
+            const { count } = await stexs.from('organization_members')
+                .select(`
+                    organizations(
+                        id
+                    )
+                `, {
+                    count: 'exact', 
+                    head: true 
+                })
+                .eq('organizations.id', organizationId)
+                .eq('role', 'Owner');
+
+            if (count === 1) {
+                $flash = {
+                    message: `Could not leave ${organizationName} organization as the only owner. Give someone the Owner role or delete the organization completely.`,
+                    classes: 'variant-ghost-error',
+                    timeout: 10000,
+                };
+                return;
+            }
+        }
+
+        const { error } = await stexs.from('organization_members')
+            .delete()
+            .eq('member_id', userId)
+            .eq('organization_id', organizationId);
+
+        if (error) {
+            $flash = {
+                message: `Could not leave ${organizationName} organization. Try out again.`,
+                classes: 'variant-ghost-error',
+                timeout: 5000,
+            };
+        } else {
+            $flash = {
+                message: `Successfully left ${organizationName} organization.`,
+                classes: 'variant-ghost-success',
+                timeout: 5000,
+            };
+        }
+    }
+
+    function openLeaveOrganizationModal(userId: string, organizationId: string, organizationName: string, role: string) {
+        const modal: ModalSettings = {
+            type: 'component',
+            component: 'confirm',
+            meta: {
+                text: `Do you really want to leave ${organizationName}?`,
+                function: leaveOrganization,
+                fnParams: {
+                    userId,
+                    organizationId,
+                    organizationName,
+                    role
+                },
+                fnAsync: true,
+                confirmBtnText: 'Leave',
+                confirmBtnClass: 'bg-surface-700 border border-solid border-surface-500 text-red-600',
+                confirmBtnLoaderMeter: 'stroke-red-500',
+                confirmBtnLoaderTrack: 'stroke-red-500/20'
+            }
+        };
+        modalStore.set([modal]);
+    }
+
+    $: organizationsMemberQuery = useQuery({
+        queryKey: ['organizationsProfile', $profileStore?.userId],
+        queryFn: async () => await fetchOrganizations($profileStore?.userId!, search, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
 </script>
@@ -76,24 +183,24 @@
 </div>
 <div class="grid gap-3">
     {#if $organizationsMemberQuery.isLoading || !$organizationsMemberQuery.data}
-        {#each Array(50) as _}
+        {#each Array(10) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-[98px]" />
         {/each}
     {:else}
         {#if $organizationsMemberQuery.data && $organizationsMemberQuery.data.length > 0}
             {#each $organizationsMemberQuery.data as organizationMember (organizationMember.organizations.id)}
-                <div class="flex px-4 py-2 flex-row border border-solid border-surface-600 rounded-lg items-center justify-between">
+                <div class="flex space-x-4 px-4 py-2 flex-row border border-solid border-surface-600 rounded-lg items-center justify-between">
                     <a href="/" class="flex flex-row items-center space-x-4 group">
                         <div class="p-0 aspect-square h-[80px] w-[80px] rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer flex items-center justify-center transition group-hover:bg-surface-600">
-                            <OrganizationLogo {stexs} organizationId={organizationMember.organizations.id} alt={organizationMember.organizations.id} iconClass="text-[46px]" />
+                            <OrganizationLogo {stexs} organizationId={organizationMember.organizations.id} alt={organizationMember.organizations.name} iconClass="text-[46px]" />
                         </div>
-                        <p class="text-secondary-500 group-hover:text-secondary-400 transition">{organizationMember.organizations.name}</p>
+                        <p class="text-secondary-500 group-hover:text-secondary-400 transition break-all">{organizationMember.organizations.name}</p>
                     </a>
-                    <div class="h-fit w-fit space-x-2">
+                    <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">
                         {#if organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin'}
-                            <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500">Settings</Button>
+                            <a href="/" class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 btn">Settings</a>
                         {/if}
-                        <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" >Leave</Button>
+                        <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                     </div>
                 </div>
             {/each}
