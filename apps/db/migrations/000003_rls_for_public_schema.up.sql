@@ -569,13 +569,13 @@ CREATE POLICY oauth2_apps_insert
 
 ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
 
-CREATE OR REPLACE FUNCTION public.is_user_member_of_organization(_user_id UUID, _organization_id INTEGER) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION public.is_current_user_member_of_organization(_organization_id INTEGER) RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1
         FROM public.organization_members
         WHERE organization_id = _organization_id
-        AND member_id = _user_id
+        AND member_id = auth.uid()
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -596,7 +596,7 @@ CREATE POLICY organization_members_select
         OR
         (
             auth.grant() = 'password' AND
-            public.is_user_member_of_organization(auth.uid(), organization_id)
+            public.is_current_user_member_of_organization(organization_id)
         )
         OR
         (
@@ -662,10 +662,52 @@ CREATE POLICY organization_members_update
         )
     );
 
-CREATE OR REPLACE FUNCTION public.dfsf(organization_id integer) RETURNS BOOLEAN AS $$
-SELECT EXISTS (
+CREATE OR REPLACE FUNCTION public.is_current_user_allowed_to_delete_organization_members(_organization_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+DECLARE
+    current_user_role TEXT;
+BEGIN
+    SELECT role
+    INTO current_user_role
+    FROM public.organization_members
+    WHERE member_id = auth.uid() AND organization_id = _organization_id;
 
-);
+    RETURN (
+        auth.grant() = 'password' AND
+        (
+            (
+                auth.uid() = _member_id AND
+                _role in ('Admin', 'Moderator', 'Member')
+            )
+            OR
+            (
+                auth.uid() = _member_id AND
+                (
+                    SELECT COUNT(*)
+                    FROM public.organization_members
+                    WHERE
+                        organization_id = _organization_id AND
+                        role = 'Owner'
+                ) > 1 AND
+                _role = 'Owner'
+            )
+            OR
+            (
+                current_user_role = 'Owner' AND
+                _role in ('Admin', 'Moderator', 'Member')
+            )
+            OR
+            (
+                current_user_role = 'Admin' AND
+                _role in ('Moderator', 'Member')
+            )
+            OR
+            (
+                current_user_role = 'Moderator' AND
+                _role = 'Member'
+            )
+        )
+    );
+END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE POLICY organization_members_delete
@@ -674,48 +716,7 @@ CREATE POLICY organization_members_delete
     FOR DELETE
     USING (
         (
-            (
-                auth.grant() = 'password' AND
-                EXISTS(
-                    SELECT 1
-                    FROM public.organization_members om
-                    WHERE
-                        om.organization_id = organization_id AND
-                        om.member_id = auth.uid() AND
-                        (
-                            (om.role <> 'Owner') OR
-                            (
-                                om.role = 'Owner' AND
-                                (SELECT COUNT(*) FROM public.organization_members omc
-                                WHERE omc.organization_id = organization_id
-                                AND omc.role = 'Owner') > 1
-                            )
-                        )
-                )
-            )
-            OR
-            (
-                auth.grant() = 'password' AND
-                EXISTS(
-                    SELECT 1
-                    FROM public.organization_members om
-                    WHERE
-                        om.organization_id = organization_id AND
-                        om.role = 'Owner'
-                )
-            )
-            OR 
-            (
-                auth.grant() = 'password' AND
-                EXISTS(
-                    SELECT 1
-                    FROM public.organization_members om
-                    WHERE
-                        om.organization_id = organization_id AND
-                        om.role = 'Admin'
-                ) AND
-                role NOT IN ('Owner', 'Admin')
-            )
+            public.is_current_user_allowed_to_delete_organization_members(organization_id, member_id, role)
             OR
             (
                 auth.grant() = 'client_credentials' AND

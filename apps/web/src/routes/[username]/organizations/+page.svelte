@@ -90,8 +90,32 @@
         return data;
     }
     
-    async function leaveOrganization(params: { userId: string, organizationId: string, organizationName: string }) {
-        const { userId, organizationId, organizationName } = params;
+    async function leaveOrganization(params: { userId: string, organizationId: string, organizationName: string, role: string }) {
+        const { userId, organizationId, organizationName, role } = params;
+
+        if (role === 'Owner') {
+            const { count } = await stexs.from('organization_members')
+                .select(`
+                    organizations(
+                        id
+                    )
+                `, {
+                    count: 'exact', 
+                    head: true 
+                })
+                .eq('organizations.id', organizationId)
+                .eq('role', 'Owner');
+
+            if (count === 1) {
+                $flash = {
+                    message: `Could not leave ${organizationName} organization as the only owner. Give someone the Owner role or delete the organization completely.`,
+                    classes: 'variant-ghost-error',
+                    timeout: 10000,
+                };
+                return;
+            }
+        }
+
         const { error } = await stexs.from('organization_members')
             .delete()
             .eq('member_id', userId)
@@ -112,7 +136,7 @@
         }
     }
 
-    function openLeaveOrganizationModal(userId: string, organizationId: string, organizationName: string) {
+    function openLeaveOrganizationModal(userId: string, organizationId: string, organizationName: string, role: string) {
         const modal: ModalSettings = {
             type: 'component',
             component: 'confirm',
@@ -122,7 +146,8 @@
                 fnParams: {
                     userId,
                     organizationId,
-                    organizationName
+                    organizationName,
+                    role
                 },
                 fnAsync: true,
                 confirmBtnText: 'Leave',
@@ -175,7 +200,7 @@
                         {#if organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin'}
                             <a href="/" class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 btn">Settings</a>
                         {/if}
-                        <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name)} >Leave</Button>
+                        <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                     </div>
                 </div>
             {/each}
