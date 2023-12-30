@@ -78,9 +78,10 @@ router.post(
         const sub = req.auth?.sub;
         const { organizationId } = req.params;
         const grantType = req.auth?.grant_type;
+        const organizationIdFromToken = req.auth?.organization_id;
 
         try {
-            let rowsFound = false;
+            let isAllowed = false;
 
             if (grantType === 'password') {
                 const { rowCount } = await db.query(
@@ -92,21 +93,12 @@ router.post(
                     [sub, organizationId],
                 );
 
-                if (rowCount) rowsFound = true;
+                if (rowCount) isAllowed = true;
             } else {
-                const { rowCount } = await db.query(
-                    `
-                        SELECT 1
-                        FROM public.oauth2_apps
-                        WHERE client_id = $1::uuid AND organization_id = $2::integer;
-                    `,
-                    [sub, organizationId],
-                );
-
-                if (rowCount) rowsFound = true;
+                if (organizationId === organizationIdFromToken) isAllowed = true;
             }
       
-            if (!rowsFound) {
+            if (!isAllowed) {
                 const consumer = grantType === 'password' ? 'User' : 'Client';
 
                 logger.error(
@@ -165,9 +157,10 @@ router.delete(
         const sub = req.auth?.sub;
         const { organizationId } = req.params;
         const grantType = req.auth?.grant_type;
+        const organizationIdFromToken = req.auth?.organization_id;
 
         try {
-            let rowsFound = false;
+            let isAllowed = false;
 
             if (grantType === 'password') {
                 const { rowCount } = await db.query(
@@ -179,21 +172,12 @@ router.delete(
                     [sub, organizationId],
                 );
 
-                if (rowCount) rowsFound = true;
+                if (rowCount) isAllowed = true;
             } else {
-                const { rowCount } = await db.query(
-                    `
-                        SELECT 1
-                        FROM public.oauth2_apps
-                        WHERE client_id = $1::uuid AND organization_id = $2::integer;
-                    `,
-                    [sub, organizationId],
-                );
-
-                if (rowCount) rowsFound = true;
+                if (organizationId === organizationIdFromToken) isAllowed = true;
             }
       
-            if (!rowsFound) {
+            if (!isAllowed) {
                 const consumer = grantType === 'password' ? 'User' : 'Client';
 
                 logger.error(

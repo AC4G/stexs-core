@@ -569,18 +569,34 @@ CREATE POLICY oauth2_apps_insert
 
 ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
 
+CREATE OR REPLACE FUNCTION public.is_user_member_of_organization(_user_id UUID, _organization_id INTEGER) RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.organization_members
+        WHERE organization_id = _organization_id
+        AND member_id = _user_id
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 CREATE POLICY organization_members_select
     ON public.organization_members
     AS PERMISSIVE
     FOR SELECT
     USING (
         (
-            auth.grant() NOT IN ('client_credentials', 'authorization_code') AND
+            auth.grant() IS NULL AND
             EXISTS (
                 SELECT 1
                 FROM public.profiles AS p
                 WHERE p.user_id = user_id AND p.is_private = FALSE
             )
+        )
+        OR
+        (
+            auth.grant() = 'password' AND
+            public.is_user_member_of_organization(auth.uid(), organization_id)
         )
         OR
         (
@@ -641,10 +657,16 @@ CREATE POLICY organization_members_update
                 auth.grant() = 'client_credentials' AND
                 'organization.members.update' = ANY(auth.scopes()) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
-                role NOT IN ('Admin', 'Moderator')
+                role NOT IN ('Owner', 'Admin')
             )
         )
     );
+
+CREATE OR REPLACE FUNCTION public.dfsf(organization_id integer) RETURNS BOOLEAN AS $$
+SELECT EXISTS (
+
+);
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE POLICY organization_members_delete
     ON public.organization_members
