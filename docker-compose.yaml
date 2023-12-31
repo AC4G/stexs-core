@@ -34,23 +34,6 @@ services:
     networks:
       - stexs
 
-  
-  haproxy:
-    image: haproxy:latest 
-    ports:
-      - 443:443
-    restart: unless-stopped
-    volumes:
-      - ./docker/haproxy:/etc/haproxy
-    environment:
-      JWT_SECRET: ${ACCESS_TOKEN_SECRET}
-    container_name: haproxy
-    command: ["haproxy", "-f", "/etc/haproxy/haproxy.cfg"]
-    networks:
-      - stexs
-    depends_on:
-      - rest
-
 
   mailpit:
     image: axllent/mailpit
