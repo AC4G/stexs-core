@@ -606,60 +606,68 @@ CREATE POLICY organization_members_select
         )
     );
 
+CREATE OR REPLACE FUNCTION public.organization_members_update_policy(_organization_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+DECLARE
+    current_user_role TEXT;
+BEGIN
+    SELECT role
+    INTO current_user_role
+    FROM public.organization_members
+    WHERE member_id = auth.uid() AND organization_id = _organization_id;
+
+    RETURN (
+        (
+            auth.grant() = 'password' AND
+            auth.uid() <> _member_id AND
+            (
+                (
+                    current_user_role = 'Owner' AND
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM public.organization_members
+                        WHERE member_id = _member_id
+                        AND organization_id = _organization_id 
+                        AND role = 'Owner'
+                    )
+                )
+                OR
+                (
+                    current_user_role = 'Admin' AND
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM public.organization_members
+                        WHERE member_id = _member_id
+                        AND organization_id = _organization_id 
+                        AND role IN ('Owner', 'Admin')
+                    ) AND
+                    _role NOT IN ('Owner', 'Admin')
+                )
+            )
+        )
+        OR
+        (
+            auth.grant() = 'client_credentials' AND
+            'organization.members.update' = ANY(auth.scopes()) AND
+            _organization_id = (auth.jwt()->>'organization_id')::INT AND
+            role NOT IN ('Owner', 'Admin') AND
+            NOT EXISTS (
+                SELECT 1
+                FROM public.organization_members
+                WHERE organization_id = _organization_id
+                AND member_id = _member_id 
+                AND role IN ('Owner', 'Admin')
+            )
+        )
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 CREATE POLICY organization_members_update
     ON public.organization_members
     AS PERMISSIVE
     FOR UPDATE
     USING (
-        (
-            (
-                auth.grant() = 'password' AND
-                (
-                    (
-                        EXISTS (
-                            SELECT 1
-                            FROM public.organization_members om
-                            WHERE
-                                om.organization_id = organization_id AND
-                                om.member_id = auth.uid() AND
-                                om.role = 'Admin'
-                        ) AND
-                        (
-                            member_id <> auth.uid() OR
-                            (
-                                role <> 'Admin' AND
-                                (
-                                    SELECT COUNT(*)
-                                    FROM public.organization_members om
-                                    WHERE
-                                        om.organization_id = organization_id AND
-                                        om.role = 'Admin'
-                                ) >= 2
-                            )
-                        )
-                    )
-                    OR
-                    (
-                        EXISTS (
-                            SELECT 1
-                            FROM public.organization_members om
-                            WHERE
-                                om.organization_id = organization_id AND
-                                om.member_id = auth.uid() AND
-                                om.role = 'Moderator'
-                        ) AND
-                        role NOT IN ('Admin', 'Moderator')
-                    )
-                )
-            )
-            OR
-            (
-                auth.grant() = 'client_credentials' AND
-                'organization.members.update' = ANY(auth.scopes()) AND
-                organization_id = (auth.jwt()->>'organization_id')::INT AND
-                role NOT IN ('Owner', 'Admin')
-            )
-        )
+        public.organization_members_update_policy(organization_id, member_id, role)
     );
 
 CREATE OR REPLACE FUNCTION public.is_current_user_allowed_to_delete_organization_members(_organization_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
@@ -692,18 +700,28 @@ BEGIN
             )
             OR
             (
-                current_user_role = 'Owner' AND
-                _role in ('Admin', 'Moderator', 'Member')
-            )
-            OR
-            (
-                current_user_role = 'Admin' AND
-                _role in ('Moderator', 'Member')
-            )
-            OR
-            (
-                current_user_role = 'Moderator' AND
-                _role = 'Member'
+                EXISTS (
+                    SELECT 1
+                    FROM public.organization_members
+                    WHERE member_id = _member_id
+                    AND organization_id = _organization_id
+                ) AND
+                (
+                    (
+                        current_user_role = 'Owner' AND
+                        _role in ('Admin', 'Moderator', 'Member')
+                    )
+                    OR
+                    (
+                        current_user_role = 'Admin' AND
+                        _role in ('Moderator', 'Member')
+                    )
+                    OR
+                    (
+                        current_user_role = 'Moderator' AND
+                        _role = 'Member'
+                    )
+                )
             )
         )
     );
