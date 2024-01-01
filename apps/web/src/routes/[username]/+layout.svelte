@@ -322,7 +322,7 @@
     $: isPrivate = $profileQuery.data?.is_private as boolean;
 
     $: friendsAmountQuery = useQuery({
-        queryKey: ['friendsAmount', userId],
+        queryKey: ['friendsAmount', userId, $profileStore?.refetchTrigger],
         queryFn: async () => await fetchFriendsAmount(userId),
         enabled: !!userId && ((!isPrivate && $blockedQuery.data?.length === 0) || !!isFriend || userId === $userStore?.id)
     });
