@@ -10,7 +10,7 @@ const friendRequestsTopicFromContext = async (_args, context, _resolveInfo) => {
 
 const organizationJoinRequestsTopicFromContext = async (_args, context, _resolveInfo) => {
   if (context.jwtClaims && context.jwtClaims.sub) {
-    return `graphql:organization_requests:${context.jwtClaims.sub}`;
+    return `graphql:org_requests:${context.jwtClaims.sub}`;
   } else {
     throw new Error("Invalid JWT");
   }

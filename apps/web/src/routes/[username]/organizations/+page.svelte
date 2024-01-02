@@ -29,7 +29,7 @@
     };
 
     $: organizationAmountQuery = useQuery({
-        queryKey: ['organizationsAmountProfile', $profileStore?.userId],
+        queryKey: ['organizationsAmountProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
         queryFn: async () => {
             const { count } = await stexs.from('organization_members')
                 .select(`
@@ -90,7 +90,7 @@
         return data;
     }
     
-    async function leaveOrganization(params: { userId: string, organizationId: string, organizationName: string, role: string}) {
+    async function leaveOrganization(params: { userId: string, organizationId: number, organizationName: string, role: string}) {
         const { userId, organizationId, organizationName, role } = params;
 
         if (role === 'Owner') {
@@ -135,7 +135,7 @@
                 timeout: 5000,
             };
 
-            organizationsMemberQueryStore.data.filter((organizationMember) => organizationMember.organizations.id !== organizationId);
+            organizationsMemberQueryStore.data.filter((organizationMember: { organizations: { id: number } }) => organizationMember.organizations.id !== organizationId);
             organizationAmountQueryStore.data--;
         }
     }
@@ -164,7 +164,7 @@
     }
 
     $: organizationsMemberQuery = useQuery({
-        queryKey: ['organizationsProfile', $profileStore?.userId],
+        queryKey: ['organizationsProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
         queryFn: async () => await fetchOrganizations($profileStore?.userId!, search, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
@@ -204,10 +204,12 @@
                         <p class="text-secondary-500 group-hover:text-secondary-400 transition break-all">{organizationMember.organizations.name}</p>
                     </a>
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">
-                        {#if organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin'}
-                            <a href="/" class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 btn">Settings</a>
+                        {#if $userStore?.id === $profileStore?.userId}
+                            {#if (organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin')}
+                                <a href="/" class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 btn">Settings</a>
+                            {/if}
+                            <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                         {/if}
-                        <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                     </div>
                 </div>
             {/each}

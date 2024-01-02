@@ -6,7 +6,8 @@ export interface Profile {
   isPrivate: boolean;
   isFriend: boolean;
   totalFriends: number;
-  refetchTrigger?: boolean;
+  refetchFriendsTrigger?: boolean;
+  refetchOrganizationsTrigger?: boolean;
 };
 
 export function createProfileStore(): Writable<Profile | null> {

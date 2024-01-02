@@ -106,12 +106,17 @@ CREATE POLICY friend_requests_insert
         ) AND 
         NOT EXISTS (
             SELECT 1
-            FROM public.blocked AS b
-            WHERE b.blocker_id = addressee_id AND b.blocked_id = requester_id
+            FROM public.blocked
+            WHERE blocker_id = addressee_id AND blocked_id = requester_id
             UNION
             SELECT 1
-            FROM public.blocked AS b
-            WHERE b.blocker_id = requester_id AND b.blocked_id = addressee_id
+            FROM public.blocked
+            WHERE blocker_id = requester_id AND blocked_id = addressee_id
+        ) AND
+        NOT EXISTS (
+            SELECT 1
+            FROM public.profiles
+            WHERE user_id = addressee_id AND accept_friend_requests = FALSE
         )
     );
 

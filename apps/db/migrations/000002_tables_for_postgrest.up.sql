@@ -294,6 +294,21 @@ GRANT DELETE ON TABLE public.organization_members TO authenticated;
 GRANT SELECT ON TABLE public.organization_members TO anon;
 GRANT SELECT ON TABLE public.organization_members TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.organization_members_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM public.organization_requests
+    WHERE organization_id = NEW.organization_id AND addressee_id = NEW.member_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER organization_members_insert_trigger
+AFTER INSERT ON public.organization_members
+FOR EACH ROW 
+EXECUTE FUNCTION public.organization_members_insert();
+
 
 
 CREATE TABLE public.organization_requests (
@@ -315,7 +330,7 @@ GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 CREATE TRIGGER organization_request_changed_trigger
   AFTER INSERT OR DELETE ON public.organization_requests
   FOR EACH ROW
-  EXECUTE FUNCTION public.graphql_subscription('organizationJoinRequestChanged', 'organization_requests', 'addressee_id');
+  EXECUTE FUNCTION public.graphql_subscription('organizationJoinRequestChanged', 'org_requests', 'addressee_id');
 
 CREATE OR REPLACE FUNCTION public.check_organization_request_limit()
 RETURNS TRIGGER AS $$

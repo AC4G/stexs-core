@@ -26,7 +26,7 @@ export async function acceptFriendRequest(
     profileStore.update((profile: Profile | null) => {
       return {
         ...profile!,
-        refetchTrigger: !!profile!.refetchTrigger
+        refetchTrigger: !profile!.refetchFriendsTrigger
       };
     });
     flash.set({
@@ -43,11 +43,12 @@ export async function deleteFriendRequest(
   requesterId: string,
   addresseeId: string,
   flash: Writable<ToastSettings>,
+  profileStore: Writable<Profile | null>
 ) {
   let gotFriendRequest: boolean = true;
   const { error } = await stexs
     .from('friend_requests')
-    .delete()
+    .delete() 
     .eq('requester_id', requesterId)
     .eq('addressee_id', addresseeId);
 
@@ -59,6 +60,12 @@ export async function deleteFriendRequest(
     });
   } else {
     gotFriendRequest = false;
+    profileStore.update((profile: Profile | null) => {
+      return {
+        ...profile!,
+        refetchTrigger: !profile!.refetchFriendsTrigger
+      };
+    });
     flash.set({
       message: 'Friend request successfully deleted.',
       classes: 'variant-ghost-success',
