@@ -4,7 +4,7 @@
 
     export let stexs: any;
     export let alt: string;
-    export let organizationId: string;
+    export let organizationId: number;
     export let iconClass: string = 'text-[46px] rounded-md';
 
     let loading: boolean = true;

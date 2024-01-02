@@ -106,12 +106,17 @@ CREATE POLICY friend_requests_insert
         ) AND 
         NOT EXISTS (
             SELECT 1
-            FROM public.blocked AS b
-            WHERE b.blocker_id = addressee_id AND b.blocked_id = requester_id
+            FROM public.blocked
+            WHERE blocker_id = addressee_id AND blocked_id = requester_id
             UNION
             SELECT 1
-            FROM public.blocked AS b
-            WHERE b.blocker_id = requester_id AND b.blocked_id = addressee_id
+            FROM public.blocked
+            WHERE blocker_id = requester_id AND blocked_id = addressee_id
+        ) AND
+        NOT EXISTS (
+            SELECT 1
+            FROM public.profiles
+            WHERE user_id = addressee_id AND accept_friend_requests = FALSE
         )
     );
 
@@ -586,7 +591,10 @@ CREATE POLICY organization_members_select
     FOR SELECT
     USING (
         (
-            auth.grant() IS NULL AND
+            (
+                auth.grant() IS NULL OR
+                auth.grant() = 'password'
+            ) AND
             EXISTS (
                 SELECT 1
                 FROM public.profiles AS p
@@ -700,28 +708,18 @@ BEGIN
             )
             OR
             (
-                EXISTS (
-                    SELECT 1
-                    FROM public.organization_members
-                    WHERE member_id = _member_id
-                    AND organization_id = _organization_id
-                ) AND
-                (
-                    (
-                        current_user_role = 'Owner' AND
-                        _role in ('Admin', 'Moderator', 'Member')
-                    )
-                    OR
-                    (
-                        current_user_role = 'Admin' AND
-                        _role in ('Moderator', 'Member')
-                    )
-                    OR
-                    (
-                        current_user_role = 'Moderator' AND
-                        _role = 'Member'
-                    )
-                )
+                current_user_role = 'Owner' AND
+                _role in ('Admin', 'Moderator', 'Member')
+            )
+            OR
+            (
+                current_user_role = 'Admin' AND
+                _role in ('Moderator', 'Member')
+            )
+            OR
+            (
+                current_user_role = 'Moderator' AND
+                _role = 'Member'
             )
         )
     );
@@ -745,34 +743,42 @@ CREATE POLICY organization_members_delete
         )
     );
 
-CREATE POLICY organization_members_insert
-    ON public.organization_members
-    AS PERMISSIVE
-    FOR INSERT
-    WITH CHECK (
+CREATE OR REPLACE FUNCTION public.is_user_allowed_to_join_organization(_organization_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN (
         auth.grant() = 'password' AND
-        auth.uid() = member_id AND
+        auth.uid() = _member_id AND
         (
             EXISTS (
                 SELECT 1
-                FROM public.organization_requests orq
+                FROM public.organization_requests
                 WHERE 
-                    orq.organization_id = organization_id AND 
-                    orq.addressee_id = auth.uid() AND
-                    orq.role = role
+                    organization_id = _organization_id AND 
+                    addressee_id = auth.uid() AND
+                    role = _role
             )
             OR
             (
                 NOT EXISTS (
                     SELECT 1
-                    FROM public.organization_members om
+                    FROM public.organization_members
                     WHERE 
-                        om.organization_id = organization_id AND
-                        om.role = 'Admin'
+                        organization_id = _organization_id AND
+                        role = 'Owner'
                 ) AND
-                role = 'Admin'
+                _role = 'Owner'
             )
         )
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE POLICY organization_members_insert
+    ON public.organization_members
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        public.is_user_allowed_to_join_organization(organization_id, member_id, role)
     );
 
 

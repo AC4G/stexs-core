@@ -9,7 +9,15 @@
     Modal,
     type ModalComponent
   } from '@skeletonlabs/skeleton';
-  import { Header, Avatar, Truncated, Confirm, Button, InventoryItem } from 'ui';
+  import { 
+    Header, 
+    Avatar, 
+    Truncated, 
+    Confirm, 
+    Button, 
+    InventoryItem, 
+    OrganizationLogo 
+  } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
@@ -37,6 +45,7 @@
   import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
   import { createProfileStore } from '$lib/stores/profile';
   import { createPreviousPageStore } from '$lib/stores/previousPage';
+    import { acceptOrganizationJoinRequest, deleteOrganizationJoinRequest } from '$lib/utils/organizationJoinRequests';
 
   initializeStores();
   const previousPageStore = createPreviousPageStore();
@@ -120,6 +129,7 @@
         subscription OrganizationJoinRequestsSubscription {
           organizationJoinRequestChanged {
             organizationRequests {
+              role,
               organizationByOrganizationId {
                 id
                 name
@@ -193,6 +203,9 @@
       organizationRequests.length > 0 || 
       projectRequests.length > 0
   };
+
+  $: searchedFriendRequests = notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase()));
+  $: searchedOrganizationRequests = notifications.organizationRequests.data.filter(organizationRequest => organizationRequest.organizationByOrganizationId.name.toLowerCase().includes(organizationRequestsSearch.toLowerCase()));
 </script>
 
 <svelte:head>
@@ -209,7 +222,7 @@
           <a href="/sign-in" class="btn">Sign-In</a>
           <a href="/sign-up" class="btn variant-filled-primary">Sign-Up</a>
         {:else}
-          <div class="relative mr-[8px] flex items-center space-x-2 w-full justify-end">
+          <div class="relative mr-[8px] flex items-center space-x-4 w-full justify-end">
             <Button class="notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">
               <div class="relative inline-block">
                 {#if notifications.exists}
@@ -235,38 +248,59 @@
               </div>
               <DropdownDivider />
               {#if selectedNotificationMenu === 'friends'}
-                <Search size="md" placeholder="Username" bind:value={friendRequestsSearch} class="!bg-surface-500" />
-                <div class="max-h-[200px] overflow-auto">
-                  {#each notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase())) as friendRequest, index (friendRequest.profileByRequesterId.userId)}
-                    <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
-                      <a href="/{friendRequest.profileByRequesterId.username}">
-                        <Avatar class="w-[44px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" {stexs} userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} />
-                      </a>
-                      <div class="grid grid-rows-2 col-span-2 w-full">
-                        <Truncated text={friendRequest.profileByRequesterId.username} maxLength={12} class="text-[16px] w-[70%] text-left " />
-                        <div class="flex justify-evenly pt-1">
-                          <Button on:click={async (event) => {
-                            event.stopPropagation();
-                            await acceptFriendRequest($userStore.id, friendRequest.profileByRequesterId.userId, friendRequest.profileByRequesterId.username, flash, profileStore);
-                          }} class="py-[0.8px] px-2 variant-filled-primary text-[14px]">Accept</Button>
-                          <Button on:click={async (event) => {
-                            event.stopPropagation();
-                            await deleteFriendRequest(friendRequest.profileByRequesterId.userId, $userStore.id, flash);
-                          }} class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[14px]">Delete</Button>
+                {#if notifications.friendRequests.count === 0}
+                  <p class="text-[16px] text-center p-4">No friend requests received</p>
+                {:else}
+                  <Search size="md" placeholder="Username" bind:value={friendRequestsSearch} class="!bg-surface-500" />
+                  {#if searchedFriendRequests.length > 0}
+                    <div class="max-h-[300px] overflow-auto">
+                      {#each searchedFriendRequests as friendRequest, index (friendRequest.profileByRequesterId.userId)}
+                        <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
+                          <a href="/{friendRequest.profileByRequesterId.username}">
+                            <Avatar class="w-[48px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" {stexs} userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} />
+                          </a>
+                          <div class="grid grid-rows-2 col-span-2 w-full px-1 space-y-1">
+                            <Truncated text={friendRequest.profileByRequesterId.username} maxLength={12} class="text-[16px] w-full text-left h-fit" />
+                            <div class="flex justify-between">
+                              <Button on:click={() => acceptFriendRequest($userStore.id, friendRequest.profileByRequesterId.userId, friendRequest.profileByRequesterId.username, flash, profileStore) } class="py-[0.8px] px-2 variant-filled-primary text-[16px]">Accept</Button>
+                              <Button on:click={() => deleteFriendRequest(friendRequest.profileByRequesterId.userId, $userStore.id, flash, profileStore) } class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[16px]">Delete</Button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      {/each}
                     </div>
-                  {/each}
-                </div>
+                  {:else}
+                    <p class="text-[16px] text-center p-4">Friend requests not found</p>
+                  {/if}
+                {/if}
                 <DropdownDivider />
                 <p class="text-[15px] px-2">Total: {notifications.friendRequests.count}</p>
               {:else if selectedNotificationMenu === 'organizations'}
-                <Search size="md" placeholder="Organization Name" bind:value={organizationRequestsSearch} class="!bg-surface-500" />
-                <div class="max-h-[200px] overflow-auto">
-                  {#each notifications.organizationRequests.data.filter(organizationRequest => organizationRequest.organizationByOrganizationId.name.toLowerCase().includes(organizationRequestsSearch.toLowerCase())) as organizationRequest}
-                    {organizationRequest.organizationByOrganizationId.name}
-                  {/each}
-                </div>
+                {#if notifications.organizationRequests.count === 0}
+                  <p class="text-[16px] text-center p-4">No organization join requests received</p>
+                {:else}
+                  <Search size="md" placeholder="Organization Name" bind:value={organizationRequestsSearch} class="!bg-surface-500" />
+                  {#if searchedOrganizationRequests.length > 0}
+                    <div class="max-h-[300px] overflow-auto">
+                      {#each searchedOrganizationRequests as organizationRequest}
+                        <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
+                          <a href="/organizations/{organizationRequest.organizationByOrganizationId.name}" class="pt-1 {$page.url.pathname === `/organizations/${organizationRequest.organizationByOrganizationId.name}` && 'pointer-events-none'}">
+                            <OrganizationLogo {stexs} alt={organizationRequest.organizationByOrganizationId.name} organizationId={organizationRequest.organizationByOrganizationId.id} class="w-[58px] rounded-md border border-solid border-surface-500 {$page.url.pathname === `/organizations/${organizationRequest.organizationByOrganizationId.name}` && '!border-primary-500'}" />
+                          </a>
+                          <div class="grid grid-rows-2 col-span-2 w-full px-1 space-y-1">
+                            <Truncated text={organizationRequest.organizationByOrganizationId.name} maxLength={12} class="text-[16px] w-full text-left h-fit" />
+                            <div class="flex justify-between">
+                              <Button on:click={() => acceptOrganizationJoinRequest($userStore.id, organizationRequest.organizationByOrganizationId.id, organizationRequest.organizationByOrganizationId.name, organizationRequest.role, flash, profileStore) } class="py-[0.8px] px-2 variant-filled-primary text-[16px]">Accept</Button>
+                              <Button on:click={() => deleteOrganizationJoinRequest($userStore.id, organizationRequest.organizationByOrganizationId.id, flash) } class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[16px]">Delete</Button>
+                            </div>
+                          </div>
+                        </div>
+                      {/each}                      
+                    </div>
+                  {:else}
+                    <p class="text-[16px] text-center p-4">Organization join requests not found</p>
+                  {/if}
+                {/if}
                 <DropdownDivider />
                 <p class="text-[15px] px-2">Total: {notifications.organizationRequests.count}</p>
               {:else}
@@ -280,7 +314,7 @@
                 <p class="text-[15px] px-2">Total: {notifications.projectRequests.count}</p>
               {/if}
             </Dropdown>
-            <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[48px] cursor-pointer border-4 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
+            <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[48px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
             <Dropdown triggeredBy=".avatarDropDown" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
               <div class="px-4 py-2 rounded variant-ghost-secondary">
                 <Truncated text={$userStore?.username || ''} maxLength={8} class="text-[16px]" />

@@ -2,7 +2,7 @@
 	import OrganizationLogo from './../../../../../../packages/ui/src/OrganizationLogo.svelte';
     import { getUserStore } from "$lib/stores/user";
     import { getProfileStore } from "$lib/stores/profile";
-    import { useQuery } from "@sveltestack/svelte-query";
+    import { useQuery, type UseQueryStoreResult } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
     import { 
         Paginator, 
@@ -29,7 +29,7 @@
     };
 
     $: organizationAmountQuery = useQuery({
-        queryKey: ['organizationsAmountProfile', $profileStore?.userId],
+        queryKey: ['organizationsAmountProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
         queryFn: async () => {
             const { count } = await stexs.from('organization_members')
                 .select(`
@@ -45,7 +45,7 @@
         enabled: !!$profileStore?.userId
     });
 
-    $: paginationSettings.size = $organizationAmountQuery.data;
+    $: paginationSettings.size = organizationAmountQueryStore.data;
 
     async function fetchOrganizations(userId: string, search: string, page: number, limit: number) {
         if (search !== previousSearch) {
@@ -90,7 +90,7 @@
         return data;
     }
     
-    async function leaveOrganization(params: { userId: string, organizationId: string, organizationName: string, role: string }) {
+    async function leaveOrganization(params: { userId: string, organizationId: number, organizationName: string, role: string}) {
         const { userId, organizationId, organizationName, role } = params;
 
         if (role === 'Owner') {
@@ -104,7 +104,8 @@
                     head: true 
                 })
                 .eq('organizations.id', organizationId)
-                .eq('role', 'Owner');
+                .eq('role', 'Owner')
+                .not('organizations', 'is', null);
 
             if (count === 1) {
                 $flash = {
@@ -133,6 +134,9 @@
                 classes: 'variant-ghost-success',
                 timeout: 5000,
             };
+
+            organizationsMemberQueryStore.data.filter((organizationMember: { organizations: { id: number } }) => organizationMember.organizations.id !== organizationId);
+            organizationAmountQueryStore.data--;
         }
     }
 
@@ -160,19 +164,22 @@
     }
 
     $: organizationsMemberQuery = useQuery({
-        queryKey: ['organizationsProfile', $profileStore?.userId],
+        queryKey: ['organizationsProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
         queryFn: async () => await fetchOrganizations($profileStore?.userId!, search, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
+
+    $: organizationAmountQueryStore = $organizationAmountQuery;
+    $: organizationsMemberQueryStore = $organizationsMemberQuery;
 </script>
 
 <div class="flex flex-col md:flex-row justify-between mb-[18px] space-y-2 md:space-y-0">
-    {#if $organizationsMemberQuery.isLoading || !$organizationsMemberQuery.data}
+    {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="placeholder animate-pulse md:max-w-[220px] w-full h-[42px] rounded-lg" />
         <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse w-full md:w-[80px] h-[24px]" />
         </div>
-    {:else if $organizationAmountQuery.data > 0}
+    {:else if organizationAmountQueryStore.data > 0}
         <div class="md:max-w-[220px]">
             <Search size="lg" placeholder="Organization Name" bind:value={search} class="!bg-surface-500" />
         </div>
@@ -182,13 +189,13 @@
     {/if}
 </div>
 <div class="grid gap-3">
-    {#if $organizationsMemberQuery.isLoading || !$organizationsMemberQuery.data}
+    {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         {#each Array(10) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-[98px]" />
         {/each}
     {:else}
-        {#if $organizationsMemberQuery.data && $organizationsMemberQuery.data.length > 0}
-            {#each $organizationsMemberQuery.data as organizationMember (organizationMember.organizations.id)}
+        {#if organizationsMemberQueryStore.data && organizationsMemberQueryStore.data.length > 0}
+            {#each organizationsMemberQueryStore.data as organizationMember (organizationMember.organizations.id)}
                 <div class="flex space-x-4 px-4 py-2 flex-row border border-solid border-surface-600 rounded-lg items-center justify-between">
                     <a href="/" class="flex flex-row items-center space-x-4 group">
                         <div class="p-0 aspect-square h-[80px] w-[80px] rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer flex items-center justify-center transition group-hover:bg-surface-600">
@@ -197,14 +204,16 @@
                         <p class="text-secondary-500 group-hover:text-secondary-400 transition break-all">{organizationMember.organizations.name}</p>
                     </a>
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">
-                        {#if organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin'}
-                            <a href="/" class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 btn">Settings</a>
+                        {#if $userStore?.id === $profileStore?.userId}
+                            {#if (organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin')}
+                                <a href="/" class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 btn">Settings</a>
+                            {/if}
+                            <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                         {/if}
-                        <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                     </div>
                 </div>
             {/each}
-        {:else if $organizationsMemberQuery?.data > 0 && search.length > 0}
+        {:else if organizationsMemberQueryStore?.data > 0 && search.length > 0}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
                 <p class="text-[18px] p-4 text-center">No organizations found</p>
             </div>
@@ -216,12 +225,12 @@
     {/if}
 </div>
 <div class="mx-auto mt-[18px]">
-    {#if $organizationsMemberQuery.isLoading || !$organizationsMemberQuery.data}
+    {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[44px] w-full md:w-[182px]" />
             <div class="placeholder animate-pulse h-[38px] w-[110px]" />
         </div>
-    {:else if $organizationAmountQuery?.data > 0}
+    {:else if organizationAmountQueryStore?.data > 0}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{false}"

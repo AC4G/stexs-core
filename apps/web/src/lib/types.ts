@@ -31,6 +31,7 @@ export type Friend = {
 export type OrganizationRequestsGQL = {
   organizationJoinRequestChanged: {
     organizationRequests: Array<{
+      role: string;
       organizationByOrganizationId: {
         id: number;
         name: string;
@@ -40,6 +41,7 @@ export type OrganizationRequestsGQL = {
 };
 
 export type OrganizationRequests = Array<{
+  role: string;
   organizationByOrganizationId: {
     id: number;
     name: string;
