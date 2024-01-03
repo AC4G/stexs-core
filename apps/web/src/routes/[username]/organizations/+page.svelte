@@ -197,12 +197,19 @@
         {#if organizationsMemberQueryStore.data && organizationsMemberQueryStore.data.length > 0}
             {#each organizationsMemberQueryStore.data as organizationMember (organizationMember.organizations.id)}
                 <div class="flex space-x-4 px-4 py-2 flex-row border border-solid border-surface-600 rounded-lg items-center justify-between">
-                    <a href="/" class="flex flex-row items-center space-x-4 group">
-                        <div class="p-0 aspect-square h-[80px] w-[80px] rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer flex items-center justify-center transition group-hover:bg-surface-600">
-                            <OrganizationLogo {stexs} organizationId={organizationMember.organizations.id} alt={organizationMember.organizations.name} iconClass="text-[46px]" />
+                        <div class="flex flex-row items-center space-x-4 group">
+                            <a href="/organizations/{organizationMember.organizations.name}">
+                                <div class="aspect-square h-[80px] w-[80px] rounded-md bg-surface-700 border border-solid border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600">
+                                    <OrganizationLogo {stexs} organizationId={organizationMember.organizations.id} alt={organizationMember.organizations.name} iconClass="text-[46px]" />
+                                </div>
+                            </a>
+                            <div class="flex flex-col space-y-1">
+                                <a href="/organizations/{organizationMember.organizations.name}" class="text-secondary-500 group-hover:text-secondary-400 transition break-all">
+                                    {organizationMember.organizations.name}
+                                </a>
+                                <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit">{organizationMember.role}</span>
+                            </div>
                         </div>
-                        <p class="text-secondary-500 group-hover:text-secondary-400 transition break-all">{organizationMember.organizations.name}</p>
-                    </a>
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">
                         {#if $userStore?.id === $profileStore?.userId}
                             {#if (organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin')}

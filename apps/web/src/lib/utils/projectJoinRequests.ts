@@ -1,0 +1,70 @@
+import type { Writable } from 'svelte/store';
+import { stexs } from '../../stexsClient';
+import type { ToastSettings } from '@skeletonlabs/skeleton';
+import type { Profile } from '$lib/stores/profile';
+
+export async function acceptProjectJoinRequest(
+    userId: string,
+    projectId: number,
+    projectName: string,
+    organizationName: string,
+    role: string,
+    flash: Writable<ToastSettings>,
+    profileStore: Writable<Profile | null>
+) {
+    const { error } = await stexs
+        .from('project_members')
+        .insert([
+            {
+                member_id: userId,
+                project_id: projectId,
+                role
+            }
+        ]);
+
+    if (error) {
+        flash.set({
+            message: `Could not join ${projectName} project from ${organizationName} organization. Try out again.`,
+            classes: 'variant-ghost-error',
+            timeout: 5000,
+        });
+    } else {
+        profileStore.update((profile: Profile | null) => {
+            return {
+              ...profile!,
+              refetchOrganizationsTrigger: !profile!.refetchOrganizationsTrigger
+            };
+        });
+        flash.set({
+            message: `You are now member of ${projectName} project from ${organizationName} organization.`,
+            classes: 'variant-ghost-success',
+            timeout: 5000,
+        });
+    }
+}
+
+export async function deleteProjectJoinRequest(
+    userId: string,
+    projectId: number,
+    flash: Writable<ToastSettings>
+) {
+    const { error } = await stexs
+        .from('project_requests')
+        .delete()
+        .eq('addressee_id', userId)
+        .eq('project_id', projectId);
+
+    if (error) {
+        flash.set({
+            message: `Could not delete project join request. Try out again.`,
+            classes: 'variant-ghost-error',
+            timeout: 5000,
+        });
+    } else {
+        flash.set({
+            message: `Project join request successfuly deleted.`,
+            classes: 'variant-ghost-success',
+            timeout: 5000,
+        });
+    }
+}
