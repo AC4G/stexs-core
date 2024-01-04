@@ -1,3 +1,17 @@
+CREATE OR REPLACE FUNCTION public.is_user_private(_user_id UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+    is_private_value BOOLEAN;
+BEGIN
+    SELECT is_private
+    INTO is_private_value
+    FROM public.profiles
+    WHERE user_id = _user_id;
+
+    RETURN is_private_value;
+END;
+$$ LANGUAGE plpgsql;
+
 ALTER TABLE public.blocked ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY blocked_select
@@ -172,11 +186,11 @@ CREATE POLICY friends_select
             OR 
             (
                 auth.grant() = 'password' AND
-                EXISTS (
+                NOT EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE (p.user_id = user_id AND p.is_private = FALSE) AND
-                          (p.user_id = friend_id AND p.is_private = FALSE)
+                    WHERE (p.user_id = user_id AND p.is_private = TRUE) OR
+                          (p.user_id = friend_id AND p.is_private = TRUE)
                 ) AND
                 NOT EXISTS (
                     SELECT 1
@@ -261,41 +275,39 @@ CREATE POLICY inventories_select
     USING (
         (
             (
-                auth.grant() IS NULL AND
-                NOT EXISTS (
-                    SELECT 1
-                    FROM public.profiles AS p
-                    WHERE p.user_id = user_id AND p.is_private = TRUE
+                auth.grant() = 'password' AND
+                (
+                    auth.uid() = user_id OR
+                    EXISTS (
+                        SELECT 1 
+                        FROM public.friends AS fr
+                        WHERE fr.user_id = auth.uid() 
+                        AND fr.friend_id = user_id
+                    ) OR
+                    (
+                        NOT public.is_user_private(user_id) AND
+                        NOT EXISTS (
+                            SELECT 1
+                            FROM public.blocked AS b
+                            WHERE b.blocker_id = user_id AND b.blocked_id = auth.uid()
+                            UNION
+                            SELECT 1
+                            FROM public.blocked AS b
+                            WHERE b.blocker_id = auth.uid() AND b.blocked_id = user_id
+                        )
+                    )
                 )
+            )
+            OR
+            (
+                auth.grant() IS NULL AND
+                NOT public.is_user_private(user_id)
             )
             OR
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
                 'inventory.read' = ANY(auth.scopes())
-            )
-            OR 
-            (
-                auth.grant() = 'password' AND
-                user_id = ANY(SELECT friend_id FROM public.friends_of_current_user)
-            )
-            OR
-            (
-                auth.grant() = 'password' AND
-                EXISTS (
-                    SELECT 1
-                    FROM public.profiles AS p
-                    WHERE p.user_id = user_id AND p.is_private = FALSE
-                ) AND
-                NOT EXISTS (
-                    SELECT 1
-                    FROM public.blocked AS b
-                    WHERE b.blocker_id = user_id AND b.blocked_id = auth.uid()
-                    UNION
-                    SELECT 1
-                    FROM public.blocked AS b
-                    WHERE b.blocker_id = auth.uid() AND b.blocked_id = user_id
-                )
             )
         )
     );
@@ -1368,32 +1380,42 @@ CREATE POLICY project_members_delete
         )
     );
 
+CREATE OR REPLACE FUNCTION public.is_user_allowed_to_join_project(_project_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN (
+        auth.grant() = 'password' AND
+        auth.uid() = _member_id AND
+        (
+            EXISTS (
+                SELECT 1
+                FROM public.project_requests
+                WHERE 
+                    project_id = _project_id AND 
+                    addressee_id = auth.uid() AND
+                    role = _role
+            )
+            OR
+            (
+                NOT EXISTS (
+                    SELECT 1
+                    FROM public.project_members
+                    WHERE 
+                        project_id = _project_id AND
+                        role = 'Owner'
+                ) AND
+                _role = 'Owner'
+            )
+        )
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 CREATE POLICY project_members_insert
     ON public.project_members
     AS PERMISSIVE
     FOR INSERT
     WITH CHECK (
-        auth.grant() = 'password' AND
-        auth.uid() = member_id AND
-        (
-            EXISTS (
-                SELECT 1
-                FROM public.project_requests prq
-                WHERE 
-                    prq.project_id = project_id AND 
-                    prq.addressee_id = auth.uid() AND
-                    prq.role = role
-            )
-            OR
-            EXISTS (
-                SELECT 1
-                FROM public.organization_members om
-                WHERE
-                    om.organization_id = organization_id AND
-                    om.member_id = auth.uid() AND
-                    om.role = 'Admin'
-            )
-        )
+        public.is_user_allowed_to_join_project(project_id, member_id, role)
     );
 
 

@@ -106,6 +106,23 @@
     toastStore.trigger($flash);
   });
 
+  stexs.auth.onAuthStateChange(event => {
+    if (event === 'SIGNED_IN') {
+      const session = stexs.auth.getSession();
+      userStore.set({
+        id: session.user.id,
+        username: session.user.raw_user_meta_data.username
+      })
+      signedIn = true;
+    }
+
+    if (event === 'SIGNED_OUT') {
+      userStore.set(null);
+      signedIn = false;
+      goto('/');
+    }
+  });
+
   onMount(async () => {
     const session = stexs.auth.getSession();
 
@@ -185,23 +202,6 @@
         }
       }
     });
-  });
- 
-  stexs.auth.onAuthStateChange(event => {
-    if (event === 'SIGNED_IN') {
-      const session = stexs.auth.getSession();
-      userStore.set({
-        id: session.user.id,
-        username: session.user.raw_user_meta_data.username
-      })
-      signedIn = true;
-    }
-
-    if (event === 'SIGNED_OUT') {
-      userStore.set(null);
-      signedIn = false;
-      goto('/');
-    }
   });
 
   $: notifications = {
@@ -324,7 +324,7 @@
                       {#each searchedOrganizationRequests as organizationRequest}
                         <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
                           <a href="/organizations/{organizationRequest.organizationByOrganizationId.name}" class="pt-1 {$page.url.pathname === `/organizations/${organizationRequest.organizationByOrganizationId.name}` && 'pointer-events-none'}">
-                            <OrganizationLogo {stexs} alt={organizationRequest.organizationByOrganizationId.name} organizationId={organizationRequest.organizationByOrganizationId.id} class="w-[55px] rounded-md border border-solid border-surface-500 {$page.url.pathname === `/organizations/${organizationRequest.organizationByOrganizationId.name}` && '!border-primary-500'}" />
+                            <OrganizationLogo {stexs} alt={organizationRequest.organizationByOrganizationId.name} organizationId={organizationRequest.organizationByOrganizationId.id} class="!w-[55px] rounded-md border border-solid border-surface-500 {$page.url.pathname === `/organizations/${organizationRequest.organizationByOrganizationId.name}` && '!border-primary-500'}" />
                           </a>
                           <div class="grid grid-rows-2 col-span-2 w-full px-1 space-y-1">
                             <div class="flex flex-row space-x-1">
@@ -347,17 +347,17 @@
                 {#if notifications.projectRequests.count === 0}
                   <p class="text-[16px] text-center p-4">No project join requests received</p>
                 {:else}
-                  <Search size="md" placeholder="Project Name" bind:value={projectRequestsSearch} class="!bg-surface-500" />
+                  <Search size="md" placeholder="Project or Organization Name" bind:value={projectRequestsSearch} class="!bg-surface-500" />
                   {#if searchedProjectRequests.length > 0}
                     <div class="max-h-[300px] overflow-auto">
                       {#each searchedProjectRequests as projectRequest}
                         <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
                           <a href="/organizations/{projectRequest.projectByProjectId.organizationByOrganizationId.name}/projects/{projectRequest.projectByProjectId.name}" class="pt-1 {$page.url.pathname === `/organizations/${projectRequest.projectByProjectId.organizationByOrganizationId.name}/projects/${projectRequest.projectByProjectId.name}` && 'pointer-events-none'}">
-                            <ProjectLogo {stexs} alt={projectRequest.projectByProjectId.name} projectId={projectRequest.projectByProjectId.id} class="w-[55px] rounded-md border border-solid border-surface-500 {$page.url.pathname === `/organizations/${projectRequest.projectByProjectId.name}` && '!border-primary-500'}" />
+                            <ProjectLogo {stexs} alt={projectRequest.projectByProjectId.name} projectId={projectRequest.projectByProjectId.id} class="!w-[55px] rounded-md border border-solid border-surface-500 {$page.url.pathname === `/organizations/${projectRequest.projectByProjectId.name}` && '!border-primary-500'}" />
                           </a>
                           <div class="grid grid-rows-2 col-span-2 w-full px-1 space-y-1">
                             <div class="flex flex-row space-x-1">
-                              <Truncated text={projectRequest.projectByProjectId.organizationByOrganizationId.name + '/' + projectRequest.projectByProjectId.name} maxLength={10} class="text-[16px] w-full text-left h-fit" title={projectRequest.projectByProjectId.organizationByOrganizationId.name + '/' + projectRequest.projectByProjectId.name} />
+                              <Truncated text={projectRequest.projectByProjectId.name} maxLength={10} class="text-[16px] w-full text-left h-fit" title={projectRequest.projectByProjectId.organizationByOrganizationId.name + '/' + projectRequest.projectByProjectId.name} />
                               <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit">{projectRequest.role}</span>
                             </div>
                             <div class="flex justify-between">
@@ -375,7 +375,7 @@
               {/if}
             </Dropdown>
             <button use:popup={avatarPopup}>
-              <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[48px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
+              <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
               <div class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px]" data-popup="avatarPopup">
                 <p class="text-[14px] break-all">{$userStore?.username}</p>
               </div>

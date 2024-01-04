@@ -34,7 +34,8 @@ CREATE TABLE public.items (
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_items_combination UNIQUE (name, project_id),
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
-    CONSTRAINT parameter_size_limit CHECK (pg_column_size(parameter) <= 1048576)
+    CONSTRAINT parameter_size_limit CHECK (pg_column_size(parameter) <= 1048576),
+    CONSTRAINT name_allowed_characters CHECK (name ~ '^[^\s]+(\s[^\s]+)*$')
 );
 
 GRANT INSERT (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
@@ -294,7 +295,7 @@ GRANT DELETE ON TABLE public.organization_members TO authenticated;
 GRANT SELECT ON TABLE public.organization_members TO anon;
 GRANT SELECT ON TABLE public.organization_members TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.organization_members_insert()
+CREATE OR REPLACE FUNCTION public.delete_organization_request()
 RETURNS TRIGGER AS $$
 BEGIN
     DELETE FROM public.organization_requests
@@ -304,10 +305,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER organization_members_insert_trigger
+CREATE TRIGGER delete_organization_request_trigger
 AFTER INSERT ON public.organization_members
 FOR EACH ROW 
-EXECUTE FUNCTION public.organization_members_insert();
+EXECUTE FUNCTION public.delete_organization_request();
 
 
 
@@ -390,6 +391,21 @@ GRANT UPDATE (role) ON TABLE public.project_members TO authenticated;
 GRANT DELETE ON TABLE public.project_members TO authenticated;
 GRANT SELECT ON TABLE public.project_members TO anon;
 GRANT SELECT ON TABLE public.project_members TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.delete_project_request()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM public.project_requests
+    WHERE project_id = NEW.project_id AND addressee_id = NEW.member_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER project_members_insert_trigger
+AFTER INSERT ON public.project_members
+FOR EACH ROW 
+EXECUTE FUNCTION public.delete_project_request();
 
 
 

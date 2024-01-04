@@ -211,7 +211,7 @@ CREATE TRIGGER encrypt_password_trigger
 BEFORE INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION auth.encrypt_password();
-
+ 
 
 
 CREATE TABLE public.profiles (
@@ -220,7 +220,8 @@ CREATE TABLE public.profiles (
     is_private BOOLEAN NOT NULL DEFAULT FALSE,
     accept_friend_requests BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT username_max_length CHECK (length(username) <= 20)
+    CONSTRAINT username_max_length CHECK (length(username) <= 20),
+    CONSTRAINT username_allowed_characters CHECK (username ~ '^[A-Za-z0-9._]+$')
 );
 
 GRANT UPDATE (username, is_private) ON TABLE public.profiles TO authenticated;
@@ -240,7 +241,9 @@ CREATE TABLE public.organizations (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
-    CONSTRAINT display_name_max_length CHECK (length(display_name) <= 50)
+    CONSTRAINT display_name_max_length CHECK (length(display_name) <= 50),
+    CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+$'),
+    CONSTRAINT display_name_allowed_characters CHECK (display_name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$')
 );
 
 GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
@@ -262,7 +265,8 @@ CREATE TABLE public.projects (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_project_combination UNIQUE (name, organization_id),
-    CONSTRAINT name_max_length CHECK (length(name) <= 50)
+    CONSTRAINT name_max_length CHECK (length(name) <= 50),
+    CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$')
 );
 
 GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
@@ -285,7 +289,8 @@ CREATE TABLE public.oauth2_apps (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id),
-    CONSTRAINT name_max_length CHECK (length(name) <= 50)
+    CONSTRAINT name_max_length CHECK (length(name) <= 50),
+    CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$')
 );
 
 GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
