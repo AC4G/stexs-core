@@ -1,17 +1,3 @@
-CREATE OR REPLACE FUNCTION public.is_user_private(_user_id UUID)
-RETURNS BOOLEAN AS $$
-DECLARE
-    is_private_value BOOLEAN;
-BEGIN
-    SELECT is_private
-    INTO is_private_value
-    FROM public.profiles
-    WHERE user_id = _user_id;
-
-    RETURN is_private_value;
-END;
-$$ LANGUAGE plpgsql;
-
 ALTER TABLE public.blocked ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY blocked_select
@@ -136,15 +122,16 @@ CREATE POLICY friend_requests_insert
 
 
 
-ALTER TABLE public.friends ENABLE ROW LEVEL SECURITY;
-
-CREATE VIEW public.friends_of_current_user AS
-SELECT friend_id
-FROM public.friends
-WHERE user_id = auth.uid();
-
-GRANT SELECT ON public.friends_of_current_user TO authenticated;
-GRANT SELECT ON public.friends_of_current_user TO anon;
+CREATE OR REPLACE FUNCTION public.is_selected_friend_a_friend_or_has_friend_with_current_user(_user_id UUID, _friend_id UUID) RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.friends AS f
+        WHERE f.user_id = auth.uid() AND f.friend_id = _user_id AND
+            f.user_id = auth.uid() AND f.friend_id = _friend_id
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE POLICY friends_select
     ON public.friends
@@ -157,8 +144,11 @@ CREATE POLICY friends_select
                 NOT EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE (p.user_id = user_id AND p.is_private = TRUE) OR
-                        (p.user_id = friend_id AND p.is_private = TRUE)
+                    WHERE p.user_id = public.friends.user_id AND p.is_private = TRUE 
+                    UNION
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE p.user_id = public.friends.friend_id AND p.is_private = TRUE
                 )
             )
             OR
@@ -178,19 +168,16 @@ CREATE POLICY friends_select
             OR 
             (
                 auth.grant() = 'password' AND
-                (
-                    user_id = ANY(SELECT friend_id FROM public.friends_of_current_user) OR
-                    friend_id = ANY(SELECT friend_id FROM public.friends_of_current_user)
-                )
+                public.is_selected_friend_a_friend_or_has_friend_with_current_user(user_id, friend_id)
             )
             OR 
             (
                 auth.grant() = 'password' AND
-                NOT EXISTS (
+                EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE (p.user_id = user_id AND p.is_private = TRUE) OR
-                          (p.user_id = friend_id AND p.is_private = TRUE)
+                    WHERE p.user_id = public.friends.user_id AND p.is_private = FALSE AND
+                          p.user_id = public.friends.friend_id AND p.is_private = FALSE
                 ) AND
                 NOT EXISTS (
                     SELECT 1
@@ -256,16 +243,6 @@ CREATE POLICY friends_insert
 
 
 
-CREATE OR REPLACE VIEW public.project_ids_by_jwt_organization AS
-SELECT id
-FROM public.projects
-WHERE organization_id = (auth.jwt()->>'organization_id')::INT;
-
-GRANT SELECT ON public.project_ids_by_jwt_organization TO authenticated;
-GRANT SELECT ON public.project_ids_by_jwt_organization TO anon;
-
-
-
 ALTER TABLE public.inventories ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY inventories_select
@@ -285,7 +262,11 @@ CREATE POLICY inventories_select
                         AND fr.friend_id = user_id
                     ) OR
                     (
-                        NOT public.is_user_private(user_id) AND
+                        EXISTS (
+                            SELECT 1
+                            FROM public.profiles AS p
+                            WHERE p.user_id = public.inventories.user_id AND p.is_private IS FALSE
+                        ) AND
                         NOT EXISTS (
                             SELECT 1
                             FROM public.blocked AS b
@@ -301,7 +282,11 @@ CREATE POLICY inventories_select
             OR
             (
                 auth.grant() IS NULL AND
-                NOT public.is_user_private(user_id)
+                EXISTS (
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE p.user_id = public.inventories.user_id AND p.is_private IS FALSE
+                )
             )
             OR
             (
@@ -311,6 +296,14 @@ CREATE POLICY inventories_select
             )
         )
     );
+
+CREATE OR REPLACE VIEW public.project_ids_by_jwt_organization AS
+SELECT id
+FROM public.projects
+WHERE organization_id = (auth.jwt()->>'organization_id')::INT;
+
+GRANT SELECT ON public.project_ids_by_jwt_organization TO authenticated;
+GRANT SELECT ON public.project_ids_by_jwt_organization TO anon;
 
 CREATE POLICY inventories_update
     ON public.inventories
@@ -1045,7 +1038,7 @@ CREATE POLICY profiles_select
     USING (
         (
             (
-                auth.grant() NOT IN ('client_credentials', 'authorization_code')
+                auth.grant() = 'password'
             )
             OR
             (

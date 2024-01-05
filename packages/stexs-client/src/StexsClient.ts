@@ -52,7 +52,7 @@ export default class StexsClient {
       createClient({
         url: config.graphQLWSUrl,
         connectionParams: () => {
-          const token = this._getAccessToken();
+          const token = this._getSession()?.access_token;
 
           let params = {};
 
@@ -106,9 +106,21 @@ export default class StexsClient {
     baseFetch: typeof fetch,
     input: RequestInfo,
     init?: RequestInit,
+    retryCount: number = 0
   ): Promise<Response> {
-    const accessToken = this._getAccessToken();
+    const session = this._getSession();
     const headers = new Headers(init?.headers);
+
+    if (retryCount === 100) {
+      throw Error('Max retries reached, access token still expired after waiting for refresh.');
+    }
+
+    if (retryCount < 100 && session && (session.expires * 1000 - 120 * 1000) <= Date.now()) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return this._fetchWithAuth(baseFetch, input, init);
+    }
+
+    const accessToken = session?.access_token;
 
     if (accessToken) {
       headers.set('Authorization', `Bearer ${accessToken}`);
@@ -117,12 +129,12 @@ export default class StexsClient {
     return baseFetch(input, { ...init, headers });
   }
 
-  private _getAccessToken(): string | null {
+  private _getSession(): Session | null {
     if (typeof window === 'undefined') {
       return null;
     }
 
     const session: Session = this.auth.getSession();
-    return session?.access_token;
+    return session;
   }
 }
