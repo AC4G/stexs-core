@@ -18,19 +18,19 @@ import { isExpired } from 'utils-ts';
 export async function authorizationCodeController(req: Request, res: Response) {
   const { code, client_id, client_secret: clientSecret } = req.body;
 
-  let userId, tokenId, scopes;
+  let userId, tokenId, scopes, organization_id;
 
   try {
     const { rowCount, rows } = await db.query(
       `
             WITH app_info AS (
-                SELECT id
+                SELECT id, organization_id
                 FROM public.oauth2_apps
                 WHERE client_id = $2::uuid
                 AND client_secret = $3::text
             ),
             token_info AS (
-                SELECT aot.id, aot.user_id, aot.created_at
+                SELECT aot.id, aot.user_id, aot.created_at, ai.organization_id
                 FROM auth.oauth2_authorization_tokens AS aot
                 JOIN app_info AS ai ON aot.app_id = ai.id
                 WHERE aot.token = $1::uuid
@@ -41,7 +41,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
                 JOIN public.scopes AS s ON aot.scope_id = s.id
                 WHERE aot.token_id IN (SELECT id FROM token_info)
             )
-            SELECT id, user_id, scopes
+            SELECT id, user_id, scopes, created_at, organization_id
             FROM token_info
             CROSS JOIN token_scopes;
         `,
@@ -82,7 +82,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
       );
     }
 
-    ({ id: tokenId, user_id: userId, scopes } = rows[0]);
+    ({ id: tokenId, user_id: userId, scopes, organization_id } = rows[0]);
 
     logger.info(
       `Authorization code validated successfully for user: ${userId} and client: ${client_id}`,
@@ -129,6 +129,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
         sub: userId,
         scopes,
         client_id,
+        organization_id
       },
       'authorization_code',
       refreshToken,
@@ -268,7 +269,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
 }
 
 export async function refreshTokenController(req: Request, res: Response) {
-  const { scopes, sub, client_id, jti } = req.auth!;
+  const { scopes, sub, client_id, organization_id, jti } = req.auth!;
 
   try {
     const { rowCount } = await db.query(
@@ -315,6 +316,7 @@ export async function refreshTokenController(req: Request, res: Response) {
         sub,
         scopes,
         client_id,
+        organization_id
       },
       'authorization_code',
       null,

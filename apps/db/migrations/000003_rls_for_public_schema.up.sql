@@ -127,8 +127,11 @@ BEGIN
     RETURN EXISTS (
         SELECT 1
         FROM public.friends AS f
-        WHERE f.user_id = auth.uid() AND f.friend_id = _user_id AND
-            f.user_id = auth.uid() AND f.friend_id = _friend_id
+        WHERE f.user_id = auth.uid() AND f.friend_id = _user_id 
+        UNION
+        SELECT 1
+        FROM public.friends AS f
+        WHERE f.user_id = auth.uid() AND f.friend_id = _friend_id
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -210,7 +213,7 @@ CREATE POLICY friends_delete
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'friends.delete' = ANY(auth.scopes())
+                'friend.delete' = ANY(auth.scopes())
             )
         )
     );
@@ -236,7 +239,7 @@ CREATE POLICY friends_insert
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'friends.write' = ANY(auth.scopes())
+                'friend.write' = ANY(auth.scopes())
             )
         )
     );
@@ -259,7 +262,7 @@ CREATE POLICY inventories_select
                         SELECT 1 
                         FROM public.friends AS fr
                         WHERE fr.user_id = auth.uid() 
-                        AND fr.friend_id = user_id
+                        AND fr.friend_id = public.inventories.user_id
                     ) OR
                     (
                         EXISTS (
@@ -310,22 +313,9 @@ CREATE POLICY inventories_update
     AS PERMISSIVE
     FOR UPDATE
     USING (
-        (
-            (
-                auth.grant() = 'authorization_code' AND
-                auth.uid() = user_id AND
-                'inventory.update' = ANY(auth.scopes()) AND
-                (SELECT project_id FROM public.items WHERE id = item_id) = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
-            )
-            OR 
-            (
-                auth.grant() = 'authorization_code' AND
-                auth.uid() = user_id AND
-                'inventory.update' = ANY(auth.scopes()) AND
-                (SELECT project_id FROM public.items WHERE id = item_id) <> ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
-                (amount < (SELECT amount FROM public.inventories i WHERE i.item_id = item_id AND i.user_id = auth.uid()))
-            )
-        )
+        auth.grant() = 'authorization_code' AND
+        auth.uid() = user_id AND
+        'inventory.update' = ANY(auth.scopes())
     );
     
 CREATE POLICY inventories_delete
@@ -345,8 +335,7 @@ CREATE POLICY inventories_insert
     WITH CHECK (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        'inventory.write' = ANY(auth.scopes()) AND
-        (SELECT project_id FROM public.items WHERE id = item_id) = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
+        'inventory.write' = ANY(auth.scopes())
     );
 
 
@@ -361,8 +350,7 @@ CREATE POLICY items_select
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'item.read' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
+                'item.read' = ANY(auth.scopes())
             )
             OR
             (

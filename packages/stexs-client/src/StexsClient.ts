@@ -51,14 +51,15 @@ export default class StexsClient {
     const wsLink = new GraphQLWsLink(
       createClient({
         url: config.graphQLWSUrl,
-        connectionParams: () => {
+        connectionParams: async () => {
+          await this._checkAndWaitForNewAccessToken();
+
           const token = this._getSession()?.access_token;
 
           let params = {};
 
           if (token) {
             params = {
-              ...params,
               Authorization: `Bearer ${token}`,
             };
           }
@@ -105,22 +106,12 @@ export default class StexsClient {
   private async _fetchWithAuth(
     baseFetch: typeof fetch,
     input: RequestInfo,
-    init?: RequestInit,
-    retryCount: number = 0
+    init?: RequestInit
   ): Promise<Response> {
-    const session = this._getSession();
+    await this._checkAndWaitForNewAccessToken();
+
     const headers = new Headers(init?.headers);
-
-    if (retryCount === 100) {
-      throw Error('Max retries reached, access token still expired after waiting for refresh.');
-    }
-
-    if (retryCount < 100 && session && (session.expires * 1000 - 120 * 1000) <= Date.now()) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      return this._fetchWithAuth(baseFetch, input, init);
-    }
-
-    const accessToken = session?.access_token;
+    const accessToken = this._getSession()?.access_token;
 
     if (accessToken) {
       headers.set('Authorization', `Bearer ${accessToken}`);
@@ -129,12 +120,25 @@ export default class StexsClient {
     return baseFetch(input, { ...init, headers });
   }
 
+  private async _checkAndWaitForNewAccessToken(retryCount: number = 0) {
+    const session = this._getSession();
+    const maxRetries = 100;
+
+    if (retryCount === maxRetries) {
+      throw Error(`Max retries (${maxRetries}) reached, access token still expired after waiting for refresh.`);
+    }
+
+    if (retryCount < maxRetries && session && (session.expires * 1000 - 120 * 1000) <= Date.now()) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return this._checkAndWaitForNewAccessToken(retryCount + 1);
+    }
+  }
+
   private _getSession(): Session | null {
     if (typeof window === 'undefined') {
       return null;
     }
 
-    const session: Session = this.auth.getSession();
-    return session;
+    return this.auth.getSession();
   }
 }

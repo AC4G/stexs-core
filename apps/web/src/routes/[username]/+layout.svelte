@@ -404,7 +404,7 @@
                                     </div>
                                 {:else if friendRequestSend}
                                     <Button on:click={() => revokeFriendRequestModal($userStore.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
-                                {:else if $profileQuery.data.accept_friend_requests}
+                                {:else if $profileQuery.data.accept_friend_requests && isFriend === false}
                                     <Button on:click={async () => await sendFriendRequest(username, $userStore.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
                                 {/if}
                             {/if}
