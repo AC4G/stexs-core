@@ -1156,19 +1156,38 @@ CREATE POLICY project_requests_select
                     SELECT 1
                     FROM public.project_members pm
                     WHERE
-                        pm.project_id = project_id AND
+                        pm.project_id = public.project_requests.project_id AND
                         pm.member_id = auth.uid() AND
-                        pm.role IN ('Admin', 'Moderator')
+                        pm.role IN ('Owner', 'Admin')
                 )
             )
             OR
             (
                 auth.grant() = 'client_credentials' AND
                 'project.requests.read' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
+                EXISTS (
+                    SELECT 1
+                    FROM public.projects AS p
+                    WHERE
+                        p.id = project_id AND
+                        p.organization_id = (auth.jwt()->>'organization_id')::INT
+                )
             )
         )
     );
+
+CREATE OR REPLACE FUNCTION public.is_project_request_with_role_owner_or_admin(_project_id integer, _addressee_id UUID) RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.organization_requests AS orq
+        WHERE 
+            orq.organization_id = _organization_id AND 
+            orq.addressee_id = _addressee_id AND 
+            orq.role IN ('Owner', 'Admin')
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE POLICY project_requests_update
     ON public.project_requests
@@ -1183,9 +1202,9 @@ CREATE POLICY project_requests_update
                         SELECT 1
                         FROM public.project_members pm
                         WHERE
-                            pm.project_id = project_id AND
+                            pm.project_id = public.project_requests.project_id AND
                             pm.member_id = auth.uid() AND
-                            pm.role = 'Admin'
+                            pm.role = 'Owner'
                     )
                     OR
                     (
@@ -1193,11 +1212,12 @@ CREATE POLICY project_requests_update
                             SELECT 1
                             FROM public.project_members pm
                             WHERE
-                                pm.project_id = project_id AND
+                                pm.project_id = public.project_requests.project_id AND
                                 pm.member_id = auth.uid() AND
-                                pm.role = 'Moderator'
+                                pm.role = 'Admin'
                         ) AND
-                        role NOT IN ('Admin', 'Moderator')
+                        role NOT IN ('Owner', 'Admin') AND 
+                        public.is_project_request_with_role_owner_or_admin(project_id, addressee_id)
                     )
                 )
             )
@@ -1205,8 +1225,15 @@ CREATE POLICY project_requests_update
             (
                 auth.grant() = 'client_credentials' AND
                 'project.requests.update' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
-                role NOT IN ('Admin', 'Moderator')
+                EXISTS (
+                    SELECT 1
+                    FROM public.projects AS p
+                    WHERE
+                        p.id = project_id AND
+                        p.organization_id = (auth.jwt()->>'organization_id')::INT
+                ) AND
+                role NOT IN ('Owner', 'Admin') AND
+                public.is_project_request_with_role_owner_or_admin(project_id, addressee_id)
             )
         )
     );
@@ -1225,9 +1252,9 @@ CREATE POLICY project_requests_delete
                         SELECT 1
                         FROM public.project_members pm
                         WHERE
-                            pm.project_id = project_id AND
+                            pm.project_id = public.project_requests.project_id AND
                             pm.member_id = auth.uid() AND
-                            pm.role = 'Admin'
+                            pm.role = 'Owner'
                     )
                     OR
                     (
@@ -1235,11 +1262,11 @@ CREATE POLICY project_requests_delete
                             SELECT 1
                             FROM public.project_members pm
                             WHERE
-                                pm.project_id = project_id AND
+                                pm.project_id = public.project_requests.project_id AND
                                 pm.member_id = auth.uid() AND
-                                pm.role = 'Moderator'
+                                pm.role = 'Admin'
                         ) AND
-                        role NOT IN ('Admin', 'Moderator')
+                        role NOT IN ('Owner', 'Admin')
                     )
                 )
             )
@@ -1247,8 +1274,14 @@ CREATE POLICY project_requests_delete
             (
                 auth.grant() = 'client_credentials' AND
                 'project.requests.delete' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
-                role NOT IN ('Admin', 'Moderator')
+                EXISTS (
+                    SELECT 1
+                    FROM public.projects AS p
+                    WHERE
+                        p.id = project_id AND
+                        p.organization_id = (auth.jwt()->>'organization_id')::INT
+                ) AND
+                role NOT IN ('Owner', 'Admin')
             )
         )
     );
@@ -1263,8 +1296,8 @@ CREATE POLICY project_requests_insert
                 SELECT 1
                 FROM public.project_members pm
                 WHERE
-                    pm.project_id = project_id AND
-                    pm.member_id = member_id
+                    pm.project_id = public.project_requests.project_id AND
+                    pm.member_id = addressee_id
             ) AND
             (
                 (
@@ -1275,9 +1308,9 @@ CREATE POLICY project_requests_insert
                             SELECT 1
                             FROM public.project_members pm
                             WHERE
-                                pm.project_id = project_id AND
+                                pm.project_id = public.project_requests.project_id AND
                                 pm.member_id = auth.uid() AND
-                                pm.role = 'Admin'
+                                pm.role = 'Owner'
                         )
                         OR
                         (
@@ -1285,11 +1318,11 @@ CREATE POLICY project_requests_insert
                                 SELECT 1
                                 FROM public.project_members pm
                                 WHERE
-                                    pm.project_id = project_id AND
+                                    pm.project_id = public.project_requests.project_id AND
                                     pm.member_id = auth.uid() AND
-                                    pm.role = 'Moderator'
+                                    pm.role = 'Admin'
                             ) AND
-                            role NOT IN ('Admin', 'Moderator')
+                            role NOT IN ('Owner', 'Admin')
                         )
                     )
                 )
@@ -1297,8 +1330,14 @@ CREATE POLICY project_requests_insert
                 (
                     auth.grant() = 'client_credentials' AND
                     'project.requests.write' = ANY(auth.scopes()) AND
-                    project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization) AND
-                    role NOT IN ('Admin', 'Moderator')
+                    EXISTS (
+                        SELECT 1
+                        FROM public.projects AS p
+                        WHERE
+                            p.id = project_id AND
+                            p.organization_id = (auth.jwt()->>'organization_id')::INT
+                    ) AND
+                    role NOT IN ('Owner', 'Admin')
                 )
             )
         )
