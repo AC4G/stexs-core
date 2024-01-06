@@ -369,7 +369,12 @@ CREATE POLICY items_update
             (
                 auth.grant() = 'client_credentials' AND
                 'item.update' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
+                EXISTS (
+                    SELECT 1
+                    FROM public.projects AS p
+                    WHERE p.id = project_id
+                        AND p.organization_id = (auth.jwt()->>'organization_id')::INT
+                )
             )
             OR
             (
@@ -378,9 +383,9 @@ CREATE POLICY items_update
                     SELECT 1
                     FROM public.project_members pm
                     WHERE
-                        pm.project_id = project_id AND
+                        pm.project_id = public.items.project_id AND
                         pm.member_id = auth.uid() AND
-                        pm.role IN ('Admin', 'Moderator')
+                        pm.role IN ('Owner', 'Admin')
                 )
             )
         )
@@ -395,7 +400,12 @@ CREATE POLICY items_delete
             (
                 auth.grant() = 'client_credentials' AND
                 'item.delete' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
+                EXISTS (
+                    SELECT 1
+                    FROM public.projects AS p
+                    WHERE p.id = project_id
+                        AND p.organization_id = (auth.jwt()->>'organization_id')::INT
+                )
             )
             OR
             (
@@ -404,9 +414,9 @@ CREATE POLICY items_delete
                     SELECT 1
                     FROM public.project_members pm
                     WHERE
-                        pm.project_id = project_id AND
+                        pm.project_id = public.items.project_id AND
                         pm.member_id = auth.uid() AND
-                        pm.role IN ('Admin', 'Moderator')
+                        pm.role IN ('Owner', 'Admin')
                 )
             )
         )
@@ -421,7 +431,12 @@ CREATE POLICY items_insert
             (
                 auth.grant() = 'client_credentials' AND
                 'item.write' = ANY(auth.scopes()) AND
-                project_id = ANY(SELECT id FROM public.project_ids_by_jwt_organization)
+                EXISTS (
+                    SELECT 1
+                    FROM public.projects AS p
+                    WHERE p.id = project_id
+                        AND p.organization_id = (auth.jwt()->>'organization_id')::INT
+                )
             )
             OR
             (
@@ -430,9 +445,9 @@ CREATE POLICY items_insert
                     SELECT 1
                     FROM public.project_members pm
                     WHERE
-                        pm.project_id = project_id AND
+                        pm.project_id = public.items.project_id AND
                         pm.member_id = auth.uid() AND
-                        pm.role IN ('Admin', 'Moderator')
+                        pm.role IN ('Owner', 'Admin')
                 )
             )
         )
