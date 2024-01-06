@@ -39,5 +39,6 @@ INSERT INTO public.scopes (name, type) VALUES
     ('organization.logo.write', 'client'),
     ('organization.logo.delete', 'client'),
     ('project.logo.write', 'client'),
-    ('project.logo.delete', 'client');
+    ('project.logo.delete', 'client'),
+    ('scope.read', 'client');
     

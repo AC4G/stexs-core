@@ -453,8 +453,6 @@ CREATE POLICY items_insert
         )
     );
 
-
-
 ALTER TABLE public.oauth2_app_scopes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY oauth2_app_scopes_select
@@ -462,7 +460,11 @@ CREATE POLICY oauth2_app_scopes_select
     AS PERMISSIVE
     FOR SELECT
     USING (
-        auth.grant() = 'password'
+        auth.grant() = 'password' OR
+        (
+            auth.grant() = 'client_credentials' AND
+            'scope.read' = ANY(auth.scopes())
+        )
     );
 
 CREATE POLICY oauth2_app_scopes_delete
@@ -472,17 +474,13 @@ CREATE POLICY oauth2_app_scopes_delete
     USING (
         auth.grant() = 'password' AND
         EXISTS (
-            WITH app AS (
-                SELECT oa.organization_id
-                FROM public.oauth2_apps oa
-                WHERE oa.id = app_id
-            )
             SELECT 1
             FROM public.organization_members om
+            JOIN public.oauth2_apps oa ON om.organization_id = oa.organization_id
             WHERE
-                om.organization_id = (SELECT organization_id FROM app) AND
+                oa.id = app_id AND
                 om.member_id = auth.uid() AND
-                om.role IN ('Admin', 'Moderator')
+                om.role IN ('Owner', 'Admin')
         )
     );
 
@@ -493,17 +491,13 @@ CREATE POLICY oauth2_app_scopes_insert
     WITH CHECK (
         auth.grant() = 'password' AND 
         EXISTS (
-            WITH app AS (
-                SELECT oa.organization_id
-                FROM public.oauth2_apps oa
-                WHERE oa.id = app_id
-            )
             SELECT 1
             FROM public.organization_members om
+            JOIN public.oauth2_apps oa ON om.organization_id = oa.organization_id
             WHERE
-                om.organization_id = (SELECT organization_id FROM app) AND
+                oa.id = app_id AND
                 om.member_id = auth.uid() AND
-                om.role IN ('Admin', 'Moderator')
+                om.role IN ('Owner', 'Admin')
         )
     );
 

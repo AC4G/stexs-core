@@ -358,7 +358,8 @@ CREATE TABLE public.scopes (
     name VARCHAR(200) NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMPTZ
+    updated_at TIMESTAMPTZ,
+    CONSTRAINT scope_type CHECK (type IN ('user', 'client'))
 );
 
 GRANT SELECT ON TABLE public.scopes TO authenticated;
