@@ -61,7 +61,10 @@ CREATE POLICY friend_requests_select
     AS PERMISSIVE
     FOR SELECT
     USING (
-        (auth.uid() = requester_id OR auth.uid() = addressee_id) AND
+        (
+            auth.uid() = requester_id OR 
+            auth.uid() = addressee_id
+        ) AND
         (
             auth.grant() = 'password' OR
             (
@@ -76,7 +79,10 @@ CREATE POLICY friend_requests_delete
     AS PERMISSIVE
     FOR DELETE
     USING (
-        (auth.uid() = requester_id OR auth.uid() = addressee_id) AND
+        (
+            auth.uid() = requester_id OR 
+            auth.uid() = addressee_id
+        ) AND
         (
             auth.grant() = 'password' OR
             (
@@ -94,8 +100,10 @@ CREATE POLICY friend_requests_insert
         auth.uid() <> addressee_id AND
         NOT EXISTS (
             SELECT 1
-            FROM public.friends
-            WHERE user_id = auth.uid() AND friend_id = addressee_id
+            FROM public.friends AS f
+            WHERE 
+                f.user_id = auth.uid() AND 
+                f.friend_id = addressee_id
         ) AND 
         (
             auth.grant() = 'password' OR
@@ -106,17 +114,23 @@ CREATE POLICY friend_requests_insert
         ) AND 
         NOT EXISTS (
             SELECT 1
-            FROM public.blocked
-            WHERE blocker_id = addressee_id AND blocked_id = requester_id
+            FROM public.blocked AS b
+            WHERE 
+                b.blocker_id = addressee_id AND 
+                b.blocked_id = requester_id
             UNION
             SELECT 1
-            FROM public.blocked
-            WHERE blocker_id = requester_id AND blocked_id = addressee_id
+            FROM public.blocked AS b
+            WHERE 
+                b.blocker_id = requester_id AND 
+                b.blocked_id = addressee_id
         ) AND
         NOT EXISTS (
             SELECT 1
-            FROM public.profiles
-            WHERE user_id = addressee_id AND accept_friend_requests = FALSE
+            FROM public.profiles AS p
+            WHERE 
+                p.user_id = addressee_id AND 
+                p.accept_friend_requests IS FALSE
         )
     );
 
@@ -127,11 +141,15 @@ BEGIN
     RETURN EXISTS (
         SELECT 1
         FROM public.friends AS f
-        WHERE f.user_id = auth.uid() AND f.friend_id = _user_id 
+        WHERE 
+            f.user_id = auth.uid() AND 
+            f.friend_id = _user_id 
         UNION
         SELECT 1
         FROM public.friends AS f
-        WHERE f.user_id = auth.uid() AND f.friend_id = _friend_id
+        WHERE 
+            f.user_id = auth.uid() AND 
+            f.friend_id = _friend_id
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -147,11 +165,15 @@ CREATE POLICY friends_select
                 NOT EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = public.friends.user_id AND p.is_private = TRUE 
+                    WHERE 
+                        p.user_id = public.friends.user_id AND 
+                        p.is_private IS TRUE 
                     UNION
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = public.friends.friend_id AND p.is_private = TRUE
+                    WHERE 
+                        p.user_id = public.friends.friend_id AND 
+                        p.is_private IS TRUE
                 )
             )
             OR
@@ -179,25 +201,40 @@ CREATE POLICY friends_select
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = public.friends.user_id AND p.is_private = FALSE AND
-                          p.user_id = public.friends.friend_id AND p.is_private = FALSE
+                    WHERE 
+                        (
+                            p.user_id = public.friends.user_id AND 
+                            p.is_private IS FALSE
+                        ) AND
+                        (
+                            p.user_id = public.friends.friend_id AND 
+                            p.is_private IS FALSE
+                        )
                 ) AND
                 NOT EXISTS (
                     SELECT 1
                     FROM public.blocked AS b
-                    WHERE b.blocker_id = user_id AND b.blocked_id = auth.uid()
+                    WHERE 
+                        b.blocker_id = user_id AND 
+                        b.blocked_id = auth.uid()
                     UNION
                     SELECT 1
                     FROM public.blocked AS b
-                    WHERE b.blocker_id = auth.uid() AND b.blocked_id = user_id
+                    WHERE 
+                        b.blocker_id = auth.uid() AND
+                        b.blocked_id = user_id
                     UNION
                     SELECT 1
                     FROM public.blocked AS b
-                    WHERE b.blocker_id = friend_id AND b.blocked_id = auth.uid()
+                    WHERE 
+                        b.blocker_id = friend_id AND 
+                        b.blocked_id = auth.uid()
                     UNION
                     SELECT 1
                     FROM public.blocked AS b
-                    WHERE b.blocker_id = auth.uid() AND b.blocked_id = friend_id
+                    WHERE 
+                        b.blocker_id = auth.uid() AND 
+                        b.blocked_id = friend_id
                 )
             )
         )
@@ -208,7 +245,10 @@ CREATE POLICY friends_delete
     AS PERMISSIVE
     FOR DELETE
     USING (
-        (auth.uid() = user_id OR auth.uid() = friend_id) AND
+        (
+            auth.uid() = user_id OR 
+            auth.uid() = friend_id
+        ) AND
         (
             auth.grant() = 'password' OR
             (
@@ -226,14 +266,16 @@ CREATE POLICY friends_insert
         (auth.uid() = user_id OR auth.uid() = friend_id) AND
         EXISTS (
             SELECT 1
-            FROM public.friend_requests
+            FROM public.friend_requests AS fr
             WHERE
-                addressee_id = auth.uid() AND requester_id = friend_id
+                fr.addressee_id = auth.uid() AND 
+                fr.requester_id = friend_id
             UNION
             SELECT 1
-            FROM public.friend_requests
+            FROM public.friend_requests AS fr
             WHERE
-                addressee_id = auth.uid() AND requester_id = user_id
+                fr.addressee_id = auth.uid() AND 
+                fr.requester_id = user_id
         ) AND
         (
             auth.grant() = 'password' OR
@@ -261,23 +303,30 @@ CREATE POLICY inventories_select
                     EXISTS (
                         SELECT 1 
                         FROM public.friends AS fr
-                        WHERE fr.user_id = auth.uid() 
-                        AND fr.friend_id = public.inventories.user_id
+                        WHERE 
+                            fr.user_id = auth.uid() AND 
+                            fr.friend_id = public.inventories.user_id
                     ) OR
                     (
                         EXISTS (
                             SELECT 1
                             FROM public.profiles AS p
-                            WHERE p.user_id = public.inventories.user_id AND p.is_private IS FALSE
+                            WHERE 
+                                p.user_id = public.inventories.user_id AND 
+                                p.is_private IS FALSE
                         ) AND
                         NOT EXISTS (
                             SELECT 1
                             FROM public.blocked AS b
-                            WHERE b.blocker_id = user_id AND b.blocked_id = auth.uid()
+                            WHERE 
+                                b.blocker_id = user_id AND 
+                                b.blocked_id = auth.uid()
                             UNION
                             SELECT 1
                             FROM public.blocked AS b
-                            WHERE b.blocker_id = auth.uid() AND b.blocked_id = user_id
+                            WHERE 
+                                b.blocker_id = auth.uid() AND 
+                                b.blocked_id = user_id
                         )
                     )
                 )
@@ -288,7 +337,9 @@ CREATE POLICY inventories_select
                 EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = public.inventories.user_id AND p.is_private IS FALSE
+                    WHERE 
+                        p.user_id = public.inventories.user_id AND 
+                        p.is_private IS FALSE
                 )
             )
             OR
@@ -372,8 +423,9 @@ CREATE POLICY items_update
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
-                    WHERE p.id = project_id
-                        AND p.organization_id = (auth.jwt()->>'organization_id')::INT
+                    WHERE 
+                        p.id = project_id AND 
+                        p.organization_id = (auth.jwt()->>'organization_id')::INT
                 )
             )
             OR
@@ -403,8 +455,9 @@ CREATE POLICY items_delete
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
-                    WHERE p.id = project_id
-                        AND p.organization_id = (auth.jwt()->>'organization_id')::INT
+                    WHERE 
+                        p.id = project_id AND 
+                        p.organization_id = (auth.jwt()->>'organization_id')::INT
                 )
             )
             OR
@@ -434,8 +487,9 @@ CREATE POLICY items_insert
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
-                    WHERE p.id = project_id
-                        AND p.organization_id = (auth.jwt()->>'organization_id')::INT
+                    WHERE 
+                        p.id = project_id AND 
+                        p.organization_id = (auth.jwt()->>'organization_id')::INT
                 )
             )
             OR
@@ -500,8 +554,6 @@ CREATE POLICY oauth2_app_scopes_insert
                 om.role IN ('Owner', 'Admin')
         )
     );
-
-
 
 ALTER TABLE public.oauth2_apps ENABLE ROW LEVEL SECURITY;
 
