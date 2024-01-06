@@ -691,10 +691,11 @@ BEGIN
                     current_user_role = 'Owner' AND
                     NOT EXISTS (
                         SELECT 1
-                        FROM public.organization_members
-                        WHERE member_id = _member_id
-                        AND organization_id = _organization_id 
-                        AND role = 'Owner'
+                        FROM public.organization_members AS om
+                        WHERE 
+                            om.member_id = _member_id AND 
+                            om.organization_id = _organization_id AND 
+                            om.role = 'Owner'
                     )
                 )
                 OR
@@ -702,10 +703,11 @@ BEGIN
                     current_user_role = 'Admin' AND
                     NOT EXISTS (
                         SELECT 1
-                        FROM public.organization_members
-                        WHERE member_id = _member_id
-                        AND organization_id = _organization_id 
-                        AND role IN ('Owner', 'Admin')
+                        FROM public.organization_members AS om
+                        WHERE 
+                            om.member_id = _member_id AND 
+                            om.organization_id = _organization_id AND 
+                            om.role IN ('Owner', 'Admin')
                     ) AND
                     _role NOT IN ('Owner', 'Admin')
                 )
@@ -719,10 +721,11 @@ BEGIN
             role NOT IN ('Owner', 'Admin') AND
             NOT EXISTS (
                 SELECT 1
-                FROM public.organization_members
-                WHERE organization_id = _organization_id
-                AND member_id = _member_id 
-                AND role IN ('Owner', 'Admin')
+                FROM public.organization_members AS om
+                WHERE 
+                    om.organization_id = _organization_id AND 
+                    om.member_id = _member_id AND 
+                    om.role IN ('Owner', 'Admin')
             )
         )
     );
@@ -743,8 +746,10 @@ DECLARE
 BEGIN
     SELECT role
     INTO current_user_role
-    FROM public.organization_members
-    WHERE member_id = auth.uid() AND organization_id = _organization_id;
+    FROM public.organization_members AS om
+    WHERE 
+        om.member_id = auth.uid() AND 
+        om.organization_id = _organization_id;
 
     RETURN (
         auth.grant() = 'password' AND
@@ -758,10 +763,10 @@ BEGIN
                 auth.uid() = _member_id AND
                 (
                     SELECT COUNT(*)
-                    FROM public.organization_members
+                    FROM public.organization_members AS om
                     WHERE
-                        organization_id = _organization_id AND
-                        role = 'Owner'
+                        om.organization_id = _organization_id AND
+                        om.role = 'Owner'
                 ) > 1 AND
                 _role = 'Owner'
             )
@@ -810,20 +815,20 @@ BEGIN
         (
             EXISTS (
                 SELECT 1
-                FROM public.organization_requests
+                FROM public.organization_requests AS orq
                 WHERE 
-                    organization_id = _organization_id AND 
-                    addressee_id = auth.uid() AND
-                    role = _role
+                    orq.organization_id = _organization_id AND 
+                    orq.addressee_id = auth.uid() AND
+                    orq.role = _role
             )
             OR
             (
                 NOT EXISTS (
                     SELECT 1
-                    FROM public.organization_members
+                    FROM public.organization_members AS om
                     WHERE 
-                        organization_id = _organization_id AND
-                        role = 'Owner'
+                        om.organization_id = _organization_id AND
+                        om.role = 'Owner'
                 ) AND
                 _role = 'Owner'
             )
