@@ -51,6 +51,7 @@ export type OrganizationRequests = Array<{
 export type ProjectRequestsGQL = {
   projectJoinRequestChanged: {
     projectRequests: Array<{
+      role: string;
       projectByProjectId: {
         id: number;
         name: string;
@@ -63,6 +64,7 @@ export type ProjectRequestsGQL = {
 };
 
 export type ProjectRequests = Array<{
+  role: string;
   projectByProjectId: {
     id: number;
     name: string;

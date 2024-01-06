@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRadial, popup } from '@skeletonlabs/skeleton';
 
   export let submitted: boolean = $$restProps.submitted || false;
   export let type: 'button' | 'submit' | 'reset' = 'button';

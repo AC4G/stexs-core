@@ -30,11 +30,13 @@ CREATE TABLE public.items (
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     is_private BOOLEAN DEFAULT FALSE NOT NULL,
+    is_unique BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_items_combination UNIQUE (name, project_id),
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
-    CONSTRAINT parameter_size_limit CHECK (pg_column_size(parameter) <= 1048576)
+    CONSTRAINT parameter_size_limit CHECK (pg_column_size(parameter) <= 1048576),
+    CONSTRAINT name_allowed_characters CHECK (name ~ '^[^\s]+(\s[^\s]+)*$')
 );
 
 GRANT INSERT (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
@@ -49,12 +51,23 @@ CREATE TABLE public.inventories (
     id SERIAL PRIMARY KEY,
     item_id INT REFERENCES public.items(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-    amount BIGINT DEFAULT 0 NOT NULL,
+    amount BIGINT DEFAULT 0,
     parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT parameter_size_limit CHECK(pg_column_size(parameter) <= 1048576)
+    CONSTRAINT parameter_size_limit CHECK (pg_column_size(parameter) <= 1048576),
+    CONSTRAINT is_unique_amount CHECK (is_unique_amount_check(item_id, amount))
 );
+
+CREATE OR REPLACE FUNCTION is_unique_amount_check(_item_id INT, _amount BIGINT)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN (
+        (_amount IS NULL AND (SELECT is_unique FROM public.items WHERE id = _item_id) IS TRUE) OR
+        (_amount IS NOT NULL AND (SELECT is_unique FROM public.items WHERE id = _item_id) IS FALSE)
+    );
+END;
+$$ LANGUAGE plpgsql;
 
 GRANT INSERT (item_id, user_id, amount, parameter) ON TABLE public.inventories TO authenticated;
 GRANT UPDATE (amount, parameter) ON TABLE public.inventories TO authenticated;
@@ -86,6 +99,93 @@ $$ LANGUAGE plpgsql;
 
 GRANT EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) TO anon;
 GRANT EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.check_inventory_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM public.projects p
+        JOIN public.items i ON p.id = i.project_id
+        WHERE i.id = NEW.item_id
+            AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
+    ) THEN
+        RETURN NEW;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM public.items AS i
+        WHERE i.id = NEW.item_id AND (
+            i.is_private IS TRUE OR
+            i.unique IS TRUE)
+    ) OR
+    NEW.amount > OLD.amount OR NEW.parameter IS DISTINCT FROM OLD.parameter THEN
+        RETURN NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_inventory_update_trigger
+BEFORE UPDATE ON public.inventories
+FOR EACH ROW 
+EXECUTE FUNCTION public.check_inventory_update();
+
+CREATE OR REPLACE FUNCTION public.check_inventory_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM public.projects p
+        JOIN public.items i ON p.id = i.project_id
+        WHERE i.id = NEW.item_id
+            AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
+    ) THEN
+        RETURN NEW;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM public.items AS i
+        WHERE i.id = NEW.item_id AND (
+            i.is_private IS TRUE OR
+            i.unique IS TRUE)
+    ) THEN
+        RETURN NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_inventory_delete_trigger
+BEFORE DELETE ON public.inventories
+FOR EACH ROW 
+EXECUTE FUNCTION public.check_inventory_delete();
+
+CREATE OR REPLACE FUNCTION public.check_inventory_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM public.projects p
+        JOIN public.items i ON p.id = i.project_id
+        WHERE i.id = NEW.item_id
+            AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
+    ) THEN
+        RETURN NEW;
+    END IF;
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_inventory_insert_trigger
+BEFORE INSERT ON public.inventories
+FOR EACH ROW 
+EXECUTE FUNCTION public.check_inventory_insert();
  
 
 
@@ -294,7 +394,7 @@ GRANT DELETE ON TABLE public.organization_members TO authenticated;
 GRANT SELECT ON TABLE public.organization_members TO anon;
 GRANT SELECT ON TABLE public.organization_members TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.organization_members_insert()
+CREATE OR REPLACE FUNCTION public.delete_organization_request()
 RETURNS TRIGGER AS $$
 BEGIN
     DELETE FROM public.organization_requests
@@ -304,10 +404,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER organization_members_insert_trigger
+CREATE TRIGGER delete_organization_request_trigger
 AFTER INSERT ON public.organization_members
 FOR EACH ROW 
-EXECUTE FUNCTION public.organization_members_insert();
+EXECUTE FUNCTION public.delete_organization_request();
 
 
 
@@ -390,6 +490,21 @@ GRANT UPDATE (role) ON TABLE public.project_members TO authenticated;
 GRANT DELETE ON TABLE public.project_members TO authenticated;
 GRANT SELECT ON TABLE public.project_members TO anon;
 GRANT SELECT ON TABLE public.project_members TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.delete_project_request()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM public.project_requests
+    WHERE project_id = NEW.project_id AND addressee_id = NEW.member_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER project_members_insert_trigger
+AFTER INSERT ON public.project_members
+FOR EACH ROW 
+EXECUTE FUNCTION public.delete_project_request();
 
 
 

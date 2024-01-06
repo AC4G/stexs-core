@@ -33,8 +33,7 @@
                 is_private,
                 accept_friend_requests
             `)
-            .eq('username', username)
-            .single();
+            .eq('username', username);
 
         if (data?.length === 0 && username !== undefined) {
             $flash = {
@@ -46,7 +45,7 @@
             return goto('/');
         }
 
-        return data;
+        return data[0];
     }
 
     async function fetchBlocked(userId: string, currentUserId: string) {
@@ -325,7 +324,7 @@
     $: friendsAmountQuery = useQuery({
         queryKey: ['friendsAmount', userId, $profileStore?.refetchFriendsTrigger],
         queryFn: async () => await fetchFriendsAmount(userId),
-        enabled: !!userId && ((!isPrivate && $blockedQuery.data?.length === 0) || !!isFriend || userId === $userStore?.id)
+        enabled: !!userId && ((!isPrivate && ($blockedQuery.data?.length === 0 || !$userStore)) || !!isFriend || userId === $userStore?.id)
     });
 
     $: totalFriends = $friendsAmountQuery.data ?? 0;
@@ -359,7 +358,7 @@
         <div class="rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 gap-y-8">
                 {#if $profileQuery.isLoading || !$profileQuery.data}
-                    <div class="placeholder-circle animate-pulse mx-auto w-[120px] sm:w-[148px]" />
+                    <div class="placeholder-circle animate-pulse mx-auto w-[148px] sm:w-[168px]" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <div class="placeholder animate-pulse w-[120px] h-[20px]" />
                         <div class="placeholder animate-pulse w-[100px] h-[20px]" />
@@ -405,7 +404,7 @@
                                     </div>
                                 {:else if friendRequestSend}
                                     <Button on:click={() => revokeFriendRequestModal($userStore.id, userId)} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-solid border-surface-500 text-red-600">Revoke Friend Request</Button>
-                                {:else if $profileQuery.data.accept_friend_requests}
+                                {:else if $profileQuery.data.accept_friend_requests && isFriend === false}
                                     <Button on:click={async () => await sendFriendRequest(username, $userStore.id, userId)} submitted={friendRequestSubmitted} class="h-fit text-[14px] variant-filled-primary py-1 px-2">Send Friend Request</Button>
                                 {/if}
                             {/if}
@@ -438,8 +437,21 @@
                             {/if}
                         </p>
                     </div>
+                {:else if ($profileQuery.isLoading 
+                    || !$profileQuery.data 
+                    || ($userStore?.id !== $profileStore?.userId && $profileQuery.data.is_private 
+                        && (
+                            $isFriendQuery.isLoading 
+                                || (!$isFriendQuery.data && $userStore)
+                            )
+                        )
+                    ) 
+                    || $blockedQuery.isLoading 
+                    || (!$blockedQuery.data && $userStore && $userStore.id !== $profileStore?.userId)
+                }
+                    <div class="grid row-start-2 col-span-full place-items-center placeholder animte-pulse h-[1000px] rounded-md" />
                 {:else}
-                    {#if ($profileQuery.isLoading || !$profileQuery.data || ($profileQuery.data.is_private && ($isFriendQuery.isLoading || (!$isFriendQuery.data && $userStore)))) || ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
+                    {#if ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
                         <TabGroup active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
                             <TabAnchor href="/{username}" selected={path === `/${username}`} >
                                 <span>Inventory</span>

@@ -4,7 +4,7 @@
 
     export let stexs: any;
     export let alt: string;
-    export let projectId: string;
+    export let projectId: number;
     export let iconSize: string = '46px';
 
     let loading: boolean = true;

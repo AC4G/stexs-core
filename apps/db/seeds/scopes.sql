@@ -30,8 +30,8 @@ INSERT INTO public.scopes (name, type) VALUES
     ('friend.requests.write', 'user'),
     ('friend.requests.read', 'user'),
     ('friend.requests.delete', 'user'),
-    ('friends.write', 'user'),
-    ('friends.delete', 'user'),
+    ('friend.write', 'user'),
+    ('friend.delete', 'user'),
     ('blocked.read', 'user'),
     ('blocked.write', 'user'),
     ('blocked.delete', 'user'),
@@ -39,5 +39,6 @@ INSERT INTO public.scopes (name, type) VALUES
     ('organization.logo.write', 'client'),
     ('organization.logo.delete', 'client'),
     ('project.logo.write', 'client'),
-    ('project.logo.delete', 'client');
+    ('project.logo.delete', 'client'),
+    ('scope.read', 'client');
     
