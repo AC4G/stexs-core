@@ -866,9 +866,9 @@ CREATE POLICY organization_requests_select
                     SELECT 1
                     FROM public.organization_members om
                     WHERE
-                        om.organization_id = organization_id AND
+                        om.organization_id = public.organization_requests.organization_id AND
                         om.member_id = auth.uid() AND
-                        om.role IN ('Admin', 'Moderator')
+                        om.role IN ('Owner', 'Admin')
                 )
             )
             OR 
@@ -879,6 +879,19 @@ CREATE POLICY organization_requests_select
             )
         )
     );
+
+CREATE OR REPLACE FUNCTION public.is_organization_request_with_role_owner_or_admin(_organization_id integer, _addressee_id UUID) RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.organization_requests AS orq
+        WHERE 
+            orq.organization_id = _organization_id AND 
+            orq.addressee_id = _addressee_id AND 
+            orq.role IN ('Owner', 'Admin')
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE POLICY organization_requests_update
     ON public.organization_requests
@@ -893,9 +906,9 @@ CREATE POLICY organization_requests_update
                         SELECT 1
                         FROM public.organization_members om
                         WHERE
-                            om.organization_id = organization_id AND
+                            om.organization_id = public.organization_requests.organization_id AND
                             om.member_id = auth.uid() AND
-                            om.role = 'Admin'
+                            om.role = 'Owner'
                     )
                     OR
                     (
@@ -903,11 +916,12 @@ CREATE POLICY organization_requests_update
                             SELECT 1
                             FROM public.organization_members om
                             WHERE
-                                om.organization_id = organization_id AND
+                                om.organization_id = public.organization_requests.organization_id AND
                                 om.member_id = auth.uid() AND
-                                om.role = 'Moderator'
+                                om.role = 'Admin'
                         ) AND
-                        role NOT IN ('Admin', 'Moderator')
+                        role NOT IN ('Owner', 'Admin') AND
+                        NOT public.is_organization_request_with_role_owner_or_admin(organization_id, addressee_id)
                     )
                 )
             )
@@ -916,7 +930,8 @@ CREATE POLICY organization_requests_update
                 auth.grant() = 'client_credentials' AND
                 'organization.requests.update' = ANY(auth.scopes()) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
-                role NOT IN ('Admin', 'Moderator')
+                role NOT IN ('Owner', 'Admin') AND 
+                NOT public.is_organization_request_with_role_owner_or_admin(organization_id, addressee_id)
             )
         )
     );
@@ -935,9 +950,9 @@ CREATE POLICY organization_requests_delete
                         SELECT 1
                         FROM public.organization_members om
                         WHERE
-                            om.organization_id = organization_id AND
+                            om.organization_id = public.organization_requests.organization_id AND
                             om.member_id = auth.uid() AND
-                            om.role = 'Admin'
+                            om.role = 'Owner'
                     )
                     OR
                     (
@@ -945,11 +960,11 @@ CREATE POLICY organization_requests_delete
                             SELECT 1
                             FROM public.organization_members om
                             WHERE
-                                om.organization_id = organization_id AND
+                                om.organization_id = public.organization_requests.organization_id AND
                                 om.member_id = auth.uid() AND
-                                om.role = 'Moderator'
+                                om.role = 'Admin'
                         ) AND
-                        role NOT IN ('Admin', 'Moderator')
+                        role NOT IN ('Owner', 'Admin')
                     )
                 )
             )
@@ -958,7 +973,7 @@ CREATE POLICY organization_requests_delete
                 auth.grant() = 'client_credentials' AND
                 'organization.requests.delete' = ANY(auth.scopes()) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
-                role NOT IN ('Admin', 'Moderator')
+                role NOT IN ('Owner', 'Admin')
             )
         )
     );
@@ -973,9 +988,9 @@ CREATE POLICY organization_requests_insert
                 SELECT 1
                 FROM public.organization_members om
                 WHERE
-                    om.organization_id = organization_id AND
-                    om.member_id = member_id   
-            )AND
+                    om.organization_id = public.organization_requests.organization_id AND
+                    om.member_id = public.organization_requests.addressee_id   
+            ) AND
             (
                 (
                     auth.grant() = 'password' AND
@@ -984,9 +999,9 @@ CREATE POLICY organization_requests_insert
                             SELECT 1
                             FROM public.organization_members om
                             WHERE
-                                om.organization_id = organization_id AND
+                                om.organization_id = public.organization_requests.organization_id AND
                                 om.member_id = auth.uid() AND
-                                om.role = 'Admin'
+                                om.role = 'Owner'
                         )
                         OR
                         (
@@ -994,11 +1009,11 @@ CREATE POLICY organization_requests_insert
                                 SELECT 1
                                 FROM public.organization_members om
                                 WHERE
-                                    om.organization_id = organization_id AND
+                                    om.organization_id = public.organization_requests.organization_id AND
                                     om.member_id = auth.uid() AND
-                                    om.role = 'Moderator'
+                                    om.role = 'Admin'
                             ) AND
-                            role NOT IN ('Admin', 'Moderator')
+                            role NOT IN ('Owner', 'Admin')
                         )
                     )
                 )
@@ -1007,7 +1022,7 @@ CREATE POLICY organization_requests_insert
                     auth.grant() = 'client_credentials' AND
                     'organization.requests.write' = ANY(auth.scopes()) AND
                     organization_id = (auth.jwt()->>'organization_id')::INT AND
-                    role NOT IN ('Admin', 'Moderator')
+                    role NOT IN ('Owner', 'Admin')
                 )
             )
         )
