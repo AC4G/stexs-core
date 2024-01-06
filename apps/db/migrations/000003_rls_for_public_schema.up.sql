@@ -568,9 +568,9 @@ CREATE POLICY oauth2_apps_select
                 SELECT 1
                 FROM public.organization_members om
                 WHERE
-                    om.organization_id = organization_id AND
+                    om.organization_id = public.oauth2_apps.organization_id AND
                     om.member_id = auth.uid() AND
-                    om.role IN ('Admin', 'Moderator')
+                    om.role IN ('Owner', 'Admin')
             ) OR
             client_secret IS NULL
         )
@@ -586,9 +586,9 @@ CREATE POLICY oauth2_apps_update
             SELECT 1
             FROM public.organization_members om
             WHERE
-                om.organization_id = organization_id AND
+                om.organization_id = public.oauth2_apps.organization_id AND
                 om.member_id = auth.uid() AND
-                om.role IN ('Admin', 'Moderator')
+                om.role IN ('Owner', 'Admin')
         )
     );
 
@@ -602,9 +602,9 @@ CREATE POLICY oauth2_apps_delete
             SELECT 1
             FROM public.organization_members om
             WHERE
-                om.organization_id = organization_id AND
+                om.organization_id = public.oauth2_apps.organization_id AND
                 om.member_id = auth.uid() AND
-                om.role IN ('Admin', 'Moderator')
+                om.role IN ('Owner', 'Admin')
         )
     );
 
@@ -618,9 +618,9 @@ CREATE POLICY oauth2_apps_insert
             SELECT 1
             FROM public.organization_members om
             WHERE
-                om.organization_id = organization_id AND
+                om.organization_id = public.oauth2_apps.organization_id AND
                 om.member_id = auth.uid() AND
-                om.role IN ('Admin', 'Moderator')
+                om.role IN ('Owner', 'Admin')
         )
     );
 
@@ -632,9 +632,10 @@ CREATE OR REPLACE FUNCTION public.is_current_user_member_of_organization(_organi
 BEGIN
     RETURN EXISTS (
         SELECT 1
-        FROM public.organization_members
-        WHERE organization_id = _organization_id
-        AND member_id = auth.uid()
+        FROM public.organization_members AS om
+        WHERE 
+            om.organization_id = _organization_id AND 
+            om.member_id = auth.uid()
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -652,7 +653,9 @@ CREATE POLICY organization_members_select
             EXISTS (
                 SELECT 1
                 FROM public.profiles AS p
-                WHERE p.user_id = user_id AND p.is_private = FALSE
+                WHERE 
+                    p.user_id = user_id AND 
+                    p.is_private IS FALSE
             )
         )
         OR
@@ -674,8 +677,10 @@ DECLARE
 BEGIN
     SELECT role
     INTO current_user_role
-    FROM public.organization_members
-    WHERE member_id = auth.uid() AND organization_id = _organization_id;
+    FROM public.organization_members AS om
+    WHERE 
+        om.member_id = auth.uid() AND 
+        om.organization_id = _organization_id;
 
     RETURN (
         (
