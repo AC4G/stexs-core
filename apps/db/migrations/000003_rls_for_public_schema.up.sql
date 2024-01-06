@@ -1045,8 +1045,7 @@ CREATE POLICY organizations_select
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'organization.read' = ANY(auth.scopes()) AND
-                id = (auth.jwt()->>'organization_id')::INT
+                'organization.read' = ANY(auth.scopes())
             )
         )
     );
@@ -1065,7 +1064,7 @@ CREATE POLICY organizations_update
                     WHERE
                         om.organization_id = id AND
                         om.member_id = auth.uid() AND
-                        om.role IN ('Admin', 'Moderator')
+                        om.role IN ('Owner', 'Admin')
                 )
             )
             OR
@@ -1089,7 +1088,7 @@ CREATE POLICY organizations_delete
             WHERE
                 om.organization_id = id AND
                 om.member_id = auth.uid() AND
-                om.role = 'Admin'
+                om.role = 'Owner'
         )
     );
 
