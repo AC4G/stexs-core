@@ -351,14 +351,6 @@ CREATE POLICY inventories_select
         )
     );
 
-CREATE OR REPLACE VIEW public.project_ids_by_jwt_organization AS
-SELECT id
-FROM public.projects
-WHERE organization_id = (auth.jwt()->>'organization_id')::INT;
-
-GRANT SELECT ON public.project_ids_by_jwt_organization TO authenticated;
-GRANT SELECT ON public.project_ids_by_jwt_organization TO anon;
-
 CREATE POLICY inventories_update
     ON public.inventories
     AS PERMISSIVE
@@ -515,10 +507,7 @@ CREATE POLICY oauth2_app_scopes_select
     FOR SELECT
     USING (
         auth.grant() = 'password' OR
-        (
-            auth.grant() = 'client_credentials' AND
-            'scope.read' = ANY(auth.scopes())
-        )
+        auth.grant() = 'client_credentials'
     );
 
 CREATE POLICY oauth2_app_scopes_delete
