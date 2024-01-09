@@ -87,8 +87,6 @@
     placement: 'bottom'
   };
 
-  $: activeUrl = $page.url.pathname;
-
   let signedIn: boolean;
   let avatarDropDownOpen: boolean = false;
   let notificationsDropDownOpen: boolean = false;
@@ -272,7 +270,7 @@
                 <Icon icon="mdi:bell-outline" width="18" />
               </div>
             </Button>
-            <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-62px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[280px]">
+            <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-68px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[280px]">
               <div class="grid grid-cols-3 space-x-1">
                 <Button on:click={() => selectedNotificationMenu = 'friends'} class="p-0 hover:bg-surface-500 transition items-center flex {selectedNotificationMenu === 'friends' && 'bg-surface-500'}">
                   <Icon icon="octicon:person-add-16" />
@@ -380,7 +378,7 @@
                 <p class="text-[14px] break-all">{$userStore?.username}</p>
               </div>
             </button>
-            <Dropdown triggeredBy=".avatarDropDown" {activeUrl} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
+            <Dropdown triggeredBy=".avatarDropDown" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
               <div class="px-4 py-2 rounded variant-ghost-surface max-w-[120px]">
                 <p class="text-[14px] break-all">{$userStore?.username}</p>
               </div>
