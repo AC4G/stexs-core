@@ -46,7 +46,7 @@
     ProjectRequestsGQL, 
     ProjectRequests 
   } from '$lib/types';
-  import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friendRequests';
+  import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friend';
   import { createProfileStore } from '$lib/stores/profile';
   import { createPreviousPageStore } from '$lib/stores/previousPage';
   import { acceptOrganizationJoinRequest, deleteOrganizationJoinRequest } from '$lib/utils/organizationJoinRequests';
