@@ -11,6 +11,7 @@
     import { getFlash } from "sveltekit-flash-message";
     import { page } from "$app/stores";
     import { blockUserModal } from "$lib/utils/modals/userModals";
+    import { debounce } from "lodash";
 
     const flash = getFlash(page);
     const profileStore = getProfileStore();
@@ -28,7 +29,13 @@
 
     $: paginationSettings.size = $profileStore?.totalFriends!;
 
+    const handleSearch = debounce((e: Event) => {
+        search = (e.target as HTMLInputElement)?.value || '';
+    }, 200);
+
     async function fetchFriends(userId: string, search: string, page: number, limit: number) {
+        console.log({ search })
+
         if (search !== previousSearch) {
             paginationSettings.page = 0;
             page = 0;
@@ -83,12 +90,12 @@
         $friendsQuery.isLoading || !$friendsQuery.data;
 </script>
 
-<div class="flex flex-row justify-between {friendsLoaded ? 'mb-[18px]' : ''} items-center space-y-0">
+<div class="flex flex-col md:flex-row justify-between {friendsLoaded ? 'mb-[18px]' : ''} space-y-2 md:space-y-0">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="placeholder animate-pulse max-w-[220px] w-full h-[44px] rounded-lg" />
     {:else if $profileStore && $profileStore.totalFriends > 0}
         <div class="md:max-w-[220px]">
-            <Search size="lg" placeholder="Username" bind:value={search} class="!bg-surface-500" />
+            <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
         </div>
     {/if}
     {#if $userStore?.id === $profileStore?.userId}

@@ -258,8 +258,8 @@
     <AppShell>
       <Header>
         {#if !signedIn}
-          <a href="/sign-in" class="btn">Sign-In</a>
-          <a href="/sign-up" class="btn variant-filled-primary">Sign-Up</a>
+          <a href="/sign-in" class="btn py-1 px-2">Sign-In</a>
+          <a href="/sign-up" class="btn variant-filled-primary py-1 px-2">Sign-Up</a>
         {:else}
           <div class="relative mr-[8px] flex items-center space-x-4 w-full justify-end">
             <Button class="notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">

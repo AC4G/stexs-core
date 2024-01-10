@@ -14,6 +14,7 @@
     import { Button } from 'ui';
     import { getFlash } from 'sveltekit-flash-message/client';
     import { page } from '$app/stores';
+    import { debounce } from 'lodash';
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -27,6 +28,9 @@
         size: 0,
         amounts: [50, 100, 250, 500, 1000],
     };
+    const handleSearch = debounce((e: Event) => {
+        search = (e.target as HTMLInputElement)?.value || '';
+    }, 200);
 
     $: organizationAmountQuery = useQuery({
         queryKey: ['organizationsAmountProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
@@ -181,7 +185,7 @@
         </div>
     {:else if organizationAmountQueryStore.data > 0}
         <div class="md:max-w-[220px]">
-            <Search size="lg" placeholder="Organization Name" bind:value={search} class="!bg-surface-500" />
+            <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
         <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
             <p class="text-[18px]">Organizations {paginationSettings.size}</p>

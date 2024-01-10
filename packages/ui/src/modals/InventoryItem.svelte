@@ -70,7 +70,9 @@
                     <a href="/organizations/{data.items.projects.organizations.name}" class="text-[14px] text-gray-500 hover:text-secondary-400 transition">{data.items.projects.organizations.name}</a>
                 </div>
             </div>
-            <p class="text-[18px]">Amount: {data.amount}</p>
+            {#if data.amount !== null}
+                <p class="text-[18px]">Amount: {data.amount}</p>
+            {/if}
             {#if data.items.description}
                 <p class="text-[16px]">{data.items.description}</p>
             {/if}

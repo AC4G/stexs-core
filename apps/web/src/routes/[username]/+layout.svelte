@@ -166,7 +166,7 @@
                 {:else}
                     <Avatar {userId} {stexs} {username} class="mx-auto w-[148px] sm:w-[168px]" draggable="false" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
-                        <p class="text-[28px] w-fit">{$profileQuery.data?.username}</p>
+                        <p class="text-[28px] w-fit break-all">{$profileQuery.data?.username}</p>
                         {#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
                             {#if $friendsAmountQuery.isLoading}
                                 <div class="placeholder animate-pulse w-[100px] h-[20px]" />

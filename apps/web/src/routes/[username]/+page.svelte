@@ -14,6 +14,7 @@
     } from "@skeletonlabs/skeleton";
     import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";
+    import { debounce } from "lodash";
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -41,6 +42,9 @@
         amounts: [50, 100, 250, 500, 1000],
     };
     let previousProject: number | undefined;
+    const handleSearch = debounce((e: Event) => {
+        search = (e.target as HTMLInputElement)?.value || '';
+    }, 200);
 
     async function fetchProjectsInUsersInventory(userId: string) {
         const { data } = await stexs.rpc('distinct_projects_from_inventory', {
@@ -182,7 +186,7 @@
         </div>
     {:else if $itemsAmountQuery.data > 0}
         <div class="md:max-w-[220px]">
-            <Search size="lg" placeholder="Item Name" bind:value={search} class="!bg-surface-500" />
+            <Search size="lg" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
         <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <p class="text-[18px]">Items {paginationSettings.size}</p>

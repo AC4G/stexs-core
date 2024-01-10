@@ -354,6 +354,9 @@ importers:
       fast-xml-parser:
         specifier: ^4.3.2
         version: 4.3.2
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       stexs-client:
         specifier: workspace:*
         version: link:../../packages/stexs-client
@@ -400,6 +403,9 @@ importers:
       '@types/cookie':
         specifier: ^0.5.1
         version: 0.5.2
+      '@types/lodash':
+        specifier: ^4.14.202
+        version: 4.14.202
       '@types/node':
         specifier: ^20.8.7
         version: 20.8.10
@@ -2273,6 +2279,10 @@ packages:
     resolution: {integrity: sha512-b0jGiOgHtZ2jqdPgPnP6WLCXZk1T8p06A/vPGzUvxpFGgKMbjXJDjC5m52ErqBnIuWZFgGoIJyRdeG5AyreJjA==}
     dependencies:
       '@types/node': 20.9.4
+
+  /@types/lodash@4.14.202:
+    resolution: {integrity: sha512-OvlIYQK9tNneDlS0VN54LLd5uiPCBOp7gS5Z0f1mjoJYBrtStzgmJBxONW3U6OZqdtNzZPmn9BS/7WI7BFFcFQ==}
+    dev: true
 
   /@types/mime@1.3.3:
     resolution: {integrity: sha512-Ys+/St+2VF4+xuY6+kDIXGxbNRO0mesVg0bbxEfB97Od1Vjpjx9KD1qxs64Gcb3CWPirk9Xe+PT4YiiHQ9T+eg==}

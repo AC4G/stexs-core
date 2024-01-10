@@ -19,6 +19,7 @@
 		"@sveltestack/svelte-query": "^1.6.0",
 		"@tailwindcss/forms": "^0.5.7",
 		"@types/cookie": "^0.5.1",
+		"@types/lodash": "^4.14.202",
 		"@types/node": "^20.8.7",
 		"@types/uuid": "^9.0.2",
 		"autoprefixer": "^10.4.16",
@@ -39,6 +40,7 @@
 	"dependencies": {
 		"@floating-ui/dom": "^1.5.3",
 		"fast-xml-parser": "^4.3.2",
+		"lodash": "^4.17.21",
 		"stexs-client": "workspace:*",
 		"ui": "workspace:*",
 		"utils-ts": "workspace:*",
