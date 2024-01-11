@@ -39,8 +39,6 @@ CREATE TABLE public.items (
     CONSTRAINT name_allowed_characters CHECK (name ~ '^[^\s]+(\s[^\s]+)*$')
 );
 
-CREATE INDEX idx_items_name_trgm ON public.items USING gin(name gin_trgm_ops);
-
 GRANT INSERT (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
 GRANT UPDATE (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
 GRANT DELETE ON TABLE public.items TO authenticated;

@@ -1,8 +1,8 @@
-import type { ModalSettings, ToastSettings } from "@skeletonlabs/skeleton";
+import type { ModalSettings, ModalStore, ToastSettings } from "@skeletonlabs/skeleton";
 import { blockUser, unblockUser } from "../user";
 import type { Writable } from "svelte/store";
 
-export function blockUserModal(userId: string, currentUserId: string, username: string, flash: Writable<ToastSettings>, modalStore: Writable<[ModalSettings]>) {
+export function openBlockUserModal(userId: string, currentUserId: string, username: string, flash: Writable<ToastSettings>, modalStore: ModalStore) {
     const modal: ModalSettings = {
         type: 'component',
         component: 'confirm',
@@ -21,7 +21,7 @@ export function blockUserModal(userId: string, currentUserId: string, username: 
     modalStore.set([modal]);
 }
 
-export function unblockUserModal(userId: string, currentUserId: string, username: string, flash: Writable<ToastSettings>, modalStore: Writable<[ModalSettings]>) {
+export function openUnblockUserModal(userId: string, currentUserId: string, username: string, flash: Writable<ToastSettings>, modalStore: ModalStore) {
     const modal: ModalSettings = {
         type: 'component',
         component: 'confirm',

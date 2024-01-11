@@ -19,15 +19,15 @@
     Button, 
     InventoryItem, 
     OrganizationLogo, 
-    ProjectLogo
-
+    ProjectLogo,
+    AddFriends
   } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { getFlash } from 'sveltekit-flash-message';
   import Icon from '@iconify/svelte';
-  import { createUserStore } from '$lib/stores/user';
+  import { createUserStore } from '$lib/stores/userStore';
   import { browser } from '$app/environment';
   import { 
     Dropdown, 
@@ -47,13 +47,12 @@
     ProjectRequests 
   } from '$lib/types';
   import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friend';
-  import { createProfileStore } from '$lib/stores/profile';
-  import { createPreviousPageStore } from '$lib/stores/previousPage';
+  import { createProfileStore } from '$lib/stores/profileStore';
+  import { createPreviousPageStore } from '$lib/stores/previousPageStore';
   import { acceptOrganizationJoinRequest, deleteOrganizationJoinRequest } from '$lib/utils/organizationJoinRequests';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import { storePopup } from '@skeletonlabs/skeleton';
   import { acceptProjectJoinRequest, deleteProjectJoinRequest } from '$lib/utils/projectJoinRequests';
-
   
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
   initializeStores();
@@ -73,7 +72,8 @@
 
   const modalRegistry: Record<string, ModalComponent> = {
     confirm: { ref: Confirm },
-    inventoryItem: { ref: InventoryItem }
+    inventoryItem: { ref: InventoryItem },
+    addFriends: { ref: AddFriends }
   };
   const excludeRoutes = [
     '/sign-in',
@@ -378,12 +378,14 @@
                 <p class="text-[14px] break-all">{$userStore?.username}</p>
               </div>
             </button>
-            <Dropdown triggeredBy=".avatarDropDown" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
-              <div class="px-4 py-2 rounded variant-ghost-surface max-w-[120px]">
-                <p class="text-[14px] break-all">{$userStore?.username}</p>
-              </div>
+            <Dropdown triggeredBy=".avatarDropDown" activeUrl={$page.url.pathname} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
+              <div class="px-4 py-2 rounded variant-ghost-surface">
+                <p class="text-[16px] break-all">{$userStore?.username}</p>
+              </div> 
               <DropdownDivider />
               <DropdownItem href="/{$userStore?.username}" class="hover:!bg-surface-500 transition rounded text-[16px]">Profile</DropdownItem>
+              <DropdownItem href="/{$userStore?.username}/friends" class="hover:!bg-surface-500 transition rounded text-[16px]">Friends</DropdownItem>
+              <DropdownItem href="/{$userStore?.username}/organizations" class="hover:!bg-surface-500 transition rounded text-[16px]">Organizations</DropdownItem>
               <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]">Settings</DropdownItem>
               <DropdownDivider />
               <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]" on:click={async () => { await stexs.auth.signOut() }} >Sign out</DropdownItem>

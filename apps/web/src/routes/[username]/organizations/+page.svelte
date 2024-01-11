@@ -1,8 +1,7 @@
 <script lang="ts">
-	import OrganizationLogo from './../../../../../../packages/ui/src/OrganizationLogo.svelte';
-    import { getUserStore } from "$lib/stores/user";
-    import { getProfileStore } from "$lib/stores/profile";
-    import { useQuery, type UseQueryStoreResult } from "@sveltestack/svelte-query";
+    import { getUserStore } from "$lib/stores/userStore";
+    import { getProfileStore } from "$lib/stores/profileStore";
+    import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
     import { 
         Paginator, 
@@ -11,10 +10,11 @@
         getModalStore 
     } from "@skeletonlabs/skeleton";
     import { Search } from "flowbite-svelte";
-    import { Button } from 'ui';
+    import { Button, OrganizationLogo } from 'ui';
     import { getFlash } from 'sveltekit-flash-message/client';
     import { page } from '$app/stores';
     import { debounce } from 'lodash';
+    import Icon from "@iconify/svelte";
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -55,41 +55,27 @@
         if (search !== previousSearch) {
             paginationSettings.page = 0;
             page = 0;
-
-            const { count } = await stexs.from('organization_members')
-                .select(`
-                    organizations(
-                        id,
-                        name
-                    )
-                `, { 
-                    count: 'exact', 
-                    head: true 
-                })
-                .eq('member_id', userId)
-                .ilike('organizations.name', `%${search}%`)
-                .not('organizations', 'is', null);
-
-            paginationSettings.size = count;
             previousSearch = search;
         }
 
         const start = page * limit;
         const end = start + limit - 1;
 
-        const { data } = await stexs.from('organization_members')
+        const { data, count } = await stexs.from('organization_members')
             .select(`
                 organizations(
                     id,
                     name
                 ),
                 role
-            `)
+            `, { count: 'exact' })
             .eq('member_id', userId)
             .ilike('organizations.name', `%${search}%`)
             .not('organizations', 'is', null)
             .order('organizations(name)', { ascending: true })
             .range(start, end);
+
+        paginationSettings.size = count;
 
         return data;
     }
@@ -177,7 +163,7 @@
     $: organizationsMemberQueryStore = $organizationsMemberQuery;
 </script>
 
-<div class="flex flex-col md:flex-row justify-between mb-[18px] space-y-2 md:space-y-0">
+<div class="flex flex-col md:flex-row justify-between {organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''} space-y-2 md:space-y-0">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="placeholder animate-pulse md:max-w-[220px] w-full h-[42px] rounded-lg" />
         <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
@@ -187,8 +173,13 @@
         <div class="md:max-w-[220px]">
             <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
-        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+        <div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
             <p class="text-[18px]">Organizations {paginationSettings.size}</p>
+            {#if $userStore?.id === $profileStore?.userId}
+                <Button title="Create Organization" class="variant-ghost-primary p-3 h-fit w-full md:w-fit">
+                    <Icon icon="pepicons-pop:plus" />
+                </Button>
+            {/if}
         </div>
     {/if}
 </div>
@@ -235,7 +226,7 @@
         {/if}
     {/if}
 </div>
-<div class="mx-auto mt-[18px]">
+<div class="{organizationAmountQueryStore?.data > 0 ? 'mt-[18px]' : ''}">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[44px] w-full md:w-[182px]" />

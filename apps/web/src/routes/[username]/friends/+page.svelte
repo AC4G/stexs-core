@@ -1,16 +1,17 @@
 <script lang="ts">
     import { Avatar, Button } from "ui";
-    import { getUserStore } from "$lib/stores/user";
+    import { getUserStore } from "$lib/stores/userStore";
     import { Paginator, type PaginationSettings, getModalStore } from "@skeletonlabs/skeleton";
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
-    import { getProfileStore } from "$lib/stores/profile";
+    import { getProfileStore } from "$lib/stores/profileStore";
     import { Dropdown, DropdownItem, Search } from "flowbite-svelte";
     import Icon from "@iconify/svelte";
     import { removeFriend } from "$lib/utils/friend";
     import { getFlash } from "sveltekit-flash-message";
     import { page } from "$app/stores";
-    import { blockUserModal } from "$lib/utils/modals/userModals";
+    import { openBlockUserModal } from "$lib/utils/modals/userModals";
+    import { openAddFriendsModal } from "$lib/utils/modals/friendModals";
     import { debounce } from "lodash";
 
     const flash = getFlash(page);
@@ -34,46 +35,30 @@
     }, 200);
 
     async function fetchFriends(userId: string, search: string, page: number, limit: number) {
-        console.log({ search })
-
         if (search !== previousSearch) {
             paginationSettings.page = 0;
             page = 0;
-
-            const { count } = await stexs.from('friends')
-                .select(`
-                    profiles!friends_friend_id_fkey(
-                        user_id,
-                        username
-                    )
-                `, { 
-                    count: 'exact', 
-                    head: true 
-                })
-                .eq('user_id', userId)
-                .ilike('profiles.username', `%${search}%`)
-                .not('profiles', 'is', null);
-
-            paginationSettings.size = count;
             previousSearch = search;
         }
 
         const start = page * limit;
         const end = start + limit - 1;
 
-        const { data } = await stexs.from('friends')
+        const { data, count } = await stexs.from('friends')
             .select(`
                 id,
                 profiles!friends_friend_id_fkey(
                     user_id,
                     username
                 )
-            `)
+            `, { count: 'exact' })
             .eq('user_id', userId)
             .ilike('profiles.username', `%${search}%`)
             .order('profiles(username)', { ascending: true })
             .not('profiles', 'is', null)
             .range(start, end);
+
+        paginationSettings.size = count;
 
         return data;
     }
@@ -99,7 +84,7 @@
         </div>
     {/if}
     {#if $userStore?.id === $profileStore?.userId}
-        <Button title="Add Friend" class="variant-ghost-primary p-3 h-fit">
+        <Button on:click={() => openAddFriendsModal($userStore.id, flash, modalStore, stexs)} title="Add Friends" class="variant-ghost-primary p-3 h-fit">
             <Icon icon="pepicons-pop:plus" />
         </Button>
     {/if}
@@ -132,7 +117,7 @@
                                 $friendsQuery.refetch();
                             }} submitted={removeFriendSubmitted} class="hover:!bg-surface-500 rounded transition text-red-600 whitespace-nowrap">Remove Friend</DropdownItem>
                             <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-600">Report</DropdownItem>
-                            <DropdownItem on:click={() => blockUserModal(friend.profiles.user_id, $userStore.id, friend.profiles.username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
+                            <DropdownItem on:click={() => openBlockUserModal(friend.profiles.user_id, $userStore.id, friend.profiles.username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
                         </Dropdown>
                     {/if}
                 </div>
@@ -148,7 +133,7 @@
         {/if}
     {/if}
 </div>
-<div class="mx-auto {friendsLoaded ? 'mt-[18px]' : ''}">
+<div class="{friendsLoaded ? 'mt-[18px]' : ''}">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />

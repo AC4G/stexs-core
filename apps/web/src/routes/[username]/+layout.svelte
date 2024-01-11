@@ -1,10 +1,10 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import { Avatar, Button } from "ui";
-    import { getUserStore } from "$lib/stores/user";
+    import { getUserStore } from "$lib/stores/userStore";
     import { stexs } from "../../stexsClient";
     import { useQuery } from '@sveltestack/svelte-query'
-    import { TabAnchor, TabGroup, getModalStore, type ModalSettings } from "@skeletonlabs/skeleton";
+    import { TabAnchor, TabGroup, getModalStore } from "@skeletonlabs/skeleton";
     import { goto } from "$app/navigation";
     import { getFlash } from "sveltekit-flash-message/client";
     import Icon from '@iconify/svelte';
@@ -16,8 +16,8 @@
         revokeFriendRequest, 
         sendFriendRequest 
     } from "$lib/utils/friend";
-    import { getProfileStore } from "$lib/stores/profile";
-    import { blockUserModal, unblockUserModal } from "$lib/utils/modals/userModals";
+    import { getProfileStore } from "$lib/stores/profileStore";
+    import { openBlockUserModal, openUnblockUserModal } from "$lib/utils/modals/userModals";
     
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -155,7 +155,7 @@
 
 <div class="w-screen h-screen bg-no-repeat bg-top">
     <div class="grid place-items-center">
-        <div class="rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
+        <div class="sm:rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 gap-y-8">
                 {#if $profileQuery.isLoading || !$profileQuery.data}
                     <div class="placeholder-circle animate-pulse mx-auto w-[148px] sm:w-[168px]" />
@@ -235,9 +235,9 @@
                                 {/if}
                                 <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-600">Report</DropdownItem>
                                 {#if isCurrentUserBlocker}
-                                    <DropdownItem on:click={() => unblockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-primary-500">Unblock</DropdownItem>
+                                    <DropdownItem on:click={() => openUnblockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-primary-500">Unblock</DropdownItem>
                                 {:else}
-                                    <DropdownItem on:click={() => blockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
+                                    <DropdownItem on:click={() => openBlockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
                                 {/if}
                             </Dropdown>
                         </div>
