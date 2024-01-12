@@ -100,10 +100,10 @@
                     class="text-[22px]"
                     /></Button>
                 <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
-                    <ListBoxItem bind:group={filter} name="filter" value={'A-Z'}>A-Z</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Z-A'}>Z-A</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Latest'}>Latest</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Oldest'}>Oldest</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'A-Z'} class="transition">A-Z</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Z-A'} class="transition">Z-A</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Latest'} class="transition">Latest</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Oldest'} class="transition">Oldest</ListBoxItem>
                 </Dropdown>
             </div>
         </div>

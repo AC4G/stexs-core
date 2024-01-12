@@ -86,7 +86,7 @@
         filterTime: string,
         filterAlphabet: string,
         filterAmount: string
-    },selectedProject: number | undefined, page: number, limit: number) {
+    }, selectedProject: number | undefined, page: number, limit: number) {
         const { filterTime, filterAlphabet, filterAmount } = filters;
 
         if (search !== previousSearch || previousProject !== selectedProject) {
@@ -116,39 +116,39 @@
             .not('items.projects', 'is', null)
             .range(start, end);
 
-        if (filterTime === 'Latest') {
+        if (filterTime === 'Latest')
             query
                 .order('created_at', { ascending: true })
                 .order('updated_at', { ascending: true });
-        }
 
-        if (filterTime === 'Oldest') {
+        if (filterTime === 'Oldest')
             query
                 .order('created_at', { ascending: false })
                 .order('updated_at', { ascending: false });
-        }
+
+        if (filterAmount === 'Unique') 
+            query.order('amount', { 
+                ascending: true, 
+                nullsFirst: true 
+            });
+
+        if (filterAmount === 'Amount: Low to high')
+            query
+                .order('amount', { ascending: true });
+
+        if (filterAmount === 'Amount: High to low')
+            query
+                .order('amount', { 
+                    ascending: false, 
+                    nullsFirst: false 
+                });
 
         if (filterAlphabet === 'A-Z') query.order('items(name)', { ascending: true });
 
         if (filterAlphabet === 'Z-A') query.order('items(name)', { ascending: false });
 
-        if (filterAmount === 'Unique') query.is('amount', null);
-
-        if (filterAmount === 'Amount: Low to high') {
-            query
-                .order('amount', { ascending: true })
-                .not('amount', 'is', null);
-        }
-
-        if (filterAmount === 'Amount: High to low') {
-            query
-                .order('amount', { ascending: false })
-                .not('amount', 'is', null);
-        }
-
-        if (selectedProject !== undefined && typeof selectedProject == 'number') {
+        if (selectedProject !== undefined && typeof selectedProject == 'number')
             query.eq('items.projects.id', selectedProject);
-        }
 
         const { data, count } = await query;
 
@@ -223,14 +223,14 @@
                     <ListBoxItem bind:group={filterTime} name="filter" value='Oldest'>Oldest</ListBoxItem>
                     <ListBoxItem bind:group={filterTime} name="filter" value=''>No Filter</ListBoxItem>
                     <DropdownDivider />
-                    <ListBoxItem bind:group={filterAlphabet} name="filter" value='A-Z'>A-Z</ListBoxItem>
-                    <ListBoxItem bind:group={filterAlphabet} name="filter" value='Z-A'>Z-A</ListBoxItem>
-                    <ListBoxItem bind:group={filterAlphabet} name="filter" value=''>No Filter</ListBoxItem>
-                    <DropdownDivider />
                     <ListBoxItem bind:group={filterAmount} name="filter" value='Unique'>Unique</ListBoxItem>
                     <ListBoxItem bind:group={filterAmount} name="filter" value='Amount: Low to high'>Amount: Low to high</ListBoxItem>
                     <ListBoxItem bind:group={filterAmount} name="filter" value='Amount: High to low'>Amount: High to low</ListBoxItem>
                     <ListBoxItem bind:group={filterAmount} name="filter" value=''>No Filter</ListBoxItem>
+                    <DropdownDivider />
+                    <ListBoxItem bind:group={filterAlphabet} name="filter" value='A-Z'>A-Z</ListBoxItem>
+                    <ListBoxItem bind:group={filterAlphabet} name="filter" value='Z-A'>Z-A</ListBoxItem>
+                    <ListBoxItem bind:group={filterAlphabet} name="filter" value=''>No Filter</ListBoxItem>
                 </Dropdown>
             </div>
             <div class="w-full md:w-fit">
