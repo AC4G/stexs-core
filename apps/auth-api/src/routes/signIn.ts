@@ -5,7 +5,7 @@ import { body } from 'express-validator';
 import generateAccessToken, {
   generateSignInConfirmToken,
 } from '../services/jwtService';
-import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
+import { CustomValidationError, errorMessages } from 'utils-node/messageBuilder';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,
@@ -21,16 +21,16 @@ import {
   TOTP_DISABLED,
   TYPE_REQUIRED,
   UNSUPPORTED_TYPE,
-} from 'utils-ts/errors';
-import validate from 'utils-ts/validatorMiddleware';
+} from 'utils-node/errors';
+import validate from 'utils-node/validatorMiddleware';
 import logger from '../loggers/logger';
-import { isExpired } from 'utils-ts';
+import { isExpired } from 'utils-node';
 import { getTOTPForVerification } from '../services/totpService';
 import {
   validateSignInConfirmToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 import {
   AUDIENCE,
   ISSUER,

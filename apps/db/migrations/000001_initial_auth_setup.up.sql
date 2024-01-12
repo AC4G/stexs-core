@@ -376,7 +376,7 @@ CREATE TABLE public.oauth2_app_scopes (
 
 GRANT INSERT (app_id, scope_id) ON TABLE public.oauth2_app_scopes TO authenticated;
 GRANT DELETE ON TABLE public.oauth2_app_scopes TO authenticated;
-GRANT SELECT ON TABLE public.oauth2_app_scopes TO anon;
+GRANT SELECT ON TABLE public.oauth2_app_scopes TO anon; 
 GRANT SELECT ON TABLE public.oauth2_app_scopes TO authenticated;
 
 

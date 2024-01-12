@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { errorMessages, message } from 'utils-ts/messageBuilder';
+import { errorMessages, message } from 'utils-node/messageBuilder';
 import db from '../database';
 import { body, query } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
@@ -11,11 +11,11 @@ import {
   INTERNAL_ERROR,
   INVALID_EMAIL,
   TOKEN_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 import logger from '../loggers/logger';
-import { isExpired } from 'utils-ts';
+import { isExpired } from 'utils-node';
 
 const router = Router();
 

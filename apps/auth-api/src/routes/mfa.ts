@@ -2,16 +2,16 @@ import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
 import db from '../database';
 import logger from '../loggers/logger';
-import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
+import { CustomValidationError, errorMessages } from 'utils-node/messageBuilder';
 import {
   CODE_REQUIRED,
   INTERNAL_ERROR,
   INVALID_TYPE,
   TYPE_REQUIRED,
   UNSUPPORTED_TYPE,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { body } from 'express-validator';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 import {
   enableEmail,
   enableTOTP,
@@ -25,7 +25,7 @@ import {
   validateSignInConfirmOrAccessToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 import {
   ACCESS_TOKEN_SECRET,
   AUDIENCE,

@@ -1,3 +1,6 @@
+import type { ModalSettings } from "@skeletonlabs/skeleton";
+import type { Invalidator, Subscriber, Unsubscriber, Updater } from "svelte/store";
+
 export type MFAMethod = {
   icon: string;
   description: string;

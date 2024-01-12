@@ -29,7 +29,7 @@
         "pg": "^8.11.2",
         "response-time": "^2.3.2",
         "speakeasy": "^2.0.0",
-        "utils-ts": "workspace:*",
+        "utils-node": "workspace:*",
         "uuid": "^9.0.0",
         "winston": "^3.11.0",
         "winston-loki": "^6.0.7"

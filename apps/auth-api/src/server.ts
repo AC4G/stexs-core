@@ -13,8 +13,8 @@ import swaggerRouter from './routes/swagger';
 import { ENV, SERVER_PORT } from '../env-config';
 import logger from './loggers/logger';
 import responseTime from 'response-time';
-import { errorMessages } from 'utils-ts/messageBuilder';
-import { ROUTE_NOT_FOUND } from 'utils-ts/errors';
+import { errorMessages } from 'utils-node/messageBuilder';
+import { ROUTE_NOT_FOUND } from 'utils-node/errors';
 import cors from 'cors';
 
 process.on('uncaughtException', (err) => {

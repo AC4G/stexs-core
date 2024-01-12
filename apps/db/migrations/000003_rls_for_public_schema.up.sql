@@ -198,18 +198,18 @@ CREATE POLICY friends_select
             OR 
             (
                 auth.grant() = 'password' AND
-                EXISTS (
+                NOT EXISTS (
                     SELECT 1
                     FROM public.profiles AS p
                     WHERE 
-                        (
-                            p.user_id = public.friends.user_id AND 
-                            p.is_private IS FALSE
-                        ) AND
-                        (
-                            p.user_id = public.friends.friend_id AND 
-                            p.is_private IS FALSE
-                        )
+                        p.user_id = public.friends.user_id AND 
+                        p.is_private IS TRUE
+                    UNION
+                    SELECT 1
+                    FROM public.profiles AS p
+                    WHERE 
+                        p.user_id = public.friends.friend_id AND 
+                        p.is_private IS TRUE
                 ) AND
                 NOT EXISTS (
                     SELECT 1

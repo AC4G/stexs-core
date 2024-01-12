@@ -1,8 +1,8 @@
 <script lang="ts">
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../stexsClient";
-    import { getUserStore } from "$lib/stores/user";
-    import { getProfileStore } from "$lib/stores/profile";
+    import { getUserStore } from "$lib/stores/userStore";
+    import { getProfileStore } from "$lib/stores/profileStore";
     import { Dropdown, Search } from "flowbite-svelte";
     import { 
         Paginator, 
@@ -14,6 +14,7 @@
     } from "@skeletonlabs/skeleton";
     import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";
+    import { debounce } from "lodash";
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -41,6 +42,9 @@
         amounts: [50, 100, 250, 500, 1000],
     };
     let previousProject: number | undefined;
+    const handleSearch = debounce((e: Event) => {
+        search = (e.target as HTMLInputElement)?.value || '';
+    }, 200);
 
     async function fetchProjectsInUsersInventory(userId: string) {
         const { data } = await stexs.rpc('distinct_projects_from_inventory', {
@@ -77,27 +81,6 @@
         if (search !== previousSearch || previousProject !== selectedProject) {
             paginationSettings.page = 0;
             page = 0;
-
-            const query = stexs.from('inventories')
-            .select(`
-                items(
-                    name,
-                    projects(
-                        id
-                    )
-                )`, { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .ilike('items.name', `%${search}%`)
-            .not('items', 'is', null)
-            .not('items.projects', 'is', null);
-
-            if (selectedProject !== undefined && typeof selectedProject == 'number') {
-                query.eq('items.projects.id', selectedProject);
-            }
-
-            const { count } = await query;
-
-            paginationSettings.size = count;
             previousSearch = search;
             previousProject = selectedProject;
         }
@@ -114,7 +97,8 @@
                     projects(
                         id
                     )
-                )`)
+                )
+            `, { count: 'exact' })
             .eq('user_id', userId)
             .ilike('items.name', `%${search}%`)
             .not('items', 'is', null)
@@ -126,7 +110,9 @@
             query.eq('items.projects.id', selectedProject);
         }
 
-        const { data } = await query;
+        const { data, count } = await query;
+
+        paginationSettings.size = count;
 
         return data;
     }
@@ -173,7 +159,7 @@
     });
 </script>
 
-<div class="flex flex-col md:flex-row justify-between mb-[18px] space-y-4 md:space-y-0">
+<div class="flex flex-col md:flex-row justify-between {$itemsAmountQuery?.data > 0 ? 'mb-[18px]' : ''} space-y-4 md:space-y-0">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         <div class="placeholder animate-pulse md:max-w-[220px] w-full h-[42px] rounded-lg" />
         <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
@@ -182,7 +168,7 @@
         </div>
     {:else if $itemsAmountQuery.data > 0}
         <div class="md:max-w-[220px]">
-            <Search size="lg" placeholder="Item Name" bind:value={search} class="!bg-surface-500" />
+            <Search size="lg" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
         <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <p class="text-[18px]">Items {paginationSettings.size}</p>
@@ -257,7 +243,7 @@
         {/if}
     {/if}
 </div>
-<div class="mx-auto mt-[18px]">
+<div class="{$itemsAmountQuery?.data > 0 ? 'mt-[18px]' : ''}">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />

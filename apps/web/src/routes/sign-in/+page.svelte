@@ -29,7 +29,7 @@
       if ((code === 'success' || code === 'error') && message) {
         $flash = {
           message,
-          classes: `variant-ghost-${code}`,
+          classes: `variant-glass-${code}`,
           timeout: 5000,
         }
       }

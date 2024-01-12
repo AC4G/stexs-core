@@ -1,7 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { stexs } from '../../stexsClient';
 import type { ToastSettings } from '@skeletonlabs/skeleton';
-import type { Profile } from '$lib/stores/profile';
+import type { Profile } from '$lib/stores/profileStore';
 
 export async function acceptProjectJoinRequest(
     userId: string,
@@ -25,7 +25,7 @@ export async function acceptProjectJoinRequest(
     if (error) {
         flash.set({
             message: `Could not join ${projectName} project from ${organizationName} organization. Try out again.`,
-            classes: 'variant-ghost-error',
+            classes: 'variant-glass-error',
             timeout: 5000,
         });
     } else {
@@ -37,7 +37,7 @@ export async function acceptProjectJoinRequest(
         });
         flash.set({
             message: `You are now member of ${projectName} project from ${organizationName} organization.`,
-            classes: 'variant-ghost-success',
+            classes: 'variant-glass-success',
             timeout: 5000,
         });
     }
@@ -57,13 +57,13 @@ export async function deleteProjectJoinRequest(
     if (error) {
         flash.set({
             message: `Could not delete project join request. Try out again.`,
-            classes: 'variant-ghost-error',
+            classes: 'variant-glass-error',
             timeout: 5000,
         });
     } else {
         flash.set({
             message: `Project join request successfuly deleted.`,
-            classes: 'variant-ghost-success',
+            classes: 'variant-glass-success',
             timeout: 5000,
         });
     }

@@ -64,7 +64,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
     RETURN (
         (_amount IS NULL AND (SELECT is_unique FROM public.items WHERE id = _item_id) IS TRUE) OR
-        (_amount IS NOT NULL AND (SELECT is_unique FROM public.items WHERE id = _item_id) IS FALSE)
+        (_amount IS NOT NULL)
     );
 END;
 $$ LANGUAGE plpgsql;
@@ -118,7 +118,7 @@ BEGIN
         FROM public.items AS i
         WHERE i.id = NEW.item_id AND (
             i.is_private IS TRUE OR
-            i.unique IS TRUE)
+            i.is_unique IS TRUE)
     ) OR
     NEW.amount > OLD.amount OR NEW.parameter IS DISTINCT FROM OLD.parameter THEN
         RETURN NULL;
@@ -199,7 +199,7 @@ CREATE TABLE public.friends (
 
 GRANT INSERT (user_id, friend_id) ON TABLE public.friends TO authenticated;
 GRANT DELETE ON TABLE public.friends TO authenticated;
-GRANT SELECT ON TABLE public.friends TO anon;
+GRANT SELECT ON TABLE public.friends TO anon; 
 GRANT SELECT ON TABLE public.friends TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.friend_insert()

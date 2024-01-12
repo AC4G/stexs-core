@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { getPreviousPageStore } from '$lib/stores/previousPage';
+	import { getPreviousPageStore } from '$lib/stores/previousPageStore';
   import { Button } from 'ui';
   import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
   import type { Session, SignInInit } from 'stexs-client/src/lib/types';
   import Icon from '@iconify/svelte';
-  import { redirectToPreviousPage } from '$lib/stores/previousPage';
+  import { redirectToPreviousPage } from '$lib/stores/previousPageStore';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
   import { SignInConfirm } from 'validation-schemas';
   import type { MFAMethod } from '$lib/types';
@@ -81,7 +81,7 @@
       requested = false;
       $flash = {
         message: 'Your session has expired. Please sign in again.',
-        classes: 'variant-ghost-error',
+        classes: 'variant-glass-error',
         timeout: 10000,
       };
       return goto('/sign-in');
@@ -122,7 +122,7 @@
     if (response.success && showMessage) {
       $flash = {
         message: 'New authentification code successfully requested.',
-        classes: 'variant-ghost-success',
+        classes: 'variant-glass-success',
         timeout: 5000,
       };
       return;
