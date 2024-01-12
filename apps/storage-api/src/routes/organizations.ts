@@ -2,19 +2,19 @@ import { Router, Response } from 'express';
 import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
 import { param } from 'express-validator';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 import { 
     INTERNAL_ERROR,
     ORGANIZATION_ID_NOT_NUMERIC, 
     ORGANIZATION_ID_REQUIRED, 
     UNAUTHORIZED_ACCESS
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { 
     checkScopes,
     checkTokenGrantType, 
     transformJwtErrorMessages, 
     validateAccessToken 
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 import { 
     ACCESS_TOKEN_SECRET, 
     AUDIENCE, 
@@ -22,7 +22,7 @@ import {
     ISSUER 
 } from '../../env-config';
 import db from '../database';
-import { errorMessages } from 'utils-ts/messageBuilder';
+import { errorMessages } from 'utils-node/messageBuilder';
 import s3 from '../s3';
 
 const router = Router();

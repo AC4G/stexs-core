@@ -252,7 +252,7 @@
 </svelte:head>
 
 <QueryClientProvider client={queryClient}>
-  <Toast buttonDismiss="btn-icon btn-icon-sm rounded-full variant-filled pt-[0.5px]" />
+  <Toast buttonDismiss="btn-icon btn-icon-sm rounded-full variant-filled pt-[0.5px]" zIndex="z-[1000]" />
   <Modal components={modalRegistry} />
   {#if !excludeRoutes.includes($page.url.pathname)}
     <AppShell>

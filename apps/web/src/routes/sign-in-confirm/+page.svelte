@@ -81,7 +81,7 @@
       requested = false;
       $flash = {
         message: 'Your session has expired. Please sign in again.',
-        classes: 'variant-ghost-error',
+        classes: 'variant-glass-error',
         timeout: 10000,
       };
       return goto('/sign-in');
@@ -122,7 +122,7 @@
     if (response.success && showMessage) {
       $flash = {
         message: 'New authentification code successfully requested.',
-        classes: 'variant-ghost-success',
+        classes: 'variant-glass-success',
         timeout: 5000,
       };
       return;

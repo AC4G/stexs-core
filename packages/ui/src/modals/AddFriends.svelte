@@ -13,12 +13,15 @@
     const modalStore = getModalStore();
     const stexs = $modalStore[0].meta.stexsClient;
     const userId = $modalStore[0].meta.userId;
+    const flash = $modalStore[0].meta.flash;
     let search: string = '';
+    let submitted: number;
+    let operationSubmitted: boolean = false;
     let paginationSettings: PaginationSettings = {
         page: 0,
-        limit: 50, 
+        limit: 20, 
         size: 0,
-        amounts: [50, 100, 250, 500, 1000],
+        amounts: [20, 50],
     };
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
@@ -35,9 +38,8 @@
                 user_id,
                 username,
                 accept_friend_requests,
-                friends!friends_user_id_fkey(
-                    user_id,
-                    friend_id
+                friends!friends_friend_id_fkey(
+                    user_id
                 ),
                 friend_requests!friend_requests_addressee_id_fkey(
                     requester_id
@@ -45,8 +47,7 @@
             `, { count: 'exact' })
             .ilike('username', `%${search}%`)
             .order('username', { ascending: true })
-            .eq('friends.friend_id', userId)
-            .eq('friend_requests.requester_id', userId)
+            .eq('friends.user_id', userId)
             .range(start, end);
 
         paginationSettings.size = count;
@@ -61,7 +62,7 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-5 space-y-6 flex flex-col max-w-[958px] min-h-[90vh] w-full relative">
+    <div class="card p-3 sm:p-5 space-y-6 flex flex-col max-w-[958px] min-h-[90vh] w-full relative">
         <div>
             <div class="absolute right-[8px] top-[8px]">
                 <Button on:click={parent.onClose} class="p-3 hover:text-gray-600">
@@ -73,27 +74,55 @@
             </div>
         </div>
         <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500 !outline-none" />
-        <div class="grid gap-2 place-items-center grid-cols-1">
+        <div class="flex flex-col items-center space-y-2">
             {#if $searchForFriendsQuery.data}
-                {#each $searchForFriendsQuery.data as profile (profile.user_id)}
-                    <div class="flex flex-row rounded-md transition items-center justify-between px-4 py-2 w-full border border-solid border-surface-600 space-x-4">
-                        <a href="/{profile.username}" class="flex h-full justify-left group">
-                            <Avatar class="aspect-square" userId={profile.user_id} username={profile.username} {stexs} />
-                            <p class="text-[18px] text-left pl-4 break-all group-hover:text-secondary-400 transition">{profile.username}</p>
+                {#each $searchForFriendsQuery.data as profile, i}
+                    <div class="flex flex-row rounded-md transition items-center justify-between px-2 sm:px-4 py-2 w-full border border-solid border-surface-600 space-x-4">
+                        <a href="/{profile.username}" class="flex justify-left group gap-4">
+                            <div class="w-fit h-fit">
+                                <Avatar class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px]" userId={profile.user_id} username={profile.username} {stexs} />
+                            </div>
+                            <div class="w-fit h-full">
+                                <p class="text-[14px] sm:text-[16px] text-left break-all group-hover:text-secondary-400 transition">{profile.username}</p>
+                            </div>
                         </a>
-                        {#if profile.friends.length > 0}
-                            <p class="text-[16px] badge variant-ghost-surface">Is Friend</p>
-                        {:else if profile.user_id === userId}
-                            <p class="text-[16px] badge variant-ghost-surface">You</p>
-                        {:else if profile.friend_requests.length > 0}
-                            <Button title="Revoke Friend Requests" class="h-fit text-[14px] variant-ghost-error py-2 px-2">
-                                <Icon icon="pepicons-pop:minus" />
-                            </Button>
-                        {:else if profile.accept_friend_requests}
-                            <Button title="Send Friend Requests" class="h-fit text-[14px] variant-filled-primary py-2 px-2">
-                                <Icon icon="pepicons-pop:plus" />
-                            </Button>
-                        {/if}
+                        <div class="w-fit h-fit">
+                            {#if profile.friends.length > 0}
+                                <p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">Is Friend</p>
+                            {:else if profile.user_id === userId}
+                                <p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">You</p>
+                            {:else if profile.friend_requests.length > 0}
+                                <Button submitted={submitted === i} on:click={async () => {
+                                    if (operationSubmitted) return;
+
+                                    operationSubmitted = true;
+
+                                    submitted = i;
+                                    await $modalStore[0].meta.revokeFriendRequest(userId, profile.user_id, flash);
+                                    submitted = null;
+                                    $searchForFriendsQuery.refetch();
+
+                                    operationSubmitted = false;
+                                }} title="Revoke Friend Requests" class="h-fit text-[14px] variant-ghost-error py-2 px-2" progressClass="w-[14px]">
+                                    <Icon icon="pepicons-pop:minus" />
+                                </Button>
+                            {:else if profile.accept_friend_requests}
+                                <Button submitted={submitted === i} on:click={async () => {
+                                    if (operationSubmitted) return;
+
+                                    operationSubmitted = true;
+
+                                    submitted = i;
+                                    await $modalStore[0].meta.sendFriendRequest(profile.username, userId, profile.user_id, flash);
+                                    submitted = null;
+                                    $searchForFriendsQuery.refetch();
+
+                                    operationSubmitted = false;
+                                }} title="Send Friend Requests" class="h-fit text-[14px] variant-ghost-primary py-2 px-2" progressClass="w-[14px]">
+                                    <Icon icon="pepicons-pop:plus" />
+                                </Button>
+                            {/if}
+                        </div>
                     </div>
                 {/each}
             {/if}

@@ -5,7 +5,7 @@ import {
   CustomValidationError,
   errorMessages,
   message,
-} from 'utils-ts/messageBuilder';
+} from 'utils-node/messageBuilder';
 import { body } from 'express-validator';
 import {
   ARRAY_REQUIRED,
@@ -26,9 +26,9 @@ import {
   REDIRECT_URL_REQUIRED,
   REFRESH_TOKEN_REQUIRED,
   SCOPES_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 import {
   authorizationCodeController,
   clientCredentialsController,
@@ -48,7 +48,7 @@ import {
   validateRefreshToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 
 const router = Router();
 

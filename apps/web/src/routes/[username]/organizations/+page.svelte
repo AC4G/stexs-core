@@ -26,7 +26,7 @@
         page: 0,
         limit: 50, 
         size: 0,
-        amounts: [50, 100, 250, 500, 1000],
+        amounts: [50, 100],
     };
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
@@ -100,7 +100,7 @@
             if (count === 1) {
                 $flash = {
                     message: `Could not leave ${organizationName} organization as the only owner. Give someone the Owner role or delete the organization completely.`,
-                    classes: 'variant-ghost-error',
+                    classes: 'variant-glass-error',
                     timeout: 10000,
                 };
                 return;
@@ -115,13 +115,13 @@
         if (error) {
             $flash = {
                 message: `Could not leave ${organizationName} organization. Try out again.`,
-                classes: 'variant-ghost-error',
+                classes: 'variant-glass-error',
                 timeout: 5000,
             };
         } else {
             $flash = {
                 message: `Successfully left ${organizationName} organization.`,
-                classes: 'variant-ghost-success',
+                classes: 'variant-glass-success',
                 timeout: 5000,
             };
 
@@ -183,7 +183,7 @@
         </div>
     {/if}
 </div>
-<div class="grid gap-3">
+<div class="grid gap-2">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         {#each Array(10) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-[98px]" />
@@ -191,15 +191,15 @@
     {:else}
         {#if organizationsMemberQueryStore.data && organizationsMemberQueryStore.data.length > 0}
             {#each organizationsMemberQueryStore.data as organizationMember (organizationMember.organizations.id)}
-                <div class="flex space-x-4 px-4 py-2 flex-row border border-solid border-surface-600 rounded-lg items-center justify-between">
+                <div class="flex space-x-4 px-2 sm:px-4 py-2 flex-row border border-solid border-surface-600 rounded-lg items-center justify-between">
                         <div class="flex flex-row items-center space-x-4 group">
                             <a href="/organizations/{organizationMember.organizations.name}">
-                                <div class="aspect-square h-[80px] w-[80px] rounded-md bg-surface-700 border border-solid border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600">
+                                <div class="w-[68px] h-[68px] sm:h-[80px] sm:w-[80px] rounded-md bg-surface-700 border border-solid border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600">
                                     <OrganizationLogo {stexs} organizationId={organizationMember.organizations.id} alt={organizationMember.organizations.name} iconClass="text-[46px]" />
                                 </div>
                             </a>
                             <div class="flex flex-col space-y-1">
-                                <a href="/organizations/{organizationMember.organizations.name}" class="text-secondary-500 group-hover:text-secondary-400 transition break-all">
+                                <a href="/organizations/{organizationMember.organizations.name}" class="text-secondary-500 group-hover:text-secondary-400 transition break-all text-[16px] sm:text-[18px]">
                                     {organizationMember.organizations.name}
                                 </a>
                                 <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit">{organizationMember.role}</span>
@@ -208,9 +208,9 @@
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">
                         {#if $userStore?.id === $profileStore?.userId}
                             {#if (organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin')}
-                                <a href="/" class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 btn">Settings</a>
+                                <a href="/" class="h-fit text-[16px] sm:text-[18px] bg-surface-700 p-1 sm:p-2 border border-solid border-surface-500 btn">Settings</a>
                             {/if}
-                            <Button class="h-fit text-[18px] bg-surface-700 p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
+                            <Button class="h-fit text-[16px] sm:text-[18px] bg-surface-700 p-1 sm:p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                         {/if}
                     </div>
                 </div>

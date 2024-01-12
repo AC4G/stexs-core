@@ -12,19 +12,19 @@ import {
   PASSWORD_REQUIRED,
   RECOVERY_LINK_EXPIRED,
   TOKEN_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import {
   CustomValidationError,
   errorMessages,
   message,
-} from 'utils-ts/messageBuilder';
+} from 'utils-node/messageBuilder';
 import db from '../database';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import sendEmail from '../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../env-config';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 import logger from '../loggers/logger';
-import { isExpired } from 'utils-ts';
+import { isExpired } from 'utils-node';
 
 const router = Router();
 

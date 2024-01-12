@@ -5,7 +5,7 @@ import {
   message,
   errorMessages,
   CustomValidationError,
-} from 'utils-ts/messageBuilder';
+} from 'utils-node/messageBuilder';
 import { body } from 'express-validator';
 import { ISSUER } from '../../env-config';
 import {
@@ -18,10 +18,10 @@ import {
   INVALID_USERNAME,
   PASSWORD_REQUIRED,
   USERNAME_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../loggers/logger';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 
 const router = Router();
 

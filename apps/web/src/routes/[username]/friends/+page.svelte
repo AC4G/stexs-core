@@ -24,7 +24,7 @@
         page: 0,
         limit: 50, 
         size: 0,
-        amounts: [50, 100, 250, 500, 1000],
+        amounts: [50, 100],
     };
     let removeFriendSubmitted: boolean = false;
 
@@ -89,7 +89,7 @@
         </Button>
     {/if}
 </div>
-<div class="grid gap-2 place-items-center grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
+<div class="grid gap-2 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         {#each Array(50) as _}
             <div class="flex h-full w-full items-center justify-between">

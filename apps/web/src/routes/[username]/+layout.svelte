@@ -158,15 +158,15 @@
         <div class="sm:rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 gap-y-8">
                 {#if $profileQuery.isLoading || !$profileQuery.data}
-                    <div class="placeholder-circle animate-pulse mx-auto w-[148px] sm:w-[168px]" />
+                    <div class="placeholder-circle animate-pulse mx-auto w-[122px] sm:w-[168px]" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
                         <div class="placeholder animate-pulse w-[120px] h-[20px]" />
                         <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                     </div>
                 {:else}
-                    <Avatar {userId} {stexs} {username} class="mx-auto w-[148px] sm:w-[168px]" draggable="false" />
+                    <Avatar {userId} {stexs} {username} class="mx-auto w-[122px] sm:w-[168px]" draggable="false" />
                     <div class="grid grid-rows-3 gap-y-4 sm:gap-0 sm:pt-[12px] pl-4 sm:pl-[12px]">
-                        <p class="text-[28px] w-fit break-all">{$profileQuery.data?.username}</p>
+                        <p class="text-[22px] sm:text-[28px] w-fit break-all">{$profileQuery.data?.username}</p>
                         {#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
                             {#if $friendsAmountQuery.isLoading}
                                 <div class="placeholder animate-pulse w-[100px] h-[20px]" />
@@ -270,7 +270,7 @@
                     <div class="grid row-start-2 col-span-full place-items-center placeholder animte-pulse h-[1000px] rounded-md" />
                 {:else}
                     {#if ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
-                        <TabGroup active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
+                        <TabGroup regionList="flex flex-col sm:flex-row" active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
                             <TabAnchor href="/{username}" selected={path === `/${username}`} >
                                 <span>Inventory</span>
                             </TabAnchor>

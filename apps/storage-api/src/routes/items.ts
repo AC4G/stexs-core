@@ -10,20 +10,20 @@ import {
   checkTokenGrantType,
   transformJwtErrorMessages,
   validateAccessToken,
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
 import db from '../database';
-import { errorMessages } from 'utils-ts/messageBuilder';
+import { errorMessages } from 'utils-node/messageBuilder';
 import { 
   INTERNAL_ERROR, 
   ITEM_ID_NOT_NUMERIC, 
   ITEM_ID_REQUIRED, 
   UNAUTHORIZED_ACCESS 
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import s3 from '../s3';
 import { param } from 'express-validator';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 
 const router = Router();
 

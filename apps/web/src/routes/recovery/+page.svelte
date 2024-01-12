@@ -50,7 +50,7 @@
     if (response.success) {
       $flash = {
         message: response.message,
-        classes: 'variant-ghost-success',
+        classes: 'variant-glass-primary',
         timeout: 10000,
       };
       submitted = false;
@@ -91,7 +91,7 @@
     if (response.success) {
       $flash = {
         message: response.message,
-        classes: 'variant-ghost-success',
+        classes: 'variant-glass-success',
         timeout: 10000,
       };
       return goto('/sign-in');

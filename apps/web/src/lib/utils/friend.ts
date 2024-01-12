@@ -1,7 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { stexs } from '../../stexsClient';
 import type { ToastSettings } from '@skeletonlabs/skeleton';
-import type { Profile } from '$lib/stores/profile';
+import type { Profile } from '$lib/stores/profileStore';
 
 export async function acceptFriendRequest(
   user_id: string,
@@ -18,7 +18,7 @@ export async function acceptFriendRequest(
   if (error) {
     flash.set({
       message: `Could not add ${username} as a friend. Try out again.`,
-      classes: 'variant-ghost-error',
+      classes: 'variant-glass-error',
       timeout: 5000,
     });
   } else {
@@ -31,7 +31,7 @@ export async function acceptFriendRequest(
     });
     flash.set({
       message: `${username} is now your friend.`,
-      classes: 'variant-ghost-success',
+      classes: 'variant-glass-success',
       timeout: 5000,
     });
   }
@@ -55,7 +55,7 @@ export async function deleteFriendRequest(
   if (error) {
     flash.set({
       message: 'Could not delete friend request. Try out again.',
-      classes: 'variant-ghost-error',
+      classes: 'variant-glass-error',
       timeout: 5000,
     });
   } else {
@@ -68,7 +68,7 @@ export async function deleteFriendRequest(
     });
     flash.set({
       message: 'Friend request successfully deleted.',
-      classes: 'variant-ghost-success',
+      classes: 'variant-glass-success',
       timeout: 5000,
     });
   }
@@ -85,13 +85,13 @@ export async function removeFriend(userId: string, friendId: string, flash: Writ
   if (error) {
       flash.set({
           message: 'Could not remove friend. Try out again.',
-          classes: 'variant-ghost-error',
+          classes: 'variant-glass-error',
           timeout: 5000,
       });
   } else {
       flash.set({
           message: 'Friend successfully removed.',
-          classes: 'variant-ghost-success',
+          classes: 'variant-glass-success',
           timeout: 5000,
       });
   }
@@ -106,13 +106,13 @@ export async function revokeFriendRequest(requesterId: string, addresseeId: stri
   if (error) {
       flash.set({
           message: 'Could not revoke friend request. Try out again.',
-          classes: 'variant-ghost-error',
+          classes: 'variant-glass-error',
           timeout: 5000,
       });
   } else {
       flash.set({
           message: 'Friend request successfully revoked.',
-          classes: 'variant-ghost-success',
+          classes: 'variant-glass-success',
           timeout: 5000,
       });
   }
@@ -136,26 +136,26 @@ export async function sendFriendRequest(username: string, requester_id: string, 
     if (error) {
         flash.set({
             message: `Could not add ${username} as a friend. Try out again.`,
-            classes: 'variant-ghost-error',
+            classes: 'variant-glass-error',
             timeout: 5000,
         });
     } else {
         flash.set({
             message: `${username} is now your friend.`,
-            classes: 'variant-ghost-success',
+            classes: 'variant-glass-success',
             timeout: 5000,
         })
     };
   } else if (error) {
       flash.set({
           message: 'Could not send friend request. Try out again.',
-          classes: 'variant-ghost-error',
+          classes: 'variant-glass-error',
           timeout: 5000,
       });
   } else {
       flash.set({
           message: 'Friend request successfully send.',
-          classes: 'variant-ghost-success',
+          classes: 'variant-glass-success',
           timeout: 5000,
       });
   }

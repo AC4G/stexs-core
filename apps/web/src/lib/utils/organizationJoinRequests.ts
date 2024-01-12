@@ -1,7 +1,7 @@
 import type { Writable } from 'svelte/store';
 import { stexs } from '../../stexsClient';
 import type { ToastSettings } from '@skeletonlabs/skeleton';
-import type { Profile } from '$lib/stores/profile';
+import type { Profile } from '$lib/stores/profileStore';
 
 export async function acceptOrganizationJoinRequest(
     userId: string,
@@ -24,7 +24,7 @@ export async function acceptOrganizationJoinRequest(
     if (error) {
         flash.set({
             message: `Could not join ${organizationName} organization. Try out again.`,
-            classes: 'variant-ghost-error',
+            classes: 'variant-glass-error',
             timeout: 5000,
         });
     } else {
@@ -36,7 +36,7 @@ export async function acceptOrganizationJoinRequest(
         });
         flash.set({
             message: `You are now member of ${organizationName} organization.`,
-            classes: 'variant-ghost-success',
+            classes: 'variant-glass-success',
             timeout: 5000,
         });
     }
@@ -56,13 +56,13 @@ export async function deleteOrganizationJoinRequest(
     if (error) {
         flash.set({
             message: `Could not delete organization join request. Try out again.`,
-            classes: 'variant-ghost-error',
+            classes: 'variant-glass-error',
             timeout: 5000,
         });
     } else {
         flash.set({
             message: `Organization join request successfuly deleted.`,
-            classes: 'variant-ghost-success',
+            classes: 'variant-glass-success',
             timeout: 5000,
         });
     }

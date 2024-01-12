@@ -43,7 +43,6 @@
 		"lodash": "^4.17.21",
 		"stexs-client": "workspace:*",
 		"ui": "workspace:*",
-		"utils-ts": "workspace:*",
 		"uuid": "^9.0.0",
 		"validation-schemas": "workspace:*"
 	}

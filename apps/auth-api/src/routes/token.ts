@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { errorMessages } from 'utils-ts/messageBuilder';
+import { errorMessages } from 'utils-node/messageBuilder';
 import db from '../database';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
@@ -7,15 +7,15 @@ import {
   INTERNAL_ERROR,
   INVALID_TOKEN,
   REFRESH_TOKEN_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import logger from '../loggers/logger';
 import { body } from 'express-validator';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 import {
   validateRefreshToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
 
 const router = Router();

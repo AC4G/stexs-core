@@ -12,7 +12,7 @@ export async function blockUser(params: { blocked_id: string, blocker_id: string
     if (error) {
         flash.set({
             message: `Could not block ${username}. Try out again.`,
-            classes: 'variant-ghost-error',
+            classes: 'variant-glass-error',
             timeout: 5000,
         });
     } else {
@@ -30,7 +30,7 @@ export async function unblockUser(params: { userId: string, currentUserId: strin
     if (error) {
         flash.set({
             message: `Could not unblock ${username}. Try out again.`,
-            classes: 'variant-ghost-error',
+            classes: 'variant-glass-error',
             timeout: 5000,
         });
     } else {

@@ -18,21 +18,21 @@ import {
   PASSWORD_REQUIRED,
   TOTP_DISABLED,
   TYPE_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import {
   CustomValidationError,
   errorMessages,
   message,
-} from 'utils-ts/messageBuilder';
+} from 'utils-node/messageBuilder';
 import sendEmail from '../services/emailService';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 import logger from '../loggers/logger';
-import { generateCode, isExpired } from 'utils-ts';
+import { generateCode, isExpired } from 'utils-node';
 import {
   validateAccessToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
 import { getTOTPForVerification } from '../services/totpService';
 

@@ -1,15 +1,15 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
 import db from '../database';
-import { errorMessages } from 'utils-ts/messageBuilder';
-import { INTERNAL_ERROR } from 'utils-ts/errors';
+import { errorMessages } from 'utils-node/messageBuilder';
+import { INTERNAL_ERROR } from 'utils-node/errors';
 import logger from '../loggers/logger';
 import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
 import {
   validateAccessToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 
 const router = Router();
 

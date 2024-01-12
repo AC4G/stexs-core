@@ -4,16 +4,16 @@ import {
   INTERNAL_ERROR,
   INVALID_UUID,
   USER_ID_REQUIRED,
-} from 'utils-ts/errors';
-import { CustomValidationError, errorMessages } from 'utils-ts/messageBuilder';
-import validate from 'utils-ts/validatorMiddleware';
+} from 'utils-node/errors';
+import { CustomValidationError, errorMessages } from 'utils-node/messageBuilder';
+import validate from 'utils-node/validatorMiddleware';
 import s3 from '../s3';
 import logger from '../loggers/logger';
 import {
   validateAccessToken,
   checkTokenGrantType,
   transformJwtErrorMessages,
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 import { 
   ACCESS_TOKEN_SECRET, 
   AUDIENCE, 

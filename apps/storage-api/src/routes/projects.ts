@@ -1,16 +1,16 @@
 import { Router, Response } from 'express';
 import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
-import validate from 'utils-ts/validatorMiddleware';
+import validate from 'utils-node/validatorMiddleware';
 import { param } from 'express-validator';
 import { 
     INTERNAL_ERROR, 
     PROJECT_ID_NOT_NUMERIC, 
     PROJECT_ID_REQUIRED, 
     UNAUTHORIZED_ACCESS 
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import db from '../database';
-import { errorMessages } from 'utils-ts/messageBuilder';
+import { errorMessages } from 'utils-node/messageBuilder';
 import { 
     ACCESS_TOKEN_SECRET, 
     AUDIENCE, 
@@ -23,7 +23,7 @@ import {
     checkTokenGrantType, 
     transformJwtErrorMessages, 
     validateAccessToken 
-} from 'utils-ts/jwtMiddleware';
+} from 'utils-node/jwtMiddleware';
 
 const router = Router();
 
