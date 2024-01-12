@@ -163,20 +163,20 @@
     $: organizationsMemberQueryStore = $organizationsMemberQuery;
 </script>
 
-<div class="flex flex-col md:flex-row justify-between {organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''} space-y-2 md:space-y-0">
+<div class="flex flex-col sm:flex-row justify-between {organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
-        <div class="placeholder animate-pulse md:max-w-[220px] w-full h-[42px] rounded-lg" />
-        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse w-full md:w-[80px] h-[24px]" />
+        <div class="placeholder animate-pulse sm:max-w-[220px] w-full h-[42px] rounded-lg" />
+        <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
+            <div class="placeholder animate-pulse w-full sm:w-[80px] h-[24px]" />
         </div>
     {:else if organizationAmountQueryStore.data > 0}
-        <div class="md:max-w-[220px]">
+        <div class="sm:max-w-[220px]">
             <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
-        <div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
-            <p class="text-[18px]">Organizations {paginationSettings.size}</p>
+        <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
+            <p class="text-[18px]">Amount {paginationSettings.size}</p>
             {#if $userStore?.id === $profileStore?.userId}
-                <Button title="Create Organization" class="variant-ghost-primary p-3 h-fit w-full md:w-fit">
+                <Button title="Create Organization" class="variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
                     <Icon icon="pepicons-pop:plus" />
                 </Button>
             {/if}

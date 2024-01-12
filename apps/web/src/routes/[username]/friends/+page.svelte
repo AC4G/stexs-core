@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Avatar, Button } from "ui";
     import { getUserStore } from "$lib/stores/userStore";
-    import { Paginator, type PaginationSettings, getModalStore } from "@skeletonlabs/skeleton";
+    import { Paginator, type PaginationSettings, getModalStore, ListBoxItem } from "@skeletonlabs/skeleton";
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
     import { getProfileStore } from "$lib/stores/profileStore";
@@ -20,6 +20,7 @@
     const modalStore = getModalStore();
     let search: string = '';
     let previousSearch: string = '';
+    let filter: string = 'A-Z';
     let paginationSettings: PaginationSettings = {
         page: 0,
         limit: 50, 
@@ -34,7 +35,7 @@
         search = (e.target as HTMLInputElement)?.value || '';
     }, 200);
 
-    async function fetchFriends(userId: string, search: string, page: number, limit: number) {
+    async function fetchFriends(userId: string, search: string, filter: string, page: number, limit: number) {
         if (search !== previousSearch) {
             paginationSettings.page = 0;
             page = 0;
@@ -44,19 +45,29 @@
         const start = page * limit;
         const end = start + limit - 1;
 
-        const { data, count } = await stexs.from('friends')
+        const query = stexs.from('friends')
             .select(`
                 id,
                 profiles!friends_friend_id_fkey(
                     user_id,
                     username
-                )
+                ),
+                created_at
             `, { count: 'exact' })
             .eq('user_id', userId)
             .ilike('profiles.username', `%${search}%`)
-            .order('profiles(username)', { ascending: true })
             .not('profiles', 'is', null)
             .range(start, end);
+
+        if (filter === 'A-Z') query.order('profiles(username)', { ascending: true });
+
+        if (filter === 'Z-A') query.order('profiles(username)', { ascending: false });
+
+        if (filter === 'Latest') query.order('created_at', { ascending: false });
+
+        if (filter === 'Oldest') query.order('created_at', { ascending: true });
+
+        const { data, count } = await query;
 
         paginationSettings.size = count;
 
@@ -65,7 +76,7 @@
 
     $: friendsQuery = useQuery({
         queryKey: ['friends', $profileStore?.userId, paginationSettings.page, paginationSettings.limit],
-        queryFn: async () => await fetchFriends($profileStore?.userId!, search, paginationSettings.page, paginationSettings.limit),
+        queryFn: async () => await fetchFriends($profileStore?.userId!, search, filter, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
 
@@ -75,21 +86,35 @@
         $friendsQuery.isLoading || !$friendsQuery.data;
 </script>
 
-<div class="flex flex-col md:flex-row justify-between {friendsLoaded ? 'mb-[18px]' : ''} space-y-2 md:space-y-0">
+<div class="flex flex-col sm:flex-row justify-between {friendsLoaded ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0 sm:space-x-2">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="placeholder animate-pulse max-w-[220px] w-full h-[44px] rounded-lg" />
     {:else if $profileStore && $profileStore.totalFriends > 0}
-        <div class="md:max-w-[220px]">
-            <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
+        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
+            <div class="sm:max-w-[220px]">
+                <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
+            </div>
+            <div class="sm:w-fit">
+                <Button class="bg-surface-500 border border-solid border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+                    icon="iconamoon:arrow-down-2-duotone"
+                    class="text-[22px]"
+                    /></Button>
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                    <ListBoxItem bind:group={filter} name="filter" value={'A-Z'} class="transition">A-Z</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Z-A'} class="transition">Z-A</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Latest'} class="transition">Latest</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Oldest'} class="transition">Oldest</ListBoxItem>
+                </Dropdown>
+            </div>
         </div>
     {/if}
     {#if $userStore?.id === $profileStore?.userId}
-        <Button on:click={() => openAddFriendsModal($userStore.id, flash, modalStore, stexs)} title="Add Friends" class="variant-ghost-primary p-3 h-fit">
+        <Button on:click={() => openAddFriendsModal($userStore.id, flash, modalStore, stexs)} title="Add Friends" class="variant-ghost-primary p-[12.89px] h-fit">
             <Icon icon="pepicons-pop:plus" />
         </Button>
     {/if}
 </div>
-<div class="grid gap-2 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
+<div class="grid gap-2 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         {#each Array(50) as _}
             <div class="flex h-full w-full items-center justify-between">

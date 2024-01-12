@@ -1,9 +1,9 @@
 <script lang="ts">
     import type { SvelteComponent } from 'svelte';
-    import { getModalStore, Paginator, type PaginationSettings } from '@skeletonlabs/skeleton';
+    import { getModalStore, Paginator, type PaginationSettings, ListBoxItem } from '@skeletonlabs/skeleton';
     import Icon from "@iconify/svelte";
     import Button from '../Button.svelte';
-    import { Search } from "flowbite-svelte";
+    import { Dropdown, DropdownDivider, Search } from "flowbite-svelte";
     import { useQuery } from '@sveltestack/svelte-query';
     import { debounce } from "lodash";
     import Avatar from '../Avatar.svelte';
@@ -15,6 +15,7 @@
     const userId = $modalStore[0].meta.userId;
     const flash = $modalStore[0].meta.flash;
     let search: string = '';
+    let filter: string = 'All';
     let submitted: number;
     let operationSubmitted: boolean = false;
     let paginationSettings: PaginationSettings = {
@@ -27,28 +28,62 @@
         search = (e.target as HTMLInputElement)?.value || '';
     }, 200);
 
-    async function fetchUserProfiles(search: string, page: number, limit: number) {
-        if (search.length === 0) return;
+    async function fetchUserProfiles(search: string, filter: string, page: number, limit: number) {
+        if (search.length === 0 && filter === 'All') {
+            paginationSettings.size = 0;
+            return;
+        }
 
         const start = page * limit;
         const end = start + limit - 1;
 
-        const { data, count } = await stexs.from('profiles')
+        if (filter === 'All') {
+            const query = stexs.from('profiles')
+                .select(`
+                    user_id,
+                    username,
+                    accept_friend_requests,
+                    friends!friends_friend_id_fkey(
+                        user_id
+                    ),
+                    friend_requests!friend_requests_addressee_id_fkey(
+                        requester_id
+                    )
+                `, { count: 'exact' })
+                .ilike('username', `%${search}%`)
+                .order('username', { ascending: true })
+                .eq('friends.user_id', userId)
+                .range(start, end);
+
+            const { data, count } = await query;
+
+            paginationSettings.size = count;
+
+            return data;
+        }
+
+        const query = stexs.from('profiles')
             .select(`
                 user_id,
                 username,
                 accept_friend_requests,
-                friends!friends_friend_id_fkey(
-                    user_id
-                ),
-                friend_requests!friend_requests_addressee_id_fkey(
+                friend_requests!friend_requests_addressee_id_fkey!inner(
                     requester_id
                 )
             `, { count: 'exact' })
             .ilike('username', `%${search}%`)
-            .order('username', { ascending: true })
-            .eq('friends.user_id', userId)
+            .eq('friend_requests.requester_id', userId)
             .range(start, end);
+
+        if (filter === 'A-Z') query.order('username', { ascending: true });
+
+        if (filter === 'Z-A') query.order('username', { ascending: false });
+
+        if (filter === 'Latest') query.order('created_at', { referencedTable: 'friend_requests', ascending: false });
+
+        if (filter === 'Oldest') query.order('created_at', { referencedTable: 'friend_requests', ascending: true });
+
+        const { data, count } = await query;
 
         paginationSettings.size = count;
         
@@ -57,7 +92,7 @@
 
     $: searchForFriendsQuery = useQuery({
         queryKey: ['searchForFriends', userId, paginationSettings.page, paginationSettings.limit],
-        queryFn: async () => fetchUserProfiles(search, paginationSettings.page, paginationSettings.limit)
+        queryFn: async () => fetchUserProfiles(search, filter, paginationSettings.page, paginationSettings.limit)
     });
 </script>
 
@@ -73,12 +108,35 @@
                 <p class="text-[22px]">Add Friends</p>
             </div>
         </div>
-        <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500 !outline-none" />
+        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 sm:space-x-4">
+            <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500 !outline-none" />
+            <div class="sm:w-fit">
+                <Button class="bg-surface-500 border border-solid border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+                    icon="iconamoon:arrow-down-2-duotone"
+                    class="text-[22px]"
+                    /></Button>
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                    <ListBoxItem bind:group={filter} name="filter" value={'All'} active="variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">All</ListBoxItem>
+                    <DropdownDivider />
+                    <div class="px-4 py-2 rounded variant-ghost-surface">
+                        <p class="text-[16px]">Pending</p>
+                    </div> 
+                    <ListBoxItem bind:group={filter} name="filter" value={'A-Z'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">A-Z</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Z-A'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">Z-A</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Latest'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">Latest</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Oldest'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">Oldest</ListBoxItem>
+                </Dropdown>
+            </div>
+        </div>
         <div class="flex flex-col items-center space-y-2">
-            {#if $searchForFriendsQuery.data}
-                {#each $searchForFriendsQuery.data as profile, i}
+            {#if $searchForFriendsQuery.isLoading}
+                {#each Array(10) as _}
+                    <div class="placeholder animate-pulse aspect-square w-full h-[62px] sm:h-[72px]" />
+                {/each}
+            {:else if $searchForFriendsQuery.data}
+                {#each $searchForFriendsQuery.data as profile, i (profile.user_id)}
                     <div class="flex flex-row rounded-md transition items-center justify-between px-2 sm:px-4 py-2 w-full border border-solid border-surface-600 space-x-4">
-                        <a href="/{profile.username}" class="flex justify-left group gap-4">
+                        <a href="/{profile.username}" on:click={parent.onClose} class="flex justify-left group gap-4">
                             <div class="w-fit h-fit">
                                 <Avatar class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px]" userId={profile.user_id} username={profile.username} {stexs} />
                             </div>
@@ -87,7 +145,7 @@
                             </div>
                         </a>
                         <div class="w-fit h-fit">
-                            {#if profile.friends.length > 0}
+                            {#if profile.friends?.length > 0}
                                 <p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">Is Friend</p>
                             {:else if profile.user_id === userId}
                                 <p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">You</p>
@@ -126,7 +184,7 @@
                     </div>
                 {/each}
             {/if}
-            {#if search.length > 0 && $searchForFriendsQuery.data?.length === 0}
+            {#if $searchForFriendsQuery.data?.length === 0}
                 <p class="text-[18px]">No users found</p>
             {/if}
         </div>
@@ -136,7 +194,7 @@
                     <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
                     <div class="placeholder animate-pulse h-[38px] w-[110px]" />
                 </div>
-            {:else if search.length > 0 && paginationSettings.size > 0 }
+            {:else if paginationSettings.size > 0 }
                 <Paginator
                     bind:settings={paginationSettings}
                     showFirstLastButtons="{false}"
