@@ -75,10 +75,14 @@
         </div>
         <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500 !outline-none" />
         <div class="flex flex-col items-center space-y-2">
-            {#if $searchForFriendsQuery.data}
+            {#if $searchForFriendsQuery.isLoading}
+                {#each Array(10) as _}
+                    <div class="placeholder animate-pulse aspect-square w-full h-[62px] sm:h-[72px]" />
+                {/each}
+            {:else if $searchForFriendsQuery.data}
                 {#each $searchForFriendsQuery.data as profile, i}
                     <div class="flex flex-row rounded-md transition items-center justify-between px-2 sm:px-4 py-2 w-full border border-solid border-surface-600 space-x-4">
-                        <a href="/{profile.username}" class="flex justify-left group gap-4">
+                        <a href="/{profile.username}" on:click={parent.onClose} class="flex justify-left group gap-4">
                             <div class="w-fit h-fit">
                                 <Avatar class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px]" userId={profile.user_id} username={profile.username} {stexs} />
                             </div>

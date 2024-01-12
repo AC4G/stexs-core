@@ -3,14 +3,16 @@
     import { stexs } from "../../stexsClient";
     import { getUserStore } from "$lib/stores/userStore";
     import { getProfileStore } from "$lib/stores/profileStore";
-    import { Dropdown, Search } from "flowbite-svelte";
+    import { Dropdown, DropdownDivider, Search } from "flowbite-svelte";
     import { 
         Paginator, 
         type PaginationSettings, 
         RadioGroup, 
         RadioItem, 
         getModalStore, 
-        type ModalSettings 
+        type ModalSettings, 
+        ListBoxItem
+
     } from "@skeletonlabs/skeleton";
     import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";
@@ -22,6 +24,9 @@
     let search: string = '';
     let previousSearch: string = '';
     let projectSearch: string = '';
+    let filterTime: string = 'Latest';
+    let filterAlphabet: string = ''; 
+    let filterAmount: string = '';
     $: searchedProjects = $projectsQuery?.data?.filter((project: { id: number, name: string, organization_name: string }) => {
         const searchTerms = projectSearch.toLowerCase().split(' ');
 
@@ -39,7 +44,7 @@
         page: 0,
         limit: 50,
         size: 0,
-        amounts: [50, 100, 250, 500, 1000],
+        amounts: [50, 100],
     };
     let previousProject: number | undefined;
     const handleSearch = debounce((e: Event) => {
@@ -77,7 +82,13 @@
         enabled: !!$profileStore?.userId
     });
 
-    async function fetchInventory(userId: string, search: string, selectedProject: number | undefined, page: number, limit: number) {
+    async function fetchInventory(userId: string, search: string, filters: {
+        filterTime: string,
+        filterAlphabet: string,
+        filterAmount: string
+    },selectedProject: number | undefined, page: number, limit: number) {
+        const { filterTime, filterAlphabet, filterAmount } = filters;
+
         if (search !== previousSearch || previousProject !== selectedProject) {
             paginationSettings.page = 0;
             page = 0;
@@ -103,8 +114,37 @@
             .ilike('items.name', `%${search}%`)
             .not('items', 'is', null)
             .not('items.projects', 'is', null)
-            .order('id', { ascending: false })
             .range(start, end);
+
+        if (filterTime === 'Latest') {
+            query
+                .order('created_at', { ascending: true })
+                .order('updated_at', { ascending: true });
+        }
+
+        if (filterTime === 'Oldest') {
+            query
+                .order('created_at', { ascending: false })
+                .order('updated_at', { ascending: false });
+        }
+
+        if (filterAlphabet === 'A-Z') query.order('items(name)', { ascending: true });
+
+        if (filterAlphabet === 'Z-A') query.order('items(name)', { ascending: false });
+
+        if (filterAmount === 'Unique') query.is('amount', null);
+
+        if (filterAmount === 'Amount: Low to high') {
+            query
+                .order('amount', { ascending: true })
+                .not('amount', 'is', null);
+        }
+
+        if (filterAmount === 'Amount: High to low') {
+            query
+                .order('amount', { ascending: false })
+                .not('amount', 'is', null);
+        }
 
         if (selectedProject !== undefined && typeof selectedProject == 'number') {
             query.eq('items.projects.id', selectedProject);
@@ -154,26 +194,47 @@
 
     $: inventoryQuery = useQuery({
         queryKey: ['inventories', $profileStore?.userId],
-        queryFn: async () => await fetchInventory($profileStore?.userId!, search, selectedProject, paginationSettings.page, paginationSettings.limit),
+        queryFn: async () => await fetchInventory($profileStore?.userId!, search, { filterTime, filterAlphabet, filterAmount }, selectedProject, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
 </script>
 
-<div class="flex flex-col md:flex-row justify-between {$itemsAmountQuery?.data > 0 ? 'mb-[18px]' : ''} space-y-4 md:space-y-0">
+<div class="flex flex-col md:flex-row justify-between {$itemsAmountQuery?.data > 0 ? 'mb-[18px]' : ''} space-y-4 md:space-y-0 md:space-x-2">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         <div class="placeholder animate-pulse md:max-w-[220px] w-full h-[42px] rounded-lg" />
-        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse w-full md:w-[80px] h-[44px]" />
+        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
             <div class="placeholder animate-pulse w-full md:w-[70px] h-[24px]" />
+            <div class="placeholder animate-pulse w-full md:w-[80px] h-[44px]" />
+            <div class="placeholder animate-pulse w-full md:w-[80px] h-[44px]" />
         </div>
     {:else if $itemsAmountQuery.data > 0}
         <div class="md:max-w-[220px]">
             <Search size="lg" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
-        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <p class="text-[18px]">Items {paginationSettings.size}</p>
+        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-2">
+            <p class="text-[18px] text-center">Items {paginationSettings.size}</p>
             <div class="w-full md:w-fit">
-                <Button class="bg-surface-500 border border-solid border-gray-600 w-full md:w-fit">{selectedProjectName}<Icon
+                <Button class="bg-surface-500 border border-solid border-gray-600 w-full py-[8px] md:w-fit">Sort by<Icon
+                    icon="iconamoon:arrow-down-2-duotone"
+                    class="text-[24px]"
+                    /></Button>
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500 max-h-[400px] overflow-y-auto">
+                    <ListBoxItem bind:group={filterTime} name="filter" value='Latest'>Latest</ListBoxItem>
+                    <ListBoxItem bind:group={filterTime} name="filter" value='Oldest'>Oldest</ListBoxItem>
+                    <ListBoxItem bind:group={filterTime} name="filter" value=''>No Filter</ListBoxItem>
+                    <DropdownDivider />
+                    <ListBoxItem bind:group={filterAlphabet} name="filter" value='A-Z'>A-Z</ListBoxItem>
+                    <ListBoxItem bind:group={filterAlphabet} name="filter" value='Z-A'>Z-A</ListBoxItem>
+                    <ListBoxItem bind:group={filterAlphabet} name="filter" value=''>No Filter</ListBoxItem>
+                    <DropdownDivider />
+                    <ListBoxItem bind:group={filterAmount} name="filter" value='Unique'>Unique</ListBoxItem>
+                    <ListBoxItem bind:group={filterAmount} name="filter" value='Amount: Low to high'>Amount: Low to high</ListBoxItem>
+                    <ListBoxItem bind:group={filterAmount} name="filter" value='Amount: High to low'>Amount: High to low</ListBoxItem>
+                    <ListBoxItem bind:group={filterAmount} name="filter" value=''>No Filter</ListBoxItem>
+                </Dropdown>
+            </div>
+            <div class="w-full md:w-fit">
+                <Button class="bg-surface-500 border border-solid border-gray-600 w-full py-[8px] md:w-fit">{selectedProjectName}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[24px]"
                     /></Button>
