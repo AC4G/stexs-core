@@ -75,7 +75,7 @@
                 </Button>
             </div>
             <div class="h-fit">
-                <p class="text-[22px]">Add Friends</p>
+                <p class="text-[22px]">Add Friend</p>
             </div>
         </div>
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 sm:space-x-4 items-center">
