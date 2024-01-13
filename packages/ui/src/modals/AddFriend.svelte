@@ -37,53 +37,23 @@
         const start = page * limit;
         const end = start + limit - 1;
 
-        if (filter === 'All') {
-            const query = stexs.from('profiles')
-                .select(`
-                    user_id,
-                    username,
-                    accept_friend_requests,
-                    friends!friends_friend_id_fkey(
-                        user_id
-                    ),
-                    friend_requests!friend_requests_addressee_id_fkey(
-                        requester_id
-                    )
-                `, { count: 'exact' })
-                .ilike('username', `%${search}%`)
-                .order('username', { ascending: true })
-                .eq('friends.user_id', userId)
-                .range(start, end);
-
-            const { data, count } = await query;
-
-            paginationSettings.size = count;
-
-            return data;
-        }
-
-        const query = stexs.from('profiles')
+        const { data, count } = await stexs.from('profiles')
             .select(`
                 user_id,
                 username,
                 accept_friend_requests,
-                friend_requests!friend_requests_addressee_id_fkey!inner(
+                friends!friends_friend_id_fkey(
+                    user_id
+                ),
+                friend_requests!friend_requests_addressee_id_fkey${filter === 'Pending' ? '!inner': ''}(
                     requester_id
                 )
             `, { count: 'exact' })
             .ilike('username', `%${search}%`)
+            .order('username', { ascending: true })
+            .eq('friends.user_id', userId)
             .eq('friend_requests.requester_id', userId)
             .range(start, end);
-
-        if (filter === 'A-Z') query.order('username', { ascending: true });
-
-        if (filter === 'Z-A') query.order('username', { ascending: false });
-
-        if (filter === 'Latest') query.order('created_at', { referencedTable: 'friend_requests', ascending: false });
-
-        if (filter === 'Oldest') query.order('created_at', { referencedTable: 'friend_requests', ascending: true });
-
-        const { data, count } = await query;
 
         paginationSettings.size = count;
         
@@ -108,26 +78,34 @@
                 <p class="text-[22px]">Add Friends</p>
             </div>
         </div>
-        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 sm:space-x-4">
+        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 sm:space-x-4 items-center">
             <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500 !outline-none" />
-            <div class="sm:w-fit">
+            <div class="w-full sm:w-fit">
                 <Button class="bg-surface-500 border border-solid border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[22px]"
                     /></Button>
                 <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
-                    <ListBoxItem bind:group={filter} name="filter" value={'All'} active="variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">All</ListBoxItem>
-                    <DropdownDivider />
-                    <div class="px-4 py-2 rounded variant-ghost-surface">
-                        <p class="text-[16px]">Pending</p>
-                    </div> 
-                    <ListBoxItem bind:group={filter} name="filter" value={'A-Z'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">A-Z</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Z-A'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">Z-A</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Latest'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">Latest</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Oldest'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="transition rounded-md px-4 py-2">Oldest</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'All'} active="variant-filled-primary" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">All</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Pending'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Pending</ListBoxItem>
                 </Dropdown>
             </div>
         </div>
+        {#if $searchForFriendsQuery.isLoading}
+            <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+                <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
+                <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+            </div>
+        {:else if paginationSettings.size > 0 }
+            <Paginator
+                bind:settings={paginationSettings}
+                showFirstLastButtons="{true}"
+                showPreviousNextButtons="{true}"
+                amountText="Users"
+                select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
+                controlVariant="bg-surface-500 border border-solid border-gray-600"
+            />
+        {/if}
         <div class="flex flex-col items-center space-y-2">
             {#if $searchForFriendsQuery.isLoading}
                 {#each Array(10) as _}
@@ -197,9 +175,8 @@
             {:else if paginationSettings.size > 0 }
                 <Paginator
                     bind:settings={paginationSettings}
-                    showFirstLastButtons="{false}"
-                    showPreviousNextButtons="{true}"
-                    showNumerals
+                    showFirstLastButtons="{true}"
+	                showPreviousNextButtons="{true}"
                     amountText="Users"
                     select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
                     controlVariant="bg-surface-500 border border-solid border-gray-600"

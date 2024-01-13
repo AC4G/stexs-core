@@ -3,7 +3,7 @@ import type { Writable } from "svelte/store";
 import type StexsClient from "stexs-client";
 import { sendFriendRequest, revokeFriendRequest } from '../friend';
 
-export function openAddFriendsModal(userId: string, flash: Writable<ToastSettings>, modalStore: ModalStore, stexs: StexsClient) {
+export function openAddFriendModal(userId: string, flash: Writable<ToastSettings>, modalStore: ModalStore, stexs: StexsClient) {
     const modal: ModalSettings = {
         type: 'component',
         component: 'addFriends',

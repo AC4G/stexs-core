@@ -173,14 +173,28 @@
         <div class="sm:max-w-[220px]">
             <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
-        <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <p class="text-[18px]">Amount {paginationSettings.size}</p>
-            {#if $userStore?.id === $profileStore?.userId}
-                <Button title="Create Organization" class="variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
-                    <Icon icon="pepicons-pop:plus" />
-                </Button>
-            {/if}
+        {#if $userStore?.id === $profileStore?.userId}
+            <Button title="Create Organization" class="variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
+                <Icon icon="pepicons-pop:plus" />
+            </Button>
+        {/if}
+    {/if}
+</div>
+<div class="{organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''}">
+    {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
+        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <div class="placeholder animate-pulse h-[44px] w-full md:w-[182px]" />
+            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
         </div>
+    {:else if organizationAmountQueryStore?.data > 0}
+        <Paginator
+            bind:settings={paginationSettings}
+            showFirstLastButtons="{true}"
+            showPreviousNextButtons="{true}"
+            amountText="Organizations"
+            select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
+            controlVariant="bg-surface-500 border border-solid border-gray-600"
+        />
     {/if}
 </div>
 <div class="grid gap-2">
@@ -235,9 +249,8 @@
     {:else if organizationAmountQueryStore?.data > 0}
         <Paginator
             bind:settings={paginationSettings}
-            showFirstLastButtons="{false}"
+            showFirstLastButtons="{true}"
             showPreviousNextButtons="{true}"
-            showNumerals
             amountText="Organizations"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
             controlVariant="bg-surface-500 border border-solid border-gray-600"

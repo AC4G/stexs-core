@@ -231,13 +231,13 @@
                                         await removeFriend($userStore.id, userId, flash);
                                         removeFriendSubmitted = false;
                                         $isFriendQuery.refetch();
-                                    }} submitted={removeFriendSubmitted} class="hover:!bg-surface-500 rounded transition text-red-600 whitespace-nowrap">Remove Friend</DropdownItem>
+                                    }} submitted={removeFriendSubmitted} class="hover:!bg-surface-500 rounded text-red-600 whitespace-nowrap">Remove Friend</DropdownItem>
                                 {/if}
-                                <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-600">Report</DropdownItem>
+                                <DropdownItem class="hover:!bg-surface-500 rounded text-red-600">Report</DropdownItem>
                                 {#if isCurrentUserBlocker}
-                                    <DropdownItem on:click={() => openUnblockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-primary-500">Unblock</DropdownItem>
+                                    <DropdownItem on:click={() => openUnblockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded text-primary-500">Unblock</DropdownItem>
                                 {:else}
-                                    <DropdownItem on:click={() => openBlockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
+                                    <DropdownItem on:click={() => openBlockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem>
                                 {/if}
                             </Dropdown>
                         </div>
