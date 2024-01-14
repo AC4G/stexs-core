@@ -8,7 +8,6 @@
     getToastStore,
     Modal,
     type ModalComponent,
-    popup,
     type PopupSettings
   } from '@skeletonlabs/skeleton';
   import { 
@@ -20,7 +19,7 @@
     InventoryItem, 
     OrganizationLogo, 
     ProjectLogo,
-    AddFriends
+    AddFriend
   } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
@@ -51,8 +50,9 @@
   import { createPreviousPageStore } from '$lib/stores/previousPageStore';
   import { acceptOrganizationJoinRequest, deleteOrganizationJoinRequest } from '$lib/utils/organizationJoinRequests';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
-  import { storePopup } from '@skeletonlabs/skeleton';
+  import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
   import { acceptProjectJoinRequest, deleteProjectJoinRequest } from '$lib/utils/projectJoinRequests';
+  import { openAddFriendModal } from "$lib/utils/modals/friendModals";
   
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
   initializeStores();
@@ -60,6 +60,7 @@
   const profileStore = createProfileStore();
   const userStore = createUserStore();
   const toastStore = getToastStore();
+  const modalStore = getModalStore();
   const flash = getFlash(page);
 
   const queryClient = new QueryClient({
@@ -73,7 +74,7 @@
   const modalRegistry: Record<string, ModalComponent> = {
     confirm: { ref: Confirm },
     inventoryItem: { ref: InventoryItem },
-    addFriends: { ref: AddFriends }
+    addFriends: { ref: AddFriend }
   };
   const excludeRoutes = [
     '/sign-in',
@@ -81,6 +82,16 @@
     '/sign-in-confirm',
     '/recovery',
   ];
+  const addFriendPopup: PopupSettings = {
+    event: 'hover',
+    target: 'addFriendPopup',
+    placement: 'bottom'
+  };
+  const notificationsPopup: PopupSettings = {
+    event: 'hover',
+    target: 'notificationsPopup',
+    placement: 'bottom'
+  };
   const avatarPopup: PopupSettings = {
     event: 'hover',
     target: 'avatarPopup',
@@ -261,26 +272,35 @@
           <a href="/sign-in" class="btn py-1 px-2">Sign-In</a>
           <a href="/sign-up" class="btn variant-filled-primary py-1 px-2">Sign-Up</a>
         {:else}
-          <div class="relative mr-[8px] flex items-center space-x-4 w-full justify-end">
-            <Button class="notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">
-              <div class="relative inline-block">
+          <div class="relative mr-[8px] flex items-center space-x-2 w-full justify-end">
+            <button use:popup={addFriendPopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="hover:bg-surface-500 rounded-full transition p-3">
+              <Icon icon="octicon:person-add-16" />
+              <div class="p-2 variant-filled-surface rounded-md" data-popup="addFriendPopup">
+                <p class="text-[14px] break-all">Add Friend</p>
+              </div>
+            </button>
+            <button use:popup={notificationsPopup} class="notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">
+              <div class="relative">
                 {#if notifications.exists}
                   <span class="badge-icon variant-filled-primary absolute -top-1 -right-2 z-10 w-[8px] h-[8px]"></span>
                 {/if}
-                <Icon icon="mdi:bell-outline" width="18" />
               </div>
-            </Button>
+              <Icon icon="mdi:bell-outline" width="18" />
+              <div class="p-2 variant-filled-surface rounded-md" data-popup="notificationsPopup">
+                <p class="text-[14px] break-all">Notifications</p>
+              </div>
+            </button>
             <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-68px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[280px]">
               <div class="grid grid-cols-3 space-x-1">
-                <Button on:click={() => selectedNotificationMenu = 'friends'} class="p-0 hover:bg-surface-500 transition items-center flex {selectedNotificationMenu === 'friends' && 'bg-surface-500'}">
+                <Button on:click={() => selectedNotificationMenu = 'friends'} class="p-0 hover:bg-surface-500 items-center flex {selectedNotificationMenu === 'friends' && 'variant-filled-primary hover:variant-filled-primary'}">
                   <Icon icon="octicon:person-add-16" />
                   <p class="text-[16px]">{notifications.friendRequests.count}</p>
                 </Button>
-                <Button on:click={() => selectedNotificationMenu = 'organizations'} class="px-0 py-2 hover:bg-surface-500 transition items-center flex {selectedNotificationMenu === 'organizations' && 'bg-surface-500'}">
+                <Button on:click={() => selectedNotificationMenu = 'organizations'} class="px-0 py-2 hover:bg-surface-500 items-center flex {selectedNotificationMenu === 'organizations' && 'variant-filled-primary hover:variant-filled-primary'}">
                   <Icon icon="bi:building-add" />
                   <p class="text-[16px]">{notifications.organizationRequests.count}</p>
                 </Button>
-                <Button on:click={() => selectedNotificationMenu = 'projects'} class="p-0 hover:bg-surface-500 transition items-center flex {selectedNotificationMenu === 'projects' && 'bg-surface-500'}">
+                <Button on:click={() => selectedNotificationMenu = 'projects'} class="p-0 hover:bg-surface-500 items-center flex {selectedNotificationMenu === 'projects' && 'variant-filled-primary hover:variant-filled-primary'}">
                   <Icon icon="octicon:project-symlink-24" />
                   <p class="text-[16px]">{notifications.projectRequests.count}</p>
                 </Button>
@@ -383,12 +403,12 @@
                 <p class="text-[16px] break-all">{$userStore?.username}</p>
               </div> 
               <DropdownDivider />
-              <DropdownItem href="/{$userStore?.username}" class="hover:!bg-surface-500 transition rounded text-[16px]">Profile</DropdownItem>
-              <DropdownItem href="/{$userStore?.username}/friends" class="hover:!bg-surface-500 transition rounded text-[16px]">Friends</DropdownItem>
-              <DropdownItem href="/{$userStore?.username}/organizations" class="hover:!bg-surface-500 transition rounded text-[16px]">Organizations</DropdownItem>
-              <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]">Settings</DropdownItem>
+              <DropdownItem href="/account" class="hover:!bg-surface-500 rounded text-[16px]">Account</DropdownItem>
+              <DropdownItem href="/{$userStore?.username}" class="hover:!bg-surface-500 rounded text-[16px]">Profile</DropdownItem>
+              <DropdownItem href="/{$userStore?.username}/friends" class="hover:!bg-surface-500 rounded text-[16px]">Friends</DropdownItem>
+              <DropdownItem href="/{$userStore?.username}/organizations" class="hover:!bg-surface-500 rounded text-[16px]">Organizations</DropdownItem>
               <DropdownDivider />
-              <DropdownItem class="hover:!bg-surface-500 transition rounded text-[16px]" on:click={async () => { await stexs.auth.signOut() }} >Sign out</DropdownItem>
+              <DropdownItem class="hover:!bg-surface-500 rounded text-[16px]" on:click={async () => { await stexs.auth.signOut() }} >Sign out</DropdownItem>
             </Dropdown>
           </div>
         {/if}

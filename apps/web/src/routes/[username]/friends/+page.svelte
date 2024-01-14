@@ -11,7 +11,7 @@
     import { getFlash } from "sveltekit-flash-message";
     import { page } from "$app/stores";
     import { openBlockUserModal } from "$lib/utils/modals/userModals";
-    import { openAddFriendsModal } from "$lib/utils/modals/friendModals";
+    import { openAddFriendModal } from "$lib/utils/modals/friendModals";
     import { debounce } from "lodash";
 
     const flash = getFlash(page);
@@ -100,18 +100,35 @@
                     class="text-[22px]"
                     /></Button>
                 <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
-                    <ListBoxItem bind:group={filter} name="filter" value={'A-Z'} class="transition">A-Z</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Z-A'} class="transition">Z-A</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Latest'} class="transition">Latest</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Oldest'} class="transition">Oldest</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'A-Z'}>A-Z</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Z-A'}>Z-A</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Latest'}>Latest</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Oldest'}>Oldest</ListBoxItem>
                 </Dropdown>
             </div>
         </div>
     {/if}
     {#if $userStore?.id === $profileStore?.userId}
-        <Button on:click={() => openAddFriendsModal($userStore.id, flash, modalStore, stexs)} title="Add Friends" class="variant-ghost-primary p-[12.89px] h-fit">
+        <Button on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} title="Add Friends" class="variant-ghost-primary p-[12.89px] h-fit">
             <Icon icon="pepicons-pop:plus" />
         </Button>
+    {/if}
+</div>
+<div class="{friendsLoaded ? 'mb-[18px]' : ''}">
+    {#if $friendsQuery.isLoading || !$friendsQuery.data}
+        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
+            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+        </div>
+    {:else if $profileStore && $profileStore.totalFriends > 0}
+        <Paginator
+            bind:settings={paginationSettings}
+            showFirstLastButtons="{true}"
+            showPreviousNextButtons="{true}"
+            amountText="Friends"
+            select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
+            controlVariant="bg-surface-500 border border-solid border-gray-600"
+        />
     {/if}
 </div>
 <div class="grid gap-2 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
@@ -140,9 +157,9 @@
                                 await removeFriend($userStore.id, friend.profiles.user_id, flash);
                                 removeFriendSubmitted = false;
                                 $friendsQuery.refetch();
-                            }} submitted={removeFriendSubmitted} class="hover:!bg-surface-500 rounded transition text-red-600 whitespace-nowrap">Remove Friend</DropdownItem>
-                            <DropdownItem class="hover:!bg-surface-500 rounded transition text-red-600">Report</DropdownItem>
-                            <DropdownItem on:click={() => openBlockUserModal(friend.profiles.user_id, $userStore.id, friend.profiles.username, flash, modalStore)} class="hover:!bg-surface-500 rounded transition text-red-600">Block</DropdownItem>
+                            }} submitted={removeFriendSubmitted} class="hover:!bg-surface-500 rounded text-red-600 whitespace-nowrap">Remove Friend</DropdownItem>
+                            <DropdownItem class="hover:!bg-surface-500 rounded text-red-600">Report</DropdownItem>
+                            <DropdownItem on:click={() => openBlockUserModal(friend.profiles.user_id, $userStore.id, friend.profiles.username, flash, modalStore)} class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem>
                         </Dropdown>
                     {/if}
                 </div>
@@ -167,9 +184,8 @@
     {:else if $profileStore && $profileStore.totalFriends > 0}
         <Paginator
             bind:settings={paginationSettings}
-            showFirstLastButtons="{false}"
+            showFirstLastButtons="{true}"
             showPreviousNextButtons="{true}"
-            showNumerals
             amountText="Friends"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
             controlVariant="bg-surface-500 border border-solid border-gray-600"
