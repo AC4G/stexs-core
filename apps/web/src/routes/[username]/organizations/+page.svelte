@@ -7,9 +7,12 @@
         Paginator, 
         type PaginationSettings, 
         type ModalSettings, 
-        getModalStore 
+        getModalStore, 
+        ListBoxItem,
+        type PopupSettings,
+        popup
     } from "@skeletonlabs/skeleton";
-    import { Search } from "flowbite-svelte";
+    import { Dropdown, Search } from "flowbite-svelte";
     import { Button, OrganizationLogo } from 'ui';
     import { getFlash } from 'sveltekit-flash-message/client';
     import { page } from '$app/stores';
@@ -20,8 +23,14 @@
     const userStore = getUserStore();
     const modalStore = getModalStore();
     const flash = getFlash(page);
+    const newOrganizationProfilePopup: PopupSettings = {
+        event: 'hover',
+        target: 'newOrganizationProfilePopup',
+        placement: 'top'
+    };
     let search: string = '';
     let previousSearch: string = '';
+    let filter: string = 'A-Z';
     let paginationSettings: PaginationSettings = {
         page: 0,
         limit: 50, 
@@ -51,7 +60,7 @@
 
     $: paginationSettings.size = organizationAmountQueryStore.data;
 
-    async function fetchOrganizations(userId: string, search: string, page: number, limit: number) {
+    async function fetchOrganizations(userId: string, search: string, filter: string, page: number, limit: number) {
         if (search !== previousSearch) {
             paginationSettings.page = 0;
             page = 0;
@@ -61,7 +70,7 @@
         const start = page * limit;
         const end = start + limit - 1;
 
-        const { data, count } = await stexs.from('organization_members')
+        const query = stexs.from('organization_members')
             .select(`
                 organizations(
                     id,
@@ -72,8 +81,17 @@
             .eq('member_id', userId)
             .ilike('organizations.name', `%${search}%`)
             .not('organizations', 'is', null)
-            .order('organizations(name)', { ascending: true })
             .range(start, end);
+
+        if (filter === 'A-Z') query.order('organizations(name)', { ascending: true });
+
+        if (filter === 'Z-A') query.order('organizations(name)', { ascending: false });
+
+        if (filter === 'Latest') query.order('created_at', { ascending: false });
+
+        if (filter === 'Oldest') query.order('created_at', { ascending: true });
+
+        const { data, count } = await query;
 
         paginationSettings.size = count;
 
@@ -155,7 +173,7 @@
 
     $: organizationsMemberQuery = useQuery({
         queryKey: ['organizationsProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
-        queryFn: async () => await fetchOrganizations($profileStore?.userId!, search, paginationSettings.page, paginationSettings.limit),
+        queryFn: async () => await fetchOrganizations($profileStore?.userId!, search, filter, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
 
@@ -163,28 +181,43 @@
     $: organizationsMemberQueryStore = $organizationsMemberQuery;
 </script>
 
-<div class="flex flex-col sm:flex-row justify-between {organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0">
+<div class="flex flex-col sm:flex-row justify-between {organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0 sm:space-x-2">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="placeholder animate-pulse sm:max-w-[220px] w-full h-[42px] rounded-lg" />
-        <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <div class="placeholder animate-pulse w-full sm:w-[80px] h-[24px]" />
-        </div>
+        <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
     {:else if organizationAmountQueryStore.data > 0}
-        <div class="sm:max-w-[220px]">
-            <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
+        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
+            <div class="sm:max-w-[220px]">
+                <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
+            </div>
+            <div class="sm:w-fit">
+                <Button class="bg-surface-500 border border-solid border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+                    icon="iconamoon:arrow-down-2-duotone"
+                    class="text-[22px]"
+                    /></Button>
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                    <ListBoxItem bind:group={filter} name="filter" value={'A-Z'}>A-Z</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Z-A'}>Z-A</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Latest'}>Latest</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Oldest'}>Oldest</ListBoxItem>
+                </Dropdown>
+            </div>
         </div>
         {#if $userStore?.id === $profileStore?.userId}
-            <Button title="Create Organization" class="variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
+            <button use:popup={newOrganizationProfilePopup} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
                 <Icon icon="pepicons-pop:plus" />
-            </Button>
+                <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="newOrganizationProfilePopup">
+                    <p class="text-[14px]">New Organization</p>
+                </div>
+            </button>
         {/if}
     {/if}
 </div>
 <div class="{organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''}">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[44px] w-full md:w-[182px]" />
-            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+            <div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]" />
+            <div class="placeholder animate-pulse h-[34px] w-[232px]" />
         </div>
     {:else if organizationAmountQueryStore?.data > 0}
         <Paginator
@@ -243,8 +276,8 @@
 <div class="{organizationAmountQueryStore?.data > 0 ? 'mt-[18px]' : ''}">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[44px] w-full md:w-[182px]" />
-            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+            <div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]" />
+            <div class="placeholder animate-pulse h-[34px] w-[232px]" />
         </div>
     {:else if organizationAmountQueryStore?.data > 0}
         <Paginator

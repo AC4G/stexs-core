@@ -24,11 +24,6 @@
     const isSSR = import.meta.env.SSR;
     const modalStore = getModalStore();
     const flash = getFlash(page);
-    const countryPopup: PopupSettings = {
-        event: 'hover',
-        target: 'countryPopup',
-        placement: 'top'
-    };
     let friendRequestSubmitted: boolean = false;
     let friendRequestRevocationSubmitted: boolean = false;
     let removeFriendSubmitted: boolean = false;
@@ -44,7 +39,6 @@
                 username,
                 description,
                 url,
-                country,
                 is_private,
                 accept_friend_requests
             `)
@@ -161,13 +155,6 @@
     });
 </script>
 
-<style>
-    .dont-break-out {
-        white-space: pre-line;
-        overflow-wrap: break-word;
-    }
-</style>
-
 <div class="w-screen h-screen bg-no-repeat bg-top">
     <div class="grid place-items-center">
         <div class="sm:rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
@@ -183,28 +170,20 @@
                 {:else}
                     <Avatar {userId} {stexs} {username} class="mx-auto w-[122px] sm:w-[168px]" draggable="false" />
                     <div class="grid gap-y-4 md:col-span-2 items-center">
-                        <div class="flex flex-row space-x-2 items-center">
-                            <p class="text-[20px] sm:text-[24px] break-all">{$profileQuery.data?.username}</p>
-                            <div use:popup={countryPopup}>
-                                <Icon icon="flag:{$profileQuery.data.country.toLowerCase()}-4x3" class="text-[19px] sm:text-[20px]" />
-                                <div class="p-2 variant-filled-surface rounded-md" data-popup="countryPopup">
-                                    <p class="text-[14px] break-all">{(new Intl.DisplayNames(['en'], { type: 'region' })).of($profileQuery.data.country)}</p>
-                                </div>
-                            </div>
-                        </div>
+                        <p class="text-[20px] sm:text-[24px] break-all">{$profileQuery.data?.username}</p>
                         {#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
                             {#if $friendsAmountQuery.isLoading}
                                 <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                             {:else}
-                                <p class="text-[16px] sm:text-[18px] va">Friends {$friendsAmountQuery.data ?? 0}</p>
+                                <p class="text-[16px] va">Friends {$friendsAmountQuery.data ?? 0}</p>
                             {/if}
                         {/if}
                         <div class="flex flex-col space-y-2">
                             {#if $profileQuery.data?.description}
-                                <p class="text-[12px] sm:text-[14px] dont-break-out">{$profileQuery.data.description}</p>
+                                <p class="text-[14px] dont-break-out">{$profileQuery.data.description}</p>
                             {/if}
                             {#if $profileQuery.data?.url}
-                                <a href="{$profileQuery.data?.url}" target=”_blank” class="text-[12px] w-fit sm:text-[14px] text-secondary-500 hover:text-secondary-400 transition break-all">{$profileQuery.data.url.split('://')[1]}</a>
+                                <a href="{$profileQuery.data?.url}" target=”_blank” class="text-[14px] w-fit text-secondary-500 hover:text-secondary-400 transition break-all">{$profileQuery.data.url.split('://')[1]}</a>
                             {/if}
                         </div>
                     </div>

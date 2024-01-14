@@ -199,21 +199,20 @@
     });
 </script>
 
-<div class="flex flex-col md:flex-row justify-between {$itemsAmountQuery?.data > 0 ? 'mb-[18px]' : ''} space-y-2 md:space-y-0 md:space-x-2">
+<div class="flex flex-col sm:flex-row justify-between {$itemsAmountQuery?.data > 0 ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0 sm:space-x-2">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
-        <div class="placeholder animate-pulse md:max-w-[220px] w-full h-[42px] rounded-lg" />
-        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
-            <div class="placeholder animate-pulse w-full md:w-[70px] h-[24px]" />
-            <div class="placeholder animate-pulse w-full md:w-[80px] h-[44px]" />
-            <div class="placeholder animate-pulse w-full md:w-[80px] h-[44px]" />
+        <div class="placeholder animate-pulse sm:max-w-[220px] w-full h-[42px] rounded-lg" />
+        <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
+            <div class="placeholder animate-pulse w-full sm:w-[115px] h-[44px]" />
+            <div class="placeholder animate-pulse w-full sm:w-[85px] h-[44px]" />
         </div>
     {:else if $itemsAmountQuery.data > 0}
-        <div class="md:max-w-[220px]">
+        <div class="sm:max-w-[220px]">
             <Search size="lg" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
-        <div class="w-full md:w-fit flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
-            <div class="w-full md:w-fit">
-                <Button class="bg-surface-500 border border-solid border-gray-600 w-full py-[8px] md:w-fit">Sort by<Icon
+        <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
+            <div class="w-full sm:w-fit">
+                <Button class="bg-surface-500 border border-solid border-gray-600 w-full py-[8px] sm:w-fit">Sort by<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[24px]"
                     /></Button>
@@ -283,8 +282,8 @@
 <div class="{$itemsAmountQuery?.data > 0 ? 'mb-[18px]' : ''}">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
+            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
     {:else if $itemsAmountQuery?.data > 0}
         <Paginator
@@ -323,8 +322,8 @@
 <div class="{$itemsAmountQuery?.data > 0 ? 'mt-[18px]' : ''}">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
+            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
     {:else if $itemsAmountQuery?.data > 0}
         <Paginator

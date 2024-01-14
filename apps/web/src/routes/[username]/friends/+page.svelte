@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Avatar, Button } from "ui";
     import { getUserStore } from "$lib/stores/userStore";
-    import { Paginator, type PaginationSettings, getModalStore, ListBoxItem } from "@skeletonlabs/skeleton";
+    import { Paginator, type PaginationSettings, getModalStore, ListBoxItem, popup, type PopupSettings } from "@skeletonlabs/skeleton";
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
     import { getProfileStore } from "$lib/stores/profileStore";
@@ -18,6 +18,11 @@
     const profileStore = getProfileStore();
     const userStore = getUserStore();
     const modalStore = getModalStore();
+    const addFriendProfilePopup: PopupSettings = {
+        event: 'hover',
+        target: 'addFriendProfilePopup',
+        placement: 'top'
+    };
     let search: string = '';
     let previousSearch: string = '';
     let filter: string = 'A-Z';
@@ -88,7 +93,8 @@
 
 <div class="flex flex-col sm:flex-row justify-between {friendsLoaded ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0 sm:space-x-2">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
-        <div class="placeholder animate-pulse max-w-[220px] w-full h-[44px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:max-w-[220px] w-full h-[44px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
     {:else if $profileStore && $profileStore.totalFriends > 0}
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
             <div class="sm:max-w-[220px]">
@@ -107,18 +113,21 @@
                 </Dropdown>
             </div>
         </div>
-    {/if}
-    {#if $userStore?.id === $profileStore?.userId}
-        <Button on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} title="Add Friends" class="variant-ghost-primary p-[12.89px] h-fit">
-            <Icon icon="pepicons-pop:plus" />
-        </Button>
+        {#if $userStore?.id === $profileStore?.userId}
+            <button use:popup={addFriendProfilePopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="relative btn variant-ghost-primary p-[12.89px]">
+                <Icon icon="pepicons-pop:plus"/>
+                <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendProfilePopup">
+                    <p class="text-[14px] break-all">Add Friend</p>
+                </div>
+            </button>
+        {/if}
     {/if}
 </div>
 <div class="{friendsLoaded ? 'mb-[18px]' : ''}">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
+            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
     {:else if $profileStore && $profileStore.totalFriends > 0}
         <Paginator
@@ -134,7 +143,7 @@
 <div class="grid gap-2 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         {#each Array(50) as _}
-            <div class="flex h-full w-full items-center justify-between">
+            <div class="flex h-full w-full items-center justify-left space-x-2 p-2">
                 <div class="placeholder-circle animate-pulse w-[40px] h-[40px]" />
                 <div class="placeholder animate-pulse w-[70%]" />
             </div>
@@ -178,8 +187,8 @@
 <div class="{friendsLoaded ? 'mt-[18px]' : ''}">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
+            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
     {:else if $profileStore && $profileStore.totalFriends > 0}
         <Paginator

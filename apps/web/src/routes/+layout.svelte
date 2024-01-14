@@ -269,12 +269,14 @@
     <AppShell>
       <Header>
         {#if !signedIn}
-          <a href="/sign-in" class="btn py-1 px-2">Sign-In</a>
-          <a href="/sign-up" class="btn variant-filled-primary py-1 px-2">Sign-Up</a>
+          <a href="/sign-in" class="btn py-[1px] px-[1px] bg-gradient-to-br variant-gradient-primary-secondary group">
+            <div class="bg-surface-100-800-token text-white rounded-md px-2 py-1 w-full h-full group-hover:bg-gradient-to-br variant-gradient-primary-secondary">Sign In</div>
+          </a>
+          <a href="/sign-up" class="btn variant-ghost-primary py-[4px] px-3">Sign Up</a>
         {:else}
           <div class="relative mr-[8px] flex items-center space-x-2 w-full justify-end">
             <button use:popup={addFriendPopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="hover:bg-surface-500 rounded-full transition p-3">
-              <Icon icon="octicon:person-add-16" />
+              <Icon icon="octicon:person-add-16" width="18" />
               <div class="p-2 variant-filled-surface rounded-md" data-popup="addFriendPopup">
                 <p class="text-[14px] break-all">Add Friend</p>
               </div>
@@ -400,7 +402,7 @@
             </button>
             <Dropdown triggeredBy=".avatarDropDown" activeUrl={$page.url.pathname} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
               <div class="px-4 py-2 rounded variant-ghost-surface">
-                <p class="text-[16px] break-all">{$userStore?.username}</p>
+                <p class="text-[16px] bg-gradient-to-br from-primary-500 to-secondary-500 bg-clip-text text-transparent box-decoration-clone break-all">{$userStore?.username}</p>
               </div> 
               <DropdownDivider />
               <DropdownItem href="/account" class="hover:!bg-surface-500 rounded text-[16px]">Account</DropdownItem>
