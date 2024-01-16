@@ -94,7 +94,7 @@
         {#if $searchForFriendsQuery.isLoading}
             <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
                 <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-                <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+                <div class="placeholder animate-pulse h-[38px] w-[240px]" />
             </div>
         {:else if paginationSettings.size > 0 }
             <Paginator
@@ -170,7 +170,7 @@
             {#if $searchForFriendsQuery.isLoading}
                 <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
                     <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-                    <div class="placeholder animate-pulse h-[38px] w-[110px]" />
+                    <div class="placeholder animate-pulse h-[38px] w-[240px]" />
                 </div>
             {:else if paginationSettings.size > 0 }
                 <Paginator

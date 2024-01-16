@@ -7,7 +7,7 @@
   gridColumns="grid-cols-3"
   slotDefault="place-self-center"
   slotTrail="place-content-end"
-  class="h-[70px] flex justify-center"
+  class="h-[70px] flex justify-center border-b border-solid border-surface-500"
 >
   <svelte:fragment slot="lead">
     {#if $page.url.pathname === '/'}
