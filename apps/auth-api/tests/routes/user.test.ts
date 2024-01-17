@@ -23,29 +23,28 @@ import {
   INVALID_PASSWORD_LENGTH,
   NEW_PASSWORD_EQUALS_CURRENT,
   PASSWORD_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message, testErrorMessages } from 'utils-ts/messageBuilder';
+import { message, testErrorMessages } from 'utils-node/messageBuilder';
 
-jest.mock('utils-ts/jwtMiddleware', () => ({
+jest.mock('utils-node/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  validateRefreshToken: (req: Request, res: Response, next: NextFunction) =>
-    next(),
-  validateSignInConfirmOrAccessToken: (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => next(),
+  validateRefreshToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
+  validateSignInConfirmOrAccessToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
-    next(),
+  transformJwtErrorMessages: jest.fn(() => 
+    (err: Object, req: Request, res: Response, next: NextFunction) => {}
   ),
 }));
 
@@ -87,7 +86,7 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CODE_EXPIRED }], expect),
+      testErrorMessages([{ info: CODE_EXPIRED }]),
     );
   });
 
@@ -103,7 +102,7 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: INVALID_CODE }], expect),
+      testErrorMessages([{ info: INVALID_CODE }]),
     );
   });
 
@@ -123,7 +122,7 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CODE_EXPIRED }], expect),
+      testErrorMessages([{ info: CODE_EXPIRED }]),
     );
   });
 
@@ -192,8 +191,7 @@ describe('User Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -214,8 +212,7 @@ describe('User Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -245,8 +242,7 @@ describe('User Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -301,8 +297,7 @@ describe('User Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -321,8 +316,7 @@ describe('User Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -346,8 +340,7 @@ describe('User Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -384,8 +377,7 @@ describe('User Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });

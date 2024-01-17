@@ -1,10 +1,10 @@
 import { Result } from 'express-validator';
+import { expect } from '@jest/globals';
 
 export function message(
   message: string,
   data: Record<string, any> = {},
-  success: boolean = true,
-  expect: any | undefined = undefined,
+  success: boolean = true
 ) {
   const baseMessage = {
     success,
@@ -61,8 +61,7 @@ export function errorMessages(errors: Error[]): { errors: ErrorResponse[] } {
 }
 
 export function testErrorMessages(
-  errors: Error[],
-  expect: any,
+  errors: Error[]
 ): {
   errors: ErrorResponse[];
 } {

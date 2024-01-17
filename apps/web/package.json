@@ -41,6 +41,7 @@
 		"@floating-ui/dom": "^1.5.3",
 		"fast-xml-parser": "^4.3.2",
 		"lodash": "^4.17.21",
+		"marked": "^11.1.1",
 		"stexs-client": "workspace:*",
 		"ui": "workspace:*",
 		"uuid": "^9.0.0",

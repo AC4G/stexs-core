@@ -24,7 +24,7 @@ import {
   MFA_EMAIL_ALREADY_DISABLED,
   MFA_EMAIL_ALREADY_ENABLED,
   TYPE_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import {
   SERVICE_NAME,
   TOTP_ALGORITHM,
@@ -33,27 +33,26 @@ import {
 } from '../../env-config';
 import { getTOTPForVerification } from '../../src/services/totpService';
 import { advanceTo, clear } from 'jest-date-mock';
-import { testErrorMessages, message } from 'utils-ts/messageBuilder';
+import { testErrorMessages, message } from 'utils-node/messageBuilder';
 
-jest.mock('utils-ts/jwtMiddleware', () => ({
+jest.mock('utils-node/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  validateRefreshToken: (req: Request, res: Response, next: NextFunction) =>
-    next(),
-  validateSignInConfirmOrAccessToken: (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => next(),
+  validateRefreshToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
+  validateSignInConfirmOrAccessToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
-    next(),
+  transformJwtErrorMessages: jest.fn(() => 
+    (err: Object, req: Request, res: Response, next: NextFunction) => {}
   ),
 }));
 
@@ -116,7 +115,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: TOTP_ALREADY_ENABLED }], expect),
+      testErrorMessages([{ info: TOTP_ALREADY_ENABLED }]),
     );
   });
 
@@ -165,8 +164,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -189,7 +187,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: TOTP_ALREADY_DISABLED }], expect),
+      testErrorMessages([{ info: TOTP_ALREADY_DISABLED }]),
     );
   });
 
@@ -220,8 +218,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -273,8 +270,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -298,7 +294,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: MFA_EMAIL_ALREADY_ENABLED }], expect),
+      testErrorMessages([{ info: MFA_EMAIL_ALREADY_ENABLED }]),
     );
   });
 
@@ -330,8 +326,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -364,8 +359,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -414,8 +408,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -439,7 +432,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: MFA_EMAIL_ALREADY_DISABLED }], expect),
+      testErrorMessages([{ info: MFA_EMAIL_ALREADY_DISABLED }]),
     );
   });
 
@@ -471,8 +464,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -505,8 +497,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -555,8 +546,7 @@ describe('MFA Routes', () => {
               path: 'type',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -578,8 +568,7 @@ describe('MFA Routes', () => {
               path: 'type',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -600,8 +589,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -624,7 +612,7 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: TOTP_ALREADY_VERIFIED }], expect),
+      testErrorMessages([{ info: TOTP_ALREADY_VERIFIED }]),
     );
   });
 
@@ -655,8 +643,7 @@ describe('MFA Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });

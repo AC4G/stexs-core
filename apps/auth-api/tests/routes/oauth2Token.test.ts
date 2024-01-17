@@ -27,10 +27,10 @@ import {
   INVALID_UUID,
   NO_CLIENT_SCOPES_SELECTED,
   REFRESH_TOKEN_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { sign } from 'jsonwebtoken';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
-import { testErrorMessages } from 'utils-ts/messageBuilder';
+import { testErrorMessages } from 'utils-node/messageBuilder';
 
 jest.mock('../../src/database', () => {
   return {
