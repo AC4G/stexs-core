@@ -24,28 +24,27 @@ import {
   INVALID_UUID,
   REDIRECT_URL_REQUIRED,
   SCOPES_REQUIRED,
-} from 'utils-ts/errors';
-import { testErrorMessages } from 'utils-ts/messageBuilder';
+} from 'utils-node/errors';
+import { testErrorMessages } from 'utils-node/messageBuilder';
 
-jest.mock('utils-ts/jwtMiddleware', () => ({
+jest.mock('utils-node/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  validateRefreshToken: (req: Request, res: Response, next: NextFunction) =>
-    next(),
-  validateSignInConfirmOrAccessToken: (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => next(),
+  validateRefreshToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
+  validateSignInConfirmOrAccessToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
-    next(),
+  transformJwtErrorMessages: jest.fn(() => 
+    (err: Object, req: Request, res: Response, next: NextFunction) => {}
   ),
 }));
 
@@ -90,8 +89,7 @@ describe('OAuth2 Authorize', () => {
               path: 'client_id',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -116,8 +114,7 @@ describe('OAuth2 Authorize', () => {
               path: 'client_id',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -141,8 +138,7 @@ describe('OAuth2 Authorize', () => {
               path: 'redirect_url',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -167,8 +163,7 @@ describe('OAuth2 Authorize', () => {
               path: 'redirect_url',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -190,8 +185,7 @@ describe('OAuth2 Authorize', () => {
               path: 'scopes',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -214,8 +208,7 @@ describe('OAuth2 Authorize', () => {
               path: 'scopes',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -238,8 +231,7 @@ describe('OAuth2 Authorize', () => {
               path: 'scopes',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -269,8 +261,7 @@ describe('OAuth2 Authorize', () => {
               paths: ['client_id', 'redirect_url', 'scopes'],
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -296,7 +287,7 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CLIENT_ALREADY_CONNECTED }], expect),
+      testErrorMessages([{ info: CLIENT_ALREADY_CONNECTED }]),
     );
   });
 

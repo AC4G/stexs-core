@@ -16,6 +16,8 @@ describe('sendEmail function', () => {
     const mockCreateTransport = jest.fn().mockReturnValue({
       sendMail: jest.fn().mockResolvedValue({} as never),
     });
+    
+    //@ts-ignore
     nodemailer.createTransport = mockCreateTransport;
 
     const to = 'test@example.com';
@@ -33,6 +35,7 @@ describe('sendEmail function', () => {
       },
     });
 
+    //@ts-ignore
     expect(mockCreateTransport().sendMail).toHaveBeenCalledWith({
       from: SMTP_EMAIL,
       to,

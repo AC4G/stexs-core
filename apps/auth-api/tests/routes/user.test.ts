@@ -23,29 +23,30 @@ import {
   INVALID_PASSWORD_LENGTH,
   NEW_PASSWORD_EQUALS_CURRENT,
   PASSWORD_REQUIRED,
-} from 'utils-ts/errors';
+  TYPE_REQUIRED,
+} from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message, testErrorMessages } from 'utils-ts/messageBuilder';
+import { message, testErrorMessages } from 'utils-node/messageBuilder';
+import { getTOTPForVerification } from '../../src/services/totpService';
 
-jest.mock('utils-ts/jwtMiddleware', () => ({
+jest.mock('utils-node/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  validateRefreshToken: (req: Request, res: Response, next: NextFunction) =>
-    next(),
-  validateSignInConfirmOrAccessToken: (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => next(),
+  validateRefreshToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
+  validateSignInConfirmOrAccessToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
-    next(),
+  transformJwtErrorMessages: jest.fn(() => 
+    (err: Object, req: Request, res: Response, next: NextFunction) => {}
   ),
 }));
 
@@ -87,7 +88,7 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CODE_EXPIRED }], expect),
+      testErrorMessages([{ info: CODE_EXPIRED }]),
     );
   });
 
@@ -103,7 +104,7 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: INVALID_CODE }], expect),
+      testErrorMessages([{ info: INVALID_CODE }]),
     );
   });
 
@@ -123,7 +124,7 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CODE_EXPIRED }], expect),
+      testErrorMessages([{ info: CODE_EXPIRED }]),
     );
   });
 
@@ -192,8 +193,21 @@ describe('User Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+          {
+            info: CODE_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'code'
+            }
+          },
+          {
+            info: TYPE_REQUIRED,
+            data: {
+              location: 'body',
+              path: 'type'
+            }
+          }
+        ]
       ),
     );
   });
@@ -201,7 +215,11 @@ describe('User Routes', () => {
   it('should handle password change with invalid password according to regex specification', async () => {
     const response = await request(server)
       .post('/user/password')
-      .send({ password: 'test123456' });
+      .send({ 
+        password: 'test123456',
+        code: 'mfa_code',
+        type: 'totp'
+      });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -214,13 +232,26 @@ describe('User Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
 
   it('should handle password with current password', async () => {
+    const code = getTOTPForVerification(
+      'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
+    ).generate();
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          totp: true,
+          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ'
+        },
+      ],
+      rowCount: 1,
+    } as never);
+    
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -232,7 +263,11 @@ describe('User Routes', () => {
 
     const response = await request(server)
       .post('/user/password')
-      .send({ password: 'Test12345.' });
+      .send({ 
+        password: 'Test12345.',
+        code,
+        type: 'totp'
+      });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -245,13 +280,26 @@ describe('User Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
 
   it('should handle password change', async () => {
+    const code = getTOTPForVerification(
+      'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
+    ).generate();
+    
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          totp: true,
+          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ'
+        },
+      ],
+      rowCount: 1,
+    } as never);
+
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -268,7 +316,11 @@ describe('User Routes', () => {
 
     const response = await request(server)
       .post('/user/password')
-      .send({ password: 'Test12345.' });
+      .send({ 
+        password: 'Test12345.',
+        code,
+        type: 'totp'
+      });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
@@ -288,7 +340,11 @@ describe('User Routes', () => {
 
     const response = await request(server)
       .post('/user/password')
-      .send({ password: 'Test123.' });
+      .send({ 
+        password: 'Test123.',
+        code: 'mfa_code',
+        type: 'totp'
+      });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -301,14 +357,18 @@ describe('User Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
 
   it('should handle email change with missing email', async () => {
-    const response = await request(server).post('/user/email');
+    const response = await request(server)
+      .post('/user/email')
+      .send({
+        code: 'mfa_code',
+        type: 'totp'
+      });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -321,8 +381,7 @@ describe('User Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -330,7 +389,11 @@ describe('User Routes', () => {
   it('should handle email change with invalid email', async () => {
     const response = await request(server)
       .post('/user/email')
-      .send({ email: 'test' });
+      .send({ 
+        email: 'test',
+        code: 'mfa_code',
+        type: 'totp'
+      });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
@@ -346,13 +409,26 @@ describe('User Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
 
   it('should handle email change', async () => {
+    const code = getTOTPForVerification(
+      'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
+    ).generate();
+    
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          totp: true,
+          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ'
+        },
+      ],
+      rowCount: 1,
+    } as never);
+
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
@@ -360,7 +436,11 @@ describe('User Routes', () => {
 
     const response = await request(server)
       .post('/user/email')
-      .send({ email: 'test@example.com' });
+      .send({ 
+        email: 'test@example.com',
+        code,
+        type: 'totp'
+      });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
@@ -384,8 +464,7 @@ describe('User Routes', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });

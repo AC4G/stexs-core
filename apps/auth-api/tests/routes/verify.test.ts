@@ -19,9 +19,9 @@ import {
   EMAIL_REQUIRED,
   INVALID_EMAIL,
   TOKEN_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message, testErrorMessages } from 'utils-ts/messageBuilder';
+import { message, testErrorMessages } from 'utils-node/messageBuilder';
 
 jest.mock('../../src/database', () => {
   return {
@@ -61,8 +61,7 @@ describe('Email Verification Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -86,8 +85,7 @@ describe('Email Verification Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -108,8 +106,7 @@ describe('Email Verification Routes', () => {
               path: 'token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -230,8 +227,7 @@ describe('Email Verification Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -255,8 +251,7 @@ describe('Email Verification Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -273,7 +268,7 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: EMAIL_NOT_FOUND }], expect),
+      testErrorMessages([{ info: EMAIL_NOT_FOUND }]),
     );
   });
 
@@ -294,7 +289,7 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: EMAIL_ALREADY_VERIFIED }], expect),
+      testErrorMessages([{ info: EMAIL_ALREADY_VERIFIED }]),
     );
   });
 
@@ -318,7 +313,7 @@ describe('Email Verification Routes', () => {
 
     const response = await request(server)
       .post('/verify/resend')
-      .send({ email });
+      .send({ email }); 
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(

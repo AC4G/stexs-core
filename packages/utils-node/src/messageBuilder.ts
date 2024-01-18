@@ -3,8 +3,7 @@ import { Result } from 'express-validator';
 export function message(
   message: string,
   data: Record<string, any> = {},
-  success: boolean = true,
-  expect: any | undefined = undefined,
+  success: boolean = true
 ) {
   const baseMessage = {
     success,
@@ -18,6 +17,7 @@ export function message(
   const onTest = () => {
     return {
       ...baseMessage,
+      //@ts-ignore
       timestamp: expect.any(String),
     };
   };
@@ -61,8 +61,7 @@ export function errorMessages(errors: Error[]): { errors: ErrorResponse[] } {
 }
 
 export function testErrorMessages(
-  errors: Error[],
-  expect: any,
+  errors: Error[]
 ): {
   errors: ErrorResponse[];
 } {
@@ -70,6 +69,7 @@ export function testErrorMessages(
     errors: errors.map((error) => ({
       code: error.info.code,
       message: error.info.message,
+      //@ts-ignore
       timestamp: expect.any(String) as unknown as string,
       data: {
         ...error.data,

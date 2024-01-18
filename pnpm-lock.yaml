@@ -357,6 +357,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      marked:
+        specifier: ^11.1.1
+        version: 11.1.1
       stexs-client:
         specifier: workspace:*
         version: link:../../packages/stexs-client
@@ -510,6 +513,9 @@ importers:
 
   packages/utils-node:
     dependencies:
+      '@jest/globals':
+        specifier: ^29.7.0
+        version: 29.7.0
       express:
         specifier: ^4.18.2
         version: 4.18.2
@@ -522,6 +528,9 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
+      otpauth:
+        specifier: ^9.1.4
+        version: 9.1.5
       winston:
         specifier: ^3.11.0
         version: 3.11.0
@@ -6105,6 +6114,12 @@ packages:
   /map-stream@0.1.0:
     resolution: {integrity: sha512-CkYQrPYZfWnu/DAmVCpTSX/xHpKZ80eKh2lAkyA6AJTef6bW+6JpbQZN5rofum7da+SyN1bi5ctTm+lTfcCW3g==}
     dev: true
+
+  /marked@11.1.1:
+    resolution: {integrity: sha512-EgxRjgK9axsQuUa/oKMx5DEY8oXpKJfk61rT5iY3aRlgU6QJtUcxU5OAymdhCvWvhYcd9FKmO5eQoX8m9VGJXg==}
+    engines: {node: '>= 18'}
+    hasBin: true
+    dev: false
 
   /mdn-data@2.0.30:
     resolution: {integrity: sha512-GaqWWShW4kv/G9IEucWScBx9G1/vsFZZJUO+tD26M8J8z3Kw5RDQjaoZe03YAClgeS/SWPOcb4nkFBTEi5DUEA==}

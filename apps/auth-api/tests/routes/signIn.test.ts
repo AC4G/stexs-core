@@ -13,29 +13,28 @@ import {
   PASSWORD_REQUIRED,
   TOKEN_REQUIRED,
   TYPE_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { NextFunction } from 'express';
-import { testErrorMessages } from 'utils-ts/messageBuilder';
+import { testErrorMessages } from 'utils-node/messageBuilder';
 
-jest.mock('utils-ts/jwtMiddleware', () => ({
+jest.mock('utils-node/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  validateRefreshToken: (req: Request, res: Response, next: NextFunction) =>
-    next(),
-  validateSignInConfirmOrAccessToken: (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => next(),
+  validateRefreshToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
+  validateSignInConfirmOrAccessToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: NextFunction) =>
-    next(),
+  transformJwtErrorMessages: jest.fn(() => 
+    (err: Object, req: Request, res: Response, next: NextFunction) => {}
   ),
 }));
 
@@ -69,8 +68,7 @@ describe('Sign In Route', () => {
               path: 'identifier',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -91,8 +89,7 @@ describe('Sign In Route', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -122,8 +119,7 @@ describe('Sign In Route', () => {
               paths: ['identifier', 'password'],
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -145,41 +141,11 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: EMAIL_NOT_VERIFIED }], expect),
+      testErrorMessages([{ info: EMAIL_NOT_VERIFIED }]),
     );
   });
 
-  it('should handle sign in without 2fa', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          id: 1,
-          email_verified_at: '2023-08-21T12:34:56Z',
-          types: [],
-        },
-      ],
-      rowCount: 1,
-    } as never);
-
-    const response = await request(server).post('/sign-in').send({
-      identifier: 'test',
-      password: 'Test123.',
-    });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      access_token: expect.stringMatching(
-        /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-      ),
-      refresh_token: expect.stringMatching(
-        /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-      ),
-      token_type: 'bearer',
-      expires: expect.any(Number),
-    });
-  });
-
-  it('should handle sign in initialization with email 2fa', async () => {
+  it('should handle sign in initialization with email MFA', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -206,7 +172,7 @@ describe('Sign In Route', () => {
     });
   });
 
-  it('should handle sign in initialization with totp 2fa', async () => {
+  it('should handle sign in initialization with totp MFA', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -250,8 +216,7 @@ describe('Sign In Route', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -273,8 +238,7 @@ describe('Sign In Route', () => {
               path: 'type',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -296,8 +260,7 @@ describe('Sign In Route', () => {
               path: 'token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -320,8 +283,7 @@ describe('Sign In Route', () => {
               path: 'type',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });

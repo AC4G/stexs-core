@@ -23,9 +23,9 @@ import {
   PASSWORD_REQUIRED,
   RECOVERY_LINK_EXPIRED,
   TOKEN_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message, testErrorMessages } from 'utils-ts/messageBuilder';
+import { message, testErrorMessages } from 'utils-node/messageBuilder';
 
 jest.mock('../../src/database', () => {
   return {
@@ -63,8 +63,7 @@ describe('Recovery Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -88,8 +87,7 @@ describe('Recovery Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -118,8 +116,7 @@ describe('Recovery Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -166,8 +163,7 @@ describe('Recovery Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -193,8 +189,7 @@ describe('Recovery Routes', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -216,8 +211,7 @@ describe('Recovery Routes', () => {
               path: 'token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -240,8 +234,7 @@ describe('Recovery Routes', () => {
               path: 'token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -263,8 +256,7 @@ describe('Recovery Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -287,8 +279,7 @@ describe('Recovery Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -311,8 +302,7 @@ describe('Recovery Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -340,8 +330,7 @@ describe('Recovery Routes', () => {
               paths: ['email', 'token'],
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -373,8 +362,7 @@ describe('Recovery Routes', () => {
               path: 'token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -415,8 +403,7 @@ describe('Recovery Routes', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });

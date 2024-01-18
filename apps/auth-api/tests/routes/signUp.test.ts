@@ -13,8 +13,8 @@ import {
   INVALID_USERNAME,
   PASSWORD_REQUIRED,
   USERNAME_REQUIRED,
-} from 'utils-ts/errors';
-import { message, testErrorMessages } from 'utils-ts/messageBuilder';
+} from 'utils-node/errors';
+import { message, testErrorMessages } from 'utils-node/messageBuilder';
 
 jest.mock('../../src/database', () => {
   return {
@@ -47,8 +47,7 @@ describe('Sign Up', () => {
               path: 'username',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -74,8 +73,7 @@ describe('Sign Up', () => {
               path: 'username',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -111,8 +109,7 @@ describe('Sign Up', () => {
               path: 'username',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -138,8 +135,7 @@ describe('Sign Up', () => {
               path: 'username',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -161,8 +157,7 @@ describe('Sign Up', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -188,8 +183,7 @@ describe('Sign Up', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -211,8 +205,7 @@ describe('Sign Up', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -235,8 +228,7 @@ describe('Sign Up', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -259,8 +251,7 @@ describe('Sign Up', () => {
               path: 'password',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -290,8 +281,7 @@ describe('Sign Up', () => {
               path: 'username',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -321,8 +311,7 @@ describe('Sign Up', () => {
               path: 'email',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -345,9 +334,7 @@ describe('Sign Up', () => {
 
     expect(response.status).toBe(201);
     expect(response.body).toEqual(
-      message(
-        'Sign up successful. Check your email for an verification link!',
-      ).onTest(),
+      message('Sign up successful. Check your email for an verification link!').onTest(),
     );
   });
 });

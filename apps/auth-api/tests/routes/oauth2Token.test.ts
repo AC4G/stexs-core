@@ -27,10 +27,10 @@ import {
   INVALID_UUID,
   NO_CLIENT_SCOPES_SELECTED,
   REFRESH_TOKEN_REQUIRED,
-} from 'utils-ts/errors';
+} from 'utils-node/errors';
 import { sign } from 'jsonwebtoken';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
-import { testErrorMessages } from 'utils-ts/messageBuilder';
+import { testErrorMessages } from 'utils-node/messageBuilder';
 
 jest.mock('../../src/database', () => {
   return {
@@ -86,8 +86,7 @@ describe('OAuth2 Token', () => {
               path: 'refresh_token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -106,8 +105,7 @@ describe('OAuth2 Token', () => {
               path: 'grant_type',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -131,8 +129,7 @@ describe('OAuth2 Token', () => {
               path: 'grant_type',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -167,8 +164,7 @@ describe('OAuth2 Token', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -192,8 +188,7 @@ describe('OAuth2 Token', () => {
               path: 'client_id',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -222,8 +217,7 @@ describe('OAuth2 Token', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -259,8 +253,7 @@ describe('OAuth2 Token', () => {
               path: 'code',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -336,8 +329,7 @@ describe('OAuth2 Token', () => {
               path: 'client_secret',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -365,8 +357,7 @@ describe('OAuth2 Token', () => {
               paths: ['client_id', 'client_secret'],
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -390,7 +381,7 @@ describe('OAuth2 Token', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }], expect),
+      testErrorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]),
     );
   });
 
@@ -442,8 +433,7 @@ describe('OAuth2 Token', () => {
               path: 'refresh_token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -475,8 +465,7 @@ describe('OAuth2 Token', () => {
               path: 'refresh_token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -507,8 +496,7 @@ describe('OAuth2 Token', () => {
               path: 'refresh_token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });

@@ -162,10 +162,10 @@
                 {#if $profileQuery.isLoading || !$profileQuery.data}
                     <div class="placeholder-circle animate-pulse mx-auto w-[122px] sm:w-[168px]" />
                     <div class="grid gap-y-4 md:col-span-2 items-center">
-                        <div class="placeholder animate-pulse w-[120px] h-[24px]" />
+                        <div class="placeholder animate-pulse w-[80%] sm:w-[120px] h-[24px]" />
                         <div class="placeholder animate-pulse w-[100px] h-[24px]" />
-                        <div class="placeholder animate-pulse w-[208px] h-[40px]" />
-                        <div class="placeholder animate-pulse w-[160px] h-[24px]" />
+                        <div class="placeholder animate-pulse sm:w-full h-[40px]" />
+                        <div class="placeholder animate-pulse w-[80%] sm:w-[50%] h-[24px]" />
                     </div>
                 {:else}
                     <Avatar {userId} {stexs} {username} class="mx-auto w-[122px] sm:w-[168px]" draggable="false" />

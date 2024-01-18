@@ -11,7 +11,7 @@ import {
 import { verify } from 'jsonwebtoken';
 import { Logger } from 'winston';
 
-class JWTError extends Error {
+export default class MiddlewareError extends Error {
   code: string;
   status: number;
   data?: Record<string, any>;
@@ -93,13 +93,13 @@ export function validateSignInConfirmOrAccessToken(
       },
       (e, decoded) => {
         if (e?.message === 'jwt expired')
-          throw new JWTError(INVALID_TOKEN, 403);
+          throw new MiddlewareError(INVALID_TOKEN, 403);
 
         if (e) return;
 
         if (typeof decoded === 'object' && 'grant_type' in decoded) {
           if (decoded?.grant_type !== 'sign_in_confirm')
-            throw new JWTError(
+            throw new MiddlewareError(
               {
                 message: INVALID_GRANT_TYPE.messages[0],
                 code: INVALID_GRANT_TYPE.code,
@@ -120,13 +120,13 @@ export function validateSignInConfirmOrAccessToken(
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      throw new JWTError(CREDENTIALS_REQUIRED, 400);
+      throw new MiddlewareError(CREDENTIALS_REQUIRED, 400);
     }
 
     const [bearer, accessToken] = authHeader.split(' ');
 
     if (bearer.toLowerCase() !== 'bearer') {
-      throw new JWTError(CREDENTIALS_BAD_FORMAT, 400);
+      throw new MiddlewareError(CREDENTIALS_BAD_FORMAT, 400);
     }
 
     verify(
@@ -139,13 +139,13 @@ export function validateSignInConfirmOrAccessToken(
       },
       (e, decoded) => {
         if (e?.message === 'jwt expired')
-          throw new JWTError(INVALID_TOKEN, 403);
+          throw new MiddlewareError(INVALID_TOKEN, 403);
 
         if (e) return;
 
         if (typeof decoded === 'object' && 'grant_type' in decoded) {
           if (decoded?.grant_type !== 'password')
-            throw new JWTError(
+            throw new MiddlewareError(
               {
                 message: INVALID_GRANT_TYPE.messages[0],
                 code: INVALID_GRANT_TYPE.code,
@@ -159,7 +159,7 @@ export function validateSignInConfirmOrAccessToken(
       },
     );
 
-    if (grantType === null) throw new JWTError(INVALID_TOKEN, 403);
+    if (grantType === null) throw new MiddlewareError(INVALID_TOKEN, 403);
 
     return next();
   };
@@ -171,7 +171,7 @@ export function checkTokenGrantType(grantTypes: string[]) {
 
     if (grantTypes.includes(token?.grant_type)) return next();
 
-    throw new JWTError(
+    throw new MiddlewareError(
       {
         message: INVALID_GRANT_TYPE.messages[0],
         code: INVALID_GRANT_TYPE.code,
@@ -199,7 +199,7 @@ export function checkScopes(requiredScopes: string[]) {
 
     if (hasRequiredScope) return next();
 
-    throw new JWTError(
+    throw new MiddlewareError(
       INSUFFICIENT_SCOPES,
       401,
       {
@@ -210,7 +210,7 @@ export function checkScopes(requiredScopes: string[]) {
 }
 
 export function transformJwtErrorMessages(logger: Logger) {
-  return (err: JWTError, req: Request, res: Response, next: NextFunction) => {
+  return (err: MiddlewareError, req: Request, res: Response, next: NextFunction) => {
     logger.warn(`JWT Error: ${err.message}`);
 
     return res.status(err.status).json(

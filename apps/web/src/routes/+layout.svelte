@@ -275,21 +275,23 @@
           <a href="/sign-up" class="btn variant-ghost-primary py-[4px] px-3">Sign Up</a>
         {:else}
           <div class="relative mr-[8px] flex items-center space-x-2 w-full justify-end">
-            <button use:popup={addFriendPopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="hover:bg-surface-500 rounded-full transition p-3">
+            <button use:popup={addFriendPopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="btn relative hover:bg-surface-500 rounded-full transition p-3">
               <Icon icon="octicon:person-add-16" width="18" />
-              <div class="p-2 variant-filled-surface rounded-md" data-popup="addFriendPopup">
+              <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendPopup">
                 <p class="text-[14px] break-all">Add Friend</p>
               </div>
             </button>
-            <button use:popup={notificationsPopup} class="notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">
-              <div class="relative">
-                {#if notifications.exists}
-                  <span class="badge-icon variant-filled-primary absolute -top-1 -right-2 z-10 w-[8px] h-[8px]"></span>
-                {/if}
-              </div>
-              <Icon icon="mdi:bell-outline" width="18" />
-              <div class="p-2 variant-filled-surface rounded-md" data-popup="notificationsPopup">
-                <p class="text-[14px] break-all">Notifications</p>
+            <button use:popup={notificationsPopup} class="btn relative notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">
+              <div>
+                <div class="relative">
+                  {#if notifications.exists}
+                    <span class="badge-icon variant-filled-primary absolute -top-1 -right-2 z-10 w-[8px] h-[8px]"></span>
+                  {/if}
+                </div>
+                <Icon icon="mdi:bell-outline" width="18" />
+                <div class="p-2 variant-filled-surface rounded-md" data-popup="notificationsPopup">
+                  <p class="text-[14px] break-all">Notifications</p>
+                </div>
               </div>
             </button>
             <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-68px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[280px]">
@@ -394,9 +396,9 @@
                 {/if}
               {/if}
             </Dropdown>
-            <button use:popup={avatarPopup}>
+            <button use:popup={avatarPopup} class="btn relative p-0">
               <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
-              <div class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px]" data-popup="avatarPopup">
+              <div class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px] !ml-0" data-popup="avatarPopup">
                 <p class="text-[14px] break-all">{$userStore?.username}</p>
               </div>
             </button>

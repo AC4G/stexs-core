@@ -11,27 +11,28 @@ import {
   CONNECTION_ALREADY_REVOKED,
   INVALID_UUID,
   REFRESH_TOKEN_REQUIRED,
-} from 'utils-ts/errors';
-import { message, testErrorMessages } from 'utils-ts/messageBuilder';
+} from 'utils-node/errors';
+import { message, testErrorMessages } from 'utils-node/messageBuilder';
 
-jest.mock('utils-ts/jwtMiddleware', () => ({
+jest.mock('utils-node/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  validateRefreshToken: (req: Request, res: Response, next: NextFunction) =>
-    next(),
-  validateSignInConfirmOrAccessToken: (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => next(),
+  validateRefreshToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
+  validateSignInConfirmOrAccessToken: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => next()
+  ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn((err, req, res, next: any) => next()),
+  transformJwtErrorMessages: jest.fn(() => 
+    (err: Object, req: Request, res: Response, next: NextFunction) => {}
+  ),
 }));
 
 jest.mock('../../src/database', () => {
@@ -116,8 +117,7 @@ describe('OAuth2 Routes', () => {
               path: 'client_id',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -138,8 +138,7 @@ describe('OAuth2 Routes', () => {
               path: 'client_id',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -156,7 +155,7 @@ describe('OAuth2 Routes', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CONNECTION_ALREADY_DELETED }], expect),
+      testErrorMessages([{ info: CONNECTION_ALREADY_DELETED }]),
     );
   });
 
@@ -190,8 +189,7 @@ describe('OAuth2 Routes', () => {
               path: 'refresh_token',
             },
           },
-        ],
-        expect,
+        ]
       ),
     );
   });
@@ -208,7 +206,7 @@ describe('OAuth2 Routes', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CONNECTION_ALREADY_REVOKED }], expect),
+      testErrorMessages([{ info: CONNECTION_ALREADY_REVOKED }]),
     );
   });
 
