@@ -145,7 +145,7 @@ describe('Sign In Route', () => {
     );
   });
 
-  it('should handle sign in initialization with email 2fa', async () => {
+  it('should handle sign in initialization with email MFA', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -172,7 +172,7 @@ describe('Sign In Route', () => {
     });
   });
 
-  it('should handle sign in initialization with totp 2fa', async () => {
+  it('should handle sign in initialization with totp MFA', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {

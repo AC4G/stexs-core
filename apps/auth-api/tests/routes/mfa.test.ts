@@ -196,6 +196,7 @@ describe('MFA Routes', () => {
       rows: [
         {
           totp: true,
+          email: true,
           totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
         },
       ],
@@ -232,6 +233,7 @@ describe('MFA Routes', () => {
       rows: [
         {
           totp: true,
+          email: true,
           totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
         },
       ],
@@ -440,6 +442,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
+          totp: true,
           email: true,
           email_code: 'valid-code',
           email_code_sent_at: '2023-09-15T12:00:00',
@@ -473,6 +476,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
+          totp: true,
           email: true,
           email_code: 'code',
           email_code_sent_at: '2023-09-15T11:54:00',
@@ -506,6 +510,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
+          totp: true,
           email: true,
           email_code: 'code',
           email_code_sent_at: '2023-09-15T12:00:00',

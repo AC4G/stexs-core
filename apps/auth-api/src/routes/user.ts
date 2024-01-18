@@ -117,10 +117,10 @@ router.post(
       if (type === 'totp') {
         const { rows, rowCount } = await db.query(
           `
-              SELECT totp, totp_secret
+              SELECT totp, totp_secret 
               FROM auth.mfa
               WHERE user_id = $1::uuid;
-          `,
+          `, 
           [userId],
         );
 
@@ -216,7 +216,7 @@ router.post(
       }
     } catch (e) {
       logger.error(
-        `Error while checking 2FA code for user: ${userId}. Error: ${
+        `Error while checking MFA code for user: ${userId}. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
@@ -323,7 +323,7 @@ router.post(
 
         return true;
       }),
-    validate(logger),
+    validate(logger)
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -333,10 +333,10 @@ router.post(
       if (type === 'totp') {
         const { rows, rowCount } = await db.query(
           `
-              SELECT totp, totp_secret
+              SELECT totp, totp_secret 
               FROM auth.mfa
               WHERE user_id = $1::uuid;
-          `,
+          `, 
           [userId],
         );
 
@@ -432,7 +432,7 @@ router.post(
       }
     } catch (e) {
       logger.error(
-        `Error while checking 2FA code for user: ${userId}. Error: ${
+        `Error while checking MFA code for user: ${userId}. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
