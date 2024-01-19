@@ -93,7 +93,6 @@
       {/if}
       <form
         class="space-y-6"
-        autocomplete="off"
         on:submit|preventDefault={signIn}
       >
         <label for="identifier" class="label">

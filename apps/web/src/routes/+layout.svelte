@@ -19,7 +19,8 @@
     InventoryItem, 
     OrganizationLogo, 
     ProjectLogo,
-    AddFriend
+    AddFriend,
+    CreateOrganization
   } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
@@ -53,6 +54,7 @@
   import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
   import { acceptProjectJoinRequest, deleteProjectJoinRequest } from '$lib/utils/projectJoinRequests';
   import { openAddFriendModal } from "$lib/utils/modals/friendModals";
+  import 'highlight.js/styles/github-dark.css';
   
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
   initializeStores();
@@ -74,7 +76,8 @@
   const modalRegistry: Record<string, ModalComponent> = {
     confirm: { ref: Confirm },
     inventoryItem: { ref: InventoryItem },
-    addFriends: { ref: AddFriend }
+    addFriends: { ref: AddFriend },
+    createOrganization: { ref: CreateOrganization }
   };
   const excludeRoutes = [
     '/sign-in',

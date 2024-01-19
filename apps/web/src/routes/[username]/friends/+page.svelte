@@ -1,7 +1,14 @@
 <script lang="ts">
     import { Avatar, Button } from "ui";
     import { getUserStore } from "$lib/stores/userStore";
-    import { Paginator, type PaginationSettings, getModalStore, ListBoxItem, popup, type PopupSettings } from "@skeletonlabs/skeleton";
+    import { 
+        Paginator, 
+        type PaginationSettings, 
+        getModalStore, 
+        ListBoxItem, 
+        popup, 
+        type PopupSettings 
+    } from "@skeletonlabs/skeleton";
     import { useQuery } from "@sveltestack/svelte-query";
     import { stexs } from "../../../stexsClient";
     import { getProfileStore } from "$lib/stores/profileStore";
