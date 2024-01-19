@@ -4,7 +4,7 @@
     import { getUserStore } from "$lib/stores/userStore";
     import { stexs } from "../../stexsClient";
     import { useQuery } from '@sveltestack/svelte-query'
-    import { TabAnchor, TabGroup, getModalStore, popup, type PopupSettings } from "@skeletonlabs/skeleton";
+    import { TabAnchor, TabGroup, getModalStore } from "@skeletonlabs/skeleton";
     import { goto } from "$app/navigation";
     import { getFlash } from "sveltekit-flash-message/client";
     import Icon from '@iconify/svelte';

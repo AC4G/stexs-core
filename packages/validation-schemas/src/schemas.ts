@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const emailValidation = z.string().email();
+
 const passwordValidation = z
   .string()
   .min(10, {
@@ -45,7 +47,7 @@ export const RecoveryConfirm = z
   });
 
 export const Recovery = z.object({
-  email: z.string().email(),
+  email: emailValidation,
 });
 
 export const SignInConfirm = z.object({
@@ -61,7 +63,7 @@ export const SignIn = z.object({
 export const SignUp = z
   .object({
     username: usernameValidation,
-    email: z.string().email(),
+    email: emailValidation,
     password: passwordValidation,
     confirm: z.string(),
     terms: z.boolean().refine((value) => value),
@@ -73,4 +75,26 @@ export const SignUp = z
         message: 'The passwords did not match',
         path: ['confirm'],
       });
+  });
+
+export const CreateOrganization = z
+  .object({
+    name: z.string().min(1, {
+      message: 'Name must be at least 1 character long.'
+    }).max(50, {
+      message: 'The name can be a maximum of 50 characters long.'
+    }),
+    displayName: z.string().max(50, {
+      message: 'The display name can be a maximum of 50 characters long.'
+    }),
+    description: z.string().max(150, {
+      message: 'The description can be a maximum of 150 characters long.'
+    }),
+    readme: z.string().max(10000, {
+      message: 'The readme can be a maximum of 10k characters long.'
+    }),
+    email: emailValidation,
+    url: z.string().max(150, {
+      message: 'The url can be a maximum of 150 characters long.'
+    })
   });

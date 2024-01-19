@@ -1,9 +1,14 @@
 <script lang="ts">
     import type { SvelteComponent } from 'svelte';
-    import { getModalStore, Paginator, type PaginationSettings, ListBoxItem } from '@skeletonlabs/skeleton';
+    import { 
+        getModalStore, 
+        Paginator, 
+        type PaginationSettings, 
+        ListBoxItem 
+    } from '@skeletonlabs/skeleton';
     import Icon from "@iconify/svelte";
     import Button from '../Button.svelte';
-    import { Dropdown, DropdownDivider, Search } from "flowbite-svelte";
+    import { Dropdown, Search } from "flowbite-svelte";
     import { useQuery } from '@sveltestack/svelte-query';
     import { debounce } from "lodash";
     import Avatar from '../Avatar.svelte';

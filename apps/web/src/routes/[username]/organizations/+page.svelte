@@ -18,6 +18,7 @@
     import { page } from '$app/stores';
     import { debounce } from 'lodash';
     import Icon from "@iconify/svelte";
+    import { openCreateOrganizationModal } from "$lib/utils/modals/organizationModals";
 
     const profileStore = getProfileStore();
     const userStore = getUserStore();
@@ -204,7 +205,7 @@
             </div>
         </div>
         {#if $userStore?.id === $profileStore?.userId}
-            <button use:popup={newOrganizationProfilePopup} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
+            <button use:popup={newOrganizationProfilePopup} on:click={() => openCreateOrganizationModal($userStore.id, flash, modalStore, stexs)} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
                 <Icon icon="pepicons-pop:plus" />
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="newOrganizationProfilePopup">
                     <p class="text-[14px]">New Organization</p>
@@ -255,9 +256,9 @@
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">
                         {#if $userStore?.id === $profileStore?.userId}
                             {#if (organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin')}
-                                <a href="/" class="h-fit text-[16px] sm:text-[18px] bg-surface-700 p-1 sm:p-2 border border-solid border-surface-500 btn">Settings</a>
+                                <a href="/" class="h-fit text-[16px] sm:text-[18px] bg-surface-700 p-1 border border-solid border-surface-500 btn">Settings</a>
                             {/if}
-                            <Button class="h-fit text-[16px] sm:text-[18px] bg-surface-700 p-1 sm:p-2 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
+                            <Button class="h-fit text-[16px] sm:text-[18px] bg-surface-700 p-1 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                         {/if}
                     </div>
                 </div>
