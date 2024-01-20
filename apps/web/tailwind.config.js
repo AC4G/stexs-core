@@ -6,6 +6,9 @@ import forms from '@tailwindcss/forms';
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'media',
+  safelist: [
+    'absolute'
+  ],
   content: [
     "./src/**/*.{html,js,svelte,ts}",
     "../../packages/ui/**/*.{html,js,svelte,ts}",

@@ -205,7 +205,7 @@
             </div>
         </div>
         {#if $userStore?.id === $profileStore?.userId}
-            <button use:popup={newOrganizationProfilePopup} on:click={() => openCreateOrganizationModal($userStore.id, flash, modalStore, stexs)} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
+            <button use:popup={newOrganizationProfilePopup} on:click={() => openCreateOrganizationModal(flash, modalStore, stexs, organizationsMemberQueryStore)} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
                 <Icon icon="pepicons-pop:plus" />
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="newOrganizationProfilePopup">
                     <p class="text-[14px]">New Organization</p>
@@ -250,7 +250,7 @@
                                 <a href="/organizations/{organizationMember.organizations.name}" class="text-secondary-500 group-hover:text-secondary-400 transition break-all text-[16px] sm:text-[18px]">
                                     {organizationMember.organizations.name}
                                 </a>
-                                <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit">{organizationMember.role}</span>
+                                <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit">{organizationMember.role}</span>
                             </div>
                         </div>
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">

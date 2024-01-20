@@ -54,10 +54,10 @@
   import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
   import { acceptProjectJoinRequest, deleteProjectJoinRequest } from '$lib/utils/projectJoinRequests';
   import { openAddFriendModal } from "$lib/utils/modals/friendModals";
-  import 'highlight.js/styles/github-dark.css';
-  
-  storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
+  import { initializeCopyButtonListener } from 'ui';
+
   initializeStores();
+  storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
   const previousPageStore = createPreviousPageStore();
   const profileStore = createProfileStore();
   const userStore = createUserStore();
@@ -136,6 +136,8 @@
   });
 
   onMount(async () => {
+    initializeCopyButtonListener();
+
     const session = stexs.auth.getSession();
 
     if (!session) return;

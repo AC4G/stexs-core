@@ -12,4 +12,4 @@ export { default as CreateOrganization } from './modals/CreateOrganization.svelt
 export { default as formatJSON } from './utils/jsonFormater';
 export { hideImg } from './utils/image';
 export { default as Markdown } from './Markdown.svelte';
-
+export * from './utils/copyToClipboard';
