@@ -13,6 +13,9 @@
     let preview: boolean = false;
 
     const modalStore = getModalStore();
+    const stexs = $modalStore[0].meta.stexsClient;
+    const flash = $modalStore[0].meta.flash;
+    const organizationsMemberStore = $modalStore[0].meta.organizationsMemberStore;
     const { form, errors, validate } = superForm(superValidateSync(CreateOrganization), {
         validators: CreateOrganization,
         validationMethod: 'oninput',
@@ -20,7 +23,39 @@
     });
 
     async function createOrganization() {
+        const result = await validate();
 
+        if (!result.valid) return;
+
+        submitted = true;
+
+        const { error } = await stexs.from('organizations')
+            .insert({
+                name: $form.name,
+                display_name: $form.displayName,
+                description: $form.description,
+                readme: $form.readme,
+                email: $form.email,
+                url: $form.url
+            });
+            
+        if (error) {
+            if (error.code === '23505') {
+                $errors['name'] = ['The name has already been taken. Please choose a different one.'];
+            } else {
+                $errors._errors = [error.message];
+            }
+        } else {
+            flash.set({
+                message: `${$form.name} organization was been successfully created.`,
+                classes: 'variant-glass-success',
+                timeout: 5000,
+            });
+            organizationsMemberStore.refetch();
+            modalStore.close();
+        }
+
+        submitted = false;
     }
 </script>
 
@@ -68,7 +103,6 @@
                 id="displayName"
                 class="input"
                 type="text"
-                required
                 bind:value={$form.displayName}
                 />
             </label>
@@ -83,7 +117,6 @@
                 id="description"
                 rows="3"
                 class="input"
-                required
                 bind:value={$form.description}
                 />
             </label>
@@ -95,13 +128,12 @@
             <label for="readme" class="label">
                 <span>
                     Readme
-                    <button type="button" class="btn p-0 chip variant-soft hover:variant-filled" on:click={() => preview = !preview}>Preview</button>
+                    <button type="button" class="btn px-1 chip variant-ghost-surface" on:click={() => preview = !preview}>Preview</button>
                 </span>
                 <textarea
                 id="readme"
                 rows="5"
                 class="input"
-                required
                 bind:value={$form.readme}
                 />
                 {#if preview && $form.readme.length > 0}
@@ -119,7 +151,6 @@
                 id="email"
                 class="input"
                 type="text"
-                required
                 bind:value={$form.email}
                 />
             </label>
@@ -134,7 +165,6 @@
                 id="url"
                 class="input"
                 type="text"
-                required
                 bind:value={$form.url}
                 />
             </label>

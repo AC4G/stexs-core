@@ -31,7 +31,7 @@
 
   async function signUp() {
     const result = await validate();
-
+ 
     if (!result.valid) return;
 
     submitted = true;

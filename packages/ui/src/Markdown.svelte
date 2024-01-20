@@ -8,6 +8,7 @@
     const purifyConfig = {
         ADD_ATTR: [
             'target',
+            'onclick'
         ]
     };
 
@@ -16,8 +17,17 @@
         breaks: true,
         renderer: {
             heading(text, level) {
+                const id = text.toLowerCase().replace(/[^\w]+/g, '-');
+
                 return `
-                    <h${level} class="h${level}">${text}</h${level}>
+                    <h${level} class="h${level} flex flex-row items-center group" id="${id}" dir="auto">
+                        ${text}
+                        <a class="anchor !text-white opacity-0 group-hover:opacity-100" href="#${id}" aria-hidden="true" tabindex="-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                                <path fill="currentColor" d="m7.775 3.275l1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0a.751.751 0 0 1 .018-1.042a.751.751 0 0 1 1.042-.018a1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018a.751.751 0 0 1-.018-1.042m-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018a.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0a.751.751 0 0 1-.018 1.042a.751.751 0 0 1-1.042.018a1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83"/>
+                            </svg>
+                        </a>
+                    </h${level}>
                 `;
             },
             link(href, title, text) {
@@ -27,19 +37,26 @@
             },
             codespan(text) {
                 return `
-                    <code class="pre p-1">${text}</code>
+                    <code class="pre p-1 bg-surface-900">${text}</code>
                 `;
             },
             code(code, language) {
+                if (code.length === 0) return;
+
                 const validLang = !!(language && hljs.getLanguage(language));
 
                 const highlighted = validLang
-                    ? hljs.highlight(language, code).value
+                    ? hljs.highlight(code, { language }).value
                     : code;
 
                 return `
-                    <div class="codeblock">
-                        <pre class="codeblock-pre"><code class="text-[14px] hljs codeblock-code ${language} language-${language} whitespace-pre rounded-md">${highlighted}</code></pre>
+                    <div class="codeblock relative">
+                        <pre class="codeblock-pre"><code class="text-[14px] hljs codeblock-code ${language} language-${language} whitespace-pre rounded-md">${highlighted}</code><button type="button" class="fill-white bg-surface-700 border border-solid border-surface-500 absolute btn top-[1.6px] right-[1.6px] p-2 copy-code">
+                            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="copy-docs-icon">
+                                <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path>
+                                <path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path>
+                            </svg>
+                        </button></pre>
                     </div>
                 `;
             },
@@ -121,14 +138,21 @@
                     borderColor += ' border-l-primary-500';
                 }
 
-                return `<blockquote class="blockquote bg-surface-900 p-2 not-italic ${borderColor}">${quote}</blockquote><br>`;
+                return `<blockquote class="blockquote bg-surface-900 p-2 not-italic ${borderColor}">${quote}</blockquote>`;
             }
         }
     });
 
-    $: parsed = DOMPurify.sanitize(marked.parse(text), purifyConfig);
+    //@ts-ignore
+    $: parsed = DOMPurify.sanitize(marked.parse(
+        text.replace(/```[\s\S]*?```|\n(?=\n)/g, match => {
+            return match.startsWith('```') ? match : '\n\n<br/>\n';
+        })
+    ), purifyConfig);
 </script>
 
-<div class="bg-surface-800 rounded-md border border-solid border-surface-500 p-2" {...$$restProps}>
-    {@html parsed}
-</div>
+{#if parsed.length > 0}
+    <div class="bg-surface-800 rounded-md border border-solid border-surface-500 p-2 cursor-auto" {...$$restProps}>
+        {@html parsed}
+    </div>
+{/if}

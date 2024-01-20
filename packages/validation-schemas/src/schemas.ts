@@ -86,15 +86,15 @@ export const CreateOrganization = z
     }),
     displayName: z.string().max(50, {
       message: 'The display name can be a maximum of 50 characters long.'
-    }),
+    }).nullable(),
     description: z.string().max(150, {
       message: 'The description can be a maximum of 150 characters long.'
-    }),
+    }).nullable(),
     readme: z.string().max(10000, {
       message: 'The readme can be a maximum of 10k characters long.'
-    }),
-    email: emailValidation,
+    }).nullable(),
+    email: emailValidation.nullable(),
     url: z.string().max(150, {
       message: 'The url can be a maximum of 150 characters long.'
-    })
+    }).nullable()
   });
