@@ -41,7 +41,10 @@ export default class StexsClient {
     this.rest = new PostgrestClient(config.restUrl, {
       fetch: this._fetchWithAuth.bind(this, fetch),
     });
-    this.storage = new StexsStorageClient(this._fetchWithAuth.bind(this, fetch), config.storageURL);
+    this.storage = new StexsStorageClient(
+      this._fetchWithAuth.bind(this, fetch),
+      config.storageURL,
+    );
 
     const httpLink = new HttpLink({
       uri: config.graphQLUrl,
@@ -106,7 +109,7 @@ export default class StexsClient {
   private async _fetchWithAuth(
     baseFetch: typeof fetch,
     input: RequestInfo,
-    init?: RequestInit
+    init?: RequestInit,
   ): Promise<Response> {
     await this._checkAndWaitForNewAccessToken();
 
@@ -125,10 +128,16 @@ export default class StexsClient {
     const maxRetries = 100;
 
     if (retryCount === maxRetries) {
-      throw Error(`Max retries (${maxRetries}) reached, access token still expired after waiting for refresh.`);
+      throw Error(
+        `Max retries (${maxRetries}) reached, access token still expired after waiting for refresh.`,
+      );
     }
 
-    if (retryCount < maxRetries && session && (session.expires * 1000 - 120 * 1000) <= Date.now()) {
+    if (
+      retryCount < maxRetries &&
+      session &&
+      session.expires * 1000 - 120 * 1000 <= Date.now()
+    ) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       return this._checkAndWaitForNewAccessToken(retryCount + 1);
     }

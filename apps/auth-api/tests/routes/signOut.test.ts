@@ -11,10 +11,10 @@ jest.mock('utils-node/jwtMiddleware', () => ({
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateRefreshToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmOrAccessToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
@@ -22,8 +22,8 @@ jest.mock('utils-node/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn(() => 
-    (err: Object, req: Request, res: Response, next: NextFunction) => {}
+  transformJwtErrorMessages: jest.fn(
+    () => (err: Object, req: Request, res: Response, next: NextFunction) => {},
   ),
 }));
 

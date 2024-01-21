@@ -52,17 +52,15 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: EMAIL_REQUIRED,
-            data: {
-              location: 'query',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: EMAIL_REQUIRED,
+          data: {
+            location: 'query',
+            path: 'email',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -73,20 +71,18 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: {
-              code: INVALID_EMAIL.code,
-              message: INVALID_EMAIL.messages[0],
-            },
-            data: {
-              location: 'query',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: {
+            code: INVALID_EMAIL.code,
+            message: INVALID_EMAIL.messages[0],
           },
-        ]
-      ),
+          data: {
+            location: 'query',
+            path: 'email',
+          },
+        },
+      ]),
     );
   });
 
@@ -97,17 +93,15 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: TOKEN_REQUIRED,
-            data: {
-              location: 'query',
-              path: 'token',
-            },
+      testErrorMessages([
+        {
+          info: TOKEN_REQUIRED,
+          data: {
+            location: 'query',
+            path: 'token',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -218,17 +212,15 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: EMAIL_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: EMAIL_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'email',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -239,20 +231,18 @@ describe('Email Verification Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: {
-              code: INVALID_EMAIL.code,
-              message: INVALID_EMAIL.messages[0],
-            },
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: {
+            code: INVALID_EMAIL.code,
+            message: INVALID_EMAIL.messages[0],
           },
-        ]
-      ),
+          data: {
+            location: 'body',
+            path: 'email',
+          },
+        },
+      ]),
     );
   });
 
@@ -313,7 +303,7 @@ describe('Email Verification Routes', () => {
 
     const response = await request(server)
       .post('/verify/resend')
-      .send({ email }); 
+      .send({ email });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(

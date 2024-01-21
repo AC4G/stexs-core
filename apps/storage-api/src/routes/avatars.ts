@@ -5,7 +5,10 @@ import {
   INVALID_UUID,
   USER_ID_REQUIRED,
 } from 'utils-node/errors';
-import { CustomValidationError, errorMessages } from 'utils-node/messageBuilder';
+import {
+  CustomValidationError,
+  errorMessages,
+} from 'utils-node/messageBuilder';
 import validate from 'utils-node/validatorMiddleware';
 import s3 from '../s3';
 import logger from '../loggers/logger';
@@ -14,11 +17,11 @@ import {
   checkTokenGrantType,
   transformJwtErrorMessages,
 } from 'utils-node/jwtMiddleware';
-import { 
-  ACCESS_TOKEN_SECRET, 
-  AUDIENCE, 
-  ISSUER, 
-  BUCKET 
+import {
+  ACCESS_TOKEN_SECRET,
+  AUDIENCE,
+  ISSUER,
+  BUCKET,
 } from '../../env-config';
 import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
@@ -26,7 +29,7 @@ import { Request } from 'express-jwt';
 const router = Router();
 
 router.get(
-  '/:userId', 
+  '/:userId',
   [
     param('userId')
       .notEmpty()
@@ -37,31 +40,33 @@ router.get(
 
         return true;
       }),
-    validate(logger)
-  ],async (req: Request, res: Response) => {
-  const { userId } = req.params;
+    validate(logger),
+  ],
+  async (req: Request, res: Response) => {
+    const { userId } = req.params;
 
-  const expires = 60 * 60 * 24; // 1 day
+    const expires = 60 * 60 * 24; // 1 day
 
-  const signedUrl = await s3.getSignedUrl('getObject', {
-    Bucket: BUCKET,
-    Key: `avatars/${userId}`,
-    Expires: expires
-  });
+    const signedUrl = await s3.getSignedUrl('getObject', {
+      Bucket: BUCKET,
+      Key: `avatars/${userId}`,
+      Expires: expires,
+    });
 
-  logger.info(`Generated new presigned url for avatar: ${userId}`);
+    logger.info(`Generated new presigned url for avatar: ${userId}`);
 
-  return res.json({
-    url: signedUrl
-  });
-});
+    return res.json({
+      url: signedUrl,
+    });
+  },
+);
 
 router.post(
   '',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType(['password']),
-    transformJwtErrorMessages(logger)
+    transformJwtErrorMessages(logger),
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub;

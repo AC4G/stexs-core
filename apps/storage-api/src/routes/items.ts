@@ -1,8 +1,8 @@
-import { 
-  ACCESS_TOKEN_SECRET, 
-  AUDIENCE, 
-  BUCKET, 
-  ISSUER 
+import {
+  ACCESS_TOKEN_SECRET,
+  AUDIENCE,
+  BUCKET,
+  ISSUER,
 } from '../../env-config';
 import { Router, Response } from 'express';
 import {
@@ -15,11 +15,11 @@ import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
 import db from '../database';
 import { errorMessages } from 'utils-node/messageBuilder';
-import { 
-  INTERNAL_ERROR, 
-  ITEM_ID_NOT_NUMERIC, 
-  ITEM_ID_REQUIRED, 
-  UNAUTHORIZED_ACCESS 
+import {
+  INTERNAL_ERROR,
+  ITEM_ID_NOT_NUMERIC,
+  ITEM_ID_REQUIRED,
+  UNAUTHORIZED_ACCESS,
 } from 'utils-node/errors';
 import s3 from '../s3';
 import { param } from 'express-validator';
@@ -36,7 +36,7 @@ router.get(
       .bail()
       .isNumeric()
       .withMessage(ITEM_ID_NOT_NUMERIC),
-    validate(logger)
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const { itemId } = req.params;
@@ -46,24 +46,22 @@ router.get(
     const signedUrl = await s3.getSignedUrl('getObject', {
       Bucket: BUCKET,
       Key: `items/thumbnails/${itemId}`,
-      Expires: time
+      Expires: time,
     });
 
     logger.info(`Generated new presigned url for item thumbnail: ${itemId}`);
-  
+
     return res.json({
-      url: signedUrl
+      url: signedUrl,
     });
-});
+  },
+);
 
 router.post(
   '/thumbnail/:itemId',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType([
-      'password',
-      'client_credentials'
-    ]),
+    checkTokenGrantType(['password', 'client_credentials']),
     checkScopes(['item.thumbnail.write']),
     transformJwtErrorMessages(logger),
     param('itemId')
@@ -72,7 +70,7 @@ router.post(
       .bail()
       .isNumeric()
       .withMessage(ITEM_ID_NOT_NUMERIC),
-    validate(logger)
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const sub = req.auth?.sub;
@@ -82,7 +80,7 @@ router.post(
 
     try {
       let isAllowed = false;
-      
+
       if (grantType === 'password') {
         const { rowCount } = await db.query(
           `
@@ -129,7 +127,7 @@ router.post(
         logger.error(
           `${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${sub}`,
         );
-        
+
         return res
           .status(401)
           .json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));

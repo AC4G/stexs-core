@@ -258,29 +258,30 @@ export const UNAUTHORIZED_ACCESS = {
 };
 export const ITEM_ID_REQUIRED = {
   code: 'ITEM_ID_REQUIRED',
-  message: 'Please provide a item id.'
+  message: 'Please provide a item id.',
 };
-export const ITEM_ID_NOT_NUMERIC = { 
+export const ITEM_ID_NOT_NUMERIC = {
   code: 'ITEM_ID_NOT_NUMERIC',
-  message: 'Item id needs to be a number.'
+  message: 'Item id needs to be a number.',
 };
 export const PROJECT_ID_REQUIRED = {
   code: 'PROJECT_ID_REQUIRED',
-  message: 'Please provide a project id.'
+  message: 'Please provide a project id.',
 };
 export const PROJECT_ID_NOT_NUMERIC = {
   code: 'PROJECT_ID_NOT_NUMERIC',
-  message: 'Project id needs to be a number.'
+  message: 'Project id needs to be a number.',
 };
 export const ORGANIZATION_ID_REQUIRED = {
   code: 'ORGANIZATION_ID_REQUIRED',
-  message: 'Please provide a organization id.'
+  message: 'Please provide a organization id.',
 };
 export const ORGANIZATION_ID_NOT_NUMERIC = {
   code: 'ORGANIZATION_ID_NOT_NUMERIC',
-  message: 'Organization id needs to be a number.'
+  message: 'Organization id needs to be a number.',
 };
 export const INSUFFICIENT_SCOPES = {
   code: 'INSUFFICIENT_SCOPES',
-  message: 'Provided token has insufficient scopes for accessing the requested endpoint.'
+  message:
+    'Provided token has insufficient scopes for accessing the requested endpoint.',
 };

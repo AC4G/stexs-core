@@ -2,7 +2,10 @@ import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
 import db from '../database';
 import logger from '../loggers/logger';
-import { CustomValidationError, errorMessages } from 'utils-node/messageBuilder';
+import {
+  CustomValidationError,
+  errorMessages,
+} from 'utils-node/messageBuilder';
 import {
   CODE_REQUIRED,
   INTERNAL_ERROR,

@@ -54,17 +54,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: EMAIL_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: EMAIL_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'email',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -75,20 +73,18 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: {
-              code: INVALID_EMAIL.code,
-              message: INVALID_EMAIL.messages[0],
-            },
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: {
+            code: INVALID_EMAIL.code,
+            message: INVALID_EMAIL.messages[0],
           },
-        ]
-      ),
+          data: {
+            location: 'body',
+            path: 'email',
+          },
+        },
+      ]),
     );
   });
 
@@ -104,20 +100,18 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: {
-              code: INVALID_EMAIL.code,
-              message: INVALID_EMAIL.messages[0],
-            },
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: {
+            code: INVALID_EMAIL.code,
+            message: INVALID_EMAIL.messages[0],
           },
-        ]
-      ),
+          data: {
+            location: 'body',
+            path: 'email',
+          },
+        },
+      ]),
     );
   });
 
@@ -154,17 +148,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: EMAIL_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: EMAIL_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'email',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -177,20 +169,18 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: {
-              code: INVALID_EMAIL.code,
-              message: INVALID_EMAIL.messages[0],
-            },
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: {
+            code: INVALID_EMAIL.code,
+            message: INVALID_EMAIL.messages[0],
           },
-        ]
-      ),
+          data: {
+            location: 'body',
+            path: 'email',
+          },
+        },
+      ]),
     );
   });
 
@@ -202,17 +192,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: TOKEN_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'token',
-            },
+      testErrorMessages([
+        {
+          info: TOKEN_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'token',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -225,17 +213,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_UUID,
-            data: {
-              location: 'body',
-              path: 'token',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_UUID,
+          data: {
+            location: 'body',
+            path: 'token',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -247,17 +233,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: PASSWORD_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: PASSWORD_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -270,17 +254,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_PASSWORD,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_PASSWORD,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -293,17 +275,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_PASSWORD_LENGTH,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_PASSWORD_LENGTH,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -321,17 +301,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_REQUEST,
-            data: {
-              location: 'body',
-              paths: ['email', 'token'],
-            },
+      testErrorMessages([
+        {
+          info: INVALID_REQUEST,
+          data: {
+            location: 'body',
+            paths: ['email', 'token'],
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -353,17 +331,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: RECOVERY_LINK_EXPIRED,
-            data: {
-              location: 'body',
-              path: 'token',
-            },
+      testErrorMessages([
+        {
+          info: RECOVERY_LINK_EXPIRED,
+          data: {
+            location: 'body',
+            path: 'token',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -394,17 +370,15 @@ describe('Recovery Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: NEW_PASSWORD_EQUALS_CURRENT,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: NEW_PASSWORD_EQUALS_CURRENT,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 

@@ -136,7 +136,7 @@
   });
 
   onMount(async () => {
-    initializeCopyButtonListener();
+    initializeCopyButtonListener(flash);
 
     const session = stexs.auth.getSession();
 

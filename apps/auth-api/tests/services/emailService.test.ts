@@ -16,7 +16,7 @@ describe('sendEmail function', () => {
     const mockCreateTransport = jest.fn().mockReturnValue({
       sendMail: jest.fn().mockResolvedValue({} as never),
     });
-    
+
     //@ts-ignore
     nodemailer.createTransport = mockCreateTransport;
 

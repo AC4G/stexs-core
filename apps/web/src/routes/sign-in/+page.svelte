@@ -70,7 +70,7 @@
 
 {#if !$signInSetupQuery.isLoading && $signInSetupQuery.data}
   <div class="flex items-center justify-center h-screen flex-col">
-    <div class="card p-5 variant-ghost-surface space-y-6">
+    <div class="card p-5 variant-ghost-surface space-y-6 w-full max-w-[400px]">
       <div class="text-center">
         <h3 class="h3 text-primary-500">Sign In</h3>
         <div class="mt-3">
@@ -85,7 +85,7 @@
         </div>
       </div>
       {#if $errors._errors && Array.isArray($errors._errors)}
-        <ul class="whitespace-normal text-[12px] text-error-400 text-center">
+        <ul class="whitespace-normal text-[14px] text-error-400 text-center">
           {#each $errors._errors as error (error)}
             <li>{error}</li>
           {/each}

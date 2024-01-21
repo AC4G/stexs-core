@@ -128,14 +128,14 @@
       </div>
     </div>
     {#if $confirmErrors._errors && Array.isArray($confirmErrors._errors)}
-      <ul class="whitespace-normal text-[12px] text-error-400 text-center">
+      <ul class="whitespace-normal text-[14px] text-error-400 text-center">
         {#each $confirmErrors._errors as error (error)}
           <li>{error}</li>
         {/each}
       </ul>
     {/if}
     {#if $recoveryErrors._errors && Array.isArray($recoveryErrors._errors)}
-      <ul class="whitespace-normal text-[12px] text-error-400 text-center">
+      <ul class="whitespace-normal text-[14px] text-error-400 text-center">
         {#each $recoveryErrors._errors as error (error)}
           <li>{error}</li>
         {/each}
@@ -158,7 +158,7 @@
           />
         </label>
         {#if $confirmErrors.password && Array.isArray($confirmErrors.password)}
-          <ul class="whitespace-normal text-[12px] text-error-400">
+          <ul class="whitespace-normal text-[14px] text-error-400">
             {#each $confirmErrors.password as error (error)}
               <li>{error}</li>
             {/each}
@@ -175,7 +175,7 @@
           />
         </label>
         {#if $confirmErrors.confirm}
-          <p class="whitespace-normal text-[12px] text-error-400">
+          <p class="whitespace-normal text-[14px] text-error-400">
             {$confirmErrors.confirm}
           </p>
         {/if}

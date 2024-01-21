@@ -34,10 +34,10 @@ jest.mock('utils-node/jwtMiddleware', () => ({
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateRefreshToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmOrAccessToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
@@ -45,8 +45,8 @@ jest.mock('utils-node/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn(() => 
-    (err: Object, req: Request, res: Response, next: NextFunction) => {}
+  transformJwtErrorMessages: jest.fn(
+    () => (err: Object, req: Request, res: Response, next: NextFunction) => {},
   ),
 }));
 
@@ -87,9 +87,7 @@ describe('User Routes', () => {
       .send({ code: 'code' });
 
     expect(response.status).toBe(403);
-    expect(response.body).toEqual(
-      testErrorMessages([{ info: CODE_EXPIRED }]),
-    );
+    expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
   });
 
   it('should handle email change verification with invalid code', async () => {
@@ -103,9 +101,7 @@ describe('User Routes', () => {
       .send({ code: 'code' });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual(
-      testErrorMessages([{ info: INVALID_CODE }]),
-    );
+    expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
   });
 
   it('should handle email change with expired verification code', async () => {
@@ -123,9 +119,7 @@ describe('User Routes', () => {
       .send({ code: 'expired-code' });
 
     expect(response.status).toBe(403);
-    expect(response.body).toEqual(
-      testErrorMessages([{ info: CODE_EXPIRED }]),
-    );
+    expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
   });
 
   it('should handle email change verification', async () => {
@@ -184,56 +178,50 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: PASSWORD_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: PASSWORD_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-          {
-            info: CODE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'code'
-            }
+        },
+        {
+          info: CODE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-          {
-            info: TYPE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'type'
-            }
-          }
-        ]
-      ),
+        },
+        {
+          info: TYPE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'type',
+          },
+        },
+      ]),
     );
   });
 
   it('should handle password change with invalid password according to regex specification', async () => {
-    const response = await request(server)
-      .post('/user/password')
-      .send({ 
-        password: 'test123456',
-        code: 'mfa_code',
-        type: 'totp'
-      });
+    const response = await request(server).post('/user/password').send({
+      password: 'test123456',
+      code: 'mfa_code',
+      type: 'totp',
+    });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_PASSWORD,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_PASSWORD,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -246,12 +234,12 @@ describe('User Routes', () => {
       rows: [
         {
           totp: true,
-          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ'
+          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
         },
       ],
       rowCount: 1,
     } as never);
-    
+
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -261,27 +249,23 @@ describe('User Routes', () => {
       rowCount: 1,
     } as never);
 
-    const response = await request(server)
-      .post('/user/password')
-      .send({ 
-        password: 'Test12345.',
-        code,
-        type: 'totp'
-      });
+    const response = await request(server).post('/user/password').send({
+      password: 'Test12345.',
+      code,
+      type: 'totp',
+    });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: NEW_PASSWORD_EQUALS_CURRENT,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: NEW_PASSWORD_EQUALS_CURRENT,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -289,12 +273,12 @@ describe('User Routes', () => {
     const code = getTOTPForVerification(
       'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
     ).generate();
-    
+
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           totp: true,
-          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ'
+          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
         },
       ],
       rowCount: 1,
@@ -314,13 +298,11 @@ describe('User Routes', () => {
       rowCount: 1,
     } as never);
 
-    const response = await request(server)
-      .post('/user/password')
-      .send({ 
-        password: 'Test12345.',
-        code,
-        type: 'totp'
-      });
+    const response = await request(server).post('/user/password').send({
+      password: 'Test12345.',
+      code,
+      type: 'totp',
+    });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
@@ -338,79 +320,67 @@ describe('User Routes', () => {
       rowCount: 1,
     } as never);
 
-    const response = await request(server)
-      .post('/user/password')
-      .send({ 
-        password: 'Test123.',
-        code: 'mfa_code',
-        type: 'totp'
-      });
+    const response = await request(server).post('/user/password').send({
+      password: 'Test123.',
+      code: 'mfa_code',
+      type: 'totp',
+    });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_PASSWORD_LENGTH,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_PASSWORD_LENGTH,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
   it('should handle email change with missing email', async () => {
-    const response = await request(server)
-      .post('/user/email')
-      .send({
-        code: 'mfa_code',
-        type: 'totp'
-      });
+    const response = await request(server).post('/user/email').send({
+      code: 'mfa_code',
+      type: 'totp',
+    });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: EMAIL_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: EMAIL_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'email',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
   it('should handle email change with invalid email', async () => {
-    const response = await request(server)
-      .post('/user/email')
-      .send({ 
-        email: 'test',
-        code: 'mfa_code',
-        type: 'totp'
-      });
+    const response = await request(server).post('/user/email').send({
+      email: 'test',
+      code: 'mfa_code',
+      type: 'totp',
+    });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: {
-              code: INVALID_EMAIL.code,
-              message: INVALID_EMAIL.messages[0],
-            },
-            data: {
-              location: 'body',
-              path: 'email',
-            },
+      testErrorMessages([
+        {
+          info: {
+            code: INVALID_EMAIL.code,
+            message: INVALID_EMAIL.messages[0],
           },
-        ]
-      ),
+          data: {
+            location: 'body',
+            path: 'email',
+          },
+        },
+      ]),
     );
   });
 
@@ -418,12 +388,12 @@ describe('User Routes', () => {
     const code = getTOTPForVerification(
       'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
     ).generate();
-    
+
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           totp: true,
-          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ'
+          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
         },
       ],
       rowCount: 1,
@@ -434,13 +404,11 @@ describe('User Routes', () => {
       rowCount: 1,
     } as never);
 
-    const response = await request(server)
-      .post('/user/email')
-      .send({ 
-        email: 'test@example.com',
-        code,
-        type: 'totp'
-      });
+    const response = await request(server).post('/user/email').send({
+      email: 'test@example.com',
+      code,
+      type: 'totp',
+    });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
@@ -455,17 +423,15 @@ describe('User Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CODE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: CODE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 });

@@ -29,15 +29,12 @@
 
         submitted = true;
 
+        $form = Object.fromEntries(
+            Object.entries($form).filter(([key, value]) => value !== null)
+        );
+
         const { error } = await stexs.from('organizations')
-            .insert({
-                name: $form.name,
-                display_name: $form.displayName,
-                description: $form.description,
-                readme: $form.readme,
-                email: $form.email,
-                url: $form.url
-            });
+            .insert($form);
             
         if (error) {
             if (error.code === '23505') {
@@ -103,12 +100,12 @@
                 id="displayName"
                 class="input"
                 type="text"
-                bind:value={$form.displayName}
+                bind:value={$form.display_name}
                 />
             </label>
-            {#if $errors.displayName}
+            {#if $errors.display_name}
                 <p class="whitespace-normal text-[14px] text-error-400">
-                    {$errors.displayName}
+                    {$errors.display_name}
                 </p>
             {/if}
             <label for="description" class="label">
@@ -136,7 +133,7 @@
                 class="input"
                 bind:value={$form.readme}
                 />
-                {#if preview && $form.readme.length > 0}
+                {#if preview && $form.readme && $form.readme.length > 0}
                     <Markdown text={$form.readme} />
                 {/if}
             </label>

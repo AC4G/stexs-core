@@ -18,6 +18,7 @@
     "validation-schemas": "workspace:*"
   },
   "dependencies": {
+    "ansi-to-html": "^0.7.2",
     "dompurify": "^3.0.8",
     "fast-xml-parser": "^4.3.2",
     "highlight.js": "^11.9.0",

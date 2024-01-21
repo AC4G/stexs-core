@@ -32,10 +32,10 @@ jest.mock('utils-node/jwtMiddleware', () => ({
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateRefreshToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmOrAccessToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
@@ -43,8 +43,8 @@ jest.mock('utils-node/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn(() => 
-    (err: Object, req: Request, res: Response, next: NextFunction) => {}
+  transformJwtErrorMessages: jest.fn(
+    () => (err: Object, req: Request, res: Response, next: NextFunction) => {},
   ),
 }));
 
@@ -80,17 +80,15 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CLIENT_ID_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'client_id',
-            },
+      testErrorMessages([
+        {
+          info: CLIENT_ID_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'client_id',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -105,17 +103,15 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_UUID,
-            data: {
-              location: 'body',
-              path: 'client_id',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_UUID,
+          data: {
+            location: 'body',
+            path: 'client_id',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -129,17 +125,15 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: REDIRECT_URL_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'redirect_url',
-            },
+      testErrorMessages([
+        {
+          info: REDIRECT_URL_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'redirect_url',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -154,17 +148,15 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_URL,
-            data: {
-              location: 'body',
-              path: 'redirect_url',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_URL,
+          data: {
+            location: 'body',
+            path: 'redirect_url',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -176,17 +168,15 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: SCOPES_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'scopes',
-            },
+      testErrorMessages([
+        {
+          info: SCOPES_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'scopes',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -199,17 +189,15 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: ARRAY_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'scopes',
-            },
+      testErrorMessages([
+        {
+          info: ARRAY_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'scopes',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -222,17 +210,15 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: EMPTY_ARRAY,
-            data: {
-              location: 'body',
-              path: 'scopes',
-            },
+      testErrorMessages([
+        {
+          info: EMPTY_ARRAY,
+          data: {
+            location: 'body',
+            path: 'scopes',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -252,17 +238,15 @@ describe('OAuth2 Authorize', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CLIENT_NOT_FOUND,
-            data: {
-              location: 'body',
-              paths: ['client_id', 'redirect_url', 'scopes'],
-            },
+      testErrorMessages([
+        {
+          info: CLIENT_NOT_FOUND,
+          data: {
+            location: 'body',
+            paths: ['client_id', 'redirect_url', 'scopes'],
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
