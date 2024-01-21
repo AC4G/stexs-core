@@ -120,7 +120,7 @@ router.post(
               SELECT totp, totp_secret 
               FROM auth.mfa
               WHERE user_id = $1::uuid;
-          `, 
+          `,
           [userId],
         );
 
@@ -323,7 +323,7 @@ router.post(
 
         return true;
       }),
-    validate(logger)
+    validate(logger),
   ],
   async (req: Request, res: Response) => {
     const userId = req.auth?.sub;
@@ -336,7 +336,7 @@ router.post(
               SELECT totp, totp_secret 
               FROM auth.mfa
               WHERE user_id = $1::uuid;
-          `, 
+          `,
           [userId],
         );
 

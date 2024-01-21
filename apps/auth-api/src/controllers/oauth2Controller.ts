@@ -129,7 +129,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
         sub: userId,
         scopes,
         client_id,
-        organization_id
+        organization_id,
       },
       'authorization_code',
       refreshToken,
@@ -316,7 +316,7 @@ export async function refreshTokenController(req: Request, res: Response) {
         sub,
         scopes,
         client_id,
-        organization_id
+        organization_id,
       },
       'authorization_code',
       null,

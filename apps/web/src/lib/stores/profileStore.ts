@@ -1,14 +1,14 @@
 import { getContext, setContext } from 'svelte';
 import { writable, type Writable } from 'svelte/store';
 
-export interface Profile { 
+export interface Profile {
   userId: string;
   isPrivate: boolean;
   isFriend: boolean;
   totalFriends: number;
   refetchFriendsTrigger?: boolean;
   refetchOrganizationsTrigger?: boolean;
-};
+}
 
 export function createProfileStore(): Writable<Profile | null> {
   const profile = writable<Profile | null>(null);

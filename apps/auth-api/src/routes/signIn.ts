@@ -5,7 +5,10 @@ import { body } from 'express-validator';
 import generateAccessToken, {
   generateSignInConfirmToken,
 } from '../services/jwtService';
-import { CustomValidationError, errorMessages } from 'utils-node/messageBuilder';
+import {
+  CustomValidationError,
+  errorMessages,
+} from 'utils-node/messageBuilder';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,

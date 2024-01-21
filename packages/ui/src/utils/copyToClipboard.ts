@@ -1,28 +1,36 @@
-export async function initializeCopyButtonListener() {
-    document.addEventListener('click', async (event: MouseEvent) => {
-        const targetElement = event.target as Element;
-        
-        if (!targetElement?.classList.contains('copy-code')) {
-            return;
-        }
+import type { ToastSettings } from '@skeletonlabs/skeleton';
+import type { Writable } from 'svelte/store';
 
-        const codeBlock = targetElement.closest("pre");
-        if (!codeBlock) {
-            return;
-        }
+export async function initializeCopyButtonListener(
+  flash: Writable<ToastSettings>,
+) {
+  document.addEventListener('click', async (event: MouseEvent) => {
+    const targetElement = event.target as Element;
 
-        const codeElement = codeBlock.querySelector("code");
-        if (!codeElement) {
-            return;
-        }
+    if (!targetElement.classList.contains('copy-code')) return;
 
-        const codeText = codeElement.textContent;
-        if (codeText) {
-            await copyToClipboard(codeText);
-        }
-    });
+    const codeBlock = targetElement.closest('.codeblock');
+
+    if (!codeBlock) return;
+
+    const codeElement = codeBlock.querySelector('code');
+
+    if (codeElement) {
+      const codeText = codeElement.textContent as string;
+      await copyToClipboard(codeText, flash);
+    }
+  });
 }
 
-export async function copyToClipboard(text: string) {
-    await navigator.clipboard.writeText(text);
+export async function copyToClipboard(
+  text: string,
+  flash: Writable<ToastSettings>,
+) {
+  console.log({ text });
+  await navigator.clipboard.writeText(text);
+  flash.set({
+    message: `Copied to clipboard`,
+    classes: 'variant-glass-secondary',
+    timeout: 3000,
+  });
 }

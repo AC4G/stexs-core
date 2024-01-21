@@ -22,10 +22,10 @@ jest.mock('utils-node/jwtMiddleware', () => ({
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateRefreshToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmOrAccessToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
@@ -33,8 +33,8 @@ jest.mock('utils-node/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn(() => 
-    (err: Object, req: Request, res: Response, next: NextFunction) => {}
+  transformJwtErrorMessages: jest.fn(
+    () => (err: Object, req: Request, res: Response, next: NextFunction) => {},
   ),
 }));
 
@@ -59,17 +59,15 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: IDENTIFIER_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'identifier',
-            },
+      testErrorMessages([
+        {
+          info: IDENTIFIER_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'identifier',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -80,17 +78,15 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: PASSWORD_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'password',
-            },
+      testErrorMessages([
+        {
+          info: PASSWORD_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'password',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -107,20 +103,18 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: {
-              code: INVALID_CREDENTIALS.code,
-              message: INVALID_CREDENTIALS.messages[0],
-            },
-            data: {
-              location: 'body',
-              paths: ['identifier', 'password'],
-            },
+      testErrorMessages([
+        {
+          info: {
+            code: INVALID_CREDENTIALS.code,
+            message: INVALID_CREDENTIALS.messages[0],
           },
-        ]
-      ),
+          data: {
+            location: 'body',
+            paths: ['identifier', 'password'],
+          },
+        },
+      ]),
     );
   });
 
@@ -207,17 +201,15 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CODE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: CODE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -229,17 +221,15 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: TYPE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'type',
-            },
+      testErrorMessages([
+        {
+          info: TYPE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'type',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -251,17 +241,15 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: TOKEN_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'token',
-            },
+      testErrorMessages([
+        {
+          info: TOKEN_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'token',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -274,17 +262,15 @@ describe('Sign In Route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_TYPE,
-            data: {
-              location: 'body',
-              path: 'type',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_TYPE,
+          data: {
+            location: 'body',
+            path: 'type',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 });

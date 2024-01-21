@@ -54,7 +54,10 @@ export class StexsAuthClient {
       if (!document.hidden) {
         const session = this.getSession();
 
-        if (session && (session.expires * 1000 - this.refreshThreshhold) <= Date.now()) {
+        if (
+          session &&
+          session.expires * 1000 - this.refreshThreshhold <= Date.now()
+        ) {
           if (this.refreshTimeoutId !== null) {
             clearTimeout(this.refreshTimeoutId);
           }
@@ -164,9 +167,9 @@ export class StexsAuthClient {
     },
     continuousAutoRefresh: boolean,
   ): Promise<Response> {
-    const response = await this._request({ 
+    const response = await this._request({
       ...requestParameter,
-      method: 'POST' 
+      method: 'POST',
     });
 
     if (response.ok) {
@@ -614,7 +617,7 @@ export class StexsAuthClient {
   private async _scheduleTokenRefresh() {
     while (true) {
       const session = this.getSession();
-          
+
       if (session && session.expires) {
         const expiresInMs = session.expires * 1000 - Date.now();
 
@@ -628,7 +631,10 @@ export class StexsAuthClient {
           this.refreshTimeoutId = setTimeout(async () => {
             const session = this.getSession();
 
-            if (session && (session.expires * 1000 - this.refreshThreshhold) <= Date.now()) {
+            if (
+              session &&
+              session.expires * 1000 - this.refreshThreshhold <= Date.now()
+            ) {
               this._refreshAccessToken();
             }
           }, expiresInMs - this.refreshThreshhold);

@@ -76,7 +76,7 @@
 
 {#if !$signUpSetupQuery.isLoading && $signUpSetupQuery.data}
   <div class="flex items-center justify-center h-screen">
-    <div class="card p-5 variant-ghost-surface space-y-6">
+    <div class="card p-5 variant-ghost-surface space-y-6  w-full max-w-[400px]">
       <div class="text-center">
         <h3 class="h3 text-primary-500">Sign Up</h3>
         <div class="mt-3">
@@ -91,7 +91,7 @@
         </div>
       </div>
       {#if $errors._errors && Array.isArray($errors._errors)}
-        <ul class="whitespace-normal text-[12px] text-error-400 text-center">
+        <ul class="whitespace-normal text-[14px] text-error-400 text-center">
           {#each $errors._errors as error (error)}
             <li>{error}</li>
           {/each}
@@ -112,7 +112,7 @@
           />
         </label>
         {#if $errors.username && Array.isArray($errors.username)}
-          <ul class="whitespace-normal text-[12px] text-error-400">
+          <ul class="whitespace-normal text-[14px] text-error-400">
             {#each $errors.username as error (error)}
               <li>{error}</li>
             {/each}
@@ -129,7 +129,7 @@
           />
         </label>
         {#if $errors.email}
-          <p class="whitespace-normal text-[12px] text-error-400">
+          <p class="whitespace-normal text-[14px] text-error-400">
             {$errors.email}
           </p>
         {/if}
@@ -144,7 +144,7 @@
           />
         </label>
         {#if $errors.password && Array.isArray($errors.password)}
-          <ul class="whitespace-normal text-[12px] text-error-400">
+          <ul class="whitespace-normal text-[14px] text-error-400">
             {#each $errors.password as error (error)}
               <li>{error}</li>
             {/each}
@@ -161,7 +161,7 @@
           />
         </label>
         {#if $errors.confirm}
-          <p class="whitespace-normal text-[12px] text-error-400">
+          <p class="whitespace-normal text-[14px] text-error-400">
             {$errors.confirm}
           </p>
         {/if}

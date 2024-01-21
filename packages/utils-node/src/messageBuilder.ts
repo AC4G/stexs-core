@@ -3,7 +3,7 @@ import { Result } from 'express-validator';
 export function message(
   message: string,
   data: Record<string, any> = {},
-  success: boolean = true
+  success: boolean = true,
 ) {
   const baseMessage = {
     success,
@@ -60,9 +60,7 @@ export function errorMessages(errors: Error[]): { errors: ErrorResponse[] } {
   };
 }
 
-export function testErrorMessages(
-  errors: Error[]
-): {
+export function testErrorMessages(errors: Error[]): {
   errors: ErrorResponse[];
 } {
   return {

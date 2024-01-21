@@ -21,10 +21,10 @@ jest.mock('utils-node/jwtMiddleware', () => ({
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateRefreshToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmOrAccessToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
@@ -32,8 +32,8 @@ jest.mock('utils-node/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn(() => 
-    (err: Object, req: Request, res: Response, next: NextFunction) => {}
+  transformJwtErrorMessages: jest.fn(
+    () => (err: Object, req: Request, res: Response, next: NextFunction) => {},
   ),
 }));
 
@@ -63,17 +63,15 @@ describe('Token Route', () => {
 
     expect(response.status).toBe(401);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_TOKEN,
-            data: {
-              location: 'body',
-              path: 'refresh_token',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_TOKEN,
+          data: {
+            location: 'body',
+            path: 'refresh_token',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 

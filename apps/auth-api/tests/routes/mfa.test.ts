@@ -40,10 +40,10 @@ jest.mock('utils-node/jwtMiddleware', () => ({
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateRefreshToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   validateSignInConfirmOrAccessToken: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => next()
+    () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
   checkTokenGrantType: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
@@ -51,8 +51,8 @@ jest.mock('utils-node/jwtMiddleware', () => ({
   validateSignInConfirmToken: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => next(),
   ),
-  transformJwtErrorMessages: jest.fn(() => 
-    (err: Object, req: Request, res: Response, next: NextFunction) => {}
+  transformJwtErrorMessages: jest.fn(
+    () => (err: Object, req: Request, res: Response, next: NextFunction) => {},
   ),
 }));
 
@@ -155,17 +155,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CODE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: CODE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -210,17 +208,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_CODE,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_CODE,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -263,17 +259,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CODE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: CODE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -319,17 +313,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_CODE,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_CODE,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -352,17 +344,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CODE_EXPIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: CODE_EXPIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -401,17 +391,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CODE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: CODE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -458,17 +446,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_CODE,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_CODE,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -492,17 +478,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CODE_EXPIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: CODE_EXPIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -542,17 +526,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: TYPE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'type',
-            },
+      testErrorMessages([
+        {
+          info: TYPE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'type',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -564,17 +546,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_TYPE,
-            data: {
-              location: 'body',
-              path: 'type',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_TYPE,
+          data: {
+            location: 'body',
+            path: 'type',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -585,17 +565,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: CODE_REQUIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: CODE_REQUIRED,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
@@ -639,17 +617,15 @@ describe('MFA Routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual(
-      testErrorMessages(
-        [
-          {
-            info: INVALID_CODE,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
+      testErrorMessages([
+        {
+          info: INVALID_CODE,
+          data: {
+            location: 'body',
+            path: 'code',
           },
-        ]
-      ),
+        },
+      ]),
     );
   });
 
