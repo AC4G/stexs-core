@@ -42,9 +42,9 @@
             : $projectsQuery?.data.filter((project: { id: number, name: string }) => project.id === selectedProject)[0].name;
     let paginationSettings: PaginationSettings = {
         page: 0,
-        limit: 50,
+        limit: 20,
         size: 0,
-        amounts: [50, 100],
+        amounts: [20, 50, 100],
     };
     let previousProject: number | undefined;
     const handleSearch = debounce((e: Event) => {

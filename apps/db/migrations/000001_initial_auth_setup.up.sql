@@ -4,15 +4,11 @@ CREATE EXTENSION IF NOT EXISTS 'uuid-ossp';
 CREATE EXTENSION IF NOT EXISTS 'pgcrypto';
 CREATE EXTENSION IF NOT EXISTS 'citext';  
 CREATE EXTENSION IF NOT EXISTS 'pgtap';
-CREATE EXTENSION IF NOT EXISTS 'uri';
-CREATE EXTENSION IF NOT EXISTS 'timescaledb';
-
 
 
 CREATE ROLE authenticator LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER ENCRYPTED PASSWORD 'authenticator';
 CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
-
 
 
 GRANT anon TO authenticator;
@@ -218,12 +214,11 @@ CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
     description VARCHAR(150),
-    url URI,
+    url VARCHAR(150),
     is_private BOOLEAN NOT NULL DEFAULT FALSE,
     accept_friend_requests BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT username_max_length CHECK (length(username) <= 20),
-    CONSTRAINT url_max_length CHECK (length(url::TEXT) <= 150),
     CONSTRAINT username_allowed_characters CHECK (username ~ '^[A-Za-z0-9._]+$')
 );
 

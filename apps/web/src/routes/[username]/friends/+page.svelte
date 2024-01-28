@@ -35,9 +35,9 @@
     let filter: string = 'A-Z';
     let paginationSettings: PaginationSettings = {
         page: 0,
-        limit: 50, 
+        limit: 20, 
         size: 0,
-        amounts: [50, 100],
+        amounts: [20, 50, 100],
     };
     let removeFriendSubmitted: boolean = false;
 

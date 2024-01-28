@@ -1,0 +1,188 @@
+#!/bin/bash
+
+curl -i -X POST http://localhost:8001/services \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "rest_v1",
+        "host": "host.docker.internal",
+        "port": 3000,
+        "tags": [
+            "rest", 
+            "postgrest", 
+            "rest-api", 
+            "api"
+        ]
+    }'
+
+curl -i -X POST http://localhost:8001/routes \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "rest_v1",
+        "service": {
+            "name": "rest_v1"
+        },
+        "tags": [
+            "rest", 
+            "postgrest", 
+            "rest-api", 
+            "api"
+        ],
+        "methods": [
+            "GET", 
+            "PUT", 
+            "POST", 
+            "DELETE", 
+            "OPTIONS",
+            "HEAD"
+        ],
+        "paths": [
+            "/rest/v1"
+        ]
+    }'
+
+
+curl -i -X POST http://localhost:8001/services \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "auth_v1",
+        "host": "host.docker.internal",
+        "port": 3001,
+        "tags": [
+            "auth", 
+            "auth-api", 
+            "api"
+        ]
+    }'
+
+curl -i -X POST http://localhost:8001/routes \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "auth_v1",
+        "service": {
+            "name": "auth_v1"
+        },
+        "tags": [
+            "auth", 
+            "auth-api", 
+            "api"
+        ],
+        "methods": [
+            "GET",  
+            "POST", 
+            "DELETE", 
+            "OPTIONS"
+        ],
+        "paths": [
+            "/auth/v1"
+        ]
+    }'
+
+
+curl -i -X POST http://localhost:8001/services \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "storage_v1",
+        "host": "host.docker.internal",
+        "port": 3002,
+        "tags": [
+            "storage", 
+            "storage-api", 
+            "api"
+        ]
+    }'
+
+curl -i -X POST http://localhost:8001/routes \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "storage_v1",
+        "service": {
+            "name": "storage_v1"
+        },
+        "tags": [
+            "storage", 
+            "storage-api", 
+            "api"
+        ],
+        "methods": [
+            "GET",  
+            "POST", 
+            "DELETE", 
+            "OPTIONS"
+        ],
+        "paths": [
+            "/storage/v1"
+        ]
+    }'
+
+
+curl -i -X POST http://localhost:8001/services \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "graphql_v1",
+        "host": "host.docker.internal",
+        "port": 5000,
+        "tags": [
+            "graphql", 
+            "graphql-api", 
+            "api"
+        ],
+        "path": "/graphql"
+    }'
+
+curl -i -X POST http://localhost:8001/routes \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "graphql_v1",
+        "service": {
+            "name": "graphql_v1"
+        },
+        "tags": [
+            "graphql", 
+            "graphql-api", 
+            "api"
+        ],
+        "methods": [
+            "POST",
+            "OPTIONS"
+        ],
+        "paths": [
+            "/graphql/v1"
+        ]
+    }'
+
+curl -i -X POST http://localhost:8001/services \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "ws_graphql_v1",
+        "host": "host.docker.internal",
+        "port": 5000,
+        "tags": [
+            "ws",
+            "graphql", 
+            "graphql-api", 
+            "api"
+        ],
+        "path": "/graphql"
+    }'
+
+curl -i -X POST http://localhost:8001/routes \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "ws_graphql_v1",
+        "service": {
+            "name": "ws_graphql_v1"
+        },
+        "tags": [
+            "ws",
+            "graphql", 
+            "graphql-api", 
+            "api"
+        ],
+        "protocols": [
+            "ws"
+        ],
+        "paths": [
+            "/graphql/v1"
+        ]
+    }'
+

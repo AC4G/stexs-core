@@ -68,8 +68,6 @@ services:
     command: server --console-address ":9001" /data
     networks:
       - stexs
-    depends_on:
-      - db
 
     
   postgraphile:
@@ -85,7 +83,7 @@ services:
         "--plugins",
         "@graphile/pg-pubsub",
         "--append-plugins",
-        "/postgraphile/CustomPlugin.js",
+        "/postgraphile/RequestsPlugin.js",
         "--connection",
         "postgres://authenticator:authenticator@db:5432/postgres",
         "--port",
@@ -105,15 +103,79 @@ services:
     networks:
       - stexs
 
+
   redis:
     image: redis/redis-stack:latest
     ports: 
       - 6379:6379
-      - 8001:8001
+      - 8008:8001
     container_name: redis
     restart: unless-stopped
     networks:
       - stexs
+
+
+  kong-database:
+    image: postgres:latest
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_DB: kong
+      POSTGRES_PASSWORD: kongpass
+    container_name: kong-database
+    volumes:
+      - ./docker/kong/data:/var/lib/postgresql/data
+    networks:
+      - stexs
+
+
+  kong-migrations: 
+    image: kong/kong-gateway:3.5.0.3
+    environment:
+      KONG_DATABASE: postgres
+      POSTGRES_USER: kong
+      KONG_PG_HOST: kong-database
+      KONG_PG_PASSWORD: kongpass
+      KONG_PASSWORD: test
+    command: ["kong", "migrations", "bootstrap"]
+    container_name: kong-migrations
+    networks:
+      - stexs
+    depends_on:
+      - kong-database
+
+
+  kong:
+    image: kong/kong-gateway:3.5.0.3
+    environment:
+      KONG_DATABASE: postgres
+      POSTGRES_USER: kong
+      KONG_PG_HOST: kong-database
+      KONG_PG_PASSWORD: kongpass
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_CASSANDRA_CONTACT_POINTS: db
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    ports:
+      - 8000:8000
+      - 8443:8443
+      - 8001:8001
+      - 8444:8444
+      - 8002:8002
+      - 8445:8445
+      - 8003:8003
+      - 8004:8004
+    container_name: kong
+    restart: unless-stopped
+    networks:
+      - stexs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   
 networks:
   stexs:
