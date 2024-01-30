@@ -2,4 +2,4 @@ FROM graphile/postgraphile:latest
 
 RUN npm i @graphile/pg-pubsub
 
-COPY ./docker/postgraphile/CustomPlugin.js /postgraphile/
+COPY ./apps/postgraphile-plugins/Requests.js /postgraphile/RequestsPlugin.js

@@ -30,7 +30,6 @@ CREATE TABLE public.items (
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
     creator_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     is_private BOOLEAN DEFAULT FALSE NOT NULL,
-    is_unique BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_items_combination UNIQUE (name, project_id),
@@ -51,23 +50,12 @@ CREATE TABLE public.inventories (
     id SERIAL PRIMARY KEY,
     item_id INT REFERENCES public.items(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-    amount BIGINT DEFAULT 0,
+    amount BIGINT,
     parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT parameter_size_limit CHECK (pg_column_size(parameter) <= 1048576),
-    CONSTRAINT is_unique_amount CHECK (is_unique_amount_check(item_id, amount))
+    CONSTRAINT parameter_size_limit CHECK (pg_column_size(parameter) <= 1048576)
 );
-
-CREATE OR REPLACE FUNCTION is_unique_amount_check(_item_id INT, _amount BIGINT)
-RETURNS BOOLEAN AS $$
-BEGIN
-    RETURN (
-        (_amount IS NULL AND (SELECT is_unique FROM public.items WHERE id = _item_id) IS TRUE) OR
-        (_amount IS NOT NULL)
-    );
-END;
-$$ LANGUAGE plpgsql;
 
 GRANT INSERT (item_id, user_id, amount, parameter) ON TABLE public.inventories TO authenticated;
 GRANT UPDATE (amount, parameter) ON TABLE public.inventories TO authenticated;
@@ -113,12 +101,13 @@ BEGIN
         RETURN NEW;
     END IF;
 
-    IF EXISTS (
+    
+    IF OLD.amount IS NULL OR 
+    EXISTS (
         SELECT 1
         FROM public.items AS i
-        WHERE i.id = NEW.item_id AND (
-            i.is_private IS TRUE OR
-            i.is_unique IS TRUE)
+        WHERE i.id = NEW.item_id 
+            AND i.is_private IS TRUE
     ) OR
     NEW.amount > OLD.amount OR NEW.parameter IS DISTINCT FROM OLD.parameter THEN
         RETURN NULL;

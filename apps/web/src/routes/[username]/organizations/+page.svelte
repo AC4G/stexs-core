@@ -34,9 +34,9 @@
     let filter: string = 'A-Z';
     let paginationSettings: PaginationSettings = {
         page: 0,
-        limit: 50, 
+        limit: 20, 
         size: 0,
-        amounts: [50, 100],
+        amounts: [20, 50, 100],
     };
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
@@ -120,7 +120,7 @@
                 $flash = {
                     message: `Could not leave ${organizationName} organization as the only owner. Give someone the Owner role or delete the organization completely.`,
                     classes: 'variant-glass-error',
-                    timeout: 10000,
+                    autohide: false
                 };
                 return;
             }
