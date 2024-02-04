@@ -11,67 +11,40 @@ export type MFAMethod = {
   description: string;
 };
 
-export type FriendRequestsGQL = {
-  friendRequestChanged: {
-    friendRequests: Array<{
-      profileByRequesterId: {
-        userId: string;
-        username: string;
-      };
-    }>;
-  };
+export type NotificationsGQL = {
+  notificationsChanged:  {
+    notifications: Notifications
+    unseenNotifications: number
+  }
 };
 
-export type FriendRequests = Array<{
+export type Notifications = Array<{
+  id: number;
+  userId: string;
+  message: string | null;
+  type: 'notification' | 'friend_request' | 'organization_request' | 'project_request';
+  seen: boolean;
+  friendRequestByFriendRequestId: FriendRequest;
+  organizationRequestByOrganizationRequestId: OrganizationRequest;
+  projectRequestByProjectRequestId: ProjectRequest;
+}>;
+
+type FriendRequest = {
   profileByRequesterId: {
     userId: string;
     username: string;
   };
-}>;
-
-export type Friend = {
-  profiles: {
-    user_id: string;
-    username: string;
-  };
 };
 
-export type OrganizationRequestsGQL = {
-  organizationJoinRequestChanged: {
-    organizationRequests: Array<{
-      role: string;
-      organizationByOrganizationId: {
-        id: number;
-        name: string;
-      };
-    }>;
-  };
-};
-
-export type OrganizationRequests = Array<{
+type OrganizationRequest = {
   role: string;
   organizationByOrganizationId: {
     id: number;
     name: string;
   };
-}>;
-
-export type ProjectRequestsGQL = {
-  projectJoinRequestChanged: {
-    projectRequests: Array<{
-      role: string;
-      projectByProjectId: {
-        id: number;
-        name: string;
-        organizationByOrganizationId: {
-          name: string;
-        };
-      };
-    }> | null;
-  };
 };
 
-export type ProjectRequests = Array<{
+type ProjectRequest = {
   role: string;
   projectByProjectId: {
     id: number;
@@ -80,4 +53,11 @@ export type ProjectRequests = Array<{
       name: string;
     };
   };
-}>;
+};
+
+export type Friend = {
+  profiles: {
+    user_id: string;
+    username: string;
+  };
+};

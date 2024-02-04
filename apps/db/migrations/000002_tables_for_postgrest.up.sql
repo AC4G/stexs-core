@@ -278,10 +278,29 @@ GRANT INSERT (requester_id, addressee_id) ON TABLE public.friend_requests TO aut
 GRANT DELETE ON TABLE public.friend_requests TO authenticated;
 GRANT SELECT ON TABLE public.friend_requests TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.insert_friend_request_into_notifications()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.addressee_id IS NOT NULL THEN
+        INSERT INTO public.notifications (
+            user_id,
+            type,
+            friend_request_id
+        ) VALUES (
+            NEW.addressee_id,
+            'friend_request',
+            NEW.id
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER friend_request_changed_trigger
   AFTER INSERT OR DELETE ON public.friend_requests
   FOR EACH ROW
-  EXECUTE FUNCTION public.graphql_subscription('friendRequestChanged', 'friend_requests', 'addressee_id');
+  EXECUTE FUNCTION public.insert_friend_request_into_notifications();
 
 CREATE OR REPLACE FUNCTION public.check_friend_request_limit()
 RETURNS TRIGGER AS $$
@@ -416,10 +435,27 @@ GRANT UPDATE (role) ON TABLE public.organization_requests TO authenticated;
 GRANT DELETE ON TABLE public.organization_requests TO authenticated;
 GRANT SELECT ON TABLE public.organization_requests TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.insert_organization_request_into_notifications()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.notifications (
+        user_id,
+        type,
+        organization_request_id
+    ) VALUES (
+        NEW.addressee_id,
+        'organization_request',
+        NEW.id
+    );
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER organization_request_changed_trigger
   AFTER INSERT OR DELETE ON public.organization_requests
   FOR EACH ROW
-  EXECUTE FUNCTION public.graphql_subscription('organizationJoinRequestChanged', 'org_requests', 'addressee_id');
+  EXECUTE FUNCTION public.insert_organization_request_into_notifications();
 
 CREATE OR REPLACE FUNCTION public.check_organization_request_limit()
 RETURNS TRIGGER AS $$
@@ -513,10 +549,27 @@ GRANT UPDATE (role) ON TABLE public.project_requests TO authenticated;
 GRANT DELETE ON TABLE public.project_requests TO authenticated;
 GRANT SELECT ON TABLE public.project_requests TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.insert_project_request_into_notifications()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.notifications (
+        user_id,
+        type,
+        project_request_id
+    ) VALUES (
+        NEW.addressee_id,
+        'project_request',
+        NEW.id
+    );
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER project_request_changed_trigger
   AFTER INSERT OR DELETE ON public.project_requests
   FOR EACH ROW
-  EXECUTE FUNCTION public.graphql_subscription('projectJoinRequestChanged', 'project_requests', 'addressee_id');
+  EXECUTE FUNCTION public.insert_project_request_into_notifications();
 
 CREATE OR REPLACE FUNCTION public.check_project_request_limit()
 RETURNS TRIGGER AS $$
@@ -584,6 +637,37 @@ EXECUTE FUNCTION public.make_project_creator_a_member();
 
 
 
+CREATE TABLE public.notifications (
+    id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+    message TEXT,
+    type VARCHAR(100) NOT NULL,
+    seen BOOLEAN DEFAULT FALSE NOT NULL,
+    friend_request_id INT REFERENCES public.friend_requests(id) ON DELETE CASCADE,
+    organization_request_id INT REFERENCES public.organization_requests(id) ON DELETE CASCADE,
+    project_request_id INT REFERENCES public.project_requests(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ,
+    CHECK (type in ('notification', 'friend_request', 'organization_request', 'project_request')),
+    CHECK (
+        (friend_request_id IS NOT NULL)::integer +
+        (organization_request_id IS NOT NULL)::integer +
+        (project_request_id IS NOT NULL)::integer <= 1
+    )
+);
+
+GRANT UPDATE (seen) ON TABLE public.notifications TO authenticated;
+GRANT INSERT ON TABLE public.notifications TO authenticated;
+GRANT DELETE ON TABLE public.notifications TO authenticated;
+GRANT SELECT ON TABLE public.notifications TO authenticated;
+
+CREATE TRIGGER notification_changed_trigger
+  AFTER INSERT OR DELETE ON public.notifications
+  FOR EACH ROW
+  EXECUTE FUNCTION public.graphql_subscription('notificationsChanged', 'notifications', 'user_id');
+
+
+
 GRANT USAGE, SELECT ON SEQUENCE public.blocked_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.friends_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.friend_requests_id_seq TO authenticated;
@@ -598,3 +682,4 @@ GRANT USAGE, SELECT ON SEQUENCE public.project_members_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.projects_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.project_requests_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.scopes_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.notifications_id_seq TO authenticated;

@@ -83,7 +83,7 @@ services:
         "--plugins",
         "@graphile/pg-pubsub",
         "--append-plugins",
-        "/postgraphile/RequestsPlugin.js",
+        "/postgraphile/NotificationsPlugin.js",
         "--connection",
         "postgres://authenticator:authenticator@db:5432/postgres",
         "--port",

@@ -146,7 +146,8 @@ curl -i -X POST http://localhost:8001/routes \
             "OPTIONS"
         ],
         "paths": [
-            "/graphql/v1"
+            "/graphql/v1",
+            "/graphql
         ]
     }'
 
@@ -155,6 +156,7 @@ curl -i -X POST http://localhost:8001/services \
     -d '{
         "name": "ws_graphql_v1",
         "host": "host.docker.internal",
+        "protocol": "ws",
         "port": 5000,
         "tags": [
             "ws",
@@ -182,7 +184,46 @@ curl -i -X POST http://localhost:8001/routes \
             "ws"
         ],
         "paths": [
-            "/graphql/v1"
+            "/graphql/v1",
+            "/graphql"
+        ]
+    }'
+
+curl -i -X POST http://localhost:8001/services \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "graphql_v1_gui",
+        "host": "host.docker.internal",
+        "port": 5000,
+        "tags": [
+            "graphql", 
+            "graphql-gui", 
+            "gui"
+        ],
+        "path": "/graphiql"
+    }'
+
+curl -i -X POST http://localhost:8001/routes \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "ws_graphql_v1",
+        "service": {
+            "name": "ws_graphql_v1"
+        },
+        "tags": [
+            "graphql", 
+            "graphql-gui", 
+            "gui"
+        ],
+        "methods": [
+            "GET",
+            "PATCH",
+            "DELETE",
+            "POST",
+            "OPTIONS"
+        ],
+        "paths": [
+            "/graphiql/v1"
         ]
     }'
 
