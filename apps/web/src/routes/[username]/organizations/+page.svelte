@@ -1,7 +1,7 @@
 <script lang="ts">
     import { getUserStore } from "$lib/stores/userStore";
     import { getProfileStore } from "$lib/stores/profileStore";
-    import { useQuery } from "@sveltestack/svelte-query";
+    import { createQuery } from "@tanstack/svelte-query";
     import { stexs } from "../../../stexsClient";
     import { 
         Paginator, 
@@ -42,7 +42,7 @@
         search = (e.target as HTMLInputElement)?.value || '';
     }, 200);
 
-    $: organizationAmountQuery = useQuery({
+    $: organizationAmountQuery = createQuery({
         queryKey: ['organizationsAmountProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
         queryFn: async () => {
             const { count } = await stexs.from('organization_members')
@@ -172,7 +172,7 @@
         modalStore.set([modal]);
     }
 
-    $: organizationsMemberQuery = useQuery({
+    $: organizationsMemberQuery = createQuery({
         queryKey: ['organizationsProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
         queryFn: async () => await fetchOrganizations($profileStore?.userId!, search, filter, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId

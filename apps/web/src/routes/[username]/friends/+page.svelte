@@ -9,7 +9,7 @@
         popup, 
         type PopupSettings 
     } from "@skeletonlabs/skeleton";
-    import { useQuery } from "@sveltestack/svelte-query";
+    import { createQuery } from "@tanstack/svelte-query";
     import { stexs } from "../../../stexsClient";
     import { getProfileStore } from "$lib/stores/profileStore";
     import { Dropdown, DropdownItem, Search } from "flowbite-svelte";
@@ -86,7 +86,7 @@
         return data;
     }
 
-    $: friendsQuery = useQuery({
+    $: friendsQuery = createQuery({
         queryKey: ['friends', $profileStore?.userId, paginationSettings.page, paginationSettings.limit],
         queryFn: async () => await fetchFriends($profileStore?.userId!, search, filter, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId

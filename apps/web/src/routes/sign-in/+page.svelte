@@ -5,14 +5,14 @@
   import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
   import type { Session, SignInInit } from 'stexs-client/src/lib/types';
-  import { useQuery } from '@sveltestack/svelte-query';
+  import { createQuery } from '@tanstack/svelte-query';
   import { page } from '$app/stores';
   import { getFlash } from 'sveltekit-flash-message/client';
 
   let submitted: boolean = false;
   const flash = getFlash(page);
 
-  const signInSetupQuery = useQuery({
+  const signInSetupQuery = createQuery({
     queryKey: ['signInSetup'],
     queryFn: async () => {
       const session: Session = stexs.auth.getSession();

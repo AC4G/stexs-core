@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { useQuery } from '@sveltestack/svelte-query';
+  import { createQuery } from '@tanstack/svelte-query';
 
   export let stexs: any;
   export let itemId: string;
@@ -10,7 +10,7 @@
   let failed: boolean = false;
   let prevUrl: string = '';
 
-  const query = useQuery({
+  const query = createQuery({
       queryKey: ['itemThumbnail', itemId],
       queryFn: async () => {
         return await stexs.storage.getItemThumbnailUrl(itemId)

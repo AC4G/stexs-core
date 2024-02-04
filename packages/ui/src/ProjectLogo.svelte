@@ -1,6 +1,6 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
-    import { useQuery } from '@sveltestack/svelte-query';
+    import { createQuery } from '@tanstack/svelte-query';
 
     export let stexs: any;
     export let alt: string;
@@ -12,7 +12,7 @@
     let failed: boolean = false;
     let prevUrl: string = '';
 
-    const query = useQuery({
+    const query = createQuery({
         queryKey: ['projectLogo', projectId],
         queryFn: async () => {
             return await stexs.storage.getProjectLogoUrl(projectId)

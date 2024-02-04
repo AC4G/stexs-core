@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { useQuery } from "@sveltestack/svelte-query";
+    import { createQuery } from "@tanstack/svelte-query";
     import { stexs } from "../../stexsClient";
     import { getUserStore } from "$lib/stores/userStore";
     import { getProfileStore } from "$lib/stores/profileStore";
@@ -59,7 +59,7 @@
         return data;
     }
 
-    $: itemsAmountQuery = useQuery({
+    $: itemsAmountQuery = createQuery({
         queryKey: ['itemsAmountInventory', $profileStore?.userId],
         queryFn: async () => {
             const { count } = await stexs.from('inventories')
@@ -76,7 +76,7 @@
 
     $: paginationSettings.size = $itemsAmountQuery.data;
 
-    $: projectsQuery = useQuery({
+    $: projectsQuery = createQuery({
         queryKey: ['projectsInInventory', $profileStore?.userId],
         queryFn: async () => await fetchProjectsInUsersInventory($profileStore?.userId!),
         enabled: !!$profileStore?.userId
@@ -192,7 +192,7 @@
         modalStore.set([modal]);
     }
 
-    $: inventoryQuery = useQuery({
+    $: inventoryQuery = createQuery({
         queryKey: ['inventories', $profileStore?.userId],
         queryFn: async () => await fetchInventory($profileStore?.userId!, search, { filterTime, filterAlphabet, filterAmount }, selectedProject, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
@@ -240,7 +240,7 @@
                     <Search size="md" placeholder="Project Name" bind:value={projectSearch} class="!bg-surface-500" />
                     <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
                     {#if $projectsQuery.isLoading || !$projectsQuery.data}
-                        <RadioGroup class="max-h-[280px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500" display="flex-col space-y-1">
+                        <RadioGroup class="max-h-[280px] overflow-auto" display="flex-col space-y-1">
                             {#each Array(10) as _}
                                 <div class="flex flex-row space-x-2 px-4 py-1">
                                     <div class="placeholder animate-pulse w-[48px] h-[48px]" />
@@ -252,7 +252,7 @@
                             {/each}
                         </RadioGroup>
                     {:else}
-                        <RadioGroup class="max-h-[200px] overflow-auto" active="variant-filled-primary" hover="hover:bg-surface-500" display="flex-col space-y-1">
+                        <RadioGroup class="max-h-[200px] overflow-auto" active="variant-glass-primary text-primary-500" hover="hover:bg-surface-500" display="flex-col space-y-1">
                             {#if searchedProjects && searchedProjects.length > 0 }
                                 {#each searchedProjects as project (project.id)}
                                     <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
