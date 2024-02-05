@@ -3,8 +3,8 @@
 	import Icon from '@iconify/svelte';
 		
 	const activeClass = 'flex items-center p-2 rounded-md  variant-glass-primary text-primary-500 pointer-events-none';
-	const nonActiveClass = 'flex items-center p-2 text-white rounded-md hover:bg-surface-400';
-	const btnClass = 'flex items-center p-2 w-full rounded-md transition duration-75 text-white group hover:!bg-surface-400';
+	const nonActiveClass = 'flex items-center p-2 text-white rounded-md hover:bg-surface-500';
+	const btnClass = 'flex items-center p-2 w-full rounded-md transition duration-75 text-white group hover:!bg-surface-500';
 
 	export let activeUrl;
 </script>

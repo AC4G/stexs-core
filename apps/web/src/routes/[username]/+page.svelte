@@ -12,7 +12,6 @@
         getModalStore, 
         type ModalSettings, 
         ListBoxItem
-
     } from "@skeletonlabs/skeleton";
     import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";

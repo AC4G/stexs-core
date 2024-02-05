@@ -15,12 +15,9 @@
   import { 
     Header, 
     Avatar, 
-    Truncated, 
     Confirm, 
     Button, 
     InventoryItem, 
-    OrganizationLogo, 
-    ProjectLogo,
     AddFriend,
     CreateOrganization,
     initializeCopyButtonListener,
@@ -36,21 +33,16 @@
   import { 
     Dropdown, 
     DropdownItem, 
-    DropdownDivider, 
-    Search 
+    DropdownDivider
   } from 'flowbite-svelte';
   import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
   import { goto } from '$app/navigation';
-  import { gql } from 'stexs-client';
-  import type { NotificationsGQL } from '$lib/types';
-  import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friend';
   import { createProfileStore } from '$lib/stores/profileStore';
   import { createPreviousPageStore } from '$lib/stores/previousPageStore';
-  import { acceptOrganizationJoinRequest, deleteOrganizationJoinRequest } from '$lib/utils/organizationJoinRequests';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
-  import { acceptProjectJoinRequest, deleteProjectJoinRequest } from '$lib/utils/projectJoinRequests';
   import { openAddFriendModal } from "$lib/utils/modals/friendModals";
+  import Notifications from '$lib/Notifications.svelte';
 
   initializeStores();
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
@@ -90,11 +82,7 @@
     target: 'addFriendPopup',
     placement: 'bottom'
   };
-  const notificationsPopup: PopupSettings = {
-    event: 'hover',
-    target: 'notificationsPopup',
-    placement: 'bottom'
-  };
+
   const avatarPopup: PopupSettings = {
     event: 'hover',
     target: 'avatarPopup',
@@ -103,17 +91,6 @@
 
   let signedIn: boolean;
   let avatarDropDownOpen: boolean = false;
-  let notificationsDropDownOpen: boolean = false;
-  let notifications: FriendRequests | [] = [];
-  let unseenNotifications: number = 0;
-  let notificationFilters = {};
-  let notificationPagination: {
-    limit: number,
-    offset: number
-  } = {
-    limit: 20,
-    offset: 0
-  };
 
   flash.subscribe(($flash) => {
     if (!$flash) return;
@@ -150,58 +127,6 @@
       username: session.user.raw_user_meta_data.username
     })
     signedIn = true;
-    
-    stexs.graphql
-      .subscribe({
-        query: gql`
-        subscription NotificationsSubscription($filters: NotificationFilters, $pagination: Pagination) {
-          notificationsChanged {
-            notifications(filters: $filters, pagination: $pagination) {
-              id
-              userId
-              message
-              type
-              seen
-              friendRequestByFriendRequestId {
-                profileByRequesterId {
-                  userId
-                  username
-                }
-              }
-              organizationRequestByOrganizationRequestId {
-                organizationByOrganizationId {
-                  id
-                  name
-                }
-                role
-              }
-              projectRequestByProjectRequestId {
-                projectByProjectId {
-                  id
-                  name
-                  organizationByOrganizationId {
-                    name
-                  }
-                }
-                role
-              }
-              createdAt
-              updatedAt
-            }
-            unseenNotifications
-          }
-        }
-      `,
-      variables: {
-        filters: notificationFilters,
-        pagination: notificationPagination
-      }
-    }).subscribe({
-      next({ data }: { data: NotificationsGQL }) {
-        notifications = data?.notificationsChanged.notifications.reverse();
-        unseenNotifications = data?.notificationsChanged.unseenNotifications;
-      }
-    });
   });
 </script>
 
@@ -227,7 +152,7 @@
     {/if}
   </Drawer>
   {#if !excludeRoutes.includes($page.url.pathname)}
-    <AppShell slotSidebarLeft="bg-surface-600 border-surface-500 w-0 {sidebarRoutes.find(route => $page.url.pathname.startsWith(route)) ? 'lg:w-64 lg:border-r' : '!w-0'}">
+    <AppShell slotSidebarLeft="bg-surface-700 border-surface-500 w-0 {sidebarRoutes.find(route => $page.url.pathname.startsWith(route)) ? 'lg:w-64 lg:border-r' : '!w-0'}">
       <svelte:fragment slot="header">
         <Header {sidebarRoutes} {drawerStore}>
           {#if !signedIn}
@@ -243,22 +168,7 @@
                   <p class="text-[14px] break-all">Add Friend</p>
                 </div>
               </button>
-              <button use:popup={notificationsPopup} class="btn relative notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">
-                <div>
-                  <div class="relative">
-                    {#if unseenNotifications > 0}
-                      <span class="badge-icon variant-filled-primary absolute -top-1 -right-2 z-10 w-[8px] h-[8px]"></span>
-                    {/if}
-                  </div>
-                  <Icon icon="mdi:bell-outline" width="18" />
-                  <div class="p-2 variant-filled-surface rounded-md" data-popup="notificationsPopup">
-                    <p class="text-[14px] break-all">Notifications</p>
-                  </div>
-                </div>
-              </button>
-              <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-86px] sm:right-[-74px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 max-w-[100vw] sm:max-w-[480px]">
-                <div class="w-full overflow-y-auto break-words">{JSON.stringify(notifications)}</div>
-              </Dropdown>
+              <Notifications />
               <button use:popup={avatarPopup} class="btn relative p-0">
                 <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
                 <div class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px] !ml-0" data-popup="avatarPopup">

@@ -10,7 +10,7 @@ BEGIN
     topic_template := TG_ARGV[1];
     id_column_name := TG_ARGV[2];
 
-    IF TG_OP = 'INSERT' THEN
+    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
         EXECUTE format('SELECT ($1).%I', id_column_name) INTO id_value USING NEW;
     ELSIF TG_OP = 'DELETE' THEN
         EXECUTE format('SELECT ($1).%I', id_column_name) INTO id_value USING OLD;
@@ -662,7 +662,7 @@ GRANT DELETE ON TABLE public.notifications TO authenticated;
 GRANT SELECT ON TABLE public.notifications TO authenticated;
 
 CREATE TRIGGER notification_changed_trigger
-  AFTER INSERT OR DELETE ON public.notifications
+  AFTER INSERT OR DELETE OR UPDATE ON public.notifications
   FOR EACH ROW
   EXECUTE FUNCTION public.graphql_subscription('notificationsChanged', 'notifications', 'user_id');
 

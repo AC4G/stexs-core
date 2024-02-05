@@ -31,6 +31,7 @@ curl -i -X POST http://localhost:8001/routes \
             "GET", 
             "PUT", 
             "POST", 
+            "PATCH",
             "DELETE", 
             "OPTIONS",
             "HEAD"
