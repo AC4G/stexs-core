@@ -85,15 +85,21 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            INSERT INTO auth.users (
-                email, 
-                encrypted_password, 
-                raw_user_meta_data,
-                verification_token,
-                verification_sent_at
-            )
-            VALUES ($1::text, $2::text, $3::jsonb, $4::uuid, CURRENT_TIMESTAMP)
-            RETURNING id;
+          INSERT INTO auth.users (
+              email, 
+              encrypted_password, 
+              raw_user_meta_data,
+              verification_token,
+              verification_sent_at
+          )
+          VALUES (
+            $1::text, 
+            $2::text, 
+            $3::jsonb, 
+            $4::uuid, 
+            CURRENT_TIMESTAMP
+          )
+          RETURNING id;
         `,
         [email, password, { username }, token],
       );

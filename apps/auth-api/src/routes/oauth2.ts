@@ -95,21 +95,21 @@ router.post(
 
       const { rowCount } = await db.query(
         `
-            SELECT 1
-            FROM public.oauth2_apps a
-            WHERE a.client_id = $1::uuid
+          SELECT 1
+          FROM public.oauth2_apps AS a
+          WHERE a.client_id = $1::uuid
             AND a.redirect_url = $2::text
             AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements_text($3) AS obj(scope)
+              WHERE NOT EXISTS (
                 SELECT 1
-                FROM jsonb_array_elements_text($3) AS obj(scope)
-                WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM public.oauth2_app_scopes ascs
-                    JOIN public.scopes s ON ascs.scope_id = s.id
-                    WHERE ascs.app_id = a.id
-                        AND s.type = 'user'
-                        AND obj.scope = s.name::text
-                )
+                FROM public.oauth2_app_scopes AS ascs
+                JOIN public.scopes AS s ON ascs.scope_id = s.id
+                WHERE ascs.app_id = a.id
+                  AND s.type = 'user'
+                  AND obj.scope = s.name::text
+              )
             );
         `,
         [client_id, redirect_url, scopesStringified],
@@ -125,7 +125,11 @@ router.post(
               info: CLIENT_NOT_FOUND,
               data: {
                 location: 'body',
-                paths: ['client_id', 'redirect_url', 'scopes'],
+                paths: [
+                  'client_id', 
+                  'redirect_url', 
+                  'scopes'
+                ],
               },
             },
           ]),
@@ -149,11 +153,13 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            SELECT 1 FROM auth.oauth2_connections
-            WHERE user_id = $1::uuid AND app_id = (
-                SELECT id
-                FROM public.oauth2_apps
-                WHERE client_id = $2::uuid
+          SELECT 1 
+          FROM auth.oauth2_connections
+          WHERE user_id = $1::uuid 
+            AND app_id = (
+              SELECT id
+              FROM public.oauth2_apps
+              WHERE client_id = $2::uuid
             );
         `,
         [userId, client_id],
@@ -180,17 +186,17 @@ router.post(
     try {
       const { rowCount, rows } = await db.query(
         `
-            WITH app_info AS (
-                SELECT id
-                FROM public.oauth2_apps
-                WHERE client_id = $3::uuid
-            )
-            INSERT INTO auth.oauth2_authorization_tokens (token, user_id, app_id)
-            VALUES ($1::uuid, $2::uuid, (SELECT id FROM app_info))
-            ON CONFLICT (user_id, app_id)
-            DO UPDATE
-            SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
-            RETURNING id;
+          WITH app_info AS (
+              SELECT id
+              FROM public.oauth2_apps
+              WHERE client_id = $3::uuid
+          )
+          INSERT INTO auth.oauth2_authorization_tokens (token, user_id, app_id)
+          VALUES ($1::uuid, $2::uuid, (SELECT id FROM app_info))
+          ON CONFLICT (user_id, app_id)
+          DO UPDATE
+          SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
+          RETURNING id;
         `,
         [token, userId, client_id],
       );
@@ -219,21 +225,23 @@ router.post(
     try {
       await db.query(
         `
-            WITH scope_ids AS (
-                SELECT id
-                FROM public.scopes
-                WHERE name = ANY($2::text[])
-            ),
-            deleted_scopes AS (
-                DELETE FROM auth.oauth2_authorization_token_scopes
-                WHERE token_id = $1::integer
+          WITH scope_ids AS (
+              SELECT id
+              FROM public.scopes
+              WHERE name = ANY($2::text[])
+          ),
+          deleted_scopes AS (
+              DELETE FROM auth.oauth2_authorization_token_scopes
+              WHERE token_id = $1::integer
                 AND scope_id NOT IN (SELECT id FROM scope_ids)
-                RETURNING token_id
-            )
-            INSERT INTO auth.oauth2_authorization_token_scopes (token_id, scope_id)
-            SELECT $1::integer, id
-            FROM scope_ids
-            ON CONFLICT DO NOTHING;
+              RETURNING token_id
+          )
+          INSERT INTO auth.oauth2_authorization_token_scopes (token_id, scope_id)
+          SELECT 
+            $1::integer, 
+            id
+          FROM scope_ids
+          ON CONFLICT DO NOTHING;
         `,
         [tokenId, scopes],
       );
@@ -395,24 +403,20 @@ router.get(
     try {
       const { rows } = await db.query(
         `
-            SELECT
-                jsonb_build_object(
-                    'id', o.id,
-                    'name', o.name,
-                    'display_name', o.display_name
-                ) AS organization,
-                oa.description,
-                oa.homepage_url,
-                oa.client_id
-            FROM
-                auth.oauth2_connections AS oc
-            JOIN
-                public.oauth2_apps AS oa ON oc.client_id = oa.id
-            JOIN
-                public.organizations AS o ON oa.organization_id = o.id
-            WHERE
-                oc.user_id = $1::uuid
-            LIMIT $2 OFFSET $3;
+          SELECT
+              jsonb_build_object(
+                  'id', o.id,
+                  'name', o.name,
+                  'display_name', o.display_name
+              ) AS organization,
+              oa.description,
+              oa.homepage_url,
+              oa.client_id
+          FROM auth.oauth2_connections AS oc
+          JOIN public.oauth2_apps AS oa ON oc.client_id = oa.id
+          JOIN public.organizations AS o ON oa.organization_id = o.id
+          WHERE oc.user_id = $1::uuid
+          LIMIT $2 OFFSET $3;
         `,
         [userId, limit, offset],
       );
@@ -461,15 +465,15 @@ router.delete(
     try {
       const { rowCount } = await db.query(
         `
-            WITH oauth2_connection_info AS (
-                SELECT oc.refresh_token_id
-                FROM auth.oauth2_connections AS oc
-                JOIN public.oauth2_apps AS oa ON oc.client_id = oa.id
-                WHERE oa.client_id = $1::uuid
+          WITH oauth2_connection_info AS (
+              SELECT oc.refresh_token_id
+              FROM auth.oauth2_connections AS oc
+              JOIN public.oauth2_apps AS oa ON oc.client_id = oa.id
+              WHERE oa.client_id = $1::uuid
                 AND oc.user_id = $2::uuid
-            )
-            DELETE FROM auth.refresh_tokens AS rt
-            WHERE rt.id IN (SELECT refresh_token_id FROM oauth2_connection_info);
+          )
+          DELETE FROM auth.refresh_tokens AS rt
+          WHERE rt.id IN (SELECT refresh_token_id FROM oauth2_connection_info);
         `,
         [clientId, userId],
       );
@@ -514,8 +518,11 @@ router.delete(
     try {
       const { rowCount } = await db.query(
         `
-            DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid AND grant_type = 'authorization_code' AND token = $2::uuid AND session_id IS NULL;
+          DELETE FROM auth.refresh_tokens
+          WHERE user_id = $1::uuid 
+            AND grant_type = 'authorization_code' 
+            AND token = $2::uuid 
+            AND session_id IS NULL;
         `,
         [token?.sub, token?.jti],
       );

@@ -58,15 +58,17 @@ router.post(
     try {
       const { rowCount, rows } = await db.query(
         `
-            SELECT u.id, u.email_verified_at,
-                    ARRAY_REMOVE(ARRAY[
-                            CASE WHEN mfa.email = TRUE THEN 'email' END,
-                            CASE WHEN mfa.totp = TRUE THEN 'totp' END
-                    ], NULL) AS types
-            FROM auth.users u
-            LEFT JOIN public.profiles p ON u.id = p.user_id
-            LEFT JOIN auth.mfa ON u.id = mfa.user_id
-            WHERE u.encrypted_password = crypt($2::text, u.encrypted_password)
+          SELECT 
+            u.id, 
+            u.email_verified_at,
+            ARRAY_REMOVE(ARRAY[
+              CASE WHEN mfa.email = TRUE THEN 'email' END,
+              CASE WHEN mfa.totp = TRUE THEN 'totp' END
+            ], NULL) AS types
+          FROM auth.users AS u
+          LEFT JOIN public.profiles AS p ON u.id = p.user_id
+          LEFT JOIN auth.mfa ON u.id = mfa.user_id
+          WHERE u.encrypted_password = crypt($2::text, u.encrypted_password)
             AND (
                 (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
             );
@@ -168,10 +170,13 @@ router.post(
       try {
         const { rowCount, rows } = await db.query(
           `
-                SELECT email, email_code, email_code_sent_at
-                FROM auth.mfa
-                WHERE user_id = $1::uuid;
-            `,
+            SELECT 
+              email, 
+              email_code, 
+              email_code_sent_at
+            FROM auth.mfa
+            WHERE user_id = $1::uuid;
+          `,
           [userId],
         );
 
@@ -227,12 +232,12 @@ router.post(
 
         const { rowCount: count } = await db.query(
           `
-                UPDATE auth.mfa
-                SET
-                    email_code = NULL,
-                    email_code_sent_at = NULL
-                WHERE user_id = $1::uuid;
-            `,
+            UPDATE auth.mfa
+            SET
+                email_code = NULL,
+                email_code_sent_at = NULL
+            WHERE user_id = $1::uuid;
+          `,
           [userId],
         );
 
@@ -252,10 +257,12 @@ router.post(
       try {
         const { rowCount, rows } = await db.query(
           `
-                SELECT totp, totp_secret 
-                FROM auth.mfa
-                WHERE user_id = $1::uuid;
-            `,
+            SELECT 
+              totp, 
+              totp_secret 
+            FROM auth.mfa
+            WHERE user_id = $1::uuid;
+          `,
           [userId],
         );
 

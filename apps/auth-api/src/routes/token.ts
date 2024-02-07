@@ -35,8 +35,11 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid AND grant_type = 'password' AND token = $2::uuid AND session_id = $3::uuid;
+          DELETE FROM auth.refresh_tokens
+          WHERE user_id = $1::uuid 
+            AND grant_type = 'password' 
+            AND token = $2::uuid 
+            AND session_id = $3::uuid;
         `,
         [token?.sub, token?.jti, token?.session_id],
       );

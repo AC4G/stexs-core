@@ -85,10 +85,12 @@ router.post(
         const { rowCount } = await db.query(
           `
             SELECT 1
-            FROM public.project_members pm
-            JOIN public.profiles p ON pm.member_id = p.user_id
-            JOIN public.items i ON pm.project_id = i.project_id
-            WHERE i.id = $1::integer AND pm.member_id = $2::uuid AND pm.role IN ('Admin', 'Owner');
+            FROM public.project_members AS pm
+            JOIN public.profiles AS p ON pm.member_id = p.user_id
+            JOIN public.items AS i ON pm.project_id = i.project_id
+            WHERE i.id = $1::integer 
+              AND pm.member_id = $2::uuid 
+              AND pm.role IN ('Admin', 'Owner');
           `,
           [itemId, sub],
         );
@@ -99,21 +101,17 @@ router.post(
           `
             WITH ItemProjectOrganization AS (
               SELECT
-                  i.id AS item_id,
-                  p.id AS project_id,
-                  o.id AS organization_id
-              FROM
-                  public.items i
-              JOIN public.projects p ON i.project_id = p.id
-              JOIN public.organizations o ON p.organization_id = o.id
-              WHERE
-                  i.id = $1::integer
+                i.id AS item_id,
+                p.id AS project_id,
+                o.id AS organization_id
+              FROM public.items AS i
+              JOIN public.projects AS p ON i.project_id = p.id
+              JOIN public.organizations AS o ON p.organization_id = o.id
+              WHERE i.id = $1::integer
             )
             SELECT 1
-            FROM
-                ItemProjectOrganization ipo
-            WHERE
-                ipo.organization_id = $2::integer;
+            FROM ItemProjectOrganization AS ipo
+            WHERE ipo.organization_id = $2::integer;
           `,
           [itemId, organizationId],
         );

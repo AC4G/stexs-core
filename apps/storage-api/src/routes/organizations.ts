@@ -86,10 +86,12 @@ router.post(
       if (grantType === 'password') {
         const { rowCount } = await db.query(
           `
-                        SELECT 1
-                        FROM public.organization_members
-                        WHERE member_id = $1::uuid AND organization_id = $2::integer AND role IN ('Admin', 'Owner');
-                    `,
+            SELECT 1
+            FROM public.organization_members
+            WHERE member_id = $1::uuid 
+              AND organization_id = $2::integer 
+              AND role IN ('Admin', 'Owner');
+          `,
           [sub, organizationId],
         );
 
@@ -165,10 +167,12 @@ router.delete(
       if (grantType === 'password') {
         const { rowCount } = await db.query(
           `
-                        SELECT 1
-                        FROM public.organization_members
-                        WHERE member_id = $1::uuid AND organization_id = $2::integer AND role IN ('Admin', 'Owner');
-                    `,
+            SELECT 1
+            FROM public.organization_members
+            WHERE member_id = $1::uuid 
+              AND organization_id = $2::integer 
+              AND role IN ('Admin', 'Owner');
+          `,
           [sub, organizationId],
         );
 

@@ -70,19 +70,32 @@ export default async function generateAccessToken(
     if (oldRefreshToken && grantType === 'authorization_code') {
       await db.query(
         `
-            UPDATE auth.refresh_tokens
-            SET
-                token = $1::uuid,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE token = $2::uuid AND user_id = $3::uuid AND grant_type = 'authorization_code' AND session_id IS NULL;
+          UPDATE auth.refresh_tokens
+          SET
+              token = $1::uuid,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE token = $2::uuid 
+            AND user_id = $3::uuid 
+            AND grant_type = 'authorization_code' 
+            AND session_id IS NULL;
         `,
         [jti, oldRefreshToken, additionalPayload.sub],
       );
     } else {
       await db.query(
         `
-            INSERT INTO auth.refresh_tokens (token, user_id, grant_type, session_id)
-            VALUES ($1::uuid, $2::uuid, $3::text, $4::uuid);
+          INSERT INTO auth.refresh_tokens (
+            token, 
+            user_id, 
+            grant_type, 
+            session_id
+          )
+          VALUES (
+            $1::uuid, 
+            $2::uuid, 
+            $3::text, 
+            $4::uuid
+          );
         `,
         [jti, additionalPayload.sub, grantType, additionalPayload.session_id],
       );

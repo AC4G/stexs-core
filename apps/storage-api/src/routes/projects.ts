@@ -84,10 +84,12 @@ router.post(
       if (grantType === 'password') {
         const { rowCount } = await db.query(
           `
-                    SELECT 1
-                    FROM public.project_members
-                    WHERE member_id = $1::uuid AND project_id = $2::integer AND role IN ('Admin', 'Owner');
-                `,
+            SELECT 1
+            FROM public.project_members
+            WHERE member_id = $1::uuid 
+              AND project_id = $2::integer 
+              AND role IN ('Admin', 'Owner');
+          `,
           [sub, projectId],
         );
 
@@ -95,10 +97,11 @@ router.post(
       } else {
         const { rowCount } = await db.query(
           `
-                    SELECT 1
-                    FROM public.projects
-                    WHERE organization_id = $1::integer AND id = $2::integer;
-                `,
+            SELECT 1
+            FROM public.projects
+            WHERE organization_id = $1::integer 
+              AND id = $2::integer;
+          `,
           [organizationId, projectId],
         );
 
@@ -171,10 +174,12 @@ router.delete(
       if (grantType === 'password') {
         const { rowCount } = await db.query(
           `
-                        SELECT 1
-                        FROM public.project_members
-                        WHERE member_id = $1::uuid AND project_id = $2::integer AND role IN ('Admin', 'Owner');
-                    `,
+            SELECT 1
+            FROM public.project_members
+            WHERE member_id = $1::uuid 
+              AND project_id = $2::integer 
+              AND role IN ('Admin', 'Owner');
+          `,
           [sub, projectId],
         );
 
@@ -182,10 +187,11 @@ router.delete(
       } else {
         const { rowCount } = await db.query(
           `
-                        SELECT 1
-                        FROM public.projects
-                        WHERE organization_id = $1::integer AND id = $2::integer;
-                    `,
+            SELECT 1
+            FROM public.projects
+            WHERE organization_id = $1::integer 
+              AND id = $2::integer;
+          `,
           [organizationId, projectId],
         );
 

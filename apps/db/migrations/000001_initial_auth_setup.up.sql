@@ -312,6 +312,7 @@ CREATE TABLE public.oauth2_apps (
     client_id UUID DEFAULT uuid_generate_v4() NOT NULL UNIQUE,
     client_secret VARCHAR(64) NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
+    project_id INT REFERENCES public.projects(id) ON DELETE CASCADE,
     description VARCHAR(250),
     homepage_url VARCHAR(100),
     redirect_url VARCHAR(200) NOT NULL,

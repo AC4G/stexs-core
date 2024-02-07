@@ -425,7 +425,7 @@ CREATE POLICY items_update
                 auth.grant() = 'password' AND
                 EXISTS (
                     SELECT 1
-                    FROM public.project_members pm
+                    FROM public.project_members AS pm
                     WHERE
                         pm.project_id = public.items.project_id AND
                         pm.member_id = auth.uid() AND
@@ -457,7 +457,7 @@ CREATE POLICY items_delete
                 auth.grant() = 'password' AND
                 EXISTS (
                     SELECT 1
-                    FROM public.project_members pm
+                    FROM public.project_members AS pm
                     WHERE
                         pm.project_id = public.items.project_id AND
                         pm.member_id = auth.uid() AND
@@ -489,7 +489,7 @@ CREATE POLICY items_insert
                 auth.grant() = 'password' AND
                 EXISTS (
                     SELECT 1
-                    FROM public.project_members pm
+                    FROM public.project_members AS pm
                     WHERE
                         pm.project_id = public.items.project_id AND
                         pm.member_id = auth.uid() AND
@@ -518,8 +518,8 @@ CREATE POLICY oauth2_app_scopes_delete
         auth.grant() = 'password' AND
         EXISTS (
             SELECT 1
-            FROM public.organization_members om
-            JOIN public.oauth2_apps oa ON om.organization_id = oa.organization_id
+            FROM public.organization_members AS om
+            JOIN public.oauth2_apps AS oa ON om.organization_id = oa.organization_id
             WHERE
                 oa.id = app_id AND
                 om.member_id = auth.uid() AND
@@ -535,8 +535,8 @@ CREATE POLICY oauth2_app_scopes_insert
         auth.grant() = 'password' AND 
         EXISTS (
             SELECT 1
-            FROM public.organization_members om
-            JOIN public.oauth2_apps oa ON om.organization_id = oa.organization_id
+            FROM public.organization_members AS om
+            JOIN public.oauth2_apps AS oa ON om.organization_id = oa.organization_id
             WHERE
                 oa.id = app_id AND
                 om.member_id = auth.uid() AND
@@ -555,7 +555,7 @@ CREATE POLICY oauth2_apps_select
         (
             EXISTS(
                 SELECT 1
-                FROM public.organization_members om
+                FROM public.organization_members AS om
                 WHERE
                     om.organization_id = public.oauth2_apps.organization_id AND
                     om.member_id = auth.uid() AND
@@ -572,7 +572,7 @@ CREATE POLICY oauth2_apps_update
         auth.grant() = 'password' AND
         EXISTS(
             SELECT 1
-            FROM public.organization_members om
+            FROM public.organization_members AS om
             WHERE
                 om.organization_id = public.oauth2_apps.organization_id AND
                 om.member_id = auth.uid() AND
@@ -588,7 +588,7 @@ CREATE POLICY oauth2_apps_delete
         auth.grant() = 'password' AND
         EXISTS(
             SELECT 1
-            FROM public.organization_members om
+            FROM public.organization_members AS om
             WHERE
                 om.organization_id = public.oauth2_apps.organization_id AND
                 om.member_id = auth.uid() AND
@@ -604,11 +604,17 @@ CREATE POLICY oauth2_apps_insert
         auth.grant() = 'password' AND
         EXISTS(
             SELECT 1
-            FROM public.organization_members om
+            FROM public.organization_members AS om
             WHERE
                 om.organization_id = public.oauth2_apps.organization_id AND
                 om.member_id = auth.uid() AND
                 om.role IN ('Owner', 'Admin')
+        ) AND
+        EXISTS (
+            SELECT 1
+            FROM public.projects AS p
+            WHERE p.id = project_id
+                AND p.organization_id = public.oauth2_apps.organization_id
         )
     );
 
@@ -852,7 +858,7 @@ CREATE POLICY organization_requests_select
                 auth.grant() = 'password' AND
                 EXISTS (
                     SELECT 1
-                    FROM public.organization_members om
+                    FROM public.organization_members AS om
                     WHERE
                         om.organization_id = public.organization_requests.organization_id AND
                         om.member_id = auth.uid() AND
@@ -892,7 +898,7 @@ CREATE POLICY organization_requests_update
                 (
                     EXISTS (
                         SELECT 1
-                        FROM public.organization_members om
+                        FROM public.organization_members AS om
                         WHERE
                             om.organization_id = public.organization_requests.organization_id AND
                             om.member_id = auth.uid() AND
@@ -902,7 +908,7 @@ CREATE POLICY organization_requests_update
                     (
                         EXISTS (
                             SELECT 1
-                            FROM public.organization_members om
+                            FROM public.organization_members AS om
                             WHERE
                                 om.organization_id = public.organization_requests.organization_id AND
                                 om.member_id = auth.uid() AND
@@ -936,7 +942,7 @@ CREATE POLICY organization_requests_delete
                     auth.uid() = addressee_id OR
                     EXISTS (
                         SELECT 1
-                        FROM public.organization_members om
+                        FROM public.organization_members AS om
                         WHERE
                             om.organization_id = public.organization_requests.organization_id AND
                             om.member_id = auth.uid() AND
@@ -946,7 +952,7 @@ CREATE POLICY organization_requests_delete
                     (
                         EXISTS (
                             SELECT 1
-                            FROM public.organization_members om
+                            FROM public.organization_members AS om
                             WHERE
                                 om.organization_id = public.organization_requests.organization_id AND
                                 om.member_id = auth.uid() AND
@@ -974,7 +980,7 @@ CREATE POLICY organization_requests_insert
         (
             NOT EXISTS (
                 SELECT 1
-                FROM public.organization_members om
+                FROM public.organization_members AS om
                 WHERE
                     om.organization_id = public.organization_requests.organization_id AND
                     om.member_id = public.organization_requests.addressee_id   
@@ -985,7 +991,7 @@ CREATE POLICY organization_requests_insert
                     (
                         EXISTS (
                             SELECT 1
-                            FROM public.organization_members om
+                            FROM public.organization_members AS om
                             WHERE
                                 om.organization_id = public.organization_requests.organization_id AND
                                 om.member_id = auth.uid() AND
@@ -995,7 +1001,7 @@ CREATE POLICY organization_requests_insert
                         (
                             EXISTS (
                                 SELECT 1
-                                FROM public.organization_members om
+                                FROM public.organization_members AS om
                                 WHERE
                                     om.organization_id = public.organization_requests.organization_id AND
                                     om.member_id = auth.uid() AND
@@ -1048,7 +1054,7 @@ CREATE POLICY organizations_update
                 auth.grant() = 'password' AND 
                 EXISTS (
                     SELECT 1
-                    FROM public.organization_members om
+                    FROM public.organization_members AS om
                     WHERE
                         om.organization_id = id AND
                         om.member_id = auth.uid() AND
@@ -1072,7 +1078,7 @@ CREATE POLICY organizations_delete
         auth.grant() = 'password' AND 
         EXISTS (
             SELECT 1
-            FROM public.organization_members om
+            FROM public.organization_members AS om
             WHERE
                 om.organization_id = id AND
                 om.member_id = auth.uid() AND
@@ -1142,7 +1148,7 @@ CREATE POLICY project_requests_select
                 auth.grant() = 'password' AND
                 EXISTS (
                     SELECT 1
-                    FROM public.project_members pm
+                    FROM public.project_members AS pm
                     WHERE
                         pm.project_id = public.project_requests.project_id AND
                         pm.member_id = auth.uid() AND
@@ -1188,7 +1194,7 @@ CREATE POLICY project_requests_update
                 (
                     EXISTS (
                         SELECT 1
-                        FROM public.project_members pm
+                        FROM public.project_members AS pm
                         WHERE
                             pm.project_id = public.project_requests.project_id AND
                             pm.member_id = auth.uid() AND
@@ -1198,7 +1204,7 @@ CREATE POLICY project_requests_update
                     (
                         EXISTS (
                             SELECT 1
-                            FROM public.project_members pm
+                            FROM public.project_members AS pm
                             WHERE
                                 pm.project_id = public.project_requests.project_id AND
                                 pm.member_id = auth.uid() AND
@@ -1238,7 +1244,7 @@ CREATE POLICY project_requests_delete
                     auth.uid() = addressee_id OR
                     EXISTS (
                         SELECT 1
-                        FROM public.project_members pm
+                        FROM public.project_members AS pm
                         WHERE
                             pm.project_id = public.project_requests.project_id AND
                             pm.member_id = auth.uid() AND
@@ -1248,7 +1254,7 @@ CREATE POLICY project_requests_delete
                     (
                         EXISTS (
                             SELECT 1
-                            FROM public.project_members pm
+                            FROM public.project_members AS pm
                             WHERE
                                 pm.project_id = public.project_requests.project_id AND
                                 pm.member_id = auth.uid() AND
@@ -1282,7 +1288,7 @@ CREATE POLICY project_requests_insert
         (
             NOT EXISTS (
                 SELECT 1
-                FROM public.project_members pm
+                FROM public.project_members AS pm
                 WHERE
                     pm.project_id = public.project_requests.project_id AND
                     pm.member_id = addressee_id
@@ -1294,7 +1300,7 @@ CREATE POLICY project_requests_insert
                         auth.uid() = addressee_id OR
                         EXISTS (
                             SELECT 1
-                            FROM public.project_members pm
+                            FROM public.project_members AS pm
                             WHERE
                                 pm.project_id = public.project_requests.project_id AND
                                 pm.member_id = auth.uid() AND
@@ -1304,7 +1310,7 @@ CREATE POLICY project_requests_insert
                         (
                             EXISTS (
                                 SELECT 1
-                                FROM public.project_members pm
+                                FROM public.project_members AS pm
                                 WHERE
                                     pm.project_id = public.project_requests.project_id AND
                                     pm.member_id = auth.uid() AND
@@ -1585,7 +1591,7 @@ CREATE POLICY projects_update
                 auth.grant() = 'password' AND 
                 EXISTS (
                     SELECT 1
-                    FROM public.project_members pm
+                    FROM public.project_members AS pm
                     WHERE
                         pm.project_id = id AND
                         pm.member_id = auth.uid() AND
@@ -1609,7 +1615,7 @@ CREATE POLICY projects_delete
         auth.grant() = 'password' AND 
         EXISTS (
             SELECT 1
-            FROM public.project_members pm
+            FROM public.project_members AS pm
             WHERE
                 pm.project_id = id AND
                 pm.member_id = auth.uid() AND
@@ -1625,7 +1631,7 @@ CREATE POLICY projects_insert
         auth.grant() = 'password' AND 
         EXISTS (
             SELECT 1
-            FROM public.organization_members om
+            FROM public.organization_members AS om
             WHERE
                 om.organization_id = public.projects.organization_id AND
                 om.member_id = auth.uid() AND
