@@ -560,8 +560,7 @@ CREATE POLICY oauth2_apps_select
                     om.organization_id = public.oauth2_apps.organization_id AND
                     om.member_id = auth.uid() AND
                     om.role IN ('Owner', 'Admin')
-            ) OR
-            client_secret IS NULL
+            )
         )
     );
 

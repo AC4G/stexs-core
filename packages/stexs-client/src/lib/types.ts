@@ -9,8 +9,8 @@ export interface Session {
   user: {
     id: string;
     email: string;
+    username: string;
     raw_user_meta_data: {
-      username: string;
       [key: string]: any;
     };
     created_at: string;
@@ -34,8 +34,8 @@ export interface Session {
       };
       id: string;
       email: string;
+      username: string;
       raw_user_meta_data: {
-        username: string;
         [key: string]: any;
       };
       created_at: string;

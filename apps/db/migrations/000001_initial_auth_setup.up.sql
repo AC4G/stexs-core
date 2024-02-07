@@ -210,6 +210,15 @@ EXECUTE FUNCTION auth.encrypt_password();
  
 
 
+CREATE OR REPLACE FUNCTION public.is_url_valid(url TEXT)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN url ~ '(https?:\/\/)(\S*)?';
+END;
+$$ LANGUAGE plpgsql;
+
+
+
 CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
@@ -219,12 +228,32 @@ CREATE TABLE public.profiles (
     accept_friend_requests BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT username_max_length CHECK (length(username) <= 20),
-    CONSTRAINT username_allowed_characters CHECK (username ~ '^[A-Za-z0-9._]+$')
+    CONSTRAINT username_allowed_characters CHECK (username ~ '^[A-Za-z0-9._]+$'),
+    CONSTRAINT valid_url CHECK (is_url_valid(url))
 );
 
 GRANT UPDATE (username, is_private, description, url) ON TABLE public.profiles TO authenticated;
 GRANT SELECT ON TABLE public.profiles TO anon;
 GRANT SELECT ON TABLE public.profiles TO authenticated;
+
+CREATE OR REPLACE FUNCTION auth.create_profile_for_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.profiles (user_id, username)
+    VALUES (NEW.id, NEW.raw_user_meta_data->>'username');
+
+    UPDATE auth.users
+    SET raw_user_meta_data = raw_user_meta_data - 'username'
+    WHERE id = NEW.id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER create_profile_trigger
+AFTER INSERT ON auth.users
+FOR EACH ROW
+EXECUTE FUNCTION auth.create_profile_for_user();
 
 
 
@@ -241,7 +270,8 @@ CREATE TABLE public.organizations (
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
     CONSTRAINT display_name_max_length CHECK (length(display_name) <= 50),
     CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+$'),
-    CONSTRAINT display_name_allowed_characters CHECK (display_name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$')
+    CONSTRAINT display_name_allowed_characters CHECK (display_name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
+    CONSTRAINT valid_url CHECK (is_url_valid(url))
 );
 
 GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
@@ -264,7 +294,8 @@ CREATE TABLE public.projects (
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_project_combination UNIQUE (name, organization_id),
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
-    CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$')
+    CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
+    CONSTRAINT valid_url CHECK (is_url_valid(url))
 );
 
 GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
@@ -278,7 +309,7 @@ GRANT SELECT ON TABLE public.projects TO authenticated;
 CREATE TABLE public.oauth2_apps (
     id SERIAL PRIMARY KEY,
     name CITEXT NOT NULL,
-    client_id UUID NOT NULL UNIQUE,
+    client_id UUID DEFAULT uuid_generate_v4() NOT NULL UNIQUE,
     client_secret VARCHAR(64) NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
     description VARCHAR(250),
@@ -288,13 +319,14 @@ CREATE TABLE public.oauth2_apps (
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id),
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
-    CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$')
+    CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
+    CONSTRAINT valid_homepage_url CHECK (is_url_valid(homepage_url)),
+    CONSTRAINT valid_redirect_url CHECK (is_url_valid(redirect_url))
 );
 
 GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 GRANT UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 GRANT DELETE ON TABLE public.oauth2_apps TO authenticated;
-GRANT SELECT ON TABLE public.oauth2_apps TO anon;
 GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
 CREATE OR REPLACE VIEW public.oauth2_apps_public AS
@@ -310,6 +342,11 @@ FROM public.oauth2_apps;
 
 GRANT SELECT ON public.oauth2_apps_public TO authenticated;
 
+CREATE TRIGGER generate_client_credentials_trigger
+BEFORE INSERT ON public.oauth2_apps
+FOR EACH ROW
+EXECUTE FUNCTION public.generate_client_credentials();
+
 CREATE OR REPLACE FUNCTION public.generate_client_credentials()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -318,13 +355,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER generate_client_credentials_trigger
-BEFORE INSERT ON public.oauth2_apps
-FOR EACH ROW
-EXECUTE FUNCTION public.generate_client_credentials();
-
 CREATE OR REPLACE FUNCTION public.generate_new_client_secret(app_id INT)
-RETURNS VOID AS $$
+RETURNS TABLE (client_secret VARCHAR(64)) AS $$
+DECLARE
+    new_client_secret VARCHAR;
 BEGIN
     IF (
         auth.grant() = 'password' AND
@@ -336,13 +370,28 @@ BEGIN
                 AND om.member_id = auth.uid()
                 AND om.role IN ('Owner', 'Admin')
         )
+    ) OR (
+        auth.grant() = 'client_credentials' AND
+        'secret.update' = ANY(auth.scopes()) AND
+        EXISTS (
+            SELECT 1
+            FROM public.oauth2_apps 
+            WHERE id = app_id
+                AND client_id = (auth.jwt()->>'client_id')::UUID
+        )
     ) THEN
+        new_client_secret := md5(random()::text || clock_timestamp()::text);
+
         UPDATE public.oauth2_apps
-        SET client_secret = md5(random()::text || clock_timestamp()::text)
+        SET client_secret = new_client_secret
         WHERE id = app_id;
+
+        RETURN QUERY
+        SELECT new_client_secret;
     ELSE
         RAISE sqlstate '42501' USING
             message = 'Insufficient Privilege';
+        RETURN;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -405,38 +454,3 @@ CREATE TABLE auth.oauth2_connections (
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_oauth2_connections_combination UNIQUE (user_id, app_id)
 );
-
-
-
-CREATE OR REPLACE FUNCTION auth.create_profile_for_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (user_id, username)
-    VALUES (NEW.id, NEW.raw_user_meta_data->>'username');
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER create_profile_trigger
-AFTER INSERT ON auth.users
-FOR EACH ROW
-EXECUTE FUNCTION auth.create_profile_for_user();
-
-CREATE OR REPLACE FUNCTION auth.update_user_meta_data_after_profile_update()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.username <> (raw_user_meta_data->>'username') THEN
-        UPDATE auth.users
-        SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('username', NEW.username)
-        WHERE id = NEW.user_id;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_user_meta_data_after_profile_update_trigger
-AFTER UPDATE ON public.profiles
-FOR EACH ROW
-EXECUTE FUNCTION auth.update_user_meta_data_after_profile_update();

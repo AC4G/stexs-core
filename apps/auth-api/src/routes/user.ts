@@ -52,12 +52,14 @@ router.get(
       const { rows } = await db.query(
         `
             SELECT 
-                id, 
-                email, 
-                raw_user_meta_data,
-                created_at,
-                updated_at 
-            FROM auth.users
+                u.id, 
+                u.email, 
+                p.username,
+                u.raw_user_meta_data,
+                u.created_at,
+                u.updated_at 
+            FROM auth.users AS u
+            JOIN public.profiles AS p ON u.id = p.user_id
             WHERE id = $1::uuid;
         `,
         [userId],
