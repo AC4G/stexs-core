@@ -365,8 +365,8 @@ BEGIN
         auth.grant() = 'password' AND
         EXISTS (
             SELECT 1
-            FROM public.oauth2_apps oa
-            JOIN public.organization_members om ON oa.organization_id = om.organization_id
+            FROM public.oauth2_apps AS oa
+            JOIN public.organization_members AS om ON oa.organization_id = om.organization_id
             WHERE oa.id = app_id
                 AND om.member_id = auth.uid()
                 AND om.role IN ('Owner', 'Admin')
