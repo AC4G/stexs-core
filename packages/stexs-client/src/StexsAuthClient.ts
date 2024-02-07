@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { Session, SignInInit } from './lib/types';
+import type { Session, SignInInit } from './lib/types';
 
 export class StexsAuthClient {
   private authUrl: string;

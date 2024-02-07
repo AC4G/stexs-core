@@ -103,7 +103,7 @@
       const session = stexs.auth.getSession();
       userStore.set({
         id: session.user.id,
-        username: session.user.raw_user_meta_data.username
+        username: session.user.username
       })
       signedIn = true;
     }
@@ -124,7 +124,7 @@
 
     userStore.set({
       id: session.user.id,
-      username: session.user.raw_user_meta_data.username
+      username: session.user.username
     })
     signedIn = true;
   });
