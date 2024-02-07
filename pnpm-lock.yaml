@@ -67,8 +67,8 @@ importers:
         specifier: ^9.0.2
         version: 9.0.2
       nodemailer:
-        specifier: ^6.9.4
-        version: 6.9.6
+        specifier: ^6.9.9
+        version: 6.9.9
       nodemon:
         specifier: ^3.0.1
         version: 3.0.1
@@ -6663,8 +6663,8 @@ packages:
   /node-releases@2.0.14:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
 
-  /nodemailer@6.9.6:
-    resolution: {integrity: sha512-s7pDtWwe5fLMkQUhw8TkWB/wnZ7SRdd9HRZslq/s24hlZvBP3j32N/ETLmnqTpmj4xoBZL9fOWyCIZ7r2HORHg==}
+  /nodemailer@6.9.9:
+    resolution: {integrity: sha512-dexTll8zqQoVJEZPwQAKzxxtFn0qTnjdQTchoU6Re9BUUGBJiOy3YMn/0ShTW6J5M0dfQ1NeDeRTTl4oIWgQMA==}
     engines: {node: '>=6.0.0'}
     dev: false
 

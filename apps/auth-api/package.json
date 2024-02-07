@@ -23,7 +23,7 @@
         "express-paginate": "^1.0.2",
         "express-validator": "^7.0.1",
         "jsonwebtoken": "^9.0.2",
-        "nodemailer": "^6.9.4",
+        "nodemailer": "^6.9.9",
         "nodemon": "^3.0.1",
         "otpauth": "^9.1.4",
         "pg": "^8.11.2",
