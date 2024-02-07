@@ -83,7 +83,7 @@ services:
         "--plugins",
         "@graphile/pg-pubsub",
         "--append-plugins",
-        "/postgraphile/RequestsPlugin.js",
+        "/postgraphile/NotificationsPlugin.js",
         "--connection",
         "postgres://authenticator:authenticator@db:5432/postgres",
         "--port",
@@ -115,7 +115,7 @@ services:
       - stexs
 
 
-  kong-database:
+  kong-db:
     image: postgres:latest
     ports:
       - 5433:5432
@@ -123,7 +123,8 @@ services:
       POSTGRES_USER: kong
       POSTGRES_DB: kong
       POSTGRES_PASSWORD: kongpass
-    container_name: kong-database
+    container_name: kong-db
+    restart: unless-stopped
     volumes:
       - ./docker/kong/data:/var/lib/postgresql/data
     networks:
@@ -135,7 +136,7 @@ services:
     environment:
       KONG_DATABASE: postgres
       POSTGRES_USER: kong
-      KONG_PG_HOST: kong-database
+      KONG_PG_HOST: kong-db
       KONG_PG_PASSWORD: kongpass
       KONG_PASSWORD: test
     command: ["kong", "migrations", "bootstrap"]
@@ -143,7 +144,7 @@ services:
     networks:
       - stexs
     depends_on:
-      - kong-database
+      - kong-db
 
 
   kong:
@@ -151,7 +152,7 @@ services:
     environment:
       KONG_DATABASE: postgres
       POSTGRES_USER: kong
-      KONG_PG_HOST: kong-database
+      KONG_PG_HOST: kong-db
       KONG_PG_PASSWORD: kongpass
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
@@ -170,6 +171,8 @@ services:
       - 8003:8003
       - 8004:8004
     container_name: kong
+    depends_on:
+      - kong-db
     restart: unless-stopped
     networks:
       - stexs

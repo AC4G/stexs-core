@@ -9,7 +9,7 @@
     import Icon from "@iconify/svelte";
     import Button from '../Button.svelte';
     import { Dropdown, Search } from "flowbite-svelte";
-    import { useQuery } from '@sveltestack/svelte-query';
+    import { createQuery } from '@tanstack/svelte-query';
     import { debounce } from "lodash";
     import Avatar from '../Avatar.svelte';
 
@@ -36,7 +36,7 @@
     async function fetchUserProfiles(search: string, filter: string, page: number, limit: number) {
         if (search.length === 0 && filter === 'All') {
             paginationSettings.size = 0;
-            return;
+            return null;
         }
 
         const start = page * limit;
@@ -65,7 +65,7 @@
         return data;
     }
 
-    $: searchForFriendsQuery = useQuery({
+    $: searchForFriendsQuery = createQuery({
         queryKey: ['searchForFriends', userId, paginationSettings.page, paginationSettings.limit],
         queryFn: async () => fetchUserProfiles(search, filter, paginationSettings.page, paginationSettings.limit)
     });
@@ -91,8 +91,8 @@
                     class="text-[22px]"
                     /></Button>
                 <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
-                    <ListBoxItem bind:group={filter} name="filter" value={'All'} active="variant-filled-primary" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">All</ListBoxItem>
-                    <ListBoxItem bind:group={filter} name="filter" value={'Pending'} active="variant-filled-primary hover:variant-filled-primary" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Pending</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'All'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">All</ListBoxItem>
+                    <ListBoxItem bind:group={filter} name="filter" value={'Pending'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Pending</ListBoxItem>
                 </Dropdown>
             </div>
         </div>

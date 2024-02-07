@@ -1645,3 +1645,38 @@ CREATE POLICY scopes_select
     USING (
         auth.grant() <> 'authorization_code'
     );
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY notifications_select
+    ON public.notifications
+    AS PERMISSIVE
+    FOR SELECT
+    USING (
+        true
+    );
+
+
+CREATE POLICY notifications_select
+    ON public.notifications
+    AS PERMISSIVE
+    FOR UPDATE
+    USING (
+        true
+    );
+
+CREATE POLICY notifications_select
+    ON public.notifications
+    AS PERMISSIVE
+    FOR DELETE
+    USING (
+        true
+    );
+
+CREATE POLICY notifications_select
+    ON public.notifications
+    AS PERMISSIVE
+    FOR INSERT
+    WITH CHECK (
+        true
+    );

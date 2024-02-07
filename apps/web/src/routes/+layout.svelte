@@ -7,20 +7,21 @@
     initializeStores,
     getToastStore,
     Modal,
+    Drawer,
+    getDrawerStore,
     type ModalComponent,
     type PopupSettings
   } from '@skeletonlabs/skeleton';
   import { 
     Header, 
     Avatar, 
-    Truncated, 
     Confirm, 
     Button, 
     InventoryItem, 
-    OrganizationLogo, 
-    ProjectLogo,
     AddFriend,
-    CreateOrganization
+    CreateOrganization,
+    initializeCopyButtonListener,
+    SettingsSidebar
   } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
@@ -32,29 +33,16 @@
   import { 
     Dropdown, 
     DropdownItem, 
-    DropdownDivider, 
-    Search 
+    DropdownDivider
   } from 'flowbite-svelte';
-  import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
+  import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
   import { goto } from '$app/navigation';
-  import { gql } from 'stexs-client';
-  import type { 
-    FriendRequestsGQL, 
-    FriendRequests, 
-    OrganizationRequests, 
-    OrganizationRequestsGQL, 
-    ProjectRequestsGQL, 
-    ProjectRequests 
-  } from '$lib/types';
-  import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friend';
   import { createProfileStore } from '$lib/stores/profileStore';
   import { createPreviousPageStore } from '$lib/stores/previousPageStore';
-  import { acceptOrganizationJoinRequest, deleteOrganizationJoinRequest } from '$lib/utils/organizationJoinRequests';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
-  import { acceptProjectJoinRequest, deleteProjectJoinRequest } from '$lib/utils/projectJoinRequests';
   import { openAddFriendModal } from "$lib/utils/modals/friendModals";
-  import { initializeCopyButtonListener } from 'ui';
+  import Notifications from '$lib/Notifications.svelte';
 
   initializeStores();
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
@@ -62,6 +50,7 @@
   const profileStore = createProfileStore();
   const userStore = createUserStore();
   const toastStore = getToastStore();
+  const drawerStore = getDrawerStore();
   const modalStore = getModalStore();
   const flash = getFlash(page);
 
@@ -85,16 +74,15 @@
     '/sign-in-confirm',
     '/recovery',
   ];
+  const sidebarRoutes = [
+    '/settings'
+  ];
   const addFriendPopup: PopupSettings = {
     event: 'hover',
     target: 'addFriendPopup',
     placement: 'bottom'
   };
-  const notificationsPopup: PopupSettings = {
-    event: 'hover',
-    target: 'notificationsPopup',
-    placement: 'bottom'
-  };
+
   const avatarPopup: PopupSettings = {
     event: 'hover',
     target: 'avatarPopup',
@@ -103,14 +91,6 @@
 
   let signedIn: boolean;
   let avatarDropDownOpen: boolean = false;
-  let notificationsDropDownOpen: boolean = false;
-  let selectedNotificationMenu: 'friends' | 'organizations' | 'projects' = 'friends';
-  let friendRequests: FriendRequests | [] = [];
-  let friendRequestsSearch: string = '';
-  let organizationRequests: OrganizationRequests | [] = [];
-  let organizationRequestsSearch: string = '';
-  let projectRequests: ProjectRequests | [] = [];
-  let projectRequestsSearch: string = '';
 
   flash.subscribe(($flash) => {
     if (!$flash) return;
@@ -147,120 +127,7 @@
       username: session.user.raw_user_meta_data.username
     })
     signedIn = true;
-    
-    stexs.graphql
-      .subscribe({
-        query: gql`
-        subscription FriendRequestsSubscription {
-          friendRequestChanged {
-            friendRequests {
-              profileByRequesterId {
-                username
-                userId
-              }
-            }
-          }
-        }
-      `,
-    }).subscribe({
-      next({ data }: { data: FriendRequestsGQL }) {
-        friendRequests = data?.friendRequestChanged.friendRequests.reverse();
-      }
-    });
-
-    stexs.graphql
-      .subscribe({
-        query: gql`
-        subscription OrganizationJoinRequestsSubscription {
-          organizationJoinRequestChanged {
-            organizationRequests {
-              role,
-              organizationByOrganizationId {
-                id
-                name
-              }
-            }
-          }
-        }
-      `,
-    }).subscribe({
-      next({ data }: { data: OrganizationRequestsGQL }) {
-        if (data?.organizationJoinRequestChanged.organizationRequests) {
-          organizationRequests = data?.organizationJoinRequestChanged.organizationRequests.reverse();
-        }
-      }
-    });
-
-    stexs.graphql
-      .subscribe({
-      query: gql`
-      subscription ProjectJoinRequestsSubscription {
-        projectJoinRequestChanged {
-          projectRequests {
-            role
-            projectByProjectId {
-              id
-              name
-              organizationByOrganizationId {
-                name
-              }
-            }
-          }
-        }
-      }
-      `,
-    }).subscribe({
-      next({ data }: { data: ProjectRequestsGQL }) {
-        if (data?.projectJoinRequestChanged.projectRequests) {
-          projectRequests = data?.projectJoinRequestChanged.projectRequests.reverse();
-        }
-      }
-    });
   });
-
-  $: notifications = {
-    friendRequests: {
-      count: friendRequests.length,
-      data: friendRequests
-    },
-    organizationRequests:{
-      count: organizationRequests.length,
-      data: organizationRequests
-    },
-    projectRequests: {
-      count: projectRequests.length,
-      data: projectRequests
-    },
-    exists: friendRequests.length > 0 || 
-      organizationRequests.length > 0 || 
-      projectRequests.length > 0
-  };
-
-  $: searchedFriendRequests = notifications.friendRequests.data.filter(friendRequest => friendRequest.profileByRequesterId.username.toLowerCase().includes(friendRequestsSearch.toLowerCase()));
-  $: searchedOrganizationRequests = notifications.organizationRequests.data.filter(organizationRequest => organizationRequest.organizationByOrganizationId.name.toLowerCase().includes(organizationRequestsSearch.toLowerCase()));
-  $: searchedProjectRequests = notifications.projectRequests.data
-      .map(projectRequest => {
-        const searchTerms = projectRequestsSearch.trim().toLowerCase() !== '' ?
-          projectRequestsSearch.trim().toLowerCase().split(' ').filter(term => term.length > 0)
-          : [""];
-        
-        const name = projectRequest.projectByProjectId.organizationByOrganizationId.name.toLowerCase() + '/' + projectRequest.projectByProjectId.name.toLowerCase();
-
-        const matchingTermsCount = searchTerms.reduce((count, term) => {
-          if (name.includes(term)) {
-            return count + 1;
-          }
-          return count;
-        }, 0);
-
-        return {
-          projectRequest,
-          matchingTermsCount,
-        };
-      })
-      .filter(result => result.matchingTermsCount > 0)
-      .sort((a, b) => b.matchingTermsCount - a.matchingTermsCount)
-      .map(result => result.projectRequest);
 </script>
 
 <svelte:head>
@@ -269,159 +136,66 @@
 
 <QueryClientProvider client={queryClient}>
   <Toast buttonDismiss="btn aspect-square px-2 py-1 bg-surface-700 border border-solid border-surface-500" zIndex="z-[1000]" />
-  <Modal components={modalRegistry} />
+  <Modal components={modalRegistry} position="items-center !py-4 !px-0" />
+  <Drawer regionDrawer="!w-full sm:!w-64">
+    <div class="px-4">
+      <div class="flex items-center justify-between h-[70px]">
+        <h3 class="h3">Navigation</h3>
+        <Button on:click={() => drawerStore.close()} class="p-2 bg-surface-700 hover:text-gray-600 ">
+          <Icon icon="ph:x-bold" />
+        </Button>
+      </div>
+	    <hr />
+    </div>
+    {#if $page.url.pathname.startsWith('/settings')}
+      <SettingsSidebar activeUrl={$page.url.pathname} />
+    {/if}
+  </Drawer>
   {#if !excludeRoutes.includes($page.url.pathname)}
-    <AppShell>
-      <Header>
-        {#if !signedIn}
-          <a href="/sign-in" class="btn py-[1px] px-[1px] bg-gradient-to-br variant-gradient-primary-secondary group">
-            <div class="bg-surface-100-800-token text-white rounded-md px-2 py-1 w-full h-full group-hover:bg-gradient-to-br variant-gradient-primary-secondary">Sign In</div>
-          </a>
-          <a href="/sign-up" class="btn variant-ghost-primary py-[4px] px-3">Sign Up</a>
-        {:else}
-          <div class="relative mr-[8px] flex items-center space-x-2 w-full justify-end">
-            <button use:popup={addFriendPopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="btn relative hover:bg-surface-500 rounded-full transition p-3">
-              <Icon icon="octicon:person-add-16" width="18" />
-              <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendPopup">
-                <p class="text-[14px] break-all">Add Friend</p>
-              </div>
-            </button>
-            <button use:popup={notificationsPopup} class="btn relative notifications hover:bg-surface-500 rounded-full transition p-3 {notificationsDropDownOpen && 'bg-surface-500'}">
-              <div>
-                <div class="relative">
-                  {#if notifications.exists}
-                    <span class="badge-icon variant-filled-primary absolute -top-1 -right-2 z-10 w-[8px] h-[8px]"></span>
-                  {/if}
+    <AppShell slotSidebarLeft="bg-surface-700 border-surface-500 w-0 {sidebarRoutes.find(route => $page.url.pathname.startsWith(route)) ? 'lg:w-64 lg:border-r' : '!w-0'}">
+      <svelte:fragment slot="header">
+        <Header {sidebarRoutes} {drawerStore}>
+          {#if !signedIn}
+            <a href="/sign-in" class="btn py-[1px] px-[1px] bg-gradient-to-br variant-gradient-primary-secondary group">
+              <div class="bg-surface-100-800-token text-white rounded-md px-2 py-1 w-full h-full group-hover:bg-gradient-to-br variant-gradient-primary-secondary">Sign In</div>
+            </a>
+            <a href="/sign-up" class="btn variant-ghost-primary py-[4px] px-3">Sign Up</a>
+          {:else}
+            <div class="relative mr-[8px] flex items-center space-x-2 w-full justify-end">
+              <button use:popup={addFriendPopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="btn relative hover:bg-surface-500 rounded-full transition p-3">
+                <Icon icon="octicon:person-add-16" width="18" />
+                <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendPopup">
+                  <p class="text-[14px] break-all">Add Friend</p>
                 </div>
-                <Icon icon="mdi:bell-outline" width="18" />
-                <div class="p-2 variant-filled-surface rounded-md" data-popup="notificationsPopup">
-                  <p class="text-[14px] break-all">Notifications</p>
+              </button>
+              <Notifications />
+              <button use:popup={avatarPopup} class="btn relative p-0">
+                <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
+                <div class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px] !ml-0" data-popup="avatarPopup">
+                  <p class="text-[14px] break-all">{$userStore?.username}</p>
                 </div>
-              </div>
-            </button>
-            <Dropdown triggeredBy=".notifications" bind:open={notificationsDropDownOpen} class="absolute rounded-md right-[-68px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 w-[280px]">
-              <div class="grid grid-cols-3 space-x-1">
-                <Button on:click={() => selectedNotificationMenu = 'friends'} class="p-0 hover:bg-surface-500 items-center flex {selectedNotificationMenu === 'friends' && 'variant-filled-primary hover:variant-filled-primary'}">
-                  <Icon icon="octicon:person-add-16" />
-                  <p class="text-[16px]">{notifications.friendRequests.count}</p>
-                </Button>
-                <Button on:click={() => selectedNotificationMenu = 'organizations'} class="px-0 py-2 hover:bg-surface-500 items-center flex {selectedNotificationMenu === 'organizations' && 'variant-filled-primary hover:variant-filled-primary'}">
-                  <Icon icon="bi:building-add" />
-                  <p class="text-[16px]">{notifications.organizationRequests.count}</p>
-                </Button>
-                <Button on:click={() => selectedNotificationMenu = 'projects'} class="p-0 hover:bg-surface-500 items-center flex {selectedNotificationMenu === 'projects' && 'variant-filled-primary hover:variant-filled-primary'}">
-                  <Icon icon="octicon:project-symlink-24" />
-                  <p class="text-[16px]">{notifications.projectRequests.count}</p>
-                </Button>
-              </div>
-              <DropdownDivider />
-              {#if selectedNotificationMenu === 'friends'}
-                {#if notifications.friendRequests.count === 0}
-                  <p class="text-[16px] text-center p-4">No friend requests received</p>
-                {:else}
-                  <Search size="md" placeholder="Username" bind:value={friendRequestsSearch} class="!bg-surface-500" />
-                  {#if searchedFriendRequests.length > 0}
-                    <div class="max-h-[300px] overflow-auto">
-                      {#each searchedFriendRequests as friendRequest, index (friendRequest.profileByRequesterId.userId)}
-                        <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
-                          <a href="/{friendRequest.profileByRequesterId.username}">
-                            <Avatar class="w-[48px] border-2 border-surface-300-600-token hover:!border-primary-500 transition {$page.url.pathname === `/${friendRequest.profileByRequesterId.username}` && '!border-primary-500'}" {stexs} userId={friendRequest.profileByRequesterId.userId} username={friendRequest.profileByRequesterId.username} />
-                          </a>
-                          <div class="grid grid-rows-2 col-span-2 w-full px-1 space-y-1">
-                            <Truncated text={friendRequest.profileByRequesterId.username} maxLength={14} class="text-[16px] w-full text-left h-fit" title={friendRequest.profileByRequesterId.username} />
-                            <div class="flex justify-between">
-                              <Button on:click={() => acceptFriendRequest($userStore.id, friendRequest.profileByRequesterId.userId, friendRequest.profileByRequesterId.username, flash, profileStore) } class="py-[0.8px] px-2 variant-filled-primary text-[16px]">Accept</Button>
-                              <Button on:click={() => deleteFriendRequest(friendRequest.profileByRequesterId.userId, $userStore.id, flash, profileStore) } class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[16px]">Delete</Button>
-                            </div>
-                          </div>
-                        </div>
-                      {/each}
-                    </div>
-                  {:else}
-                    <p class="text-[16px] text-center p-4">Friend requests not found</p>
-                  {/if}
-                {/if}
-              {:else if selectedNotificationMenu === 'organizations'}
-                {#if notifications.organizationRequests.count === 0}
-                  <p class="text-[16px] text-center p-4">No organization join requests received</p>
-                {:else}
-                  <Search size="md" placeholder="Organization Name" bind:value={organizationRequestsSearch} class="!bg-surface-500" />
-                  {#if searchedOrganizationRequests.length > 0}
-                    <div class="max-h-[300px] overflow-auto">
-                      {#each searchedOrganizationRequests as organizationRequest}
-                        <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
-                          <a href="/organizations/{organizationRequest.organizationByOrganizationId.name}" class="pt-1 {$page.url.pathname === `/organizations/${organizationRequest.organizationByOrganizationId.name}` && 'pointer-events-none'}">
-                            <OrganizationLogo {stexs} alt={organizationRequest.organizationByOrganizationId.name} organizationId={organizationRequest.organizationByOrganizationId.id} class="!w-[55px] rounded-md border border-solid border-surface-500 {$page.url.pathname === `/organizations/${organizationRequest.organizationByOrganizationId.name}` && '!border-primary-500'}" />
-                          </a>
-                          <div class="grid grid-rows-2 col-span-2 w-full px-1 space-y-1">
-                            <div class="flex flex-row space-x-1">
-                              <Truncated text={organizationRequest.organizationByOrganizationId.name} maxLength={10} class="text-[16px] w-full text-left h-fit" title={organizationRequest.organizationByOrganizationId.name} />
-                              <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit">{organizationRequest.role}</span>
-                            </div>
-                            <div class="flex justify-between">
-                              <Button on:click={() => acceptOrganizationJoinRequest($userStore.id, organizationRequest.organizationByOrganizationId.id, organizationRequest.organizationByOrganizationId.name, organizationRequest.role, flash, profileStore) } class="py-[0.8px] px-2 variant-filled-primary text-[16px]">Accept</Button>
-                              <Button on:click={() => deleteOrganizationJoinRequest($userStore.id, organizationRequest.organizationByOrganizationId.id, flash) } class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[16px]">Delete</Button>
-                            </div>
-                          </div>
-                        </div>
-                      {/each}                   
-                    </div>
-                  {:else}
-                    <p class="text-[16px] text-center p-4">Organization join requests not found</p>
-                  {/if}
-                {/if}
-              {:else}
-                {#if notifications.projectRequests.count === 0}
-                  <p class="text-[16px] text-center p-4">No project join requests received</p>
-                {:else}
-                  <Search size="md" placeholder="Project or Organization Name" bind:value={projectRequestsSearch} class="!bg-surface-500" />
-                  {#if searchedProjectRequests.length > 0}
-                    <div class="max-h-[300px] overflow-auto">
-                      {#each searchedProjectRequests as projectRequest}
-                        <div class="grid grid-cols-3 py-2 pr-2 place-items-center">
-                          <a href="/organizations/{projectRequest.projectByProjectId.organizationByOrganizationId.name}/projects/{projectRequest.projectByProjectId.name}" class="pt-1 {$page.url.pathname === `/organizations/${projectRequest.projectByProjectId.organizationByOrganizationId.name}/projects/${projectRequest.projectByProjectId.name}` && 'pointer-events-none'}">
-                            <ProjectLogo {stexs} alt={projectRequest.projectByProjectId.name} projectId={projectRequest.projectByProjectId.id} class="!w-[55px] rounded-md border border-solid border-surface-500 {$page.url.pathname === `/organizations/${projectRequest.projectByProjectId.name}` && '!border-primary-500'}" />
-                          </a>
-                          <div class="grid grid-rows-2 col-span-2 w-full px-1 space-y-1">
-                            <div class="flex flex-row space-x-1">
-                              <Truncated text={projectRequest.projectByProjectId.name} maxLength={10} class="text-[16px] w-full text-left h-fit" title={projectRequest.projectByProjectId.organizationByOrganizationId.name + '/' + projectRequest.projectByProjectId.name} />
-                              <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit">{projectRequest.role}</span>
-                            </div>
-                            <div class="flex justify-between">
-                              <Button on:click={() => acceptProjectJoinRequest($userStore.id, projectRequest.projectByProjectId.id, projectRequest.projectByProjectId.name, projectRequest.projectByProjectId.organizationByOrganizationId.name, projectRequest.role, flash, profileStore)} class="py-[0.8px] px-2 variant-filled-primary text-[16px]">Accept</Button>
-                              <Button on:click={() => deleteProjectJoinRequest($userStore.id, projectRequest.projectByProjectId.id ,flash)} class="py-[0.8px] px-2 variant-ringed-surface hover:bg-surface-600 text-[16px]">Delete</Button>
-                            </div>
-                          </div>
-                        </div>
-                      {/each}                   
-                    </div>
-                  {:else}
-                    <p class="text-[16px] text-center p-4">Project join requests not found</p>
-                  {/if}
-                {/if}
-              {/if}
-            </Dropdown>
-            <button use:popup={avatarPopup} class="btn relative p-0">
-              <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
-              <div class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px] !ml-0" data-popup="avatarPopup">
-                <p class="text-[14px] break-all">{$userStore?.username}</p>
-              </div>
-            </button>
-            <Dropdown triggeredBy=".avatarDropDown" activeUrl={$page.url.pathname} activeClass="variant-filled-primary pointer-events-none" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
-              <div class="px-4 py-2 rounded variant-ghost-surface">
-                <p class="text-[16px] bg-gradient-to-br from-primary-500 to-secondary-500 bg-clip-text text-transparent box-decoration-clone break-all">{$userStore?.username}</p>
-              </div> 
-              <DropdownDivider />
-              <DropdownItem href="/account" class="hover:!bg-surface-500 rounded text-[16px]">Account</DropdownItem>
-              <DropdownItem href="/{$userStore?.username}" class="hover:!bg-surface-500 rounded text-[16px]">Profile</DropdownItem>
-              <DropdownItem href="/{$userStore?.username}/friends" class="hover:!bg-surface-500 rounded text-[16px]">Friends</DropdownItem>
-              <DropdownItem href="/{$userStore?.username}/organizations" class="hover:!bg-surface-500 rounded text-[16px]">Organizations</DropdownItem>
-              <DropdownDivider />
-              <DropdownItem class="hover:!bg-surface-500 rounded text-[16px]" on:click={async () => { await stexs.auth.signOut() }} >Sign out</DropdownItem>
-            </Dropdown>
-          </div>
+              </button>
+              <Dropdown triggeredBy=".avatarDropDown" activeUrl={'/' + $page.url.pathname.split('/')[1]} activeClass="variant-glass-primary text-primary-500" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
+                <div class="px-4 py-2 rounded variant-ghost-surface">
+                  <p class="text-[16px] bg-gradient-to-br from-primary-500 to-secondary-500 bg-clip-text text-transparent box-decoration-clone break-all">{$userStore?.username}</p>
+                </div> 
+                <DropdownDivider />
+                <DropdownItem href="/{$userStore?.username}" class="hover:!bg-surface-500 rounded text-[16px]">Profile</DropdownItem>
+                <DropdownItem href="/{$userStore?.username}/friends" class="hover:!bg-surface-500 rounded text-[16px]">Friends</DropdownItem>
+                <DropdownItem href="/{$userStore?.username}/organizations" class="hover:!bg-surface-500 rounded text-[16px]">Organizations</DropdownItem>
+                <DropdownItem href="/settings" class="hover:!bg-surface-500 rounded text-[16px]">Settings</DropdownItem>
+                <DropdownDivider />
+                <DropdownItem class="hover:!bg-surface-500 rounded text-[16px]" on:click={() => stexs.auth.signOut()} >Sign Out</DropdownItem>
+              </Dropdown>
+            </div>
+          {/if}
+        </Header>
+      </svelte:fragment>
+      <svelte:fragment slot="sidebarLeft">
+        {#if $page.url.pathname.startsWith('/settings')}
+          <SettingsSidebar activeUrl={$page.url.pathname} />
         {/if}
-      </Header>
+      </svelte:fragment>
       <slot />
     </AppShell>
   {:else}

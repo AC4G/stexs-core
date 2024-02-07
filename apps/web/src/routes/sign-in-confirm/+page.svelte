@@ -12,7 +12,7 @@
   import { getFlash } from 'sveltekit-flash-message/client';
   import { page } from '$app/stores';
   import { Dropdown, Radio } from 'flowbite-svelte';
-  import { useQuery } from '@sveltestack/svelte-query';
+  import { createQuery } from '@tanstack/svelte-query';
 
   const flash = getFlash(page);
   const previousPageStore = getPreviousPageStore();
@@ -50,7 +50,7 @@
     }
   );
 
-  const signInConfirmSetupQuery = useQuery({
+  const signInConfirmSetupQuery = createQuery({
     queryKey: ['signInConfirmSetup'],
     queryFn: async () => {
       const session: Session = stexs.auth.getSession();

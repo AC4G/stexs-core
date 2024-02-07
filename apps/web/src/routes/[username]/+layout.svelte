@@ -3,7 +3,7 @@
     import { Avatar, Button } from "ui";
     import { getUserStore } from "$lib/stores/userStore";
     import { stexs } from "../../stexsClient";
-    import { useQuery } from '@sveltestack/svelte-query'
+    import { createQuery } from '@tanstack/svelte-query'
     import { TabAnchor, TabGroup, getModalStore } from "@skeletonlabs/skeleton";
     import { goto } from "$app/navigation";
     import { getFlash } from "sveltekit-flash-message/client";
@@ -99,13 +99,13 @@
         return data.length > 0;
     }
 
-    $: profileQuery = useQuery({
+    $: profileQuery = createQuery({
         queryKey: ['userProfile', username],
         queryFn: async () => await fetchProfile(username),
         enabled: !!username && !isSSR
     });
 
-    $: blockedQuery = useQuery({
+    $: blockedQuery = createQuery({
         queryKey: ['blockedProfile', $userStore?.id, userId],
         queryFn: async () => await fetchBlocked(userId, $userStore?.id!),
         enabled: !!$userStore?.id && !!userId && userId !== $userStore.id
@@ -113,7 +113,7 @@
 
     $: isCurrentUserBlocker = $blockedQuery.data?.filter((blocked: { blocker_id: string }) => blocked.blocker_id === $userStore?.id).length > 0;
 
-    $: isFriendQuery = useQuery({
+    $: isFriendQuery = createQuery({
         queryKey: ['isFriend', $userStore?.id, $profileStore?.refetchFriendsTrigger],
         queryFn: async () => await fetchIsFriend($userStore?.id!, userId),
         enabled: !!$userStore?.id && !!userId && userId !== $userStore.id && !!$blockedQuery.data && $blockedQuery.data.length === 0
@@ -123,7 +123,7 @@
     $: userId = $profileQuery.data?.user_id;
     $: isPrivate = $profileQuery.data?.is_private as boolean;
 
-    $: friendsAmountQuery = useQuery({
+    $: friendsAmountQuery = createQuery({
         queryKey: ['friendsAmount', userId, $profileStore?.refetchFriendsTrigger],
         queryFn: async () => await fetchFriendsAmount(userId),
         enabled: !!userId && ((!isPrivate && ($blockedQuery.data?.length === 0 || !$userStore)) || !!isFriend || userId === $userStore?.id)
@@ -131,7 +131,7 @@
 
     $: totalFriends = $friendsAmountQuery.data ?? 0;
 
-    $: gotFriendRequestQuery = useQuery({
+    $: gotFriendRequestQuery = createQuery({
         queryKey: ['gotFriendRequest', userId, $userStore?.id, $profileStore?.refetchFriendsTrigger],
         queryFn: async () => await fetchFriendRequest(userId, $userStore?.id!),
         enabled: !!userId && !!$userStore?.id && !isFriend
@@ -139,7 +139,7 @@
     
     $: gotFriendRequest = $gotFriendRequestQuery.data;
 
-    $: friendRequestQuery = useQuery({
+    $: friendRequestQuery = createQuery({
         queryKey: ['profileFriendRequest', userId, $userStore?.id],
         queryFn: async () => fetchFriendRequest($userStore?.id!, userId),
         enabled: !!userId && !!$userStore && userId !== $userStore.id && !isFriend && !gotFriendRequest
@@ -282,7 +282,7 @@
                     <div class="grid row-start-2 col-span-full place-items-center placeholder animte-pulse h-[1000px] rounded-md" />
                 {:else}
                     {#if ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
-                        <TabGroup regionList="flex flex-col sm:flex-row" active="variant-filled-primary" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
+                        <TabGroup regionList="flex flex-col sm:flex-row" active="variant-glass-primary text-primary-500" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
                             <TabAnchor href="/{username}" selected={path === `/${username}`} >
                                 <span>Inventory</span>
                             </TabAnchor>

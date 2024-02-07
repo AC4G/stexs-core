@@ -6,13 +6,13 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { getFlash } from 'sveltekit-flash-message/client';
-  import { useQuery } from '@sveltestack/svelte-query';
+  import { createQuery } from '@tanstack/svelte-query';
   import type { Session } from 'stexs-client/src/lib/types';
 
   let submitted: boolean = false;
   const flash = getFlash(page);
 
-  const signUpSetupQuery = useQuery({
+  const signUpSetupQuery = createQuery({
     queryKey: ['signUpSetup'],
     queryFn: async () => {
       const session: Session = stexs.auth.getSession();

@@ -1,33 +1,13 @@
-import type { ModalSettings } from '@skeletonlabs/skeleton';
-import type {
-  Invalidator,
-  Subscriber,
-  Unsubscriber,
-  Updater,
-} from 'svelte/store';
-
 export type MFAMethod = {
   icon: string;
   description: string;
 };
 
-export type FriendRequestsGQL = {
-  friendRequestChanged: {
-    friendRequests: Array<{
-      profileByRequesterId: {
-        userId: string;
-        username: string;
-      };
-    }>;
-  };
+export type NotificationsGQL = {
+  notificationsChanged:  {
+    unseenNotifications: number
+  }
 };
-
-export type FriendRequests = Array<{
-  profileByRequesterId: {
-    userId: string;
-    username: string;
-  };
-}>;
 
 export type Friend = {
   profiles: {
@@ -35,49 +15,3 @@ export type Friend = {
     username: string;
   };
 };
-
-export type OrganizationRequestsGQL = {
-  organizationJoinRequestChanged: {
-    organizationRequests: Array<{
-      role: string;
-      organizationByOrganizationId: {
-        id: number;
-        name: string;
-      };
-    }>;
-  };
-};
-
-export type OrganizationRequests = Array<{
-  role: string;
-  organizationByOrganizationId: {
-    id: number;
-    name: string;
-  };
-}>;
-
-export type ProjectRequestsGQL = {
-  projectJoinRequestChanged: {
-    projectRequests: Array<{
-      role: string;
-      projectByProjectId: {
-        id: number;
-        name: string;
-        organizationByOrganizationId: {
-          name: string;
-        };
-      };
-    }> | null;
-  };
-};
-
-export type ProjectRequests = Array<{
-  role: string;
-  projectByProjectId: {
-    id: number;
-    name: string;
-    organizationByOrganizationId: {
-      name: string;
-    };
-  };
-}>;
