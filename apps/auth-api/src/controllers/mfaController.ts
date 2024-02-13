@@ -28,11 +28,12 @@ export async function enableTOTP(req: Request, res: Response) {
   try {
     const { rowCount, rows } = await db.query(
       `
-          SELECT t.totp, u.email
-          FROM auth.mfa AS t
-          INNER JOIN auth.users AS u
-          ON t.user_id = u.id
-          WHERE t.user_id = $1::uuid;
+        SELECT 
+          t.totp, 
+          u.email
+        FROM auth.mfa AS t
+        INNER JOIN auth.users AS u ON t.user_id = u.id
+        WHERE t.user_id = $1::uuid;
       `,
       [userId],
     );
@@ -65,10 +66,10 @@ export async function enableTOTP(req: Request, res: Response) {
   try {
     const { rowCount } = await db.query(
       `
-          UPDATE auth.mfa
-          SET
-              totp_secret = $2::text
-          WHERE user_id = $1::uuid;
+        UPDATE auth.mfa
+        SET
+            totp_secret = $2::text
+        WHERE user_id = $1::uuid;
       `,
       [userId, secret],
     );
@@ -101,9 +102,12 @@ export async function enableEmail(req: Request, res: Response) {
   try {
     const { rowCount, rows } = await db.query(
       `
-          SELECT email, email_code, email_code_sent_at
-          FROM auth.mfa
-          WHERE user_id = $1::uuid;
+        SELECT 
+          email, 
+          email_code, 
+          email_code_sent_at
+        FROM auth.mfa
+        WHERE user_id = $1::uuid;
       `,
       [userId],
     );
@@ -154,12 +158,12 @@ export async function enableEmail(req: Request, res: Response) {
 
     const { rowCount: count } = await db.query(
       `
-          UPDATE auth.mfa
-          SET
-              email = TRUE,
-              email_code = NULL,
-              email_code_sent_at = NULL
-          WHERE user_id = $1::uuid;
+        UPDATE auth.mfa
+        SET
+            email = TRUE,
+            email_code = NULL,
+            email_code_sent_at = NULL
+        WHERE user_id = $1::uuid;
       `,
       [userId],
     );
@@ -192,9 +196,12 @@ export async function disableTOTP(req: Request, res: Response) {
   try {
     const { rowCount, rows } = await db.query(
       `
-          SELECT totp, email, totp_secret
-          FROM auth.mfa
-          WHERE user_id = $1::uuid;
+        SELECT 
+          totp, 
+          email, 
+          totp_secret
+        FROM auth.mfa
+        WHERE user_id = $1::uuid;
       `,
       [userId],
     );
@@ -252,12 +259,12 @@ export async function disableTOTP(req: Request, res: Response) {
   try {
     const { rowCount } = await db.query(
       `
-          UPDATE auth.mfa
-          SET
-              totp = FALSE,
-              totp_secret = NULL,
-              totp_verified_at = NULL
-          WHERE user_id = $1::uuid;
+        UPDATE auth.mfa
+        SET
+            totp = FALSE,
+            totp_secret = NULL,
+            totp_verified_at = NULL
+        WHERE user_id = $1::uuid;
       `,
       [userId],
     );
@@ -289,9 +296,13 @@ export async function disableEmail(req: Request, res: Response) {
   try {
     const { rowCount, rows } = await db.query(
       `
-          SELECT email, totp, email_code, email_code_sent_at
-          FROM auth.mfa
-          WHERE user_id = $1::uuid;
+        SELECT 
+          email, 
+          totp, 
+          email_code, 
+          email_code_sent_at
+        FROM auth.mfa
+        WHERE user_id = $1::uuid;
       `,
       [userId],
     );
@@ -351,12 +362,12 @@ export async function disableEmail(req: Request, res: Response) {
 
     const { rowCount: count } = await db.query(
       `
-          UPDATE auth.mfa
-          SET
-              email = FALSE,
-              email_code = NULL,
-              email_code_sent_at = NULL
-          WHERE user_id = $1::uuid;
+        UPDATE auth.mfa
+        SET
+            email = FALSE,
+            email_code = NULL,
+            email_code_sent_at = NULL
+        WHERE user_id = $1::uuid;
       `,
       [userId],
     );
@@ -389,10 +400,12 @@ export async function verifyTOTP(req: Request, res: Response) {
   try {
     const { rowCount, rows } = await db.query(
       `
-            SELECT totp_secret, totp_verified_at
-            FROM auth.mfa
-            WHERE user_id = $1::uuid;
-        `,
+        SELECT 
+          totp_secret, 
+          totp_verified_at
+        FROM auth.mfa
+        WHERE user_id = $1::uuid;
+      `,
       [userId],
     );
 
@@ -442,12 +455,12 @@ export async function verifyTOTP(req: Request, res: Response) {
   try {
     const { rowCount } = await db.query(
       `
-            UPDATE auth.mfa
-            SET
-                totp = TRUE,
-                totp_verified_at = CURRENT_TIMESTAMP
-            WHERE user_id = $1::uuid;
-        `,
+        UPDATE auth.mfa
+        SET
+            totp = TRUE,
+            totp_verified_at = CURRENT_TIMESTAMP
+        WHERE user_id = $1::uuid;
+      `,
       [userId],
     );
 
@@ -479,17 +492,17 @@ export async function sendEmailCode(req: Request, res: Response) {
   try {
     const { rowCount, rows } = await db.query(
       `
-          WITH updated_mfa AS (
-              UPDATE auth.mfa
-              SET
-                  email_code = $1::text,
-                  email_code_sent_at = CURRENT_TIMESTAMP
-              WHERE user_id = $2::uuid
-              RETURNING user_id
-          )
-          SELECT u.email
-          FROM auth.users u
-          WHERE u.id = $2::uuid;
+        WITH updated_mfa AS (
+            UPDATE auth.mfa
+            SET
+                email_code = $1::text,
+                email_code_sent_at = CURRENT_TIMESTAMP
+            WHERE user_id = $2::uuid
+            RETURNING user_id
+        )
+        SELECT u.email
+        FROM auth.users u
+        WHERE u.id = $2::uuid;
       `,
       [code, userId],
     );

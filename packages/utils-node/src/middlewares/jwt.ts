@@ -181,27 +181,6 @@ export function checkTokenGrantType(grantTypes: string[]) {
   };
 }
 
-export function checkScopes(requiredScopes: string[]) {
-  return (req: JWTRequest, res: Response, next: NextFunction) => {
-    const grantType = req.auth?.grant_type;
-    const allowedGrantTypes = ['authorization_code', 'client_credentials'];
-
-    if (!allowedGrantTypes.includes(grantType)) return next();
-
-    const scopes = req.auth?.scopes;
-
-    const hasRequiredScope = requiredScopes.some((requiredScope) =>
-      scopes.includes(requiredScope),
-    );
-
-    if (hasRequiredScope) return next();
-
-    throw new MiddlewareError(INSUFFICIENT_SCOPES, 401, {
-      requiredScopes,
-    });
-  };
-}
-
 export function transformJwtErrorMessages(logger: Logger) {
   return (
     err: MiddlewareError,

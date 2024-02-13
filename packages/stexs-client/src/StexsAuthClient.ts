@@ -716,24 +716,20 @@ export class StexsAuthClient {
     body?: Record<string, any>;
     headers?: Record<string, string>;
   }): Promise<Response> {
-    try {
-      const options: RequestInit = {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...this.authHeaders,
-          ...headers,
-        },
-      };
+    const options: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authHeaders,
+        ...headers,
+      },
+    };
 
-      if (method !== 'GET' && body !== null) {
-        options.body = JSON.stringify(body);
-      }
-
-      return await this.fetch(`${this.authUrl}/${path}`, options);
-    } catch (e) {
-      throw e;
+    if (method !== 'GET' && body !== null) {
+      options.body = JSON.stringify(body);
     }
+
+    return await this.fetch(`${this.authUrl}/${path}`, options);
   }
 
   private _setAccessTokenToAuthHeaders(accessToken: string) {

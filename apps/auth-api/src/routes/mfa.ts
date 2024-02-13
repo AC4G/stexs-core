@@ -52,8 +52,11 @@ router.get(
     try {
       const { rowCount, rows } = await db.query(
         `
-            SELECT email, totp FROM auth.mfa
-            WHERE user_id = $1::uuid;
+          SELECT 
+            email, 
+            totp 
+          FROM auth.mfa
+          WHERE user_id = $1::uuid;
         `,
         [userId],
       );

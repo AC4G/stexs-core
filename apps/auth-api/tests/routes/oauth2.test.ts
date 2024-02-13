@@ -6,10 +6,10 @@ import request from 'supertest';
 import server from '../../src/server';
 import { NextFunction } from 'express';
 import {
-  CLIENT_ID_REQUIRED,
-  CONNECTION_ALREADY_DELETED,
   CONNECTION_ALREADY_REVOKED,
-  INVALID_UUID,
+  CONNECTION_ID_NOT_NUMERIC,
+  CONNECTION_ID_REQUIRED,
+  CONNECTION_NOT_FOUND,
   REFRESH_TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { message, testErrorMessages } from 'utils-node/messageBuilder';
@@ -49,90 +49,18 @@ describe('OAuth2 Routes', () => {
     jest.clearAllMocks();
   });
 
-  it('should handle connections', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          organization: {
-            id: 1,
-            name: 'TestOrganization',
-            display_name: null,
-          },
-          description: null,
-          homepage_url: 'example.com/Test1',
-          client_id: 1,
-        },
-        {
-          organization: {
-            id: 1,
-            name: 'TestOrganization',
-            display_name: null,
-          },
-          description: 'Test',
-          homepage_url: 'example.com/Test2',
-          client_id: 2,
-        },
-      ],
-      rowCount: 2,
-    } as never);
-
-    const response = await request(server).get('/oauth2/connections');
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual([
-      {
-        organization: {
-          id: 1,
-          name: 'TestOrganization',
-          display_name: null,
-        },
-        description: null,
-        homepage_url: 'example.com/Test1',
-        client_id: 1,
-      },
-      {
-        organization: {
-          id: 1,
-          name: 'TestOrganization',
-          display_name: null,
-        },
-        description: 'Test',
-        homepage_url: 'example.com/Test2',
-        client_id: 2,
-      },
-    ]);
-  });
-
-  it('should handle delete connection without client id', async () => {
-    const response = await request(server).delete('/oauth2/connection');
-
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual(
-      testErrorMessages([
-        {
-          info: CLIENT_ID_REQUIRED,
-          data: {
-            location: 'body',
-            path: 'client_id',
-          },
-        },
-      ]),
-    );
-  });
-
-  it('should handle delete connection with client id not as uuid', async () => {
+  it('should handle delete connection with connection id not as numeric', async () => {
     const response = await request(server)
-      .delete('/oauth2/connection')
-      .send({ client_id: 'not-uuid' });
+      .delete(`/oauth2/connections/${'not_a_number'}`);
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual(
       testErrorMessages([
         {
-          info: INVALID_UUID,
+          info: CONNECTION_ID_NOT_NUMERIC,
           data: {
-            location: 'body',
-            path: 'client_id',
+            location: 'params',
+            path: 'connectionId',
           },
         },
       ]),
@@ -146,12 +74,11 @@ describe('OAuth2 Routes', () => {
     } as never);
 
     const response = await request(server)
-      .delete('/oauth2/connection')
-      .send({ client_id: '2abb2007-8cc2-4880-a9e1-8d0e385ef6e7' });
+      .delete(`/oauth2/connections/${1}`);
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual(
-      testErrorMessages([{ info: CONNECTION_ALREADY_DELETED }]),
+      testErrorMessages([{ info: CONNECTION_NOT_FOUND }]),
     );
   });
 
@@ -162,8 +89,7 @@ describe('OAuth2 Routes', () => {
     } as never);
 
     const response = await request(server)
-      .delete('/oauth2/connection')
-      .send({ client_id: '2abb2007-8cc2-4880-a9e1-8d0e385ef6e7' });
+      .delete(`/oauth2/connections/${1}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(

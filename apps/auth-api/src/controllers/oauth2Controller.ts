@@ -9,7 +9,6 @@ import {
   NO_CLIENT_SCOPES_SELECTED,
 } from 'utils-node/errors';
 import db from '../database';
-import { v4 as uuidv4 } from 'uuid';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
 import logger from '../loggers/logger';
@@ -18,30 +17,44 @@ import { isExpired } from 'utils-node';
 export async function authorizationCodeController(req: Request, res: Response) {
   const { code, client_id, client_secret: clientSecret } = req.body;
 
-  let userId, tokenId, scopes, organization_id;
+  let userId, tokenId, scopes, organization_id, project_id;
 
   try {
     const { rowCount, rows } = await db.query(
       `
         WITH app_info AS (
-            SELECT id, organization_id
+            SELECT 
+              id, 
+              organization_id,
+              project_id
             FROM public.oauth2_apps
             WHERE client_id = $2::uuid
-            AND client_secret = $3::text
+              AND client_secret = $3::text
         ),
         token_info AS (
-            SELECT aot.id, aot.user_id, aot.created_at, ai.organization_id
+            SELECT 
+              aot.id, 
+              aot.user_id, 
+              aot.created_at, 
+              ai.organization_id,
+              ai.project_id
             FROM auth.oauth2_authorization_tokens AS aot
             JOIN app_info AS ai ON aot.app_id = ai.id
             WHERE aot.token = $1::uuid
         ),
         token_scopes AS (
-            SELECT STRING_TO_ARRAY(STRING_AGG(s.name, ','), ',') AS scopes
-            FROM auth.oauth2_authorization_token_scopes AS aot
-            JOIN public.scopes AS s ON aot.scope_id = s.id
-            WHERE aot.token_id IN (SELECT id FROM token_info)
+          SELECT ARRAY(SELECT scope_id
+            FROM auth.oauth2_authorization_token_scopes
+            WHERE token_id IN (SELECT id FROM token_info)
+          ) AS scopes
         )
-        SELECT id, user_id, scopes, created_at, organization_id
+        SELECT 
+          id, 
+          user_id, 
+          scopes, 
+          created_at, 
+          organization_id,
+          project_id
         FROM token_info
         CROSS JOIN token_scopes;
       `,
@@ -82,7 +95,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
       );
     }
 
-    ({ id: tokenId, user_id: userId, scopes, organization_id } = rows[0]);
+    ({ id: tokenId, user_id: userId, scopes, organization_id, project_id } = rows[0]);
 
     logger.info(
       `Authorization code validated successfully for user: ${userId} and client: ${client_id}`,
@@ -120,19 +133,58 @@ export async function authorizationCodeController(req: Request, res: Response) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
 
-  const refreshToken = uuidv4();
+  let connectionId;
+
+  try {
+    const { rows, rowCount } = await db.query(
+      `
+        WITH inserted_connection AS (
+          INSERT INTO public.oauth2_connections (user_id, client_id)
+          VALUES ($1::uuid, $2::uuid)
+          RETURNING id
+        )
+        INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
+        SELECT inserted_connection.id, scope_id
+        FROM inserted_connection
+        CROSS JOIN UNNEST($3::int[]) AS scope_id
+        RETURNING connection_id AS id;      
+      `,
+      [userId, client_id, scopes],
+    );
+
+    if (rowCount === 0) {
+      logger.error(
+        `Failed to insert connection for user: ${userId} and client: ${client_id}`,
+      );
+      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    }
+
+    connectionId = rows[0].id;
+  } catch (e) {
+    logger.error(
+      `Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${
+        e instanceof Error ? e.message : e
+      }`,
+    );
+    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+  }
+
+  logger.info(
+    `Connection successfully created for user: ${userId} and client: ${client_id}`,
+  );
+
   let body;
 
   try {
     body = await generateAccessToken(
       {
         sub: userId,
-        scopes,
         client_id,
         organization_id,
+        ...(project_id !== null ? { project_id } : {})
       },
       'authorization_code',
-      refreshToken,
+      connectionId
     );
 
     logger.info(
@@ -142,62 +194,25 @@ export async function authorizationCodeController(req: Request, res: Response) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
 
-  try {
-    const { rowCount } = await db.query(
-      `
-        WITH app_info AS (
-            SELECT id
-            FROM public.oauth2_apps
-            WHERE client_id = $2::uuid
-        ),
-        refresh_token_info AS (
-            SELECT id
-            FROM auth.refresh_tokens
-            WHERE user_id = $3::uuid AND token = $1::uuid AND grant_type = 'authorization_code' AND session_id IS NULL
-        )
-        INSERT INTO auth.oauth2_connections (user_id, app_id, refresh_token_id)
-        SELECT $3::uuid, id, (SELECT id FROM refresh_token_info)
-        FROM app_info;
-      `,
-      [refreshToken, client_id, userId],
-    );
-
-    if (rowCount === 0) {
-      logger.error(
-        `Failed to insert connection for user: ${userId} and client: ${client_id}`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
-  } catch (e) {
-    logger.error(
-      `Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${
-        e instanceof Error ? e.message : e
-      }`,
-    );
-    res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
-
-  logger.info(
-    `Connection successfully created for user: ${userId} and client: ${client_id}`,
-  );
-
   res.json(body);
 }
 
 export async function clientCredentialsController(req: Request, res: Response) {
   const { client_id, client_secret } = req.body;
 
-  let scopes;
-  let organization_id;
+  let scopes, organization_id, project_id;
 
   try {
     const { rowCount, rows } = await db.query(
       `
         WITH app_info AS (
-            SELECT id, organization_id
+            SELECT 
+              id, 
+              organization_id,
+              project_id
             FROM public.oauth2_apps
             WHERE client_id = $1::uuid
-            AND client_secret = $2::text
+              AND client_secret = $2::text
         ),
         app_scopes AS (
             SELECT STRING_TO_ARRAY(STRING_AGG(s.name, ','), ',') AS scopes
@@ -206,7 +221,10 @@ export async function clientCredentialsController(req: Request, res: Response) {
             JOIN public.scopes AS s ON oas.scope_id = s.id
             WHERE s.type = 'client'
         )
-        SELECT scopes, organization_id
+        SELECT 
+          scopes, 
+          organization_id,
+          project_id
         FROM app_info
         CROSS JOIN app_scopes;
       `,
@@ -228,8 +246,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
       );
     }
 
-    scopes = rows[0].scopes;
-    organization_id = rows[0].organization_id;
+    ({ scopes, organization_id, project_id } = rows[0]);
 
     if (!scopes || scopes.length === 0) {
       logger.warn(`No client scopes selected for client: ${client_id}`);
@@ -253,9 +270,9 @@ export async function clientCredentialsController(req: Request, res: Response) {
   try {
     const body = await generateAccessToken(
       {
-        scopes,
         client_id,
         organization_id,
+        ...(project_id !== null ? { project_id } : {})
       },
       'client_credentials',
     );
@@ -269,14 +286,17 @@ export async function clientCredentialsController(req: Request, res: Response) {
 }
 
 export async function refreshTokenController(req: Request, res: Response) {
-  const { scopes, sub, client_id, organization_id, jti } = req.auth!;
+  const { sub, client_id, organization_id, jti } = req.auth!;
 
   try {
     const { rowCount } = await db.query(
       `
         SELECT 1
         FROM auth.refresh_tokens
-        WHERE token = $1::uuid AND user_id = $2::uuid AND grant_type = 'authorization_code' AND session_id IS NULL;
+        WHERE token = $1::uuid 
+          AND user_id = $2::uuid 
+          AND grant_type = 'authorization_code' 
+          AND session_id IS NULL;
       `,
       [jti, sub],
     );
@@ -314,11 +334,11 @@ export async function refreshTokenController(req: Request, res: Response) {
     const body = await generateAccessToken(
       {
         sub,
-        scopes,
         client_id,
         organization_id,
       },
       'authorization_code',
+      null,
       null,
       jti,
     );

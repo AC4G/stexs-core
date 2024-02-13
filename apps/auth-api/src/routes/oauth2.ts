@@ -6,7 +6,7 @@ import {
   errorMessages,
   message,
 } from 'utils-node/messageBuilder';
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 import {
   ARRAY_REQUIRED,
   CLIENT_ALREADY_CONNECTED,
@@ -14,8 +14,10 @@ import {
   CLIENT_NOT_FOUND,
   CLIENT_SECRET_REQUIRED,
   CODE_REQUIRED,
-  CONNECTION_ALREADY_DELETED,
   CONNECTION_ALREADY_REVOKED,
+  CONNECTION_ID_NOT_NUMERIC,
+  CONNECTION_ID_REQUIRED,
+  CONNECTION_NOT_FOUND,
   EMPTY_ARRAY,
   GRANT_TYPE_REQUIRED,
   INTERNAL_ERROR,
@@ -42,7 +44,6 @@ import {
   ISSUER,
   REFRESH_TOKEN_SECRET,
 } from '../../env-config';
-import paginate from 'express-paginate';
 import {
   validateAccessToken,
   validateRefreshToken,
@@ -71,7 +72,7 @@ router.post(
       .notEmpty()
       .withMessage(REDIRECT_URL_REQUIRED)
       .bail()
-      .isURL()
+      .matches(/^(https?:\/\/)(\S*)?/)
       .withMessage(INVALID_URL),
     body('scopes')
       .notEmpty()
@@ -95,21 +96,21 @@ router.post(
 
       const { rowCount } = await db.query(
         `
-            SELECT 1
-            FROM public.oauth2_apps a
-            WHERE a.client_id = $1::uuid
+          SELECT 1
+          FROM public.oauth2_apps AS a
+          WHERE a.client_id = $1::uuid
             AND a.redirect_url = $2::text
             AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements_text($3) AS obj(scope)
+              WHERE NOT EXISTS (
                 SELECT 1
-                FROM jsonb_array_elements_text($3) AS obj(scope)
-                WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM public.oauth2_app_scopes ascs
-                    JOIN public.scopes s ON ascs.scope_id = s.id
-                    WHERE ascs.app_id = a.id
-                        AND s.type = 'user'
-                        AND obj.scope = s.name::text
-                )
+                FROM public.oauth2_app_scopes AS ascs
+                JOIN public.scopes AS s ON ascs.scope_id = s.id
+                WHERE ascs.app_id = a.id
+                  AND s.type = 'user'
+                  AND obj.scope = s.name::text
+              )
             );
         `,
         [client_id, redirect_url, scopesStringified],
@@ -125,7 +126,11 @@ router.post(
               info: CLIENT_NOT_FOUND,
               data: {
                 location: 'body',
-                paths: ['client_id', 'redirect_url', 'scopes'],
+                paths: [
+                  'client_id', 
+                  'redirect_url', 
+                  'scopes'
+                ],
               },
             },
           ]),
@@ -149,11 +154,13 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            SELECT 1 FROM auth.oauth2_connections
-            WHERE user_id = $1::uuid AND app_id = (
-                SELECT id
-                FROM public.oauth2_apps
-                WHERE client_id = $2::uuid
+          SELECT 1 
+          FROM auth.oauth2_connections
+          WHERE user_id = $1::uuid 
+            AND app_id = (
+              SELECT id
+              FROM public.oauth2_apps
+              WHERE client_id = $2::uuid
             );
         `,
         [userId, client_id],
@@ -180,17 +187,17 @@ router.post(
     try {
       const { rowCount, rows } = await db.query(
         `
-            WITH app_info AS (
-                SELECT id
-                FROM public.oauth2_apps
-                WHERE client_id = $3::uuid
-            )
-            INSERT INTO auth.oauth2_authorization_tokens (token, user_id, app_id)
-            VALUES ($1::uuid, $2::uuid, (SELECT id FROM app_info))
-            ON CONFLICT (user_id, app_id)
-            DO UPDATE
-            SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
-            RETURNING id;
+          WITH app_info AS (
+              SELECT id
+              FROM public.oauth2_apps
+              WHERE client_id = $3::uuid
+          )
+          INSERT INTO auth.oauth2_authorization_tokens (token, user_id, app_id)
+          VALUES ($1::uuid, $2::uuid, (SELECT id FROM app_info))
+          ON CONFLICT (user_id, app_id)
+          DO UPDATE
+          SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
+          RETURNING id;
         `,
         [token, userId, client_id],
       );
@@ -219,21 +226,23 @@ router.post(
     try {
       await db.query(
         `
-            WITH scope_ids AS (
-                SELECT id
-                FROM public.scopes
-                WHERE name = ANY($2::text[])
-            ),
-            deleted_scopes AS (
-                DELETE FROM auth.oauth2_authorization_token_scopes
-                WHERE token_id = $1::integer
+          WITH scope_ids AS (
+              SELECT id
+              FROM public.scopes
+              WHERE name = ANY($2::text[])
+          ),
+          deleted_scopes AS (
+              DELETE FROM auth.oauth2_authorization_token_scopes
+              WHERE token_id = $1::integer
                 AND scope_id NOT IN (SELECT id FROM scope_ids)
-                RETURNING token_id
-            )
-            INSERT INTO auth.oauth2_authorization_token_scopes (token_id, scope_id)
-            SELECT $1::integer, id
-            FROM scope_ids
-            ON CONFLICT DO NOTHING;
+              RETURNING token_id
+          )
+          INSERT INTO auth.oauth2_authorization_token_scopes (token_id, scope_id)
+          SELECT 
+            $1::integer, 
+            id
+          FROM scope_ids
+          ON CONFLICT DO NOTHING;
         `,
         [tokenId, scopes],
       );
@@ -377,114 +386,45 @@ router.post(
   },
 );
 
-router.get(
-  '/connections',
-  [
-    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType(['password']),
-    transformJwtErrorMessages(logger),
-    paginate.middleware(10, 50),
-  ],
-  async (req: Request, res: Response) => {
-    const page = (req.query?.page ?? 1) as number;
-    const limit = (req.query?.limit ?? 10) as number;
-    const userId = req.auth?.sub;
-
-    const offset = (page - 1) * limit;
-
-    try {
-      const { rows } = await db.query(
-        `
-            SELECT
-                jsonb_build_object(
-                    'id', o.id,
-                    'name', o.name,
-                    'display_name', o.display_name
-                ) AS organization,
-                oa.description,
-                oa.homepage_url,
-                oa.client_id
-            FROM
-                auth.oauth2_connections AS oc
-            JOIN
-                public.oauth2_apps AS oa ON oc.client_id = oa.id
-            JOIN
-                public.organizations AS o ON oa.organization_id = o.id
-            WHERE
-                oc.user_id = $1::uuid
-            LIMIT $2 OFFSET $3;
-        `,
-        [userId, limit, offset],
-      );
-
-      const itemCount = rows.length;
-
-      res.setHeader('X-Page', page);
-      res.setHeader('X-Item-Count', itemCount);
-      res.setHeader('X-Total-Pages', Math.ceil(itemCount / limit).toString());
-
-      logger.info(`Connections fetched successfully for user: ${userId}`);
-
-      res.json(rows);
-    } catch (e) {
-      logger.error(
-        `Error while fetching connections for user: ${userId}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
-  },
-);
-
 router.delete(
-  '/connection',
+  '/connections/:connectionId',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
-    body('client_id')
+    param('connectionId')
       .notEmpty()
-      .withMessage(CLIENT_ID_REQUIRED)
+      .withMessage(CONNECTION_ID_REQUIRED)
       .bail()
-      .custom((value) => {
-        if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
-
-        return true;
-      }),
+      .isNumeric()
+      .withMessage(CONNECTION_ID_NOT_NUMERIC),
     validate(logger),
   ],
   async (req: Request, res: Response) => {
-    const { client_id: clientId } = req.body;
+    const { connectionId } = req.params;
     const userId = req.auth?.sub;
 
     try {
       const { rowCount } = await db.query(
         `
-            WITH oauth2_connection_info AS (
-                SELECT oc.refresh_token_id
-                FROM auth.oauth2_connections AS oc
-                JOIN public.oauth2_apps AS oa ON oc.client_id = oa.id
-                WHERE oa.client_id = $1::uuid
-                AND oc.user_id = $2::uuid
-            )
-            DELETE FROM auth.refresh_tokens AS rt
-            WHERE rt.id IN (SELECT refresh_token_id FROM oauth2_connection_info);
+          DELETE FROM auth.refresh_tokens
+          WHERE connection_id = $1::integer
+            AND user_id = $2::uuid;
         `,
-        [clientId, userId],
+        [connectionId, userId],
       );
 
       if (rowCount === 0) {
         logger.warn(
-          `No connection found for deletion for user: ${userId} and client: ${clientId}`,
+          `No connection found for deletion for user: ${userId} and connection: ${connectionId}`,
         );
         return res
           .status(404)
-          .json(errorMessages([{ info: CONNECTION_ALREADY_DELETED }]));
+          .json(errorMessages([{ info: CONNECTION_NOT_FOUND }]));
       }
     } catch (e) {
       logger.error(
-        `Error while deleting connection for user: ${userId} and client: ${clientId}. Error: ${
+        `Error while deleting connection for user: ${userId} and connection: ${connectionId}. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
@@ -492,7 +432,7 @@ router.delete(
     }
 
     logger.info(
-      `Connection deleted successfully for user: ${userId} and client: ${clientId}`,
+      `Connection deleted successfully for user: ${userId} and connection: ${connectionId}`,
     );
 
     res.send(message('Connection successfully deleted.'));
@@ -514,8 +454,11 @@ router.delete(
     try {
       const { rowCount } = await db.query(
         `
-            DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid AND grant_type = 'authorization_code' AND token = $2::uuid AND session_id IS NULL;
+          DELETE FROM auth.refresh_tokens
+          WHERE user_id = $1::uuid 
+            AND grant_type = 'authorization_code' 
+            AND token = $2::uuid 
+            AND session_id IS NULL;
         `,
         [token?.sub, token?.jti],
       );

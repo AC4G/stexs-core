@@ -72,16 +72,11 @@ BEGIN
         projects.id AS id,
         projects.name AS name
         organizations.name AS organization_name
-    FROM
-        inventories
-    JOIN
-        items ON inventories.item_id = items.id
-    JOIN
-        projects ON items.project_id = projects.id
-    JOIN
-        organizations ON projects.organization_id = organizations.id
-    WHERE
-        inventories.user_id = user_id_param;
+    FROM inventories
+    JOIN items ON inventories.item_id = items.id
+    JOIN projects ON items.project_id = projects.id
+    JOIN organizations ON projects.organization_id = organizations.id
+    WHERE inventories.user_id = user_id_param;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -93,15 +88,14 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF EXISTS (
         SELECT 1
-        FROM public.projects p
-        JOIN public.items i ON p.id = i.project_id
+        FROM public.projects AS p
+        JOIN public.items AS i ON p.id = i.project_id
         WHERE i.id = NEW.item_id
             AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
     ) THEN
         RETURN NEW;
     END IF;
 
-    
     IF OLD.amount IS NULL OR 
     EXISTS (
         SELECT 1
@@ -127,8 +121,8 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF EXISTS (
         SELECT 1
-        FROM public.projects p
-        JOIN public.items i ON p.id = i.project_id
+        FROM public.projects AS p
+        JOIN public.items AS i ON p.id = i.project_id
         WHERE i.id = NEW.item_id
             AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
     ) THEN
@@ -159,8 +153,8 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF EXISTS (
         SELECT 1
-        FROM public.projects p
-        JOIN public.items i ON p.id = i.project_id
+        FROM public.projects AS p
+        JOIN public.items AS i ON p.id = i.project_id
         WHERE i.id = NEW.item_id
             AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
     ) THEN
@@ -197,13 +191,15 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1
         FROM public.friends
-        WHERE user_id = NEW.friend_id AND friend_id = NEW.user_id
+        WHERE user_id = NEW.friend_id 
+            AND friend_id = NEW.user_id
     ) THEN
         INSERT INTO public.friends (user_id, friend_id)
         VALUES (NEW.friend_id, NEW.user_id);
 
         DELETE FROM public.friend_requests
-        WHERE addressee_id = NEW.user_id AND requester_id = NEW.friend_id;
+        WHERE addressee_id = NEW.user_id 
+            AND requester_id = NEW.friend_id;
     END IF;
 
     RETURN NEW;
@@ -246,10 +242,12 @@ BEGIN
     IF EXISTS (
         SELECT 1
         FROM public.friends
-        WHERE user_id = OLD.friend_id AND friend_id = OLD.user_id
+        WHERE user_id = OLD.friend_id 
+            AND friend_id = OLD.user_id
     ) THEN 
         DELETE FROM public.friends
-        WHERE user_id = OLD.friend_id AND friend_id = OLD.user_id;
+        WHERE user_id = OLD.friend_id 
+            AND friend_id = OLD.user_id;
     END IF;
 
     RETURN OLD;
@@ -520,7 +518,8 @@ CREATE OR REPLACE FUNCTION public.delete_project_request()
 RETURNS TRIGGER AS $$
 BEGIN
     DELETE FROM public.project_requests
-    WHERE project_id = NEW.project_id AND addressee_id = NEW.member_id;
+    WHERE project_id = NEW.project_id 
+        AND addressee_id = NEW.member_id;
 
     RETURN NEW;
 END;
@@ -589,7 +588,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;GRANT DELETE ON TABLE public.oauth2_app_scopes TO authenticated;
 
 CREATE TRIGGER enforce_project_request_limit_trigger
 BEFORE INSERT ON public.project_requests
@@ -604,26 +603,40 @@ DECLARE
 BEGIN
     org_id := (
         SELECT p.organization_id
-        FROM public.projects p
+        FROM public.projects AS p
         WHERE p.id = NEW.id
     );
 
     user_role := (
         SELECT om.role
-        FROM public.organization_members om
+        FROM public.organization_members AS om
         WHERE om.organization_id = org_id
-        AND om.member_id = auth.uid()
+            AND om.member_id = auth.uid()
     );
 
-    INSERT INTO public.project_members (project_id, member_id, role)
-    SELECT NEW.id, auth.uid(), user_role;
+    INSERT INTO public.project_members (
+        project_id, 
+        member_id, 
+        role
+    )
+    SELECT 
+        NEW.id, 
+        auth.uid(), 
+        user_role;
 
     IF user_role <> 'Owner' THEN
-        INSERT INTO public.project_members (project_id, member_id, role)
-        SELECT NEW.id, om.member_id, 'Owner'
-        FROM public.organization_members om
+        INSERT INTO public.project_members (
+            project_id, 
+            member_id, 
+            role
+        )
+        SELECT 
+            NEW.id, 
+            om.member_id, 
+            'Owner'
+        FROM public.organization_members AS om
         WHERE om.organization_id = org_id
-        AND om.role = 'Owner';
+            AND om.role = 'Owner';
     END IF;
 
     RETURN NEW;
@@ -643,9 +656,9 @@ CREATE TABLE public.notifications (
     message TEXT,
     type VARCHAR(100) NOT NULL,
     seen BOOLEAN DEFAULT FALSE NOT NULL,
-    friend_request_id INT REFERENCES public.friend_requests(id) ON DELETE CASCADE,
-    organization_request_id INT REFERENCES public.organization_requests(id) ON DELETE CASCADE,
-    project_request_id INT REFERENCES public.project_requests(id) ON DELETE CASCADE,
+    friend_request_id INT REFERENCES public.friend_requests(id) ON DELETE CASCADE UNIQUE,
+    organization_request_id INT REFERENCES public.organization_requests(id) ON DELETE CASCADE UNIQUE,
+    project_request_id INT REFERENCES public.project_requests(id) ON DELETE CASCADE UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CHECK (type in ('notification', 'friend_request', 'organization_request', 'project_request')),

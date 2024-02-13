@@ -48,8 +48,9 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            SELECT 1 FROM auth.users
-            WHERE email = $1::text;
+          SELECT 1 
+          FROM auth.users
+          WHERE email = $1::text;
         `,
         [email],
       );
@@ -87,11 +88,11 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            UPDATE auth.users
-            SET
-                recovery_token = $1::uuid,
-                recovery_sent_at = CURRENT_TIMESTAMP
-            WHERE email = $2::text;
+          UPDATE auth.users
+          SET
+              recovery_token = $1::uuid,
+              recovery_sent_at = CURRENT_TIMESTAMP
+          WHERE email = $2::text;
         `,
         [token, email],
       );
@@ -175,8 +176,10 @@ router.post(
     try {
       const { rowCount, rows } = await db.query(
         `
-            SELECT recovery_sent_at FROM auth.users
-            WHERE email = $1::text AND recovery_token = $2::uuid;
+          SELECT recovery_sent_at 
+          FROM auth.users
+          WHERE email = $1::text 
+            AND recovery_token = $2::uuid;
         `,
         [email, token],
       );
@@ -217,14 +220,14 @@ router.post(
 
       const { rows: data } = await db.query(
         `
-            SELECT 
-                CASE 
-                    WHEN crypt($1::text, encrypted_password) = encrypted_password 
-                    THEN true 
-                    ELSE false 
-                END AS is_current_password
-            FROM auth.users
-            WHERE email = $2::text;
+          SELECT 
+              CASE 
+                  WHEN crypt($1::text, encrypted_password) = encrypted_password 
+                  THEN true 
+                  ELSE false 
+              END AS is_current_password
+          FROM auth.users
+          WHERE email = $2::text;
         `,
         [password, email],
       );
@@ -248,12 +251,12 @@ router.post(
 
       const { rowCount: count } = await db.query(
         `
-            UPDATE auth.users
-            SET 
-                encrypted_password = crypt($1::text, gen_salt('bf')),
-                recovery_token = NULL,
-                recovery_sent_at = NULL
-            WHERE email = $2::text;
+          UPDATE auth.users
+          SET 
+              encrypted_password = crypt($1::text, gen_salt('bf')),
+              recovery_token = NULL,
+              recovery_sent_at = NULL
+          WHERE email = $2::text;
         `,
         [password, email],
       );

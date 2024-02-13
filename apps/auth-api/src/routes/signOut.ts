@@ -26,8 +26,10 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid AND grant_type = 'password' AND session_id = $2::uuid;
+          DELETE FROM auth.refresh_tokens
+          WHERE user_id = $1::uuid 
+            AND grant_type = 'password' 
+            AND session_id = $2::uuid;
         `,
         [auth?.sub, auth?.session_id],
       );
@@ -68,8 +70,9 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid AND grant_type = 'password';
+          DELETE FROM auth.refresh_tokens
+          WHERE user_id = $1::uuid 
+            AND grant_type = 'password';
         `,
         [sub],
       );

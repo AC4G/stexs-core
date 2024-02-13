@@ -51,16 +51,16 @@ router.get(
     try {
       const { rows } = await db.query(
         `
-            SELECT 
-                u.id, 
-                u.email, 
-                p.username,
-                u.raw_user_meta_data,
-                u.created_at,
-                u.updated_at 
-            FROM auth.users AS u
-            JOIN public.profiles AS p ON u.id = p.user_id
-            WHERE id = $1::uuid;
+          SELECT 
+              u.id, 
+              u.email, 
+              p.username,
+              u.raw_user_meta_data,
+              u.created_at,
+              u.updated_at 
+          FROM auth.users AS u
+          JOIN public.profiles AS p ON u.id = p.user_id
+          WHERE id = $1::uuid;
         `,
         [userId],
       );
@@ -119,9 +119,11 @@ router.post(
       if (type === 'totp') {
         const { rows, rowCount } = await db.query(
           `
-              SELECT totp, totp_secret 
-              FROM auth.mfa
-              WHERE user_id = $1::uuid;
+            SELECT 
+              totp, 
+              totp_secret 
+            FROM auth.mfa
+            WHERE user_id = $1::uuid;
           `,
           [userId],
         );
@@ -163,9 +165,12 @@ router.post(
       if (type === 'email') {
         const { rows, rowCount } = await db.query(
           `
-              SELECT email, email_code, email_code_sent
-              FROM auth.mfa
-              WHERE user_id = $1::uuid;
+            SELECT 
+              email, 
+              email_code, 
+              email_code_sent
+            FROM auth.mfa
+            WHERE user_id = $1::uuid;
           `,
           [userId],
         );
@@ -228,14 +233,14 @@ router.post(
     try {
       const { rows, rowCount } = await db.query(
         `
-            SELECT 
-                CASE 
-                    WHEN crypt($1::text, encrypted_password) = encrypted_password 
-                    THEN true 
-                    ELSE false 
-                END AS is_current_password
-            FROM auth.users
-            WHERE id = $2::uuid;
+          SELECT 
+            CASE 
+                WHEN crypt($1::text, encrypted_password) = encrypted_password 
+                THEN true 
+                ELSE false 
+            END AS is_current_password
+          FROM auth.users
+          WHERE id = $2::uuid;
         `,
         [password, userId],
       );
@@ -268,10 +273,10 @@ router.post(
 
       const { rowCount: count } = await db.query(
         `
-            UPDATE auth.users
-            SET
-                encrypted_password = crypt($1::text, gen_salt('bf'))
-            WHERE id = $2::uuid;
+          UPDATE auth.users
+          SET
+              encrypted_password = crypt($1::text, gen_salt('bf'))
+          WHERE id = $2::uuid;
         `,
         [password, userId],
       );
@@ -335,9 +340,11 @@ router.post(
       if (type === 'totp') {
         const { rows, rowCount } = await db.query(
           `
-              SELECT totp, totp_secret 
-              FROM auth.mfa
-              WHERE user_id = $1::uuid;
+            SELECT 
+              totp, 
+              totp_secret 
+            FROM auth.mfa
+            WHERE user_id = $1::uuid;
           `,
           [userId],
         );
@@ -379,9 +386,12 @@ router.post(
       if (type === 'email') {
         const { rows, rowCount } = await db.query(
           `
-              SELECT email, email_code, email_code_sent
-              FROM auth.mfa
-              WHERE user_id = $1::uuid;
+            SELECT 
+              email, 
+              email_code, 
+              email_code_sent
+            FROM auth.mfa
+            WHERE user_id = $1::uuid;
           `,
           [userId],
         );
@@ -446,12 +456,12 @@ router.post(
     try {
       const { rowCount } = await db.query(
         `
-            UPDATE auth.users
-            SET 
-                email_change = $1::text,
-                email_change_sent_at = CURRENT_TIMESTAMP,
-                email_change_code = $2::uuid
-            WHERE id = $3::uuid;
+          UPDATE auth.users
+          SET 
+              email_change = $1::text,
+              email_change_sent_at = CURRENT_TIMESTAMP,
+              email_change_code = $2::uuid
+          WHERE id = $3::uuid;
         `,
         [newEmail, confirmationCode, userId],
       );
@@ -514,9 +524,10 @@ router.post(
     try {
       const { rowCount, rows } = await db.query(
         `
-            SELECT email_change_sent_at 
-            FROM auth.users
-            WHERE id = $1::uuid AND email_change_code = $2::text
+          SELECT email_change_sent_at 
+          FROM auth.users
+          WHERE id = $1::uuid 
+            AND email_change_code = $2::text
         `,
         [userId, code],
       );
@@ -533,14 +544,15 @@ router.post(
 
       const { rowCount: count } = await db.query(
         `
-            UPDATE auth.users
-            SET
-                email = email_change,
-                email_verified_at = CURRENT_TIMESTAMP,
-                email_change = NULL,
-                email_change_sent_at = NULL,
-                email_change_code = NULL
-            WHERE id = $1::uuid AND email_change_code = $2::text;
+          UPDATE auth.users
+          SET
+              email = email_change,
+              email_verified_at = CURRENT_TIMESTAMP,
+              email_change = NULL,
+              email_change_sent_at = NULL,
+              email_change_code = NULL
+          WHERE id = $1::uuid 
+            AND email_change_code = $2::text;
         `,
         [userId, code],
       );

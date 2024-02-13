@@ -263,7 +263,11 @@ describe('OAuth2 Token', () => {
     } as never);
 
     mockQuery.mockResolvedValueOnce({
-      rows: [],
+      rows: [
+        {
+          id: 1
+        }
+      ],
       rowCount: 1,
     } as never);
 
@@ -315,7 +319,7 @@ describe('OAuth2 Token', () => {
           },
         },
       ]),
-    );
+    ); 
   });
 
   it('should handle token route with grant type client credentials with invalid credentials', async () => {
@@ -350,6 +354,8 @@ describe('OAuth2 Token', () => {
         {
           id: 1,
           scopes: [],
+          organization_id: 1,
+          project_id: 1
         },
       ],
       rowCount: 1,
@@ -373,6 +379,8 @@ describe('OAuth2 Token', () => {
         {
           id: 1,
           scopes: ['inventory.read'],
+          organization_id: 1,
+          project_id: 1
         },
       ],
       rowCount: 1,

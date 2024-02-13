@@ -3,6 +3,9 @@
     "version": "0.0.0",
     "main": "./src/StexsClient.ts",
     "types": "./src/StexsClient.ts",
+    "scripts": {
+        "lint": "oxlint --fix --max-warnings=5 $(find ./src -type f -name \"*.ts\")"
+    },
     "dependencies": {
         "@apollo/client": "^3.8.8",
         "@supabase/postgrest-js": "^1.8.5",
@@ -13,6 +16,7 @@
     },
     "devDependencies": {
         "@types/events": "^3.0.2",
-        "@types/node": "^20.8.7"
+        "@types/node": "^20.8.7",
+        "oxlint": "^0.2.8"
     }
 }

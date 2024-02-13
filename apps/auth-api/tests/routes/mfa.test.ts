@@ -139,7 +139,7 @@ describe('MFA Routes', () => {
       type: 'totp',
     });
 
-    const otpAuthUriPattern = `otpauth:\/\/totp\/${SERVICE_NAME}:test%40example\.com\\?issuer=${SERVICE_NAME}&secret=[A-Z0-9]{32}&algorithm=${TOTP_ALGORITHM}&digits=${TOTP_DIGITS}&period=${TOTP_PERIOD}$`;
+    const otpAuthUriPattern = `otpauth://totp/${SERVICE_NAME}:test%40example.com\\?issuer=${SERVICE_NAME}&secret=[A-Z0-9]{32}&algorithm=${TOTP_ALGORITHM}&digits=${TOTP_DIGITS}&period=${TOTP_PERIOD}$`;
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({

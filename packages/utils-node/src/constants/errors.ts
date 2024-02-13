@@ -170,9 +170,9 @@ export const CODE_EXPIRED = {
   code: 'CODE_EXPIRED',
   message: 'The provided code has expired.',
 };
-export const CONNECTION_ALREADY_DELETED = {
-  code: 'CONNECTION_ALREADY_DELETED',
-  message: 'Provided client connection already deleted.',
+export const CONNECTION_NOT_FOUND = {
+  code: 'CONNECTION_NOT_FOUND',
+  message: 'Provided client connection not found.',
 };
 export const CONNECTION_ALREADY_REVOKED = {
   code: 'CONNECTION_ALREADY_REVOKED',
@@ -282,6 +282,17 @@ export const ORGANIZATION_ID_NOT_NUMERIC = {
 };
 export const INSUFFICIENT_SCOPES = {
   code: 'INSUFFICIENT_SCOPES',
-  message:
-    'Provided token has insufficient scopes for accessing the requested endpoint.',
+  message: 'Provided token has insufficient scopes for accessing the requested endpoint.',
+};
+export const ACCOUNT_BANNED = {
+  code: 'ACCOUNT_BANNED',
+  message: 'Your account is banned. If you believe you have been wrongly banned, please contact the support.'
+};
+export const CONNECTION_ID_NOT_NUMERIC = {
+  code: 'CONNECTION_ID_NOT_NUMER',
+  message: 'Connection id needs to be a number.'
+};
+export const CONNECTION_ID_REQUIRED = {
+  code: 'CONNECTION_ID_REQUIRED',
+  message: 'Please provide a connection id.'
 };

@@ -9,7 +9,6 @@ import userRouter from './routes/user';
 import recoveryRouter from './routes/recovery';
 import verifyRouter from './routes/verify';
 import mfaRouter from './routes/mfa';
-import swaggerRouter from './routes/swagger';
 import { ENV, SERVER_PORT } from '../env-config';
 import logger from './loggers/logger';
 import responseTime from 'response-time';
@@ -46,7 +45,6 @@ server.use((req, res, next) => {
   next();
 });
 
-server.use('/', swaggerRouter);
 server.use('/sign-up', signUpRouter);
 server.use('/sign-in', signInRouter);
 server.use('/sign-out', signOutRouter);
