@@ -17,7 +17,7 @@ CREATE POLICY blocked_select
             ) OR 
             (
                 auth.grant() = 'authorization_code' AND
-                'blocked.read' = ANY(auth.scopes())
+                public.has_client_scope(34)
             )
         )
     );
@@ -32,7 +32,7 @@ CREATE POLICY blocked_delete
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'blocked.delete' = ANY(auth.scopes())
+                public.has_client_scope(36)
             )
         )
     );
@@ -47,7 +47,7 @@ CREATE POLICY blocked_insert
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'blocked.write' = ANY(auth.scopes())
+                public.has_client_scope(35)
             )
         )
     );  
@@ -69,7 +69,7 @@ CREATE POLICY friend_requests_select
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'friend.requests.read' = ANY(auth.scopes())
+                public.has_client_scope(30)
             )
         )
     );
@@ -87,7 +87,7 @@ CREATE POLICY friend_requests_delete
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'friend.requests.delete' = ANY(auth.scopes())
+                public.has_client_scope(31)
             )
         )
     );
@@ -108,7 +108,7 @@ CREATE POLICY friend_requests_insert
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'friend.requests.write' = ANY(auth.scopes())
+                public.has_client_scope(29)
             )
         ) AND 
         NOT EXISTS (
@@ -180,7 +180,7 @@ CREATE POLICY friends_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                'friends.read' = ANY(auth.scopes())
+                public.has_client_scope(1)
             )  
             OR 
             (
@@ -239,7 +239,7 @@ CREATE POLICY friends_delete
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'friend.delete' = ANY(auth.scopes())
+                public.has_client_scope(33)
             )
         )
     );
@@ -265,7 +265,7 @@ CREATE POLICY friends_insert
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                'friend.write' = ANY(auth.scopes())
+                public.has_client_scope(32)
             )
         )
     );
@@ -325,7 +325,7 @@ CREATE POLICY inventories_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                'inventory.read' = ANY(auth.scopes())
+                public.has_client_scope(6)
             )
         )
     );
@@ -337,7 +337,7 @@ CREATE POLICY inventories_update
     USING (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        'inventory.update' = ANY(auth.scopes())
+        public.has_client_scope(7)
     );
     
 CREATE POLICY inventories_delete
@@ -347,7 +347,7 @@ CREATE POLICY inventories_delete
     USING (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        'inventory.delete' = ANY(auth.scopes())
+        public.has_client_scope(8)
     );
 
 CREATE POLICY inventories_insert
@@ -357,7 +357,7 @@ CREATE POLICY inventories_insert
     WITH CHECK (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        'inventory.write' = ANY(auth.scopes())
+        public.has_client_scope(9)
     );
 
 
@@ -372,7 +372,7 @@ CREATE POLICY items_select
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'item.read' = ANY(auth.scopes())
+                public.has_client_scope(2)
             )
             OR
             (
@@ -390,7 +390,7 @@ CREATE POLICY items_update
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'item.update' = ANY(auth.scopes()) AND
+                public.has_client_scope(3) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -420,7 +420,7 @@ CREATE POLICY items_delete
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'item.delete' = ANY(auth.scopes()) AND
+                public.has_client_scope(4) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -450,7 +450,7 @@ CREATE POLICY items_insert
         (
             (
                 auth.grant() = 'client_credentials' AND
-                'item.write' = ANY(auth.scopes()) AND
+                public.has_client_scope(5) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -472,6 +472,8 @@ CREATE POLICY items_insert
         )
     );
 
+
+
 ALTER TABLE public.oauth2_app_scopes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY oauth2_app_scopes_select
@@ -479,8 +481,18 @@ CREATE POLICY oauth2_app_scopes_select
     AS PERMISSIVE
     FOR SELECT
     USING (
-        auth.grant() = 'password' OR
-        auth.grant() = 'client_credentials'
+        auth.grant() = 'password' AND
+        (
+            (SELECT type FROM public.scopes WHERE id = scope_id) = 'user' OR
+            EXISTS (
+                SELECT 1
+                FROM public.organization_members AS om
+                JOIN public.oauth2_apps AS oa ON om.organization_id = oa.organization_id
+                WHERE oa.id = app_id 
+                    AND om.member_id = auth.uid() 
+                    AND om.role IN ('Owner', 'Admin')
+            )
+        )
     );
 
 CREATE POLICY oauth2_app_scopes_delete
@@ -546,6 +558,15 @@ CREATE POLICY oauth2_apps_update
             WHERE om.organization_id = public.oauth2_apps.organization_id 
                 AND om.member_id = auth.uid() 
                 AND om.role IN ('Owner', 'Admin')
+        ) AND
+        (
+            project_id IS NULL OR
+            EXISTS (
+                SELECT 1
+                FROM public.projects AS p
+                WHERE p.id = project_id
+                    AND p.organization_id = public.oauth2_apps.organization_id
+            )
         )
     );
 
@@ -577,11 +598,14 @@ CREATE POLICY oauth2_apps_insert
                 AND om.member_id = auth.uid() 
                 AND om.role IN ('Owner', 'Admin')
         ) AND
-        EXISTS (
-            SELECT 1
-            FROM public.projects AS p
-            WHERE p.id = project_id
-                AND p.organization_id = public.oauth2_apps.organization_id
+        (
+            project_id IS NULL OR
+            EXISTS (
+                SELECT 1
+                FROM public.projects AS p
+                WHERE p.id = project_id
+                    AND p.organization_id = public.oauth2_apps.organization_id
+            )
         )
     );
 
@@ -625,7 +649,7 @@ CREATE POLICY organization_members_select
         OR
         (
             auth.grant() = 'client_credentials' AND
-            'organization.members.read' = ANY(auth.scopes()) AND
+            public.has_client_scope(22) AND
             organization_id = (auth.jwt()->>'organization_id')::INT
         )
     );
@@ -672,7 +696,7 @@ BEGIN
         OR
         (
             auth.grant() = 'client_credentials' AND
-            'organization.members.update' = ANY(auth.scopes()) AND
+            public.has_client_scope(23) AND
             _organization_id = (auth.jwt()->>'organization_id')::INT AND
             role NOT IN ('Owner', 'Admin') AND
             NOT EXISTS (
@@ -753,7 +777,7 @@ CREATE POLICY organization_members_delete
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'organization.members.delete' = ANY(auth.scopes()) AND
+                public.has_client_scope(24) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin')
             )
@@ -824,7 +848,7 @@ CREATE POLICY organization_requests_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                'organization.requests.read' = ANY(auth.scopes()) AND
+                public.has_client_scope(25) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT
             )
         )
@@ -875,7 +899,7 @@ CREATE POLICY organization_requests_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'organization.requests.update' = ANY(auth.scopes()) AND
+                public.has_client_scope(26) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin') AND 
                 NOT public.is_organization_request_with_role_owner_or_admin(organization_id, addressee_id)
@@ -916,7 +940,7 @@ CREATE POLICY organization_requests_delete
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                'organization.requests.delete' = ANY(auth.scopes()) AND
+                public.has_client_scope(27) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin')
             )
@@ -962,7 +986,7 @@ CREATE POLICY organization_requests_insert
                 OR 
                 (
                     auth.grant() = 'client_credentials' AND
-                    'organization.requests.write' = ANY(auth.scopes()) AND
+                    public.has_client_scope(28) AND
                     organization_id = (auth.jwt()->>'organization_id')::INT AND
                     role NOT IN ('Owner', 'Admin')
                 )
@@ -987,7 +1011,7 @@ CREATE POLICY organizations_select
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'organization.read' = ANY(auth.scopes())
+                public.has_client_scope(20)
             )
         )
     );
@@ -1011,7 +1035,7 @@ CREATE POLICY organizations_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'organization.update' = ANY(auth.scopes()) AND
+                public.has_client_scope(21) AND
                 id = (auth.jwt()->>'organization_id')::INT
             )
         )
@@ -1061,7 +1085,7 @@ CREATE POLICY profiles_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                'profile.read' = ANY(auth.scopes())
+                public.has_client_scope(10)
             )
         )
     );
@@ -1103,7 +1127,7 @@ CREATE POLICY project_requests_select
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'project.requests.read' = ANY(auth.scopes()) AND
+                public.has_client_scope(16) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1159,7 +1183,7 @@ CREATE POLICY project_requests_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'project.requests.update' = ANY(auth.scopes()) AND
+                public.has_client_scope(17) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1205,7 +1229,7 @@ CREATE POLICY project_requests_delete
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'project.requests.delete' = ANY(auth.scopes()) AND
+                public.has_client_scope(18) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1257,7 +1281,7 @@ CREATE POLICY project_requests_insert
                 OR
                 (
                     auth.grant() = 'client_credentials' AND
-                    'project.requests.write' = ANY(auth.scopes()) AND
+                    public.has_client_scope(19) AND
                     EXISTS (
                         SELECT 1
                         FROM public.projects AS p
@@ -1295,7 +1319,7 @@ CREATE POLICY project_members_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                'project.members.read' = ANY(auth.scopes()) AND
+                public.has_client_scope(13) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1348,7 +1372,7 @@ BEGIN
         OR
         (
             auth.grant() = 'client_credentials' AND
-            'project.members.update' = ANY(auth.scopes()) AND
+            public.has_client_scope(14) AND
             EXISTS (
                 SELECT 1
                 FROM public.projects AS p
@@ -1434,7 +1458,7 @@ CREATE POLICY project_members_delete
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                'project.members.delete' = ANY(auth.scopes()) AND
+                public.has_client_scope(15) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1497,7 +1521,7 @@ CREATE POLICY projects_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                'project.read' = ANY(auth.scopes())
+                public.has_client_scope(11)
             )
         )
     );
@@ -1521,7 +1545,7 @@ CREATE POLICY projects_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                'project.update' = ANY(auth.scopes()) AND
+                public.has_client_scope(12) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT
             )
         )
@@ -1576,27 +1600,32 @@ CREATE POLICY notifications_select
     AS PERMISSIVE
     FOR SELECT
     USING (
-        true
+        auth.grant() = 'password' AND
+        auth.uid() = user_id
     );
 
 
-CREATE POLICY notifications_select
+CREATE POLICY notifications_update
     ON public.notifications
     AS PERMISSIVE
     FOR UPDATE
     USING (
-        true
+        auth.grant() = 'password' AND
+        auth.uid() = user_id AND
+        seen = TRUE
     );
 
-CREATE POLICY notifications_select
+CREATE POLICY notifications_delete
     ON public.notifications
     AS PERMISSIVE
     FOR DELETE
     USING (
-        true
+        auth.grant() = 'password' AND
+        auth.uid() = user_id AND
+        type = 'notification'
     );
 
-CREATE POLICY notifications_select
+CREATE POLICY notifications_insert
     ON public.notifications
     AS PERMISSIVE
     FOR INSERT

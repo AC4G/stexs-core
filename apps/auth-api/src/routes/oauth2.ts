@@ -6,7 +6,7 @@ import {
   errorMessages,
   message,
 } from 'utils-node/messageBuilder';
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 import {
   ARRAY_REQUIRED,
   CLIENT_ALREADY_CONNECTED,
@@ -14,8 +14,10 @@ import {
   CLIENT_NOT_FOUND,
   CLIENT_SECRET_REQUIRED,
   CODE_REQUIRED,
-  CONNECTION_ALREADY_DELETED,
   CONNECTION_ALREADY_REVOKED,
+  CONNECTION_ID_NOT_NUMERIC,
+  CONNECTION_ID_REQUIRED,
+  CONNECTION_NOT_FOUND,
   EMPTY_ARRAY,
   GRANT_TYPE_REQUIRED,
   INTERNAL_ERROR,
@@ -42,7 +44,6 @@ import {
   ISSUER,
   REFRESH_TOKEN_SECRET,
 } from '../../env-config';
-import paginate from 'express-paginate';
 import {
   validateAccessToken,
   validateRefreshToken,
@@ -71,7 +72,7 @@ router.post(
       .notEmpty()
       .withMessage(REDIRECT_URL_REQUIRED)
       .bail()
-      .isURL()
+      .matches(/^(https?:\/\/)(\S*)?/)
       .withMessage(INVALID_URL),
     body('scopes')
       .notEmpty()
@@ -385,110 +386,45 @@ router.post(
   },
 );
 
-router.get(
-  '/connections',
-  [
-    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType(['password']),
-    transformJwtErrorMessages(logger),
-    paginate.middleware(10, 50),
-  ],
-  async (req: Request, res: Response) => {
-    const page = (req.query?.page ?? 1) as number;
-    const limit = (req.query?.limit ?? 10) as number;
-    const userId = req.auth?.sub;
-
-    const offset = (page - 1) * limit;
-
-    try {
-      const { rows } = await db.query(
-        `
-          SELECT
-              jsonb_build_object(
-                  'id', o.id,
-                  'name', o.name,
-                  'display_name', o.display_name
-              ) AS organization,
-              oa.description,
-              oa.homepage_url,
-              oa.client_id
-          FROM auth.oauth2_connections AS oc
-          JOIN public.oauth2_apps AS oa ON oc.client_id = oa.id
-          JOIN public.organizations AS o ON oa.organization_id = o.id
-          WHERE oc.user_id = $1::uuid
-          LIMIT $2 OFFSET $3;
-        `,
-        [userId, limit, offset],
-      );
-
-      const itemCount = rows.length;
-
-      res.setHeader('X-Page', page);
-      res.setHeader('X-Item-Count', itemCount);
-      res.setHeader('X-Total-Pages', Math.ceil(itemCount / limit).toString());
-
-      logger.info(`Connections fetched successfully for user: ${userId}`);
-
-      res.json(rows);
-    } catch (e) {
-      logger.error(
-        `Error while fetching connections for user: ${userId}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
-  },
-);
-
 router.delete(
-  '/connection',
+  '/connections/:connectionId',
   [
     validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
     checkTokenGrantType(['password']),
     transformJwtErrorMessages(logger),
-    body('client_id')
+    param('connectionId')
       .notEmpty()
-      .withMessage(CLIENT_ID_REQUIRED)
+      .withMessage(CONNECTION_ID_REQUIRED)
       .bail()
-      .custom((value) => {
-        if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
-
-        return true;
-      }),
+      .isNumeric()
+      .withMessage(CONNECTION_ID_NOT_NUMERIC),
     validate(logger),
   ],
   async (req: Request, res: Response) => {
-    const { client_id: clientId } = req.body;
+    const { connectionId } = req.params;
     const userId = req.auth?.sub;
 
     try {
       const { rowCount } = await db.query(
         `
-          WITH oauth2_connection_info AS (
-              SELECT oc.refresh_token_id
-              FROM auth.oauth2_connections AS oc
-              JOIN public.oauth2_apps AS oa ON oc.client_id = oa.id
-              WHERE oa.client_id = $1::uuid
-                AND oc.user_id = $2::uuid
-          )
-          DELETE FROM auth.refresh_tokens AS rt
-          WHERE rt.id IN (SELECT refresh_token_id FROM oauth2_connection_info);
+          DELETE FROM auth.refresh_tokens
+          WHERE connection_id = $1::integer
+            AND user_id = $2::uuid;
         `,
-        [clientId, userId],
+        [connectionId, userId],
       );
 
       if (rowCount === 0) {
         logger.warn(
-          `No connection found for deletion for user: ${userId} and client: ${clientId}`,
+          `No connection found for deletion for user: ${userId} and connection: ${connectionId}`,
         );
         return res
           .status(404)
-          .json(errorMessages([{ info: CONNECTION_ALREADY_DELETED }]));
+          .json(errorMessages([{ info: CONNECTION_NOT_FOUND }]));
       }
     } catch (e) {
       logger.error(
-        `Error while deleting connection for user: ${userId} and client: ${clientId}. Error: ${
+        `Error while deleting connection for user: ${userId} and connection: ${connectionId}. Error: ${
           e instanceof Error ? e.message : e
         }`,
       );
@@ -496,7 +432,7 @@ router.delete(
     }
 
     logger.info(
-      `Connection deleted successfully for user: ${userId} and client: ${clientId}`,
+      `Connection deleted successfully for user: ${userId} and connection: ${connectionId}`,
     );
 
     res.send(message('Connection successfully deleted.'));

@@ -26,7 +26,6 @@ export async function copyToClipboard(
   text: string,
   flash: Writable<ToastSettings>,
 ) {
-  console.log({ text });
   await navigator.clipboard.writeText(text);
   flash.set({
     message: `Copied to clipboard`,

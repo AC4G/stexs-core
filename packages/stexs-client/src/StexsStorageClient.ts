@@ -222,22 +222,18 @@ export class StexsStorageClient {
     body?: Record<string, any>;
     headers?: Record<string, string>;
   }): Promise<Response> {
-    try {
-      const options: RequestInit = {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
-      };
+    const options: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+    };
 
-      if (method !== 'GET' && body !== null) {
-        options.body = JSON.stringify(body);
-      }
-
-      return await this.fetch(`${this.storageUrl}/${path}`, options);
-    } catch (e) {
-      throw e;
+    if (method !== 'GET' && body !== null) {
+      options.body = JSON.stringify(body);
     }
+
+    return await this.fetch(`${this.storageUrl}/${path}`, options);
   }
 }

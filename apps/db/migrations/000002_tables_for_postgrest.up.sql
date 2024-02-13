@@ -588,7 +588,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;GRANT DELETE ON TABLE public.oauth2_app_scopes TO authenticated;
 
 CREATE TRIGGER enforce_project_request_limit_trigger
 BEFORE INSERT ON public.project_requests
@@ -656,9 +656,9 @@ CREATE TABLE public.notifications (
     message TEXT,
     type VARCHAR(100) NOT NULL,
     seen BOOLEAN DEFAULT FALSE NOT NULL,
-    friend_request_id INT REFERENCES public.friend_requests(id) ON DELETE CASCADE,
-    organization_request_id INT REFERENCES public.organization_requests(id) ON DELETE CASCADE,
-    project_request_id INT REFERENCES public.project_requests(id) ON DELETE CASCADE,
+    friend_request_id INT REFERENCES public.friend_requests(id) ON DELETE CASCADE UNIQUE,
+    organization_request_id INT REFERENCES public.organization_requests(id) ON DELETE CASCADE UNIQUE,
+    project_request_id INT REFERENCES public.project_requests(id) ON DELETE CASCADE UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CHECK (type in ('notification', 'friend_request', 'organization_request', 'project_request')),

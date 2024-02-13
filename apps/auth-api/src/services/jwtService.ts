@@ -7,6 +7,7 @@ import {
   AUDIENCE,
   JWT_EXPIRY_LIMIT,
   JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT,
+  JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT
 } from '../../env-config';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../database';
@@ -33,13 +34,15 @@ export function generateSignInConfirmToken(sub: string, types: [string]) {
 }
 
 export default async function generateAccessToken(
-  additionalPayload: any,
-  grantType: string = 'password',
+  additionalPayload: Record<string, any>,
+  grantType: 'password' | 'client_credentials' | 'authorization_code' = 'password',
+  connectionId: string | null = null,
   refreshToken: string | null = null,
   oldRefreshToken: string | null = null,
 ) {
   const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + JWT_EXPIRY_LIMIT;
+  const EXP_LIMIT = grantType === 'authorization_code' ? JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT : JWT_EXPIRY_LIMIT;
+  const exp = iat + EXP_LIMIT;
 
   if (grantType === 'password') additionalPayload.session_id = uuidv4();
 
@@ -57,12 +60,17 @@ export default async function generateAccessToken(
 
   const accessToken = jwt.sign(accessTokenPayload, ACCESS_TOKEN_SECRET!);
 
-  if (grantType === 'client_credentials')
+  if (grantType === 'client_credentials') {
     return {
       access_token: accessToken,
       token_type: 'bearer',
       expires: exp,
     };
+  }
+  
+  if (grantType === 'authorization_code' && connectionId === null && oldRefreshToken !== null) {
+    throw Error('connectionId is required to generate initial access token for authorization_code grant tokens');
+  }
 
   const jti = refreshToken ? refreshToken : uuidv4();
 
@@ -88,16 +96,18 @@ export default async function generateAccessToken(
             token, 
             user_id, 
             grant_type, 
-            session_id
+            session_id,
+            connection_id
           )
           VALUES (
             $1::uuid, 
             $2::uuid, 
             $3::text, 
-            $4::uuid
+            $4::uuid,
+            $5::int
           );
         `,
-        [jti, additionalPayload.sub, grantType, additionalPayload.session_id],
+        [jti, additionalPayload.sub, grantType, additionalPayload.session_id, connectionId],
       );
     }
   } catch (e) {

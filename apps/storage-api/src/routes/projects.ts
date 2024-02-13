@@ -19,11 +19,11 @@ import {
 } from '../../env-config';
 import s3 from '../s3';
 import {
-  checkScopes,
   checkTokenGrantType,
   transformJwtErrorMessages,
   validateAccessToken,
 } from 'utils-node/jwtMiddleware';
+import { checkScopes } from '../middlewares/scopes';
 
 const router = Router();
 
@@ -76,6 +76,7 @@ router.post(
     const sub = req.auth?.sub;
     const { projectId } = req.params;
     const grantType = req.auth?.grant_type;
+    const clientId = req.auth?.client_id;
     const organizationId = req.auth?.organization_id;
 
     try {
@@ -110,9 +111,10 @@ router.post(
 
       if (!isAllowed) {
         const consumer = grantType === 'password' ? 'User' : 'Client';
+        const consumerId = grantType === 'password' ? sub : clientId;
 
-        logger.error(
-          `${consumer} is not authorized to upload/update the logo of the given project: ${projectId}. ${consumer}: ${sub}`,
+        logger.warn(
+          `${consumer} is not authorized to upload/update the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`,
         );
 
         return res
@@ -166,6 +168,7 @@ router.delete(
     const sub = req.auth?.sub;
     const { projectId } = req.params;
     const grantType = req.auth?.grant_type;
+    const clientId = req.auth?.client_id;
     const organizationId = req.auth?.organization_id;
 
     try {
@@ -200,9 +203,10 @@ router.delete(
 
       if (!rowsFound) {
         const consumer = grantType === 'password' ? 'User' : 'Client';
+        const consumerId = grantType === 'password' ? sub : clientId;
 
-        logger.error(
-          `${consumer} is not authorized to delete the logo of the given project: ${projectId}. ${consumer}: ${sub}`,
+        logger.warn(
+          `${consumer} is not authorized to delete the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`,
         );
 
         return res

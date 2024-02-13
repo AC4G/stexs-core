@@ -10,6 +10,7 @@ import {
   errorMessages,
 } from 'utils-node/messageBuilder';
 import {
+  ACCOUNT_BANNED,
   CODE_EXPIRED,
   CODE_REQUIRED,
   EMAIL_NOT_VERIFIED,
@@ -64,7 +65,8 @@ router.post(
             ARRAY_REMOVE(ARRAY[
               CASE WHEN mfa.email = TRUE THEN 'email' END,
               CASE WHEN mfa.totp = TRUE THEN 'totp' END
-            ], NULL) AS types
+            ], NULL) AS types,
+            u.banned_at
           FROM auth.users AS u
           LEFT JOIN public.profiles AS p ON u.id = p.user_id
           LEFT JOIN auth.mfa ON u.id = mfa.user_id
@@ -92,6 +94,13 @@ router.post(
             },
           ]),
         );
+      }
+
+      if (rows[0].banned_at) {
+        logger.warn(`Attempt to sign in to banned account for user: ${identifier}`);
+        return res
+          .status(400)
+          .json(errorMessages([{ info: ACCOUNT_BANNED }]));
       }
 
       if (!rows[0].email_verified_at) {

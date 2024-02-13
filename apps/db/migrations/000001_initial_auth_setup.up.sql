@@ -72,27 +72,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION auth.scopes()
- RETURNS TEXT[]
- STABLE
-AS $$
-BEGIN
-  RETURN coalesce(
-    string_to_array(nullif(current_setting('request.jwt.claim.scopes', true), ''), ','),
-    string_to_array(nullif(current_setting('request.jwt.claims', true)::JSONB->>'scopes', ''), ','),
-    string_to_array(nullif(current_setting('jwt.claims.scopes', true), ''), ','),
-    string_to_array(nullif(current_setting('jwt.claims', true)::JSONB->>'scopes', ''), ',')
-  )::TEXT[];
-END;
-$$ LANGUAGE plpgsql;
-
 GRANT USAGE ON SCHEMA auth to authenticated;
 
 GRANT EXECUTE ON FUNCTION auth.jwt() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.role() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.grant() TO authenticated;
-GRANT EXECUTE ON FUNCTION auth.scopes() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.has_client_scope(_scope_id INT)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM public.oauth2_connection_scopes AS cs
+    JOIN public.oauth2_connections AS c ON cs.connection_id = c.id
+    WHERE c.user_id = auth.uid()
+      AND c.client_id = (auth.jwt()->>'client_id')::UUID
+      AND cs.scope_id = _scope_id
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.has_client_scope(scope_id INT) TO authenticated;
+
 
 
 
@@ -105,39 +107,16 @@ CREATE TABLE auth.users (
     verification_sent_at TIMESTAMPTZ,
     raw_user_meta_data JSONB DEFAULT '{}'::JSONB NOT NULL,
     is_super_admin BOOLEAN DEFAULT FALSE NOT NULL,
-    banned_until TIMESTAMPTZ,
     email_change VARCHAR(8),
     email_change_sent_at TIMESTAMPTZ,
     email_change_token UUID,
     recovery_token UUID,
     recovery_sent_at TIMESTAMPTZ,
+    banned_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
     CONSTRAINT unique_email_change_combination UNIQUE (email_change, email_change_token)
 );
-
-CREATE TABLE auth.mfa (
-    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    email BOOLEAN DEFAULT TRUE NOT NULL,
-    totp BOOLEAN DEFAULT FALSE NOT NULL,
-    totp_secret VARCHAR(32),
-    totp_verified_at TIMESTAMPTZ,
-    email_code VARCHAR(8),
-    email_code_sent_at TIMESTAMPTZ
-);
-
-CREATE TABLE auth.refresh_tokens (
-    id SERIAL PRIMARY KEY,
-    token UUID NOT NULL,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    session_id UUID,
-    grant_type VARCHAR(50) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMPTZ,
-    CONSTRAINT unique_refresh_token_combination UNIQUE (user_id, session_id, grant_type, token)
-);
-
-
 
 CREATE OR REPLACE FUNCTION auth.create_mfa_for_user()
 RETURNS TRIGGER AS $$
@@ -207,6 +186,47 @@ CREATE TRIGGER encrypt_password_trigger
 BEFORE INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION auth.encrypt_password();
+
+
+
+CREATE TABLE auth.mfa (
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email BOOLEAN DEFAULT TRUE NOT NULL,
+    totp BOOLEAN DEFAULT FALSE NOT NULL,
+    totp_secret VARCHAR(32),
+    totp_verified_at TIMESTAMPTZ,
+    email_code VARCHAR(8),
+    email_code_sent_at TIMESTAMPTZ
+);
+
+CREATE TABLE auth.refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    token UUID NOT NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    connection_id REFERENCES public.oauth2_connections(id) ON DELETE CASCADE,
+    session_id UUID,
+    grant_type VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ,
+    CONSTRAINT unique_refresh_token_combination UNIQUE (user_id, session_id, grant_type, token, connection_id)
+);
+
+CREATE OR REPLACE FUNCTION auth.delete_connection()
+RETURNS TRIGGER AS $$
+BEGIN   
+    IF OLD.connection_id IS NOT NULL THEN
+        DELETE FROM public.oauth2_connections 
+        WHERE id = OLD.connection_id;
+    END IF;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER create_mfa_trigger
+AFTER DELETE ON auth.refresh_tokens
+FOR EACH ROW
+EXECUTE FUNCTION auth.delete_connection();
  
 
 
@@ -325,8 +345,8 @@ CREATE TABLE public.oauth2_apps (
     CONSTRAINT valid_redirect_url CHECK (is_url_valid(redirect_url))
 );
 
-GRANT INSERT (name, organization_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
-GRANT UPDATE (name, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT INSERT (name, organization_id, project_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT UPDATE (name, project_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 GRANT DELETE ON TABLE public.oauth2_apps TO authenticated;
 GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
@@ -359,29 +379,33 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION public.generate_new_client_secret(app_id INT)
 RETURNS TABLE (client_secret VARCHAR(64)) AS $$
 DECLARE
-    new_client_secret VARCHAR;
+    new_client_secret VARCHAR(64);
 BEGIN
     IF (
-        auth.grant() = 'password' AND
-        EXISTS (
-            SELECT 1
-            FROM public.oauth2_apps AS oa
-            JOIN public.organization_members AS om ON oa.organization_id = om.organization_id
-            WHERE oa.id = app_id
-                AND om.member_id = auth.uid()
-                AND om.role IN ('Owner', 'Admin')
-        )
-    ) OR (
-        auth.grant() = 'client_credentials' AND
-        'secret.update' = ANY(auth.scopes()) AND
-        EXISTS (
-            SELECT 1
-            FROM public.oauth2_apps 
-            WHERE id = app_id
-                AND client_id = (auth.jwt()->>'client_id')::UUID
+        (
+            auth.grant() = 'password' AND
+            EXISTS (
+                SELECT 1
+                FROM public.oauth2_apps AS oa
+                JOIN public.organization_members AS om ON oa.organization_id = om.organization_id
+                WHERE oa.id = app_id
+                    AND om.member_id = auth.uid()
+                    AND om.role IN ('Owner', 'Admin')
+            )
+        ) 
+        OR 
+        (
+            auth.grant() = 'client_credentials' AND
+            public.has_client_scope(42) AND
+            EXISTS (
+                SELECT 1
+                FROM public.oauth2_apps 
+                WHERE id = app_id
+                    AND client_id = (auth.jwt()->>'client_id')::UUID
+            )
         )
     ) THEN
-        new_client_secret := md5(random()::text || clock_timestamp()::text);
+        new_client_secret := encode(gen_random_bytes(32), 'hex');
 
         UPDATE public.oauth2_apps
         SET client_secret = new_client_secret
@@ -405,8 +429,7 @@ CREATE TABLE public.scopes (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
     CONSTRAINT scope_type CHECK (type IN ('user', 'client'))
 );
 
@@ -446,12 +469,25 @@ CREATE TABLE auth.oauth2_authorization_token_scopes (
     CONSTRAINT unique_oauth2_authorization_token_scopes_combination UNIQUE (token_id, scope_id)
 );
 
-CREATE TABLE auth.oauth2_connections (
+CREATE TABLE public.oauth2_connections (
     id SERIAL PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
-    refresh_token_id INT REFERENCES auth.refresh_tokens(id) ON DELETE CASCADE NOT NULL UNIQUE,
+    client_id UUID REFERENCES public.oauth2_apps(client_id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT unique_oauth2_connections_combination UNIQUE (user_id, app_id)
+    CONSTRAINT unique_oauth2_connections_combination UNIQUE (user_id, client_id)
 );
+
+GRANT SELECT ON TABLE public.oauth2_connections TO authenticated;
+
+
+
+CREATE TABLE public.oauth2_connection_scopes (
+    id SERIAL PRIMARY KEY,
+    connection_id INT REFERENCES public.oauth2_connections(id) ON DELETE CASCADE NULL,
+    scope_id INT REFERENCES public.scopes(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT unique_oauth2_connection_scopes_combination UNIQUE (connection_id, scope_id)
+);
+
+GRANT SELECT ON TABLE public.oauth2_connection_scopes TO authenticated;

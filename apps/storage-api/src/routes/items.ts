@@ -6,7 +6,6 @@ import {
 } from '../../env-config';
 import { Router, Response } from 'express';
 import {
-  checkScopes,
   checkTokenGrantType,
   transformJwtErrorMessages,
   validateAccessToken,
@@ -24,6 +23,7 @@ import {
 import s3 from '../s3';
 import { param } from 'express-validator';
 import validate from 'utils-node/validatorMiddleware';
+import { checkScopes } from '../middlewares/scopes';
 
 const router = Router();
 
@@ -76,6 +76,7 @@ router.post(
     const sub = req.auth?.sub;
     const { itemId } = req.params;
     const grantType = req.auth?.grant_type;
+    const clientId = req.auth?.client_id;
     const organizationId = req.auth?.organization_id;
 
     try {
@@ -121,9 +122,10 @@ router.post(
 
       if (!isAllowed) {
         const consumer = grantType === 'password' ? 'User' : 'Client';
+        const consumerId = grantType === 'password' ? sub : clientId;
 
-        logger.error(
-          `${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${sub}`,
+        logger.warn(
+          `${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${consumerId}`,
         );
 
         return res

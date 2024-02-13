@@ -10,7 +10,6 @@ import {
   UNAUTHORIZED_ACCESS,
 } from 'utils-node/errors';
 import {
-  checkScopes,
   checkTokenGrantType,
   transformJwtErrorMessages,
   validateAccessToken,
@@ -24,6 +23,7 @@ import {
 import db from '../database';
 import { errorMessages } from 'utils-node/messageBuilder';
 import s3 from '../s3';
+import { checkScopes } from '../middlewares/scopes';
 
 const router = Router();
 
@@ -78,6 +78,7 @@ router.post(
     const sub = req.auth?.sub;
     const { organizationId } = req.params;
     const grantType = req.auth?.grant_type;
+    const clientId = req.auth?.client_id;
     const organizationIdFromToken = req.auth?.organization_id;
 
     try {
@@ -102,9 +103,10 @@ router.post(
 
       if (!isAllowed) {
         const consumer = grantType === 'password' ? 'User' : 'Client';
+        const consumerId = grantType === 'password' ? sub : clientId;
 
-        logger.error(
-          `${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${sub}`,
+        logger.warn(
+          `${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
         );
         return res
           .status(401)
@@ -157,8 +159,9 @@ router.delete(
   ],
   async (req: Request, res: Response) => {
     const sub = req.auth?.sub;
-    const { organizationId } = req.params;
+    const organizationId = parseInt(req.params.organizationId);
     const grantType = req.auth?.grant_type;
+    const clientId = req.auth?.client_id;
     const organizationIdFromToken = req.auth?.organization_id;
 
     try {
@@ -183,9 +186,10 @@ router.delete(
 
       if (!isAllowed) {
         const consumer = grantType === 'password' ? 'User' : 'Client';
+        const consumerId = grantType === 'password' ? sub : clientId;
 
-        logger.error(
-          `${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${sub}`,
+        logger.warn(
+          `${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
         );
         return res
           .status(401)
