@@ -5,6 +5,7 @@ import type {
 } from '@skeletonlabs/skeleton';
 import { blockUser, unblockUser } from '../user';
 import type { Writable } from 'svelte/store';
+import type { Profile } from '$lib/stores/profileStore';
 
 export function openBlockUserModal(
   userId: string,
@@ -12,6 +13,7 @@ export function openBlockUserModal(
   username: string,
   flash: Writable<ToastSettings>,
   modalStore: ModalStore,
+  onSuccess: () => void
 ) {
   const modal: ModalSettings = {
     type: 'component',
@@ -24,6 +26,7 @@ export function openBlockUserModal(
         blocker_id: currentUserId,
         username,
         flash,
+        onSuccess
       },
       fnAsync: true,
     },
@@ -37,6 +40,7 @@ export function openUnblockUserModal(
   username: string,
   flash: Writable<ToastSettings>,
   modalStore: ModalStore,
+  onSuccess: () => void
 ) {
   const modal: ModalSettings = {
     type: 'component',
@@ -49,6 +53,7 @@ export function openUnblockUserModal(
         currentUserId,
         username,
         flash,
+        onSuccess
       },
       fnAsync: true,
     },

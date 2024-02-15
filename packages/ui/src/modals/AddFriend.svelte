@@ -52,6 +52,12 @@
                 ),
                 friend_requests!friend_requests_addressee_id_fkey${filter === 'Pending' ? '!inner': ''}(
                     requester_id
+                ),
+                have_blocked:blocked!blocked_blocked_id_fkey(
+                    blocked_id
+                ),
+                been_blocked:blocked!blocked_blocker_id_fkey(
+                    blocker_id
                 )
             `, { count: 'exact' })
             .ilike('username', `%${search}%`)
@@ -72,7 +78,7 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-3 sm:p-5 space-y-6 flex flex-col max-w-[958px] min-h-[90vh] w-full relative">
+    <div class="card p-3 sm:p-5 space-y-6 flex flex-col max-w-[600px] min-h-[90vh] w-full relative">
         <div>
             <div class="absolute right-[8px] top-[8px]">
                 <Button on:click={parent.onClose} class="p-3 hover:text-gray-600">
@@ -119,7 +125,7 @@
             {:else if $searchForFriendsQuery.data}
                 {#each $searchForFriendsQuery.data as profile, i (profile.user_id)}
                     <div class="flex flex-row rounded-md transition items-center justify-between px-2 sm:px-4 py-2 w-full border border-solid border-surface-600 space-x-4">
-                        <a href="/{profile.username}" on:click={parent.onClose} class="flex justify-left group gap-4">
+                        <a href="/{profile.username}" on:click={parent.onClose} class="flex justify-left items-center group gap-4">
                             <div class="w-fit h-fit">
                                 <Avatar class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px]" userId={profile.user_id} username={profile.username} {stexs} />
                             </div>
@@ -132,6 +138,10 @@
                                 <p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">Is Friend</p>
                             {:else if profile.user_id === userId}
                                 <p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">You</p>
+                            {:else if profile.have_blocked.length > 0}
+                                <p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">Blocked</p>
+                            {:else if profile.been_blocked.length > 0}
+                                <p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">Blocked You</p>
                             {:else if profile.friend_requests.length > 0}
                                 <Button submitted={submitted === i} on:click={async () => {
                                     if (operationSubmitted) return;
@@ -159,6 +169,8 @@
                                     $searchForFriendsQuery.refetch();
 
                                     operationSubmitted = false;
+
+                                    $modalStore[0].meta.onSendFriendRequest();
                                 }} title="Send Friend Requests" class="h-fit text-[14px] variant-ghost-primary py-2 px-2" progressClass="w-[14px]">
                                     <Icon icon="pepicons-pop:plus" />
                                 </Button>

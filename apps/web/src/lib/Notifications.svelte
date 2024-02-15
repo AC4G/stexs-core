@@ -77,12 +77,14 @@
 
     async function markAllNotificationsAsSeen() {
         if ($userStore?.id) {
-            await stexs
+            const result = await stexs
                 .from('notifications')
                 .update({
                     seen: true
                 })
                 .eq('user_id', $userStore.id);
+
+            console.log({ result })
         }
     }
 

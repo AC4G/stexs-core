@@ -4,7 +4,6 @@ import { errorMessages } from '../messageBuilder';
 import {
   CREDENTIALS_BAD_FORMAT,
   CREDENTIALS_REQUIRED,
-  INSUFFICIENT_SCOPES,
   INVALID_GRANT_TYPE,
   INVALID_TOKEN,
 } from '../constants/errors';
