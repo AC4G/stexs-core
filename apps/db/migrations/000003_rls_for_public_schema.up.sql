@@ -1611,8 +1611,7 @@ CREATE POLICY notifications_update
     FOR UPDATE
     USING (
         auth.grant() = 'password' AND
-        auth.uid() = user_id AND
-        seen = TRUE
+        user_id = auth.uid()
     );
 
 CREATE POLICY notifications_delete

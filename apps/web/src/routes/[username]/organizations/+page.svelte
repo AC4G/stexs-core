@@ -182,13 +182,13 @@
     $: organizationsMemberQueryStore = $organizationsMemberQuery;
 </script>
 
-<div class="flex flex-col sm:flex-row justify-between {organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0 sm:space-x-2">
+<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
-        <div class="placeholder animate-pulse sm:max-w-[220px] w-full h-[42px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[42px] rounded-lg" />
         <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
-    {:else if organizationAmountQueryStore.data > 0}
+    {:else}
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
-            <div class="sm:max-w-[220px]">
+            <div class="sm:max-w-[300px]">
                 <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
             </div>
             <div class="sm:w-fit">
@@ -214,13 +214,13 @@
         {/if}
     {/if}
 </div>
-<div class="{organizationAmountQueryStore?.data > 0 ? 'mb-[18px]' : ''}">
+<div class="mb-[18px]">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]" />
             <div class="placeholder animate-pulse h-[34px] w-[232px]" />
         </div>
-    {:else if organizationAmountQueryStore?.data > 0}
+    {:else}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{true}"
@@ -269,18 +269,18 @@
             </div>
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
-                <p class="text-[18px] p-4 text-center">{$userStore?.id === $profileStore?.userId ? 'You haven\'t join any organizations' : 'User is not a member of any organization'}</p>
+                <p class="text-[18px] p-6 text-center">{$userStore?.id === $profileStore?.userId ? 'You haven\'t join any organizations' : 'User is not a member of any organization'}</p>
             </div>
         {/if}
     {/if}
 </div>
-<div class="{organizationAmountQueryStore?.data > 0 ? 'mt-[18px]' : ''}">
+<div class="mt-[18px]">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]" />
             <div class="placeholder animate-pulse h-[34px] w-[232px]" />
         </div>
-    {:else if organizationAmountQueryStore?.data > 0}
+    {:else}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{true}"

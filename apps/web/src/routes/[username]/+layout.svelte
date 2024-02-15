@@ -100,13 +100,13 @@
     }
 
     $: profileQuery = createQuery({
-        queryKey: ['userProfile', username],
+        queryKey: ['userProfile', username, $profileStore?.refetchProfileTrigger],
         queryFn: async () => await fetchProfile(username),
         enabled: !!username && !isSSR
     });
 
     $: blockedQuery = createQuery({
-        queryKey: ['blockedProfile', $userStore?.id, userId],
+        queryKey: ['blockedProfile', $userStore?.id, userId, $profileStore?.refetchProfileTrigger],
         queryFn: async () => await fetchBlocked(userId, $userStore?.id!),
         enabled: !!$userStore?.id && !!userId && userId !== $userStore.id
     });
@@ -114,7 +114,7 @@
     $: isCurrentUserBlocker = $blockedQuery.data?.filter((blocked: { blocker_id: string }) => blocked.blocker_id === $userStore?.id).length > 0;
 
     $: isFriendQuery = createQuery({
-        queryKey: ['isFriend', $userStore?.id, $profileStore?.refetchFriendsTrigger],
+        queryKey: ['isFriend', $userStore?.id, $profileStore?.refetchFriendsTrigger, $profileStore?.refetchProfileTrigger],
         queryFn: async () => await fetchIsFriend($userStore?.id!, userId),
         enabled: !!$userStore?.id && !!userId && userId !== $userStore.id && !!$blockedQuery.data && $blockedQuery.data.length === 0
     });
@@ -124,7 +124,7 @@
     $: isPrivate = $profileQuery.data?.is_private as boolean;
 
     $: friendsAmountQuery = createQuery({
-        queryKey: ['friendsAmount', userId, $profileStore?.refetchFriendsTrigger],
+        queryKey: ['friendsAmount', userId, $profileStore?.refetchFriendsTrigger, $profileStore?.refetchProfileTrigger],
         queryFn: async () => await fetchFriendsAmount(userId),
         enabled: !!userId && ((!isPrivate && ($blockedQuery.data?.length === 0 || !$userStore)) || !!isFriend || userId === $userStore?.id)
     });
@@ -247,9 +247,25 @@
                                 {/if}
                                 <DropdownItem class="hover:!bg-surface-500 rounded text-red-600">Report</DropdownItem>
                                 {#if isCurrentUserBlocker}
-                                    <DropdownItem on:click={() => openUnblockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded text-primary-500">Unblock</DropdownItem>
+                                    <DropdownItem on:click={() => openUnblockUserModal(userId, $userStore.id, username, flash, modalStore, () => {
+                                        //@ts-ignore
+                                        profileStore.update((profile) => {
+                                            return {
+                                                ...profile,
+                                                refetchTrigger: !profile?.refetchProfileTrigger,
+                                            };
+                                        });
+                                    })} class="hover:!bg-surface-500 rounded text-primary-500">Unblock</DropdownItem>
                                 {:else}
-                                    <DropdownItem on:click={() => openBlockUserModal(userId, $userStore.id, username, flash, modalStore)} class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem>
+                                    <DropdownItem on:click={() => openBlockUserModal(userId, $userStore.id, username, flash, modalStore , () => {
+                                        //@ts-ignore
+                                        profileStore.update((profile) => {
+                                            return {
+                                                ...profile,
+                                                refetchProfileTrigger: !profile?.refetchProfileTrigger,
+                                            };
+                                        });
+                                    })} class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem>
                                 {/if}
                             </Dropdown>
                         </div>

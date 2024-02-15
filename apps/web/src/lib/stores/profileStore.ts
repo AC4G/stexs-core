@@ -6,6 +6,7 @@ export interface Profile {
   isPrivate: boolean;
   isFriend: boolean;
   totalFriends: number;
+  refetchProfileTrigger?: boolean;
   refetchFriendsTrigger?: boolean;
   refetchOrganizationsTrigger?: boolean;
 }

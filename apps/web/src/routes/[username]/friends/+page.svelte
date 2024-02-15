@@ -100,11 +100,11 @@
 
 <div class="flex flex-col sm:flex-row justify-between {friendsLoaded ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0 sm:space-x-2">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
-        <div class="placeholder animate-pulse sm:max-w-[220px] w-full h-[44px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[44px] rounded-lg" />
         <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
-    {:else if $profileStore && $profileStore.totalFriends > 0}
+    {:else}
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
-            <div class="sm:max-w-[220px]">
+            <div class="sm:max-w-[300px]">
                 <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
             </div>
             <div class="sm:w-fit">
@@ -121,7 +121,16 @@
             </div>
         </div>
         {#if $userStore?.id === $profileStore?.userId}
-            <button use:popup={addFriendProfilePopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="relative btn variant-ghost-primary p-[12.89px]">
+            <button use:popup={addFriendProfilePopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
+                //@ts-ignore
+                profileStore.update(profile => {
+                    return {
+                        ...profile,
+                        refetchFriendsTrigger: !profile?.refetchFriendsTrigger
+                    }
+                });
+                $friendsQuery.refetch();
+            })} class="relative btn variant-ghost-primary p-[12.89px]">
                 <Icon icon="pepicons-pop:plus"/>
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendProfilePopup">
                     <p class="text-[14px] break-all">Add Friend</p>
@@ -130,7 +139,7 @@
         {/if}
     {/if}
 </div>
-<div class="{friendsLoaded ? 'mb-[18px]' : ''}">
+<div class="mb-[18px]">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
@@ -172,10 +181,26 @@
                                 removeFriendSubmitted = true;
                                 await removeFriend($userStore.id, friend.profiles.user_id, flash);
                                 removeFriendSubmitted = false;
+                                //@ts-ignore
+                                profileStore.update(profile => {
+                                    return {
+                                        ...profile,
+                                        refetchFriendsTrigger: !profile?.refetchFriendsTrigger
+                                    }
+                                });
                                 $friendsQuery.refetch();
                             }} submitted={removeFriendSubmitted} class="hover:!bg-surface-500 rounded text-red-600 whitespace-nowrap">Remove Friend</DropdownItem>
                             <DropdownItem class="hover:!bg-surface-500 rounded text-red-600">Report</DropdownItem>
-                            <DropdownItem on:click={() => openBlockUserModal(friend.profiles.user_id, $userStore.id, friend.profiles.username, flash, modalStore)} class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem>
+                            <DropdownItem on:click={() => openBlockUserModal(friend.profiles.user_id, $userStore.id, friend.profiles.username, flash, modalStore, () => {
+                                //@ts-ignore
+                                profileStore.update(profile => {
+                                    return {
+                                        ...profile,
+                                        refetchFriendsTrigger: !profile?.refetchFriendsTrigger
+                                    }
+                                });
+                                $friendsQuery.refetch();
+                            })} class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem>
                         </Dropdown>
                     {/if}
                 </div>
@@ -186,18 +211,18 @@
             </div>
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
-                <p class="text-[18px] p-4 text-center">{$userStore?.id === $profileStore?.userId ? 'You have no friends' : 'User has no friends'}</p>
+                <p class="text-[18px] p-6 text-center">{$userStore?.id === $profileStore?.userId ? 'You have no friends' : 'User has no friends'}</p>
             </div>
         {/if}
     {/if}
 </div>
-<div class="{friendsLoaded ? 'mt-[18px]' : ''}">
+<div class="mt-[18px]">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
             <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
-    {:else if $profileStore && $profileStore.totalFriends > 0}
+    {:else}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{true}"

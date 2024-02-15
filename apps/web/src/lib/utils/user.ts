@@ -1,14 +1,16 @@
 import type { ToastSettings } from '@skeletonlabs/skeleton';
 import type { Writable } from 'svelte/store';
 import { stexs } from '../../stexsClient';
+import type { Profile } from '$lib/stores/profileStore';
 
 export async function blockUser(params: {
   blocked_id: string;
   blocker_id: string;
   username: string;
   flash: Writable<ToastSettings>;
+  onSuccess: () => void
 }) {
-  const { blocked_id, blocker_id, username, flash } = params;
+  const { blocked_id, blocker_id, username, flash, onSuccess } = params;
   const { error } = await stexs
     .from('blocked')
     .insert([{ blocker_id, blocked_id }]);
@@ -19,9 +21,17 @@ export async function blockUser(params: {
       classes: 'variant-glass-error',
       timeout: 5000,
     });
-  } else {
-    location.reload();
-  }
+
+    return;
+  } 
+  
+  flash.set({
+    message: `Blocked ${username}.`,
+    classes: 'variant-glass-success',
+    timeout: 5000,
+  });
+
+  onSuccess();
 }
 
 export async function unblockUser(params: {
@@ -29,8 +39,9 @@ export async function unblockUser(params: {
   currentUserId: string;
   username: string;
   flash: Writable<ToastSettings>;
-}) {
-  const { userId, currentUserId, username, flash } = params;
+  onSuccess: () => void
+}){
+  const { userId, currentUserId, username, flash, onSuccess } = params;
   const { error } = await stexs
     .from('blocked')
     .delete()
@@ -43,7 +54,15 @@ export async function unblockUser(params: {
       classes: 'variant-glass-error',
       timeout: 5000,
     });
-  } else {
-    location.reload();
-  }
+
+    return;
+  } 
+
+  flash.set({
+    message: `Unblocked ${username}.`,
+    classes: 'variant-glass-success',
+    timeout: 5000,
+  });
+
+  onSuccess();
 }
