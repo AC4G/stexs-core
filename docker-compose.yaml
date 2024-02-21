@@ -69,40 +69,6 @@ services:
     networks:
       - stexs
 
-    
-  postgraphile:
-    build: 
-      context: .
-      dockerfile: ./docker/postgraphile/Dockerfile
-    ports: 
-      - 5000:5000
-    restart: unless-stopped
-    container_name: graphile
-    command:
-      [
-        "--plugins",
-        "@graphile/pg-pubsub",
-        "--append-plugins",
-        "/postgraphile/NotificationsPlugin.js",
-        "--connection",
-        "postgres://authenticator:authenticator@db:5432/postgres",
-        "--port",
-        "5000",
-        "--cors",
-        "--schema",
-        "public",
-        "--default-role",
-        "anon",
-        "--jwt-secret",
-        "${ACCESS_TOKEN_SECRET}",
-        "--jwt-verify-audience",
-        "${AUDIENCE}",
-        "--subscriptions",
-        "--show-error-stack"
-      ]
-    networks:
-      - stexs
-
 
   redis:
     image: redis/redis-stack:latest

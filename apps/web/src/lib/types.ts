@@ -3,12 +3,6 @@ export type MFAMethod = {
   description: string;
 };
 
-export type NotificationsGQL = {
-  notificationsChanged:  {
-    unseenNotifications: number
-  }
-};
-
 export type Friend = {
   profiles: {
     user_id: string;

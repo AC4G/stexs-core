@@ -11,7 +11,10 @@
         RadioItem, 
         getModalStore, 
         type ModalSettings, 
-        ListBoxItem
+        ListBoxItem,
+
+        ProgressRadial
+
     } from "@skeletonlabs/skeleton";
     import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";
@@ -211,11 +214,11 @@
         </div>
         <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
             <div class="w-full sm:w-fit">
-                <Button class="bg-surface-500 border border-solid border-gray-600 w-full py-[8px] sm:w-fit">Sort by<Icon
+                <Button class="bg-surface-500 border border-gray-600 w-full py-[8px] sm:w-fit">Sort by<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[24px]"
                     /></Button>
-                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500 max-h-[400px] overflow-y-auto">
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500 max-h-[400px] overflow-y-auto">
                     <ListBoxItem bind:group={filterTime} name="filter" value='Latest'>Latest</ListBoxItem>
                     <ListBoxItem bind:group={filterTime} name="filter" value='Oldest'>Oldest</ListBoxItem>
                     <ListBoxItem bind:group={filterTime} name="filter" value=''>No Filter</ListBoxItem>
@@ -231,32 +234,24 @@
                 </Dropdown>
             </div>
             <div class="w-full md:w-fit">
-                <Button class="bg-surface-500 border border-solid border-gray-600 w-full py-[8px] md:w-fit">{selectedProjectName}<Icon
+                <Button class="bg-surface-500 border border-gray-600 w-full py-[8px] md:w-fit">{selectedProjectName}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[24px]"
                     /></Button>
-                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500">
                     <Search size="md" placeholder="Project Name" bind:value={projectSearch} class="!bg-surface-500" />
                     <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
                     {#if $projectsQuery.isLoading || !$projectsQuery.data}
-                        <RadioGroup class="max-h-[280px] overflow-auto" display="flex-col space-y-1">
-                            {#each Array(10) as _}
-                                <div class="flex flex-row space-x-2 px-4 py-1">
-                                    <div class="placeholder animate-pulse w-[48px] h-[48px]" />
-                                    <div class="flex flex-col space-y-2 w-[130px]">
-                                        <div class="placeholder animate-pulse h-[20px]" />
-                                        <div class="placeholder animate-pulse h-[20px]" />
-                                    </div>
-                                </div>
-                            {/each}
-                        </RadioGroup>
+                        <div class="flex justify-center p-4">
+                            <ProgressRadial stroke={40} value={undefined} width="w-[30px]" />
+                        </div>
                     {:else}
                         <RadioGroup class="max-h-[200px] overflow-auto" active="variant-glass-primary text-primary-500" hover="hover:bg-surface-500" display="flex-col space-y-1">
                             {#if searchedProjects && searchedProjects.length > 0 }
                                 {#each searchedProjects as project (project.id)}
                                     <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
                                         <div class="flex flex-row space-x-2">
-                                            <div class="w-[48px] h-[48px] bg-surface-600 border border-solid border-gray-600 rounded-md inline-flex items-center justify-center text-center">
+                                            <div class="w-[48px] h-[48px] bg-surface-600 border border-gray-600 rounded-md inline-flex items-center justify-center text-center">
                                                 <ProjectLogo {stexs} projectId={project.id} alt={project.name} class="rounded-md" />
                                             </div>
                                             <div class="flex flex-col">
@@ -291,7 +286,7 @@
             showPreviousNextButtons="{true}"
             amountText="Items"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-solid border-gray-600"
+            controlVariant="bg-surface-500 border border-gray-600"
         />
     {/if}
 </div>
@@ -303,7 +298,7 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data as inventory (inventory.id)}
-                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border border-solid border-surface-600 cursor-pointer" on:click={() => openItemModal(inventory)}>
+                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border border-surface-600 cursor-pointer" on:click={() => openItemModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
             {/each}
@@ -331,7 +326,7 @@
             showPreviousNextButtons="{true}"
             amountText="Items"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-solid border-gray-600"
+            controlVariant="bg-surface-500 border border-gray-600"
         />
     {/if}
 </div>

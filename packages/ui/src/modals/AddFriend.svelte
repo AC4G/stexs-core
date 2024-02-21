@@ -81,7 +81,7 @@
     <div class="card p-3 sm:p-5 space-y-6 flex flex-col max-w-[600px] min-h-[90vh] w-full relative">
         <div>
             <div class="absolute right-[8px] top-[8px]">
-                <Button on:click={parent.onClose} class="p-3 hover:text-gray-600">
+                <Button on:click={parent.onClose} class="p-2 variant-ghost-surface">
                     <Icon icon="ph:x-bold" />
                 </Button>
             </div>
@@ -92,11 +92,11 @@
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 sm:space-x-4 items-center">
             <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500 !outline-none" />
             <div class="w-full sm:w-fit">
-                <Button class="bg-surface-500 border border-solid border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+                <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[22px]"
                     /></Button>
-                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500">
                     <ListBoxItem bind:group={filter} name="filter" value={'All'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">All</ListBoxItem>
                     <ListBoxItem bind:group={filter} name="filter" value={'Pending'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Pending</ListBoxItem>
                 </Dropdown>
@@ -114,7 +114,7 @@
                 showPreviousNextButtons="{true}"
                 amountText="Users"
                 select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-                controlVariant="bg-surface-500 border border-solid border-gray-600"
+                controlVariant="bg-surface-500 border border-gray-600"
             />
         {/if}
         <div class="flex flex-col items-center space-y-2">
@@ -124,10 +124,10 @@
                 {/each}
             {:else if $searchForFriendsQuery.data}
                 {#each $searchForFriendsQuery.data as profile, i (profile.user_id)}
-                    <div class="flex flex-row rounded-md transition items-center justify-between px-2 sm:px-4 py-2 w-full border border-solid border-surface-600 space-x-4">
+                    <div class="flex flex-row rounded-md transition items-center justify-between px-2 sm:px-4 py-2 w-full bg-surface-700 border border-surface-600 space-x-4">
                         <a href="/{profile.username}" on:click={parent.onClose} class="flex justify-left items-center group gap-4">
                             <div class="w-fit h-fit">
-                                <Avatar class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px]" userId={profile.user_id} username={profile.username} {stexs} />
+                                <Avatar class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px] border-2 border-surface-600 group-hover:border-primary-500 !bg-surface-800 transition" userId={profile.user_id} username={profile.username} {stexs} />
                             </div>
                             <div class="w-fit h-full">
                                 <p class="text-[14px] sm:text-[16px] text-left break-all group-hover:text-secondary-400 transition">{profile.username}</p>
@@ -196,7 +196,7 @@
 	                showPreviousNextButtons="{true}"
                     amountText="Users"
                     select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-                    controlVariant="bg-surface-500 border border-solid border-gray-600"
+                    controlVariant="bg-surface-500 border border-gray-600"
                 />
             {/if}
         </div>

@@ -36,7 +36,7 @@
 {#if $modalStore[0]}
     <div class="card p-5 flex flex-col max-w-[380px] w-full relative">
         <div class="absolute right-[8px] top-[8px]">
-            <Button on:click={parent.onClose} class="p-2 hover:text-gray-600 ">
+            <Button on:click={parent.onClose} class="p-2 variant-ghost-surface">
                 <Icon icon="ph:x-bold" />
             </Button>
         </div>
@@ -61,7 +61,7 @@
                 <a href="/items/{data.items.id}" class="text-[24px] hover:text-secondary-400 transition">{data.items.name}</a>
                 <div class="flex flex-row space-x-2">
                     <a href="/organizations/{data.items.projects.organizations.name}/{data.items.projects.name}">
-                        <div class="w-[48px] h-[48px] bg-surface-600 transition border border-solid border-gray-600 rounded-md inline-flex items-center justify-center text-center">
+                        <div class="w-[48px] h-[48px] bg-surface-600 transition border border-gray-600 rounded-md inline-flex items-center justify-center text-center">
                             <ProjectLogo {stexs} projectId={data.items.projects.id} alt={data.items.projects.name} class="rounded-md" />
                         </div>
                     </a>

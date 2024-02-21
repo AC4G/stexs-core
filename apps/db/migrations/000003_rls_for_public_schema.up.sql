@@ -1621,7 +1621,7 @@ CREATE POLICY notifications_delete
     USING (
         auth.grant() = 'password' AND
         auth.uid() = user_id AND
-        type = 'notification'
+        type = 'message'
     );
 
 CREATE POLICY notifications_insert

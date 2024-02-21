@@ -41,69 +41,13 @@
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
     }, 200);
-
-    $: organizationAmountQuery = createQuery({
-        queryKey: ['organizationsAmountProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
-        queryFn: async () => {
-            const { count } = await stexs.from('organization_members')
-                .select(`
-                    member_id
-                `, { 
-                    count: 'exact', 
-                    head: true 
-                })
-                .eq('member_id', $profileStore?.userId);
-
-            return count;
-        },
-        enabled: !!$profileStore?.userId
-    });
-
-    $: paginationSettings.size = organizationAmountQueryStore.data;
-
-    async function fetchOrganizations(userId: string, search: string, filter: string, page: number, limit: number) {
-        if (search !== previousSearch) {
-            paginationSettings.page = 0;
-            page = 0;
-            previousSearch = search;
-        }
-
-        const start = page * limit;
-        const end = start + limit - 1;
-
-        const query = stexs.from('organization_members')
-            .select(`
-                organizations(
-                    id,
-                    name
-                ),
-                role
-            `, { count: 'exact' })
-            .eq('member_id', userId)
-            .ilike('organizations.name', `%${search}%`)
-            .not('organizations', 'is', null)
-            .range(start, end);
-
-        if (filter === 'A-Z') query.order('organizations(name)', { ascending: true });
-
-        if (filter === 'Z-A') query.order('organizations(name)', { ascending: false });
-
-        if (filter === 'Latest') query.order('created_at', { ascending: false });
-
-        if (filter === 'Oldest') query.order('created_at', { ascending: true });
-
-        const { data, count } = await query;
-
-        paginationSettings.size = count;
-
-        return data;
-    }
     
     async function leaveOrganization(params: { userId: string, organizationId: number, organizationName: string, role: string}) {
         const { userId, organizationId, organizationName, role } = params;
 
         if (role === 'Owner') {
-            const { count } = await stexs.from('organization_members')
+            const { count } = await stexs
+                .from('organization_members')
                 .select(`
                     organizations(
                         id
@@ -126,7 +70,8 @@
             }
         }
 
-        const { error } = await stexs.from('organization_members')
+        const { error } = await stexs
+            .from('organization_members')
             .delete()
             .eq('member_id', userId)
             .eq('organization_id', organizationId);
@@ -164,7 +109,7 @@
                 },
                 fnAsync: true,
                 confirmBtnText: 'Leave',
-                confirmBtnClass: 'bg-surface-700 border border-solid border-surface-500 text-red-600',
+                confirmBtnClass: 'bg-surface-700 border border-surface-500 text-red-600',
                 confirmBtnLoaderMeter: 'stroke-red-500',
                 confirmBtnLoaderTrack: 'stroke-red-500/20'
             }
@@ -172,11 +117,77 @@
         modalStore.set([modal]);
     }
 
+    $: organizationAmountQuery = createQuery({
+        queryKey: ['organizationsAmountProfile', $profileStore?.userId],
+        queryFn: async () => {
+            const { count } = await stexs
+                .from('organization_members')
+                .select(`
+                    member_id
+                `, { 
+                    count: 'exact', 
+                    head: true 
+                })
+                .eq('member_id', $profileStore?.userId);
+
+            return count;
+        },
+        enabled: !!$profileStore?.userId
+    });
+
+    $: paginationSettings.size = organizationAmountQueryStore.data;
+
+    async function fetchOrganizations(userId: string, search: string, filter: string, page: number, limit: number) {
+        if (search !== previousSearch) {
+            paginationSettings.page = 0;
+            page = 0;
+            previousSearch = search;
+        }
+
+        const start = page * limit;
+        const end = start + limit - 1;
+
+        const query = stexs
+            .from('organization_members')
+            .select(`
+                organizations(
+                    id,
+                    name
+                ),
+                role
+            `, { count: 'exact' })
+            .eq('member_id', userId)
+            .ilike('organizations.name', `%${search}%`)
+            .not('organizations', 'is', null)
+            .range(start, end);
+
+        if (filter === 'A-Z') query.order('organizations(name)', { ascending: true });
+
+        if (filter === 'Z-A') query.order('organizations(name)', { ascending: false });
+
+        if (filter === 'Latest') query.order('created_at', { ascending: false });
+
+        if (filter === 'Oldest') query.order('created_at', { ascending: true });
+
+        const { data, count } = await query;
+
+        paginationSettings.size = count;
+
+        return data;
+    }
+
     $: organizationsMemberQuery = createQuery({
-        queryKey: ['organizationsProfile', $profileStore?.userId, $profileStore?.refetchOrganizationsTrigger],
+        queryKey: ['organizationsProfile', $profileStore?.userId],
         queryFn: async () => await fetchOrganizations($profileStore?.userId!, search, filter, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
+
+    $: {
+        if ($profileStore && $profileStore.refetchOrganizationsTrigger !== undefined) {
+            $organizationAmountQuery.refetch();
+            $organizationsMemberQuery.refetch();
+        }
+    }
 
     $: organizationAmountQueryStore = $organizationAmountQuery;
     $: organizationsMemberQueryStore = $organizationsMemberQuery;
@@ -192,11 +203,11 @@
                 <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
             </div>
             <div class="sm:w-fit">
-                <Button class="bg-surface-500 border border-solid border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+                <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[22px]"
                     /></Button>
-                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500">
                     <ListBoxItem bind:group={filter} name="filter" value={'A-Z'}>A-Z</ListBoxItem>
                     <ListBoxItem bind:group={filter} name="filter" value={'Z-A'}>Z-A</ListBoxItem>
                     <ListBoxItem bind:group={filter} name="filter" value={'Latest'}>Latest</ListBoxItem>
@@ -227,7 +238,7 @@
             showPreviousNextButtons="{true}"
             amountText="Organizations"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-solid border-gray-600"
+            controlVariant="bg-surface-500 border border-gray-600"
         />
     {/if}
 </div>
@@ -239,10 +250,10 @@
     {:else}
         {#if organizationsMemberQueryStore.data && organizationsMemberQueryStore.data.length > 0}
             {#each organizationsMemberQueryStore.data as organizationMember (organizationMember.organizations.id)}
-                <div class="flex space-x-4 px-2 sm:px-4 py-2 flex-row border border-solid border-surface-600 rounded-lg items-center justify-between">
+                <div class="flex space-x-4 px-2 sm:px-4 py-2 flex-row bg-surface-700 border border-surface-600 rounded-lg items-center justify-between">
                         <div class="flex flex-row items-center space-x-4 group">
                             <a href="/organizations/{organizationMember.organizations.name}">
-                                <div class="w-[68px] h-[68px] sm:h-[80px] sm:w-[80px] rounded-md bg-surface-700 border border-solid border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600">
+                                <div class="w-[68px] h-[68px] sm:h-[80px] sm:w-[80px] overflow-hidden rounded-md bg-surface-800 border border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600">
                                     <OrganizationLogo {stexs} organizationId={organizationMember.organizations.id} alt={organizationMember.organizations.name} iconClass="text-[46px]" />
                                 </div>
                             </a>
@@ -256,9 +267,9 @@
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">
                         {#if $userStore?.id === $profileStore?.userId}
                             {#if (organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin')}
-                                <a href="/" class="h-fit text-[16px] sm:text-[18px] bg-surface-700 p-1 border border-solid border-surface-500 btn">Settings</a>
+                                <a href="/" class="h-fit text-[16px] sm:text-[18px] bg-surface-800 p-1 border border-surface-500 btn">Settings</a>
                             {/if}
-                            <Button class="h-fit text-[16px] sm:text-[18px] bg-surface-700 p-1 border border-solid border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
+                            <Button class="h-fit text-[16px] sm:text-[18px] bg-surface-800 p-1 border border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                         {/if}
                     </div>
                 </div>
@@ -287,7 +298,7 @@
             showPreviousNextButtons="{true}"
             amountText="Organizations"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-solid border-gray-600"
+            controlVariant="bg-surface-500 border border-gray-600"
         />
     {/if}
 </div>

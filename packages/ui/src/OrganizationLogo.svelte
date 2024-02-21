@@ -44,5 +44,5 @@
 {:else if failed}
     <Icon icon="uil:image-question" class={iconClass} />
 {:else if loaded}
-    <img class="h-full w-full object-cover aspect-square {$$restProps.class}" draggable="false" src={prevUrl} {alt} />
+    <img class="h-full w-full object-cover aspect-square {$$restProps.class} rounded-none" draggable="false" src={prevUrl} {alt} />
 {/if}
