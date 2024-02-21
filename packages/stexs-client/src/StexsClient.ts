@@ -6,23 +6,9 @@ import {
   PostgrestQueryBuilder,
 } from '@supabase/postgrest-js';
 import type { Session } from './lib/types';
-import {
-  ApolloClient,
-  InMemoryCache,
-  HttpLink,
-  split,
-  gql,
-} from '@apollo/client/core';
-import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
-import { createClient } from 'graphql-ws';
-import { getMainDefinition } from '@apollo/client/utilities';
-import WebSocket from 'isomorphic-ws';
-
-export { gql };
 
 export default class StexsClient {
   auth: StexsAuthClient;
-  graphql: ApolloClient;
   storage: StexsStorageClient;
 
   protected rest: PostgrestClient;
@@ -33,8 +19,6 @@ export default class StexsClient {
       authUrl: string;
       restUrl: string;
       storageURL: string;
-      graphQLUrl: string;
-      graphQLWSUrl: string;
     },
   ) {
     this.auth = new StexsAuthClient(fetch, config.authUrl);
@@ -45,50 +29,6 @@ export default class StexsClient {
       this._fetchWithAuth.bind(this, fetch),
       config.storageURL,
     );
-
-    const httpLink = new HttpLink({
-      uri: config.graphQLUrl,
-      fetch: this._fetchWithAuth.bind(this, fetch),
-    });
-
-    const wsLink = new GraphQLWsLink(
-      createClient({
-        url: config.graphQLWSUrl,
-        connectionParams: async () => {
-          await this._checkAndWaitForNewAccessToken();
-
-          const token = this._getSession()?.access_token;
-
-          let params = {};
-
-          if (token) {
-            params = {
-              Authorization: `Bearer ${token}`,
-            };
-          }
-
-          return params;
-        },
-        webSocketImpl: WebSocket,
-      }),
-    );
-
-    const splitLink = split(
-      ({ query }) => {
-        const definition = getMainDefinition(query);
-        return (
-          definition.kind === 'OperationDefinition' &&
-          definition.operation === 'subscription'
-        );
-      },
-      wsLink,
-      httpLink,
-    );
-
-    this.graphql = new ApolloClient({
-      link: splitLink,
-      cache: new InMemoryCache(),
-    });
   }
 
   from(relation: string): PostgrestQueryBuilder {

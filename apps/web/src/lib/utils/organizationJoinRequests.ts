@@ -29,7 +29,7 @@ export async function acceptOrganizationJoinRequest(
     profileStore.update((profile: Profile | null) => {
       return {
         ...profile!,
-        refetchOrganizationsTrigger: !profile!.refetchOrganizationsTrigger,
+        refetchOrganizationsTrigger: !profile?.refetchOrganizationsTrigger,
       };
     });
     flash.set({

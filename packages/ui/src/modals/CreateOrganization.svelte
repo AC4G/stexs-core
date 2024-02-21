@@ -60,7 +60,7 @@
     <div class="card p-3 sm:p-5 space-y-6 flex flex-col max-w-[600px] min-h-[90vh] w-full relative">
         <div>
             <div class="absolute right-[8px] top-[8px]">
-                <Button on:click={parent.onClose} class="p-3 hover:text-gray-600">
+                <Button on:click={parent.onClose} class="p-3 variant-ghost-surface">
                     <Icon icon="ph:x-bold" />
                 </Button>
             </div>

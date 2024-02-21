@@ -1,152 +1,213 @@
 <script lang="ts">
-    import { gql } from 'stexs-client';
     import { stexs } from '../stexsClient';
-    import { onDestroy, onMount } from 'svelte';
-    import { popup, type PopupSettings, ProgressRadial } from '@skeletonlabs/skeleton';
+    import { popup, type PopupSettings, ProgressRadial, ListBoxItem } from '@skeletonlabs/skeleton';
     import { createQuery } from "@tanstack/svelte-query";
-    import type { NotificationsGQL } from './types';
     import Icon from '@iconify/svelte';
-    import { 
-        Dropdown, 
-        DropdownItem, 
-        DropdownDivider, 
-        Search 
-    } from 'flowbite-svelte';
+    import { Dropdown, Search } from 'flowbite-svelte';
     import { getUserStore } from './stores/userStore';
+    import { Avatar, Button, Markdown, OrganizationLogo } from 'ui';
+    import { page } from '$app/stores';
+    import { debounce } from 'lodash';
+    import { acceptFriendRequest, deleteFriendRequest } from './utils/friend';
+    import { getFlash } from 'sveltekit-flash-message/client';
+    import { getProfileStore } from './stores/profileStore';
+    import { formatDistanceStrict } from './utils/formatDistance';
 
     const userStore = getUserStore();
+    const flash = getFlash(page);
+    const profileStore = getProfileStore();
 
+    let initialDataExists: boolean = false;
+    let search: string = '';
+    let previousSearch: string = '';
+    let filter: string = 'All';
+    let previousFilter: string = 'All';
     let notificationsWindow: any;
     const notificationsPopup: PopupSettings = {
         event: 'hover',
         target: 'notificationsPopup',
         placement: 'bottom'
     };
+    const notificationsWindowPopup: PopupSettings = {
+        event: 'click',
+        target: 'notificationsWindowPopup',
+        placement: 'bottom',
+        closeQuery: 'a[href]',
+        state: (event) => dropDownOpen = event.state
+    };
 
     let dropDownOpen: boolean = false;
-    const query = gql`
-        query Notifications($first: Int, $after: Cursor, $userId: UUID) {
-            allNotifications(first: $first, after: $after, orderBy: ID_DESC, condition: { userId: $userId }) {
-                edges {
-                    node {
-                        id
-                        message
-                        type
-                        seen
-                        friendRequestByFriendRequestId {
-                            profileByRequesterId {
-                                userId
-                                username
-                            }
-                        }
-                        organizationRequestByOrganizationRequestId {
-                            organizationByOrganizationId {
-                                id
-                                name
-                            }
-                            role
-                        }
-                        projectRequestByProjectRequestId {
-                            projectByProjectId {
-                                id
-                                name
-                            }
-                            role
-                        }
-                    }
-                    cursor
-                }
-                pageInfo {
-                    hasNextPage
-                    hasPreviousPage
-                }
-            }
-        }
-    `;
-    let subscription: { unsubscribe: () => void };
     let notifications: any[] = [];
-    let after: string | null = null;
-    let pageInfo: {
-        hasNextPage: boolean,
-        hasPreviousPage: boolean
-    } = {
-        hasNextPage: false,
-        hasPreviousPage: false
-    };
-    let unseenNotifications: number = 0;
+
+    const handleSearch = debounce((e: Event) => {
+        search = (e.target as HTMLInputElement)?.value || '';
+    }, 200);
+
+    async function deleteMessage(id: number): Promise<boolean> {
+        const { error } = await stexs
+            .from('notifications')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            flash.set({
+                message: 'Could not delete notification. Try out again.',
+                classes: 'variant-glass-error',
+                timeout: 5000,
+            });
+        }
+
+        return error === null;
+    }
 
     async function markAllNotificationsAsSeen() {
         if ($userStore?.id) {
-            const result = await stexs
+            await stexs
                 .from('notifications')
                 .update({
                     seen: true
                 })
                 .eq('user_id', $userStore.id);
 
-            console.log({ result })
+            $unseenNotificationsQuery.refetch();
         }
     }
 
-    async function fetchNotifications(after: string | null) {
-        const allNotifications = (await stexs.graphql.query({
-            query: query,
-            variables: {
-                first: 20,
-                after,
-                userId: $userStore?.id
-            }
-        })).data.allNotifications;
+    async function fetchUnseenNotifications(userId: string) {
+        const { count } = await stexs
+            .from('notifications')
+            .select('', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('seen', false);
 
-        pageInfo = allNotifications.pageInfo;
-
-        return allNotifications.edges;
+        return count;
     }
 
+    async function fetchNotifications(userId: string, filter: string, search: string, lastId: number | null) {
+        if (search !== previousSearch) {
+            notifications = [];
+            previousSearch = search;
+        }
+        
+        if (filter !== previousFilter) {
+            notifications = [];
+            previousFilter = filter;
+        }
+
+        const query = stexs
+            .from('notifications')
+            .select(`
+                id,
+                message,
+                type,
+                seen,
+                friend_requests(
+                    profiles!friend_requests_requester_id_fkey(
+                        user_id,
+                        username
+                    )
+                ),
+                organization_requests(
+                    organizations(
+                        id,
+                        name
+                    ),
+                    role
+                ),
+                project_requests(
+                    projects(
+                        id,
+                        name,
+                        organizations(
+                            name
+                        )
+                    ),
+                    role
+                ),
+                created_at,
+                updated_at
+            `)
+            .order('id', { ascending: false })
+            .eq('user_id', userId)
+            .limit(10)
+
+        if (lastId) query.lt('id', [lastId]);
+
+        if (filter === 'Messages') query.eq('type', 'message');
+
+        if (filter === 'Friend Requests') {
+            query
+                .ilike('friend_requests.profiles.username', `%${search}%`)
+                .not('friend_requests.profiles', 'is', null)
+                .not('friend_requests', 'is', null)
+                .eq('type', 'friend_request');
+        }
+
+        if (filter === 'Organization Requests') {
+            query
+                .ilike('organization_requests.organizations.name', `%${search}%`)
+                .not('organization_requests.organizations', 'is', null)
+                .not('organization_requests', 'is', null)
+                .eq('type', 'organization_request');
+        }
+
+        if (filter === 'Project Requests') {
+            query
+                .ilike('project_requests.projects.name', `%${search}%`)
+                .ilike('project_requests.projects.organizations.name', `%${search}%`)
+                .not('project_requests.projects', 'is', null)
+                .not('project_requests', 'is', null)
+                .eq('type', 'project_request');
+        }
+
+
+        const { data } = await query;
+
+        return data;
+    }
+
+    $: unseenNotificationsQuery = createQuery({
+        queryKey: ['unseenNotifications'],
+        queryFn: async () => await fetchUnseenNotifications($userStore!.id),
+        enabled: !!$userStore?.id && dropDownOpen === false,
+        refetchInterval: 3000
+    });
+
     $: notificationsQuery = createQuery({
-        queryKey: ['notifications', after],
-        queryFn: async () => await fetchNotifications(after),
+        queryKey: ['notifications'],
+        queryFn: async () => {
+            const data = await fetchNotifications($userStore!.id, filter, search, null);
+
+            if (data) initialDataExists = true;
+
+            return data;
+        },
         enabled: !!$userStore?.id && dropDownOpen === true
     });
 
     $: {
-        if (dropDownOpen && unseenNotifications > 0)
-            markAllNotificationsAsSeen();
+        if (dropDownOpen && $unseenNotificationsQuery.data > 0) {
+            setTimeout(markAllNotificationsAsSeen, 100);
+        }
     }
 
     $: {
-        if ($notificationsQuery.data)
+        if ($notificationsQuery.data) {
             notifications = [
                 ...$notificationsQuery.data
             ];
+        }
     };
 
     $: {
-        if (dropDownOpen === false)
+        if (dropDownOpen === false) {
             notifications = [];
-
+            search = '';
+            previousSearch = '';
+            filter = 'All';
+            previousFilter = 'All';
+        }
     };
-
-    onMount(async () => {
-        subscription = stexs.graphql
-        .subscribe({
-            query: gql`
-            subscription NotificationsSubscription {
-                notificationsChanged {
-                    unseenNotifications
-                }
-            }
-        `
-        }).subscribe({
-            next({ data }: { data: NotificationsGQL }) {
-                unseenNotifications = data?.notificationsChanged.unseenNotifications;
-            }
-        });
-    });
-
-    onDestroy(() => {
-        subscription?.unsubscribe();
-    });
 
     async function handleScroll() {
         if (
@@ -154,20 +215,22 @@
             notificationsWindow.scrollHeight - notificationsWindow.scrollTop <=
             notificationsWindow.clientHeight + 1
         ) {
-            if (pageInfo.hasNextPage) {
-                notifications = [
-                    ...notifications,
-                    ...await fetchNotifications(notifications.slice(-1)[0].cursor)
-                ];
-            }
+            notifications = [
+                ...notifications,
+                ...await fetchNotifications($userStore!.id, filter, search, notifications.slice(-1)[0].id)
+            ];
         }
+    }
+
+    function removeNotificationByIndex(index: number) {
+        notifications = notifications.filter((_, i) => i !== index)
     }
 </script>
 
-<button use:popup={notificationsPopup} class="btn relative notifications hover:bg-surface-500 rounded-full transition p-3 {dropDownOpen && 'bg-surface-500'}">
+<button use:popup={notificationsWindowPopup} use:popup={notificationsPopup} class="btn relative notifications hover:bg-surface-500 rounded-full transition p-3 {dropDownOpen && 'bg-surface-500'}">
     <div>
         <div class="relative">
-            {#if unseenNotifications > 0}
+            {#if $unseenNotificationsQuery.data > 0}
               <span class="badge-icon variant-filled-primary absolute -top-1 -right-2 z-10 w-[8px] h-[8px]"></span>
             {/if}
         </div>
@@ -177,24 +240,127 @@
         </div>
     </div>
 </button>
-<Dropdown id="dropdown" triggeredBy=".notifications" bind:open={dropDownOpen} class="absolute rounded-md right-[-86px] sm:right-[-74px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500 max-w-[100vw] sm:max-w-[480px]">
-    {#if $notificationsQuery.isLoading}
-        <div class="w-[144px] flex items-center justify-center py-2">
-            <ProgressRadial stroke={40} value={undefined} width="w-[30px]" />
-        </div>
-    {:else}
-        {#if notifications.length > 0}
-            <div bind:this={notificationsWindow} on:scroll={handleScroll} class="max-h-[400px] overflow-x-auto break-words">
-                {#each notifications as notification (notification.node.id)}
-                    {JSON.stringify(notification)}
-                {/each}
+<div data-popup="notificationsWindowPopup">
+    <div class="absolute rounded-md right-[-86px] sm:right-[-74px] bg-surface-900 p-2 space-y-2 border border-surface-500 w-[100vw] sm:w-[400px]">
+        {#if ($notificationsQuery.isSuccess) || search.length > 0 || filter !== 'All'}
+            {#if filter !== 'All' && filter !== 'Messages'}
+                <Search size="lg" placeholder={filter.split(' ')[0] + ' Name'} on:input={handleSearch} class="!bg-surface-500" />
+            {/if}
+            <Button class="bg-surface-500 border border-gray-600 w-full py-[8px]">
+                {filter}<Icon icon="iconamoon:arrow-down-2-duotone" class="text-[22px]" />
+            </Button>
+            <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500">
+                <ListBoxItem bind:group={filter} name="filter" value={'All'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">All</ListBoxItem>
+                <ListBoxItem bind:group={filter} name="filter" value={'Messages'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Messages</ListBoxItem>
+                <ListBoxItem bind:group={filter} name="filter" value={'Friend Requests'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Friend Requests</ListBoxItem>
+                <ListBoxItem bind:group={filter} name="filter" value={'Organization Requests'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Organization Requests</ListBoxItem>
+                <ListBoxItem bind:group={filter} name="filter" value={'Project Requests'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Project Requests</ListBoxItem>
+            </Dropdown>
+        {/if}
+        {#if $notificationsQuery.isLoading}
+            <div class="flex items-center justify-center py-2">
+                <ProgressRadial stroke={40} value={undefined} width="w-[30px]" />
             </div>
         {:else}
-            <div class="p-5 w-full whitespace-normal sm:whitespace-pre">
-                You haven't received any notifications
-            </div>
+            {#if notifications.length > 0}
+                <div bind:this={notificationsWindow} on:scroll={handleScroll} class="max-h-[400px] overflow-y-auto space-y-2">
+                    {#each notifications as notification, index (notification.id)}
+                        <div class="rounded p-2 {notification.seen ? 'bg-surface-700 border border-surface-600' : 'variant-ghost-primary'}">
+                            {#if notification.type === 'message'}
+                                <div class="flex flex-row space-x-2">
+                                    <Markdown class="" text={notification.message} />
+                                    <div class="space-y-2">
+                                        <Button title="Remove Notification" on:click={async () => {
+                                            const result = await deleteMessage(notification.id);
+    
+                                            if (result) removeNotificationByIndex(index);
+                                        }} class="p-1 h-fit variant-ghost-surface">
+                                            <Icon icon="ph:x-bold" />
+                                        </Button>
+                                        <p class="text-[14px] w-[26px] text-surface-300 text-right pr-1">{formatDistanceStrict(new Date(notification.created_at), new Date())}</p>
+                                    </div>
+                                </div>
+                            {:else if notification.type === 'friend_request'}
+                                <div class="flex space-x-4 items-center">
+                                    <a href="/{notification.friend_requests.profiles.username}">
+                                        <Avatar class="w-[58px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.startsWith(`/${notification.friend_requests.profiles.username}`) ? '!border-primary-500' : ''}" {stexs} userId={notification.friend_requests.profiles.user_id} username={notification.friend_requests.profiles.username} />
+                                    </a>
+                                    <div class="w-full space-y-2">
+                                        <div class="flex flex-row justify-between space-x-4">
+                                            <p class="text-[16px] break-all">{notification.friend_requests.profiles.username}</p>
+                                            <div class="pt-1 pr-1" title="Friend Request">
+                                                <Icon icon="octicon:person-add-16" />
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-row justify-between items-center">
+                                            <div class="flex flex-row justify-evenly w-full">
+                                                <Button on:click={async () => {
+                                                    const result = await acceptFriendRequest($userStore.id, notification.friend_requests.profiles.user_id, notification.friend_requests.profiles.username, flash, profileStore);
+    
+                                                    if (result) removeNotificationByIndex(index);
+                                                }} class="px-2 py-0 sm:px-4 sm:py-1 variant-filled-primary">Accept</Button>
+                                                <Button on:click={async () => {
+                                                    const result = await deleteFriendRequest(notification.friend_requests.profiles.user_id, $userStore.id, flash, profileStore);
+    
+                                                    if (!result) removeNotificationByIndex(index);
+                                                }} class="px-2 py-0 sm:px-4 sm:py-1 bg-surface-800 border border-surface-500">Delete</Button>
+                                            </div>
+                                            <p class="text-[14px] w-[28px] text-surface-300 text-right pr-1">{formatDistanceStrict(new Date(notification.created_at), new Date())}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {:else if notification.type === 'organization_request'}
+                                <div class="flex space-x-4 items-center">
+                                    <a href="/organizations/{notification.organization_requests.organizations.name}">
+                                        <div class="!w-[68px] h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500">
+                                            <OrganizationLogo {stexs} organizationId={notification.organization_requests.organizations.id} alt={notification.organization_requests.organizations.name} iconClass="text-[46px]" />
+                                        </div>
+                                    </a>
+                                    <div class="w-full space-y-2">
+                                        <div class="flex flex-row justify-between space-x-4">
+                                            <p class="text-[16px] break-all">{notification.organization_requests.organizations.name}</p>
+                                            <div class="pt-1 pr-1" title="Organization Request">
+                                                <Icon icon="bi:building-add" />
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-row justify-between items-center">
+                                            <div class="flex flex-row justify-evenly w-full">
+                                                <Button on:click={async () => {
+
+                                                }} class="px-2 py-0 sm:px-4 sm:py-1 variant-filled-primary">Accept</Button>
+                                                <Button on:click={async () => {
+
+                                                }} class="px-2 py-0 sm:px-4 sm:py-1 bg-surface-800 border border-surface-500">Delete</Button>
+                                            </div>
+                                            <p class="text-[14px] w-[28px] text-surface-300 text-right pr-1">{formatDistanceStrict(new Date(notification.created_at), new Date())}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {:else}
+                                {notification.project_requests.projects.name}
+                            {/if}
+                        </div>
+                    {/each}
+                </div>
+            {:else if filter !== 'All' || notifications.length > 0}
+                <div class="p-5 w-full text-center whitespace-normal sm:whitespace-pre">
+                    {#if filter === 'Friend Requests'}
+                        No friend requests found
+                    {:else if filter === 'Organization Requests'}
+                        No organization requests found
+                    {:else if filter === 'Project Requests'}
+                        No project requests found
+                    {:else}
+                        No notifications found
+                    {/if}
+                </div>
+            {:else}
+                <div class="p-5 w-full text-center whitespace-normal sm:whitespace-pre">
+                    You haven't received any notifications
+                </div>
+            {/if}
         {/if}
-    {/if}
-</Dropdown>
+    </div>
+</div>
 
 

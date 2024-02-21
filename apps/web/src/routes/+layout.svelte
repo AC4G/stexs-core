@@ -135,7 +135,7 @@
 </svelte:head>
 
 <QueryClientProvider client={queryClient}>
-  <Toast buttonDismiss="btn aspect-square px-2 py-1 bg-surface-700 border border-solid border-surface-500" zIndex="z-[1000]" />
+  <Toast buttonDismiss="btn aspect-square px-2 py-1 variant-ghost-surface" zIndex="z-[1000]" />
   <Modal components={modalRegistry} position="items-center !py-4 !px-0" />
   <Drawer regionDrawer="!w-full sm:!w-64">
     <div class="px-4">

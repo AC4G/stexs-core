@@ -661,7 +661,7 @@ CREATE TABLE public.notifications (
     project_request_id INT REFERENCES public.project_requests(id) ON DELETE CASCADE UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CHECK (type in ('notification', 'friend_request', 'organization_request', 'project_request')),
+    CHECK (type in ('message', 'friend_request', 'organization_request', 'project_request')),
     CHECK (
         (friend_request_id IS NOT NULL)::integer +
         (organization_request_id IS NOT NULL)::integer +

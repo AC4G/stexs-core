@@ -30,7 +30,7 @@ export async function acceptProjectJoinRequest(
     profileStore.update((profile: Profile | null) => {
       return {
         ...profile!,
-        refetchOrganizationsTrigger: !profile!.refetchOrganizationsTrigger,
+        refetchOrganizationsTrigger: !profile?.refetchOrganizationsTrigger,
       };
     });
     flash.set({

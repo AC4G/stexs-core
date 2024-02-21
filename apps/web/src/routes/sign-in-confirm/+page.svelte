@@ -203,7 +203,7 @@
               />
             </Button>
             <Dropdown
-              class="bg-surface-800 rounded-md p-2 space-y-2 border border-solid border-surface-500"
+              class="bg-surface-800 rounded-md p-2 space-y-2 border border-surface-500"
             >
               {#each signInInit.types as currentType}
                 <Radio bind:group={type} value={currentType} custom>

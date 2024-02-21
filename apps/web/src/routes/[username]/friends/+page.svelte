@@ -98,7 +98,7 @@
         $friendsQuery.isLoading || !$friendsQuery.data;
 </script>
 
-<div class="flex flex-col sm:flex-row justify-between {friendsLoaded ? 'mb-[18px]' : ''} space-y-2 sm:space-y-0 sm:space-x-2">
+<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[44px] rounded-lg" />
         <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
@@ -108,11 +108,11 @@
                 <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
             </div>
             <div class="sm:w-fit">
-                <Button class="bg-surface-500 border border-solid border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+                <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[22px]"
                     /></Button>
-                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-solid border-surface-500">
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500">
                     <ListBoxItem bind:group={filter} name="filter" value={'A-Z'}>A-Z</ListBoxItem>
                     <ListBoxItem bind:group={filter} name="filter" value={'Z-A'}>Z-A</ListBoxItem>
                     <ListBoxItem bind:group={filter} name="filter" value={'Latest'}>Latest</ListBoxItem>
@@ -145,14 +145,14 @@
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
             <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
-    {:else if $profileStore && $profileStore.totalFriends > 0}
+    {:else}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{true}"
             showPreviousNextButtons="{true}"
             amountText="Friends"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-solid border-gray-600"
+            controlVariant="bg-surface-500 border border-gray-600"
         />
     {/if}
 </div>
@@ -167,16 +167,16 @@
     {:else}
         {#if $friendsQuery.data?.length > 0}
             {#each $friendsQuery.data as friend (friend.id)}
-                <div class="flex flex-row rounded-md transition items-center p-2 w-full border border-solid border-surface-600">
+                <div class="flex flex-row rounded-md transition items-center p-2 w-full bg-surface-700 border border-surface-600">
                     <a href="/{friend.profiles.username}" class="flex h-full w-full items-center justify-left group">
-                        <Avatar class="w-[40px] h-[40px]" userId={friend.profiles.user_id} username={friend.profiles.username} {stexs} />
+                        <Avatar class="w-[40px] h-[40px] !bg-surface-800 border-2 border-surface-600 group-hover:border-primary-500 transition" userId={friend.profiles.user_id} username={friend.profiles.username} {stexs} />
                         <p class="text-[14px] w-[70%] text-left pl-2 break-all group-hover:text-secondary-400 transition">{friend.profiles.username}</p>
                     </a>
                     {#if $userStore?.id === $profileStore?.userId}
                         <Button class="w-fit h-fit p-1 group">
                             <Icon icon="pepicons-pop:dots-y" class="text-[26px] group-hover:text-surface-400 transition" />
                         </Button>
-                        <Dropdown placement="left" class="rounded-md bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
+                        <Dropdown placement="left" class="rounded-md bg-surface-900 p-2 space-y-2 border border-surface-500">
                             <DropdownItem on:click={async () => {
                                 removeFriendSubmitted = true;
                                 await removeFriend($userStore.id, friend.profiles.user_id, flash);
@@ -229,7 +229,7 @@
             showPreviousNextButtons="{true}"
             amountText="Friends"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-solid border-gray-600"
+            controlVariant="bg-surface-500 border border-gray-600"
         />
     {/if}
 </div>
