@@ -957,7 +957,7 @@ CREATE POLICY organization_requests_insert
                 SELECT 1
                 FROM public.organization_members AS om
                 WHERE om.organization_id = public.organization_requests.organization_id 
-                    AND om.member_id = public.organization_requests.addressee_id   
+                    AND om.member_id = addressee_id   
             ) AND
             (
                 (

@@ -451,7 +451,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER organization_request_changed_trigger
-  AFTER INSERT OR DELETE ON public.organization_requests
+  AFTER INSERT ON public.organization_requests
   FOR EACH ROW
   EXECUTE FUNCTION public.insert_organization_request_into_notifications();
 
@@ -566,7 +566,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER project_request_changed_trigger
-  AFTER INSERT OR DELETE ON public.project_requests
+  AFTER INSERT ON public.project_requests
   FOR EACH ROW
   EXECUTE FUNCTION public.insert_project_request_into_notifications();
 

@@ -5,13 +5,15 @@
     import Icon from '@iconify/svelte';
     import { Dropdown, Search } from 'flowbite-svelte';
     import { getUserStore } from './stores/userStore';
-    import { Avatar, Button, Markdown, OrganizationLogo } from 'ui';
+    import { Avatar, Button, Markdown, OrganizationLogo, ProjectLogo } from 'ui';
     import { page } from '$app/stores';
     import { debounce } from 'lodash';
     import { acceptFriendRequest, deleteFriendRequest } from './utils/friend';
     import { getFlash } from 'sveltekit-flash-message/client';
     import { getProfileStore } from './stores/profileStore';
     import { formatDistanceStrict } from './utils/formatDistance';
+    import { acceptOrganizationRequest, deleteOrganizationRequest } from './utils/organizationRequests';
+    import { acceptProjectRequest, deleteProjectRequest } from './utils/projectRequests';
 
     const userStore = getUserStore();
     const flash = getFlash(page);
@@ -281,13 +283,14 @@
                                     </div>
                                 </div>
                             {:else if notification.type === 'friend_request'}
+                                {@const profile = notification.friend_requests.profiles}
                                 <div class="flex space-x-4 items-center">
-                                    <a href="/{notification.friend_requests.profiles.username}">
-                                        <Avatar class="w-[58px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.startsWith(`/${notification.friend_requests.profiles.username}`) ? '!border-primary-500' : ''}" {stexs} userId={notification.friend_requests.profiles.user_id} username={notification.friend_requests.profiles.username} />
+                                    <a href="/{profile.username}">
+                                        <Avatar class="w-[58px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.startsWith(`/${profile.username}`) ? '!border-primary-500' : ''}" {stexs} userId={profile.user_id} username={profile.username} />
                                     </a>
-                                    <div class="w-full space-y-2">
+                                    <div class="w-full space-y-4">
                                         <div class="flex flex-row justify-between space-x-4">
-                                            <p class="text-[16px] break-all">{notification.friend_requests.profiles.username}</p>
+                                            <p class="text-[16px] break-all">{profile.username}</p>
                                             <div class="pt-1 pr-1" title="Friend Request">
                                                 <Icon icon="octicon:person-add-16" />
                                             </div>
@@ -295,12 +298,12 @@
                                         <div class="flex flex-row justify-between items-center">
                                             <div class="flex flex-row justify-evenly w-full">
                                                 <Button on:click={async () => {
-                                                    const result = await acceptFriendRequest($userStore.id, notification.friend_requests.profiles.user_id, notification.friend_requests.profiles.username, flash, profileStore);
+                                                    const result = await acceptFriendRequest($userStore.id, profile.user_id, profile.username, flash, profileStore);
     
                                                     if (result) removeNotificationByIndex(index);
                                                 }} class="px-2 py-0 sm:px-4 sm:py-1 variant-filled-primary">Accept</Button>
                                                 <Button on:click={async () => {
-                                                    const result = await deleteFriendRequest(notification.friend_requests.profiles.user_id, $userStore.id, flash, profileStore);
+                                                    const result = await deleteFriendRequest(profile.user_id, $userStore.id, flash, profileStore);
     
                                                     if (!result) removeNotificationByIndex(index);
                                                 }} class="px-2 py-0 sm:px-4 sm:py-1 bg-surface-800 border border-surface-500">Delete</Button>
@@ -310,26 +313,34 @@
                                     </div>
                                 </div>
                             {:else if notification.type === 'organization_request'}
+                                {@const organization = notification.organization_requests.organizations}
                                 <div class="flex space-x-4 items-center">
-                                    <a href="/organizations/{notification.organization_requests.organizations.name}">
+                                    <a href="/organizations/{organization.name}" class="group">
                                         <div class="!w-[68px] h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500">
-                                            <OrganizationLogo {stexs} organizationId={notification.organization_requests.organizations.id} alt={notification.organization_requests.organizations.name} iconClass="text-[46px]" />
+                                            <OrganizationLogo {stexs} organizationId={organization.id} alt={organization.name} iconClass="text-[46px]" />
                                         </div>
                                     </a>
-                                    <div class="w-full space-y-2">
+                                    <div class="w-full space-y-4">
                                         <div class="flex flex-row justify-between space-x-4">
-                                            <p class="text-[16px] break-all">{notification.organization_requests.organizations.name}</p>
+                                            <div class="flex flex-row space-x-2 justify-between w-full">
+                                                <p class="text-[16px] break-all">{organization.name}</p>
+                                                <span title="Role" class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit">{notification.organization_requests.role}</span>
+                                            </div>
                                             <div class="pt-1 pr-1" title="Organization Request">
-                                                <Icon icon="bi:building-add" />
+                                                <Icon icon="octicon:organization-16" />
                                             </div>
                                         </div>
                                         <div class="flex flex-row justify-between items-center">
                                             <div class="flex flex-row justify-evenly w-full">
                                                 <Button on:click={async () => {
+                                                    const result = await acceptOrganizationRequest($userStore.id, organization.id, organization.name, notification.organization_requests.role, flash, profileStore);
 
+                                                    if (result) removeNotificationByIndex(index);
                                                 }} class="px-2 py-0 sm:px-4 sm:py-1 variant-filled-primary">Accept</Button>
                                                 <Button on:click={async () => {
+                                                    const result = await deleteOrganizationRequest($userStore.id, organization.id, flash);
 
+                                                    if (result) removeNotificationByIndex(index);
                                                 }} class="px-2 py-0 sm:px-4 sm:py-1 bg-surface-800 border border-surface-500">Delete</Button>
                                             </div>
                                             <p class="text-[14px] w-[28px] text-surface-300 text-right pr-1">{formatDistanceStrict(new Date(notification.created_at), new Date())}</p>
@@ -337,7 +348,41 @@
                                     </div>
                                 </div>
                             {:else}
-                                {notification.project_requests.projects.name}
+                                {@const project = notification.project_requests.projects}
+                                <div class="flex space-x-4 items-center">
+                                    <a href="/organizations/projects/{project.name}" class="group">
+                                        <div class="!w-[68px] h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500">
+                                            <ProjectLogo {stexs} projectId={project.id} alt={project.name} iconClass="text-[46px]" />
+                                        </div>
+                                    </a>
+                                    <div class="w-full space-y-4">
+                                        <div class="flex flex-row justify-between space-x-4">
+                                            <div class="flex flex-row space-x-2 justify-between w-full">
+                                                <p class="text-[16px] break-all">
+                                                    <a href="/organizations/{project.organizations.name}" class="hover:text-secondary-400 transition">{project.organizations.name}</a> / {project.name}</p>
+                                                <span title="Role" class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit">{notification.project_requests.role}</span>
+                                            </div>
+                                            <div class="pt-1 pr-1" title="Project Request">
+                                                <Icon icon="octicon:project-symlink-16" />
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-row justify-between items-center">
+                                            <div class="flex flex-row justify-evenly w-full">
+                                                <Button on:click={async () => {
+                                                    const result = await acceptProjectRequest($userStore.id, project.id, project.name, project.organizations.name, notification.project_requests.role, flash, profileStore);
+
+                                                    if (result) removeNotificationByIndex(index);
+                                                }} class="px-2 py-0 sm:px-4 sm:py-1 variant-filled-primary">Accept</Button>
+                                                <Button on:click={async () => {
+                                                    const result = await deleteProjectRequest($userStore.id, project.id, flash);
+
+                                                    if (result) removeNotificationByIndex(index);
+                                                }} class="px-2 py-0 sm:px-4 sm:py-1 bg-surface-800 border border-surface-500">Delete</Button>
+                                            </div>
+                                            <p class="text-[14px] w-[28px] text-surface-300 text-right pr-1">{formatDistanceStrict(new Date(notification.created_at), new Date())}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             {/if}
                         </div>
                     {/each}
