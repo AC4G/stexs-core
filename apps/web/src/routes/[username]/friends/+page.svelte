@@ -129,7 +129,6 @@
                         refetchFriendsTrigger: !profile?.refetchFriendsTrigger
                     }
                 });
-                $friendsQuery.refetch();
             })} class="relative btn variant-ghost-primary p-[12.89px]">
                 <Icon icon="pepicons-pop:plus"/>
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendProfilePopup">
