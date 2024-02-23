@@ -40,5 +40,7 @@ INSERT INTO public.scopes (id, name, type) VALUES
     (39, 'organization.logo.delete', 'client'),
     (40, 'project.logo.write', 'client'),
     (41, 'project.logo.delete', 'client'),
-    (42, 'secret.update', 'client');
+    (42, 'secret.update', 'client'),
+    (43, 'connection.read', 'client'),
+    (44, 'connection.scopes.read', 'client');
     

@@ -3,14 +3,15 @@ import { stexs } from '../../stexsClient';
 import type { ToastSettings } from '@skeletonlabs/skeleton';
 import type { Profile } from '$lib/stores/profileStore';
 
-export async function acceptOrganizationJoinRequest(
+export async function acceptOrganizationRequest(
   userId: string,
   organizationId: number,
   organizationName: string,
   role: string,
   flash: Writable<ToastSettings>,
   profileStore: Writable<Profile | null>,
-) {
+): Promise<boolean> {
+  let isMember: boolean = false;
   const { error } = await stexs.from('organization_members').insert([
     {
       member_id: userId,
@@ -37,14 +38,18 @@ export async function acceptOrganizationJoinRequest(
       classes: 'variant-glass-success',
       timeout: 5000,
     });
+    isMember = true;
   }
+
+  return isMember;
 }
 
-export async function deleteOrganizationJoinRequest(
+export async function deleteOrganizationRequest(
   userId: string,
   organizationId: number,
   flash: Writable<ToastSettings>,
-) {
+): Promise<boolean> {
+  let isDeleted: boolean = false;
   const { error } = await stexs
     .from('organization_requests')
     .delete()
@@ -53,15 +58,18 @@ export async function deleteOrganizationJoinRequest(
 
   if (error) {
     flash.set({
-      message: `Could not delete organization join request. Try out again.`,
+      message: `Could not delete organization request. Try out again.`,
       classes: 'variant-glass-error',
       timeout: 5000,
     });
   } else {
     flash.set({
-      message: `Organization join request successfuly deleted.`,
+      message: `Organization request successfuly deleted.`,
       classes: 'variant-glass-success',
       timeout: 5000,
     });
+    isDeleted = true;
   }
+
+  return isDeleted
 }

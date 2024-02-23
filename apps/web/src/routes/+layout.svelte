@@ -162,7 +162,15 @@
             <a href="/sign-up" class="btn variant-ghost-primary py-[4px] px-3">Sign Up</a>
           {:else}
             <div class="relative mr-[8px] flex items-center space-x-2 w-full justify-end">
-              <button use:popup={addFriendPopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs)} class="btn relative hover:bg-surface-500 rounded-full transition p-3">
+              <button use:popup={addFriendPopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
+                //@ts-ignore
+                profileStore.update(profile => {
+                    return {
+                        ...profile,
+                        refetchFriendsTrigger: !profile?.refetchFriendsTrigger
+                    }
+                });
+              })} class="btn relative hover:bg-surface-500 rounded-full transition p-3">
                 <Icon icon="octicon:person-add-16" width="18" />
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendPopup">
                   <p class="text-[14px] break-all">Add Friend</p>

@@ -267,9 +267,9 @@
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">
                         {#if $userStore?.id === $profileStore?.userId}
                             {#if (organizationMember.role === 'Owner' ||  organizationMember.role === 'Admin')}
-                                <a href="/" class="h-fit text-[16px] sm:text-[18px] bg-surface-800 p-1 border border-surface-500 btn">Settings</a>
+                                <a href="/" class="h-fit text-[16px] sm:text-[16px] bg-surface-800 p-1 border border-surface-500 btn">Settings</a>
                             {/if}
-                            <Button class="h-fit text-[16px] sm:text-[18px] bg-surface-800 p-1 border border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
+                            <Button class="h-fit text-[16px] sm:text-[16px] bg-surface-800 p-1 border border-surface-500 text-red-600" on:click={() => openLeaveOrganizationModal($profileStore.userId, organizationMember.organizations.id, organizationMember.organizations.name, organizationMember.role)} >Leave</Button>
                         {/if}
                     </div>
                 </div>
