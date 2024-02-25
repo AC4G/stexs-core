@@ -1,27 +1,3 @@
-CREATE OR REPLACE FUNCTION public.graphql_subscription()
-RETURNS TRIGGER AS $$
-DECLARE
-  event_name TEXT;
-  topic_template TEXT;
-  id_column_name TEXT;
-  id_value TEXT;
-BEGIN
-    event_name := TG_ARGV[0];
-    topic_template := TG_ARGV[1];
-    id_column_name := TG_ARGV[2];
-
-    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
-        EXECUTE format('SELECT ($1).%I', id_column_name) INTO id_value USING NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        EXECUTE format('SELECT ($1).%I', id_column_name) INTO id_value USING OLD;
-    END IF;
-
-    PERFORM pg_notify(format('graphql:%s:%s', topic_template, id_value), json_build_object('event', event_name)::TEXT);
-
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE TABLE public.items (
     id SERIAL PRIMARY KEY,
     name CITEXT NOT NULL,
@@ -90,7 +66,12 @@ BEGIN
         SELECT 1
         FROM public.projects AS p
         JOIN public.items AS i ON p.id = i.project_id
+        JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
         WHERE i.id = NEW.item_id
+            AND (
+                oa.project_id = p.id OR
+                oa.project_id IS NULL
+            )
             AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
     ) THEN
         RETURN NEW;
@@ -100,8 +81,13 @@ BEGIN
     EXISTS (
         SELECT 1
         FROM public.items AS i
-        WHERE i.id = NEW.item_id 
-            AND i.is_private IS TRUE
+        JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+        WHERE i.id = NEW.item_id
+            AND (
+                i.is_private IS TRUE OR
+                i.unique IS TRUE
+            )
+            AND oa.project_id IS NULL
     ) OR
     NEW.amount > OLD.amount OR NEW.parameter IS DISTINCT FROM OLD.parameter THEN
         RETURN NULL;
@@ -123,7 +109,12 @@ BEGIN
         SELECT 1
         FROM public.projects AS p
         JOIN public.items AS i ON p.id = i.project_id
+        JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
         WHERE i.id = NEW.item_id
+            AND (
+                oa.project_id = p.id OR
+                oa.project_id IS NULL
+            )
             AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
     ) THEN
         RETURN NEW;
@@ -132,9 +123,13 @@ BEGIN
     IF EXISTS (
         SELECT 1
         FROM public.items AS i
-        WHERE i.id = NEW.item_id AND (
-            i.is_private IS TRUE OR
-            i.unique IS TRUE)
+        JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+        WHERE i.id = NEW.item_id
+            AND (
+                i.is_private IS TRUE OR
+                i.unique IS TRUE
+            )
+            AND oa.project_id IS NULL
     ) THEN
         RETURN NULL;
     END IF;
@@ -155,7 +150,12 @@ BEGIN
         SELECT 1
         FROM public.projects AS p
         JOIN public.items AS i ON p.id = i.project_id
+        JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
         WHERE i.id = NEW.item_id
+            AND (
+                oa.project_id = p.id OR
+                oa.project_id IS NULL
+            )
             AND p.organization_id = (auth.jwt() ->> 'organization_id')::INT
     ) THEN
         RETURN NEW;
@@ -673,11 +673,6 @@ GRANT UPDATE (seen) ON TABLE public.notifications TO authenticated;
 GRANT INSERT ON TABLE public.notifications TO authenticated;
 GRANT DELETE ON TABLE public.notifications TO authenticated;
 GRANT SELECT ON TABLE public.notifications TO authenticated;
-
-CREATE TRIGGER notification_changed_trigger
-  AFTER INSERT OR DELETE OR UPDATE ON public.notifications
-  FOR EACH ROW
-  EXECUTE FUNCTION public.graphql_subscription('notificationsChanged', 'notifications', 'user_id');
 
 
 

@@ -17,7 +17,7 @@ import { isExpired } from 'utils-node';
 export async function authorizationCodeController(req: Request, res: Response) {
   const { code, client_id, client_secret: clientSecret } = req.body;
 
-  let userId, tokenId, scopes, organization_id, project_id;
+  let userId, tokenId, scopes, organization_id;
 
   try {
     const { rowCount, rows } = await db.query(
@@ -25,8 +25,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
         WITH app_info AS (
             SELECT 
               id, 
-              organization_id,
-              project_id
+              organization_id
             FROM public.oauth2_apps
             WHERE client_id = $2::uuid
               AND client_secret = $3::text
@@ -53,8 +52,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
           user_id, 
           scopes, 
           created_at, 
-          organization_id,
-          project_id
+          organization_id
         FROM token_info
         CROSS JOIN token_scopes;
       `,
@@ -95,7 +93,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
       );
     }
 
-    ({ id: tokenId, user_id: userId, scopes, organization_id, project_id } = rows[0]);
+    ({ id: tokenId, user_id: userId, scopes, organization_id } = rows[0]);
 
     logger.info(
       `Authorization code validated successfully for user: ${userId} and client: ${client_id}`,
@@ -180,8 +178,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
       {
         sub: userId,
         client_id,
-        organization_id,
-        ...(project_id !== null ? { project_id } : {})
+        organization_id
       },
       'authorization_code',
       connectionId
@@ -200,7 +197,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 export async function clientCredentialsController(req: Request, res: Response) {
   const { client_id, client_secret } = req.body;
 
-  let scopes, organization_id, project_id;
+  let scopes, organization_id;
 
   try {
     const { rowCount, rows } = await db.query(
@@ -208,8 +205,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
         WITH app_info AS (
             SELECT 
               id, 
-              organization_id,
-              project_id
+              organization_id
             FROM public.oauth2_apps
             WHERE client_id = $1::uuid
               AND client_secret = $2::text
@@ -223,8 +219,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
         )
         SELECT 
           scopes, 
-          organization_id,
-          project_id
+          organization_id
         FROM app_info
         CROSS JOIN app_scopes;
       `,
@@ -246,7 +241,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
       );
     }
 
-    ({ scopes, organization_id, project_id } = rows[0]);
+    ({ scopes, organization_id } = rows[0]);
 
     if (!scopes || scopes.length === 0) {
       logger.warn(`No client scopes selected for client: ${client_id}`);
@@ -271,8 +266,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
     const body = await generateAccessToken(
       {
         client_id,
-        organization_id,
-        ...(project_id !== null ? { project_id } : {})
+        organization_id
       },
       'client_credentials',
     );

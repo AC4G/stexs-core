@@ -100,21 +100,19 @@ router.post(
       } else {
         const { rowCount } = await db.query(
           `
-            WITH ItemProjectOrganization AS (
-              SELECT
-                i.id AS item_id,
-                p.id AS project_id,
-                o.id AS organization_id
-              FROM public.items AS i
-              JOIN public.projects AS p ON i.project_id = p.id
-              JOIN public.organizations AS o ON p.organization_id = o.id
-              WHERE i.id = $1::integer
-            )
             SELECT 1
-            FROM ItemProjectOrganization AS ipo
-            WHERE ipo.organization_id = $2::integer;
+            FROM public.items AS i
+            JOIN public.projects AS p ON p.id = i.project_id
+            JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+            JOIN public.organizations AS o ON o.id = p.organization_id
+            WHERE i.id = $1::integer
+              AND (
+                oa.project_id = i.project_id OR
+                oa.project_id IS NULL
+              )
+              AND o.id = $2::integer;
           `,
-          [itemId, organizationId],
+          [itemId, organizationId, clientId],
         );
 
         if (rowCount) isAllowed = true;

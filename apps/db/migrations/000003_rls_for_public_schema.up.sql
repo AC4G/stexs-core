@@ -164,7 +164,7 @@ CREATE POLICY friends_select
                     UNION
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = public.friends.friend_id 
+                    WHERE p.user_id = friend_id 
                         AND p.is_private IS TRUE
                 )
             )
@@ -198,7 +198,7 @@ CREATE POLICY friends_select
                     UNION
                     SELECT 1
                     FROM public.profiles AS p
-                    WHERE p.user_id = public.friends.friend_id 
+                    WHERE p.user_id = friend_id 
                         AND p.is_private IS TRUE
                 ) AND
                 NOT EXISTS (
@@ -288,7 +288,7 @@ CREATE POLICY inventories_select
                         SELECT 1 
                         FROM public.friends AS fr
                         WHERE fr.user_id = auth.uid() 
-                            AND fr.friend_id = public.inventories.user_id
+                            AND fr.friend_id = user_id
                     ) OR
                     (
                         EXISTS (
@@ -394,7 +394,12 @@ CREATE POLICY items_update
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
-                    WHERE p.id = project_id 
+                    JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+                    WHERE p.id = project_id
+                        AND (
+                            oa.project_id = public.items.project_id OR
+                            oa.project_id IS NULL
+                        )
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 )
             )
@@ -424,7 +429,12 @@ CREATE POLICY items_delete
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
+                    JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
                     WHERE p.id = project_id 
+                        AND (
+                            oa.project_id = public.items.project_id OR
+                            oa.project_id IS NULL
+                        )
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 )
             )
@@ -454,7 +464,12 @@ CREATE POLICY items_insert
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
+                    JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
                     WHERE p.id = project_id 
+                        AND (
+                            oa.project_id = public.items.project_id OR
+                            oa.project_id IS NULL
+                        )
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 )
             )
@@ -637,7 +652,7 @@ CREATE POLICY organization_members_select
             EXISTS (
                 SELECT 1
                 FROM public.profiles AS p
-                WHERE p.user_id = user_id 
+                WHERE p.user_id = member_id
                     AND p.is_private IS FALSE
             )
         )
@@ -1131,7 +1146,12 @@ CREATE POLICY project_requests_select
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
+                    JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
                     WHERE p.id = project_id 
+                        AND (
+                            oa.project_id = public.project_requests.project_id OR
+                            oa.project_id IS NULL
+                        )
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 )
             )
@@ -1187,7 +1207,12 @@ CREATE POLICY project_requests_update
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
+                    JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
                     WHERE p.id = project_id 
+                        AND (
+                            oa.project_id = public.project_requests.project_id OR
+                            oa.project_id IS NULL
+                        )
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 ) AND
                 role NOT IN ('Owner', 'Admin') AND
@@ -1233,7 +1258,12 @@ CREATE POLICY project_requests_delete
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
-                    WHERE p.id = project_id 
+                    JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+                    WHERE p.id = project_id
+                        AND (
+                            oa.project_id = public.project_requests.project_id OR
+                            oa.project_id IS NULL
+                        )
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 ) AND
                 role NOT IN ('Owner', 'Admin')
@@ -1285,7 +1315,12 @@ CREATE POLICY project_requests_insert
                     EXISTS (
                         SELECT 1
                         FROM public.projects AS p
-                        WHERE p.id = project_id 
+                        JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+                        WHERE p.id = project_id
+                            AND (
+                                oa.project_id = public.project_requests.project_id OR
+                                oa.project_id IS NULL
+                            )
                             AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                     ) AND
                     role NOT IN ('Owner', 'Admin')
@@ -1323,7 +1358,12 @@ CREATE POLICY project_members_select
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
+                    JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
                     WHERE p.id = project_id 
+                        AND (
+                            oa.project_id = public.project_members.project_id OR
+                            oa.project_id IS NULL
+                        )
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 )
             )
@@ -1376,7 +1416,12 @@ BEGIN
             EXISTS (
                 SELECT 1
                 FROM public.projects AS p
-                WHERE p.id = project_id 
+                JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+                WHERE p.id = _project_id
+                    AND (
+                        oa.project_id = _project_id OR
+                        oa.project_id IS NULL
+                    )
                     AND p.organization_id = (auth.jwt()->>'organization_id')::INT
             ) AND
             role NOT IN ('Owner', 'Admin') AND
@@ -1462,7 +1507,12 @@ CREATE POLICY project_members_delete
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
-                    WHERE p.id = project_id 
+                    JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUId
+                    WHERE p.id = project_id
+                        AND (
+                            oa.project_id = public.project_members.project_id OR
+                            oa.project_id IS NULL
+                        )
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 ) AND
                 role NOT IN ('Owner', 'Admin')
@@ -1492,7 +1542,7 @@ CREATE POLICY project_members_insert
             EXISTS (
                 SELECT 1
                 FROM public.project_requests AS pr
-                WHERE pr.project_id = project_id 
+                WHERE pr.project_id = public.project_members.project_id 
                     AND pr.addressee_id = auth.uid() 
                     AND pr.role = role
             )
@@ -1546,6 +1596,15 @@ CREATE POLICY projects_update
             (
                 auth.grant() = 'client_credentials' AND
                 public.has_client_scope(12) AND
+                EXISTS (
+                    SELECT 1
+                    FROM public.oauth2_apps AS oa
+                    WHERE oa.client_id = (auth.jwt()->>'client_id')::UUID
+                        AND (
+                            oa.project_id = id OR
+                            oa.project_id IS NULL
+                        )
+                ) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT
             )
         )
@@ -1639,9 +1698,9 @@ CREATE POLICY notifications_insert
                 EXISTS (
                     SELECT 1
                     FROM public.friend_requests AS fr
-                    WHERE fr.id = friend_request_id AND
-                        fr.addressee_id = user_id AND
-                        fr.requester_id = auth.uid()
+                    WHERE fr.id = friend_request_id 
+                        AND fr.addressee_id = user_id 
+                        AND fr.requester_id = auth.uid()
                 )
             )
             OR
@@ -1655,8 +1714,8 @@ CREATE POLICY notifications_insert
                         EXISTS (
                             SELECT 1
                             FROM public.organization_requests AS ogr
-                            WHERE ogr.id = organization_request_id AND
-                                ogr.addressee_id = auth.uid()
+                            WHERE ogr.id = organization_request_id 
+                                AND ogr.addressee_id = auth.uid()
                         )
                     )
                     OR
@@ -1667,8 +1726,8 @@ CREATE POLICY notifications_insert
                         EXISTS (
                             SELECT id
                             FROM public.project_requests AS pr
-                            WHERE pr.id = project_request_id AND
-                                pr.addressee_id = auth.uid()
+                            WHERE pr.id = project_request_id 
+                                AND  pr.addressee_id = auth.uid()
                         )
                     )
                 )
@@ -1691,18 +1750,18 @@ CREATE POLICY oauth2_connections_select
                     SELECT 1
                     FROM public.organization_members AS om
                     JOIN public.oauth2_apps AS oa ON oa.client_id = public.oauth2_connections.client_id
-                    WHERE oa.project_id IS NULL AND
-                        om.role IN ('Owner', 'Admin') AND
-                        om.organization_id = oa.organization_id AND
-                        om.member_id = auth.uid()
+                    WHERE oa.project_id IS NULL 
+                        AND om.role IN ('Owner', 'Admin') 
+                        AND om.organization_id = oa.organization_id 
+                        AND om.member_id = auth.uid()
                     UNION
                     SELECT 1
                     FROM project_members AS pm
                     JOIN public.oauth2_apps AS oa ON oa.client_id = public.oauth2_connections.client_id
-                    WHERE oa.project_id IS NOT NULL AND
-                        pm.role IN ('Owner', 'Admin') AND
-                        pm.project_id = oa.project_id AND
-                        pm.member_id = auth.uid()
+                    WHERE oa.project_id IS NOT NULL 
+                        AND pm.role IN ('Owner', 'Admin') 
+                        AND pm.project_id = oa.project_id 
+                        AND pm.member_id = auth.uid()
                 )
             )
         )
@@ -1710,7 +1769,16 @@ CREATE POLICY oauth2_connections_select
         (
             auth.grant() = 'client_credentials' AND
             public.has_client_scope(43) AND
-            client_id = (auth.jwt()->>'client_id')::UUID
+            EXISTS (
+                SELECT 1
+                FROM public.oauth2_apps AS oa
+                JOIN public.oauth2_apps AS oac ON oac.client_id = (auth.jwt()->>'client_id')::UUID
+                WHERE (
+                        oac.project_id = oa.project_id OR
+                        oac.project_id IS NULL
+                    )
+                    AND oa.organization_id = (auth.jwt()->>'organization_id')::INT
+            )
         )
     );
 
@@ -1734,19 +1802,19 @@ CREATE POLICY oauth2_connection_scopes_select
                     FROM public.organization_members AS om
                     JOIN public.oauth2_connections AS oc ON oc.id = connection_id
                     JOIN public.oauth2_apps AS oa ON oa.client_id = oc.client_id
-                    WHERE oa.project_id IS NULL AND
-                        om.role IN ('Owner', 'Admin') AND
-                        om.organization_id = oa.organization_id AND
-                        om.member_id = auth.uid()
+                    WHERE oa.project_id IS NULL 
+                        AND om.role IN ('Owner', 'Admin') 
+                        AND om.organization_id = oa.organization_id 
+                        AND om.member_id = auth.uid()
                     UNION
                     SELECT 1
                     FROM project_members AS pm
                     JOIN public.oauth2_connections AS oc ON oc.id = connection_id
                     JOIN public.oauth2_apps AS oa ON oa.client_id = oc.client_id
-                    WHERE oa.project_id IS NOT NULL AND
-                        pm.role IN ('Owner', 'Admin') AND
-                        pm.project_id = oa.project_id AND
-                        pm.member_id = auth.uid()
+                    WHERE oa.project_id IS NOT NULL 
+                        AND pm.role IN ('Owner', 'Admin') 
+                        AND pm.project_id = oa.project_id 
+                        AND pm.member_id = auth.uid()
                 )
             )
         )
@@ -1756,9 +1824,15 @@ CREATE POLICY oauth2_connection_scopes_select
             public.has_client_scope(44) AND
             EXISTS (
                 SELECT 1
-                FROM public.oauth2_connections AS os
-                WHERE os.id = connection_id AND
-                    os.client_id = (auth.jwt()->>'client_id')::UUID
+                FROM public.oauth2_apps AS oa
+                JOIN public.oauth2_connections AS oc ON oc.id = connection_id
+                JOIN public.oauth2_apps AS oac ON oac.client_id = (auth.jwt()->>'client_id')::UUID
+                WHERE oa.client_id = oc.client_id 
+                    AND (
+                        oac.project_id = oa.project_id OR
+                        oac.project_id IS NULL
+                    )
+                    AND oa.organization_id = (auth.jwt()->>'organization_id')::INT
             )
         )
     );

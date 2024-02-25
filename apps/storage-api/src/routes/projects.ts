@@ -86,10 +86,10 @@ router.post(
         const { rowCount } = await db.query(
           `
             SELECT 1
-            FROM public.project_members
-            WHERE member_id = $1::uuid 
-              AND project_id = $2::integer 
-              AND role IN ('Admin', 'Owner');
+            FROM public.project_members AS pm
+            WHERE pm.member_id = $1::uuid 
+              AND pm.project_id = $2::integer 
+              AND pm.role IN ('Admin', 'Owner');
           `,
           [sub, projectId],
         );
@@ -99,11 +99,16 @@ router.post(
         const { rowCount } = await db.query(
           `
             SELECT 1
-            FROM public.projects
-            WHERE organization_id = $1::integer 
-              AND id = $2::integer;
+            FROM public.projects AS p
+            JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+            WHERE pm.organization_id = $1::integer 
+              AND (
+                oa.project_id = $2::integer OR
+                oa.project_id IS NULL
+              )
+              AND p.id = $2::integer;
           `,
-          [organizationId, projectId],
+          [organizationId, projectId, clientId],
         );
 
         if (rowCount) isAllowed = true;
@@ -178,10 +183,10 @@ router.delete(
         const { rowCount } = await db.query(
           `
             SELECT 1
-            FROM public.project_members
-            WHERE member_id = $1::uuid 
-              AND project_id = $2::integer 
-              AND role IN ('Admin', 'Owner');
+            FROM public.project_members AS pm
+            WHERE pm.member_id = $1::uuid 
+              AND pm.project_id = $2::integer 
+              AND pm.role IN ('Admin', 'Owner');
           `,
           [sub, projectId],
         );
@@ -191,11 +196,16 @@ router.delete(
         const { rowCount } = await db.query(
           `
             SELECT 1
-            FROM public.projects
-            WHERE organization_id = $1::integer 
-              AND id = $2::integer;
+            FROM public.projects AS p
+            JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+            WHERE p.organization_id = $1::integer
+              AND (
+                oa.project_id = $2::integer OR
+                oa.project_id IS NULL
+              )
+              AND p.id = $2::integer;
           `,
-          [organizationId, projectId],
+          [organizationId, projectId, clientId],
         );
 
         if (rowCount) rowsFound = true;
