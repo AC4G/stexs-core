@@ -286,7 +286,7 @@
                                 {@const profile = notification.friend_requests.profiles}
                                 <div class="flex space-x-4 items-center">
                                     <a href="/{profile.username}">
-                                        <Avatar class="w-[58px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.startsWith(`/${profile.username}`) ? '!border-primary-500' : ''}" {stexs} userId={profile.user_id} username={profile.username} />
+                                        <Avatar class="w-[69px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.startsWith(`/${profile.username}`) ? '!border-primary-500' : ''}" {stexs} userId={profile.user_id} username={profile.username} />
                                     </a>
                                     <div class="w-full space-y-4">
                                         <div class="flex flex-row justify-between space-x-4">

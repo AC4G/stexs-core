@@ -252,8 +252,8 @@
             {#each organizationsMemberQueryStore.data as organizationMember (organizationMember.organizations.id)}
                 <div class="flex space-x-4 px-2 sm:px-4 py-2 flex-row bg-surface-700 border border-surface-600 rounded-lg items-center justify-between">
                         <div class="flex flex-row items-center space-x-4 group">
-                            <a href="/organizations/{organizationMember.organizations.name}">
-                                <div class="w-[68px] h-[68px] sm:h-[80px] sm:w-[80px] overflow-hidden rounded-md bg-surface-800 border border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600">
+                            <a href="/organizations/{organizationMember.organizations.name}" class="group">
+                                <div class="w-[68px] h-[68px] sm:h-[80px] sm:w-[80px] overflow-hidden rounded-md bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500">
                                     <OrganizationLogo {stexs} organizationId={organizationMember.organizations.id} alt={organizationMember.organizations.name} iconClass="text-[46px]" />
                                 </div>
                             </a>
