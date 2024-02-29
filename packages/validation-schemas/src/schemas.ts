@@ -110,5 +110,45 @@ export const CreateOrganization = z.object({
     .max(150, {
       message: 'The url can be a maximum of 150 characters long.',
     })
+    .refine((value) => {
+      try {
+        const url = new URL(value);
+        return url.protocol === 'https:';
+      } catch (e) {
+         return false;
+      }
+    }, {
+      message: 'Url must use the HTTPS protocol'
+    })
     .nullable(),
+});
+
+export const UpdateProfile = z.object({
+  username: usernameValidation,
+  url: z
+    .string()
+    .max(150, {
+      message: 'The url can be a maximum of 150 characters long.'
+    })
+    .refine((value) => {
+      try {
+        const url = new URL(value);
+        return url.protocol === 'https:';
+      } catch (e) {
+         return false;
+      }
+    }, {
+      message: 'Url must use the HTTPS protocol'
+    })
+    .nullable(),
+  bio: z
+    .string()
+    .max(250, {
+      message: 'The bio can be a maximum of 250 characters long.'
+    })
+    .nullable(),
+  is_private: z
+    .boolean(),
+  accept_friend_requests: z
+    .boolean()
 });

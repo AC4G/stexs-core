@@ -29,12 +29,12 @@
 
         submitted = true;
 
-        $form = Object.fromEntries(
+        const cleanedForm = Object.fromEntries(
             Object.entries($form).filter(([key, value]) => value !== null)
         );
 
         const { error } = await stexs.from('organizations')
-            .insert($form);
+            .insert(cleanedForm);
             
         if (error) {
             if (error.code === '23505') {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getPreviousPageStore } from '$lib/stores/previousPageStore';
-  import { Button } from 'ui';
+  import { Button, Input } from 'ui';
   import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
   import type { Session, SignInInit } from 'stexs-client/src/lib/types';
@@ -41,21 +41,22 @@
 
   const requestCodeTypes = ['email'];
 
-  const { form, errors, validate } = superForm(
-    superValidateSync(SignInConfirm),
-    {
-      validators: SignInConfirm,
-      validationMethod: 'oninput',
-      clearOnSubmit: 'none',
-    }
-  );
+  const { form, errors, validate } = superForm(superValidateSync(SignInConfirm), {
+    validators: SignInConfirm,
+    validationMethod: 'oninput',
+    clearOnSubmit: 'none',
+  });
 
   const signInConfirmSetupQuery = createQuery({
     queryKey: ['signInConfirmSetup'],
     queryFn: async () => {
       const session: Session = stexs.auth.getSession();
 
-      if (session) return goto('/');
+      if (session) {
+        goto('/');
+
+        return false;
+      }
 
       signInInit = stexs.auth.getSignInInit();
 
@@ -63,14 +64,16 @@
         !signInInit ||
         (signInInit !== null && new Date(signInInit.expires * 1000) < new Date())
       ) {
-        return goto('/sign-in');
+        goto('/sign-in');
+
+        return false;
       }
 
       if (signInInit.types.length === 1) {
         type = signInInit.types[0];
       }
 
-      return { data: true };
+      return true;
     }
   });
 
@@ -84,7 +87,7 @@
         classes: 'variant-glass-error',
         timeout: 10000,
       };
-      return goto('/sign-in');
+      goto('/sign-in');
     }
   }
 
@@ -140,11 +143,11 @@
 
   function cancelSignInConfirm() {
     stexs.auth.cancelSignInConfirm();
-    return goto('/');
+    goto('/');
   }
 </script>
 
-{#if !$signInConfirmSetupQuery.isLoading && $signInConfirmSetupQuery.data}
+{#if $signInConfirmSetupQuery.data}
   <div class="flex items-center justify-center h-screen">
     <div class="card p-5 variant-ghost-surface space-y-6">
       <div class="m-auto">
@@ -250,16 +253,10 @@
           autocomplete="off"
           on:submit|preventDefault={signInConfirm}
         >
-          <label for="code" class="label">
-            <span>Code</span>
-            <input
-              id="code"
-              class="input"
-              type="text"
-              required
-              bind:value={$form.code}
-            />
-          </label>
+          <Input
+            field="code"
+            required
+            bind:value={$form.code}>Code</Input>
           <div class="flex justify-between">
             <Button
               class="variant-ringed-surface hover:bg-surface-600"

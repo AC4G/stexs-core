@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SignIn } from 'validation-schemas';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
-  import { Button } from 'ui';
+  import { Button, Input } from 'ui';
   import { stexs } from '../../stexsClient';
   import { goto } from '$app/navigation';
   import type { Session, SignInInit } from 'stexs-client/src/lib/types';
@@ -17,11 +17,18 @@
     queryFn: async () => {
       const session: Session = stexs.auth.getSession();
 
-      if (session) return goto('/');
+      if (session) {
+        goto('/');
+
+        return false;
+      }
 
       const signInInit: SignInInit = stexs.auth.getSignInInit();
-      if (signInInit !== null && new Date(signInInit.expires * 1000) > new Date())
-        return goto('/sign-in-confirm');
+      if (signInInit !== null && new Date(signInInit.expires * 1000) > new Date()) {
+        goto('/sign-in-confirm');
+
+        return false;
+      }
 
       const code = $page.url.searchParams.get('code');
       const message = $page.url.searchParams.get('message');
@@ -34,7 +41,7 @@
         }
       }
 
-      return { data: true };
+      return true;
     }
   });
 
@@ -95,37 +102,24 @@
         class="space-y-6"
         on:submit|preventDefault={signIn}
       >
-        <label for="identifier" class="label">
-          <span>Username or Email</span>
-          <input
-            id="identifier"
-            class="input"
-            type="text"
-            required
-            bind:value={$form.identifier}
-          />
-        </label>
-        <label for="password" class="label">
-          <span>Password</span>
-          <input
-            id="password"
-            class="input"
-            type="password"
-            required
-            bind:value={$form.password}
-          />
-        </label>
+        <Input
+          field="identifier"
+          type="text"
+          required
+          bind:value={$form.identifier}>Username or Email</Input>
+        <Input
+          field="password"
+          type="password"
+          required
+          bind:value={$form.password}>Password</Input>
         <div class="flex justify-between">
-          <label class="flex items-center space-x-2">
-            <input
-              id="remember"
-              class="checkbox"
-              type="checkbox"
-              value={false}
-              bind:checked={$form.remember}
-            />
-            <span>Remember me</span>
-          </label>
+          <Input
+            field="remember"
+            inputClass="checkbox"
+            labelClass="flex items-center space-x-2"
+            type="checkbox"
+            labelAfter={true}
+            bind:checked={$form.remember}>Remember me</Input>
           <a
             href="/recovery"
             class="text-secondary-500 hover:text-secondary-400 transition"

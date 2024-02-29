@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button } from 'ui';
+  import { Button, Input } from 'ui';
   import { SignUp } from 'validation-schemas';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
   import { stexs } from '../../stexsClient';
@@ -17,9 +17,13 @@
     queryFn: async () => {
       const session: Session = stexs.auth.getSession();
 
-      if (session) return goto('/');
+      if (session) {
+        goto('/');
 
-      return { data: true };
+        return false;
+      }
+
+      return true;
     }
   });
 
@@ -46,7 +50,9 @@
         classes: 'variant-glass-success',
         timeout: 10000,
       };
-      return goto('/sign-in');
+      goto('/sign-in');
+
+      return;
     }
 
     response.errors.forEach(
@@ -74,7 +80,7 @@
   }
 </script>
 
-{#if !$signUpSetupQuery.isLoading && $signUpSetupQuery.data}
+{#if $signUpSetupQuery.data}
   <div class="flex items-center justify-center h-screen">
     <div class="card p-5 variant-ghost-surface space-y-6  w-full max-w-[400px]">
       <div class="text-center">
@@ -101,86 +107,67 @@
         class="space-y-6"
         on:submit|preventDefault={signUp}
       >
-        <label for="username" class="label">
-          <span>Username</span>
-          <input
-            id="username"
-            class="input"
-            type="text"
+        <div>
+          <Input
+            field="username"
             required
-            bind:value={$form.username}
-          />
-        </label>
-        {#if $errors.username && Array.isArray($errors.username)}
-          <ul class="whitespace-normal text-[14px] text-error-400">
-            {#each $errors.username as error (error)}
-              <li>{error}</li>
-            {/each}
-          </ul>
-        {/if}
-        <label for="email" class="label">
-          <span>Email</span>
-          <input
-            id="email"
-            class="input"
+            bind:value={$form.username}>Username</Input>
+          {#if $errors.username && Array.isArray($errors.username)}
+            <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
+              {#each $errors.username as error (error)}
+                <li>{error}</li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+        <div>
+          <Input
+            field="email"
             type="email"
             required
-            bind:value={$form.email}
-          />
-        </label>
-        {#if $errors.email}
-          <p class="whitespace-normal text-[14px] text-error-400">
-            {$errors.email}
-          </p>
-        {/if}
-        <label for="password" class="label">
-          <span>Password</span>
-          <input
-            id="password"
-            class="input"
+            bind:value={$form.email}>Email</Input>
+          {#if $errors.email}
+            <p class="whitespace-normal text-[14px] mt-2 text-error-400">
+              {$errors.email}
+            </p>
+          {/if}
+        </div>
+        <div>
+          <Input
+            field="password"
             type="password"
             required
-            bind:value={$form.password}
-          />
-        </label>
-        {#if $errors.password && Array.isArray($errors.password)}
-          <ul class="whitespace-normal text-[14px] text-error-400">
-            {#each $errors.password as error (error)}
-              <li>{error}</li>
-            {/each}
-          </ul>
-        {/if}
-        <label for="confirm" class="label">
-          <span>Confirm Password</span>
-          <input
-            id="confirm"
-            class="input"
+            bind:value={$form.password}>Password</Input>
+          {#if $errors.password && Array.isArray($errors.password)}
+            <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
+              {#each $errors.password as error (error)}
+                <li>{error}</li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+        <div>
+          <Input
+            field="confirm"
             type="password"
             required
-            bind:value={$form.confirm}
-          />
-        </label>
-        {#if $errors.confirm}
-          <p class="whitespace-normal text-[14px] text-error-400">
-            {$errors.confirm}
-          </p>
-        {/if}
-        <label class="flex items-center space-x-2">
-          <input
-            id="terms"
-            class="checkbox"
-            type="checkbox"
-            required
-            bind:checked={$form.terms}
-          />
-          <span
-            >I agree to <a
-              href="/terms-and-conditions"
-              class="text-secondary-500 hover:text-secondary-400 transition"
-              >Terms and Conditions</a
-            ></span
-          >
-        </label>
+            bind:value={$form.confirm}>Confirm Password</Input>
+          {#if $errors.confirm}
+            <p class="whitespace-normal text-[14px] text-error-400">
+              {$errors.confirm}
+            </p>
+          {/if}
+        </div>
+        <Input
+          field="terms"
+          labelClass="flex items-center space-x-2"
+          labelAfter={true}
+          inputClass="checkbox"
+          type="checkbox"
+          required
+          bind:checked={$form.terms}>
+          I agree to <a href="/terms-and-conditions" class="text-secondary-500 hover:text-secondary-400 transition">Terms and Conditions</a>
+        </Input>
         <div class="flex justify-center">
           <Button type="submit" class="variant-filled-primary" {submitted}
             >Submit</Button

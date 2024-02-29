@@ -91,11 +91,6 @@
         queryFn: async () => await fetchFriends($profileStore?.userId!, search, filter, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
-
-    $: friendsLoaded = $profileStore && 
-        ($profileStore.totalFriends > 0 && search.length > 0 ||
-        $profileStore.totalFriends > 0) ||
-        $friendsQuery.isLoading || !$friendsQuery.data;
 </script>
 
 <div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
@@ -104,7 +99,7 @@
         <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
     {:else}
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
-            <div class="sm:max-w-[300px]">
+            <div class="sm:max-w-[300px] w-full">
                 <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
             </div>
             <div class="sm:w-fit">
@@ -157,7 +152,7 @@
 </div>
 <div class="grid gap-2 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
-        {#each Array(50) as _}
+        {#each Array(20) as _}
             <div class="flex h-full w-full items-center justify-left space-x-2 p-2">
                 <div class="placeholder-circle animate-pulse w-[40px] h-[40px]" />
                 <div class="placeholder animate-pulse w-[70%]" />

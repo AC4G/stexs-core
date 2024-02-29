@@ -141,7 +141,7 @@
     <div class="px-4">
       <div class="flex items-center justify-between h-[70px]">
         <h3 class="h3">Navigation</h3>
-        <Button on:click={() => drawerStore.close()} class="p-2 bg-surface-700 hover:text-gray-600 ">
+        <Button on:click={() => drawerStore.close()} class="p-2 variant-ghost-surface">
           <Icon icon="ph:x-bold" />
         </Button>
       </div>
@@ -183,7 +183,7 @@
                   <p class="text-[14px] break-all">{$userStore?.username}</p>
                 </div>
               </button>
-              <Dropdown triggeredBy=".avatarDropDown" activeUrl={'/' + $page.url.pathname.split('/')[1]} activeClass="variant-glass-primary text-primary-500" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
+              <Dropdown triggeredBy=".avatarDropDown" activeUrl={$page.url.pathname.startsWith('/settings') ? '/' + $page.url.pathname.split('/')[1] : $page.url.pathname} activeClass="variant-glass-primary text-primary-500" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
                 <div class="px-4 py-2 rounded variant-ghost-surface">
                   <p class="text-[16px] bg-gradient-to-br from-primary-500 to-secondary-500 bg-clip-text text-transparent box-decoration-clone break-all">{$userStore?.username}</p>
                 </div> 
@@ -200,9 +200,11 @@
         </Header>
       </svelte:fragment>
       <svelte:fragment slot="sidebarLeft">
-        {#if $page.url.pathname.startsWith('/settings')}
-          <SettingsSidebar activeUrl={$page.url.pathname} />
-        {/if}
+        <div class="bg-surface-800 h-full">
+          {#if $page.url.pathname.startsWith('/settings')}
+            <SettingsSidebar activeUrl={$page.url.pathname} />
+          {/if}
+        </div>
       </svelte:fragment>
       <slot />
     </AppShell>

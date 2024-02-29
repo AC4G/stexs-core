@@ -46,7 +46,7 @@ BEGIN
     RETURN QUERY
     SELECT DISTINCT ON (projects.id)
         projects.id AS id,
-        projects.name AS name
+        projects.name AS name,
         organizations.name AS organization_name
     FROM inventories
     JOIN items ON inventories.item_id = items.id
