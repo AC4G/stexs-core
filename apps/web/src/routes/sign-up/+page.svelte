@@ -153,7 +153,7 @@
             required
             bind:value={$form.confirm}>Confirm Password</Input>
           {#if $errors.confirm}
-            <p class="whitespace-normal text-[14px] text-error-400">
+            <p class="whitespace-normal text-[14px] mt-2 text-error-400">
               {$errors.confirm}
             </p>
           {/if}
