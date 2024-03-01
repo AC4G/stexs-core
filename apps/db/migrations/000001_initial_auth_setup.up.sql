@@ -80,7 +80,14 @@ GRANT EXECUTE ON FUNCTION auth.role() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.grant() TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.has_client_scope(_scope_id INT)
+
+
+CREATE SCHEMA IF NOT EXISTS utils;
+
+GRANT USAGE ON SCHEMA utils TO authenticated;
+GRANT USAGE ON SCHEMA utils TO anon;
+
+CREATE OR REPLACE FUNCTION utils.has_client_scope(_scope_id INT)
 RETURNS BOOLEAN AS $$
 BEGIN
     IF auth.grant() IS NULL OR auth.grant() = 'password' THEN
@@ -108,7 +115,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION public.has_client_scope(scope_id INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION utils.has_client_scope(scope_id INT) TO authenticated;
 
 
 
@@ -244,7 +251,7 @@ EXECUTE FUNCTION auth.delete_connection();
  
 
 
-CREATE OR REPLACE FUNCTION public.is_url_valid(url TEXT, require_https BOOLEAN DEFAULT FALSE)
+CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, require_https BOOLEAN DEFAULT FALSE)
 RETURNS BOOLEAN AS $$
 BEGIN
     IF require_https THEN
@@ -254,6 +261,9 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, require_https BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, require_https BOOLEAN) TO anon;
 
 
 
@@ -267,7 +277,7 @@ CREATE TABLE public.profiles (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT username_max_length CHECK (length(username) <= 20),
     CONSTRAINT username_allowed_characters CHECK (username ~ '^[A-Za-z0-9._]+$'),
-    CONSTRAINT valid_url CHECK (is_url_valid(url, TRUE))
+    CONSTRAINT valid_url CHECK (utils.is_url_valid(url, TRUE))
 );
 
 GRANT UPDATE (username, is_private, bio, url, accept_friend_requests) ON TABLE public.profiles TO authenticated;
@@ -309,7 +319,7 @@ CREATE TABLE public.organizations (
     CONSTRAINT display_name_max_length CHECK (length(display_name) <= 50),
     CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+$'),
     CONSTRAINT display_name_allowed_characters CHECK (display_name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
-    CONSTRAINT valid_url CHECK (is_url_valid(url, TRUE))
+    CONSTRAINT valid_url CHECK (utils.is_url_valid(url, TRUE))
 );
 
 GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
@@ -333,7 +343,7 @@ CREATE TABLE public.projects (
     CONSTRAINT unique_project_combination UNIQUE (name, organization_id),
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
     CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
-    CONSTRAINT valid_url CHECK (is_url_valid(url, TRUE))
+    CONSTRAINT valid_url CHECK (utils.is_url_valid(url, TRUE))
 );
 
 GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
@@ -359,8 +369,8 @@ CREATE TABLE public.oauth2_apps (
     CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id),
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
     CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
-    CONSTRAINT valid_homepage_url CHECK (is_url_valid(homepage_url, TRUE)),
-    CONSTRAINT valid_redirect_url CHECK (is_url_valid(redirect_url))
+    CONSTRAINT valid_homepage_url CHECK (utils.is_url_valid(homepage_url, TRUE)),
+    CONSTRAINT valid_redirect_url CHECK (utils.is_url_valid(redirect_url))
 );
 
 GRANT INSERT (name, organization_id, project_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
@@ -414,7 +424,7 @@ BEGIN
         OR 
         (
             auth.grant() = 'client_credentials' AND
-            public.has_client_scope(42) AND
+            utils.has_client_scope(42) AND
             EXISTS (
                 SELECT 1
                 FROM public.oauth2_apps 

@@ -214,7 +214,7 @@ EXECUTE FUNCTION public.friend_insert();
 CREATE OR REPLACE FUNCTION public.check_friends_limit()
 RETURNS TRIGGER AS $$
 DECLARE
-  friends_count INTEGER;
+  friends_count INT;
 BEGIN
     SELECT COUNT(1) INTO friends_count
     FROM public.friends
@@ -303,7 +303,7 @@ CREATE TRIGGER friend_request_changed_trigger
 CREATE OR REPLACE FUNCTION public.check_friend_request_limit()
 RETURNS TRIGGER AS $$
 DECLARE
-  friend_request_count INTEGER;
+  friend_request_count INT;
 BEGIN
   SELECT COUNT(1) INTO friend_request_count
   FROM public.friend_requests
@@ -458,7 +458,7 @@ CREATE TRIGGER organization_request_changed_trigger
 CREATE OR REPLACE FUNCTION public.check_organization_request_limit()
 RETURNS TRIGGER AS $$
 DECLARE
-  organization_request_count INTEGER;
+  organization_request_count INT;
 BEGIN
   SELECT COUNT(1) INTO organization_request_count
   FROM public.organization_requests
@@ -573,7 +573,7 @@ CREATE TRIGGER project_request_changed_trigger
 CREATE OR REPLACE FUNCTION public.check_project_request_limit()
 RETURNS TRIGGER AS $$
 DECLARE
-  project_request_count INTEGER;
+  project_request_count INT;
 BEGIN
   SELECT COUNT(1) INTO project_request_count
   FROM public.project_requests
@@ -663,9 +663,9 @@ CREATE TABLE public.notifications (
     updated_at TIMESTAMPTZ,
     CHECK (type in ('message', 'friend_request', 'organization_request', 'project_request')),
     CHECK (
-        (friend_request_id IS NOT NULL)::integer +
-        (organization_request_id IS NOT NULL)::integer +
-        (project_request_id IS NOT NULL)::integer <= 1
+        (friend_request_id IS NOT NULL)::INT +
+        (organization_request_id IS NOT NULL)::INT +
+        (project_request_id IS NOT NULL)::INT <= 1
     )
 );
 

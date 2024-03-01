@@ -42,6 +42,11 @@
         target: 'profilePrivateInfoPopup',
         placement: 'top'
     };
+    const avatarSettingPopup: PopupSettings = {
+        event: 'click',
+        target: 'avatarSettingPopup',
+        placement: 'bottom'
+    };
 
     function updateForm({ username, ...rest } : { username: string }) {
         $form.username = username;
@@ -122,9 +127,13 @@
             <div class="grid sm:grid-cols-2 pt-4">
                 <div class="relative w-fit h-fit mx-auto ">
                     <Avatar userId={$userStore.id} {stexs} username={$userStore?.username} class="w-[200px] sm:col-start-2 border-2 border-surface-500" draggable="false" />
-                    <Button class="rounded variant-glass-surface p-2 absolute top-36 right-1 border border-surface-500">
+                    <button use:popup={avatarSettingPopup} class="btn rounded variant-glass-surface p-2 absolute top-36 right-1 border border-surface-500">
                         <Icon icon="octicon:pencil-16" class="text-[18px]" />
-                    </Button>
+                    </button>
+                    <div class="p-2 bg-surface-800 border border-surface-600 w-fit max-w-[240px] rounded-md !ml-0" data-popup="avatarSettingPopup">
+                        <Button class="hover:!bg-surface-500 p-2 w-full">Upload Avatar</Button>
+                        <Button class="hover:!bg-surface-500 p-2 w-full text-red-600">Remove Avatar</Button>
+                    </div>
                 </div>
                 <form class="space-y-6 sm:row-start-1" on:submit|preventDefault={saveChanges}>
                     <div>

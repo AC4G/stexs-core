@@ -13,7 +13,6 @@ services:
       PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS}
       PGRST_JWT_SECRET: ${ACCESS_TOKEN_SECRET}
       PGRST_JWT_AUD: ${AUDIENCE}
-      PGRST_OPENAPI_MODE: disabled
     container_name: rest
     networks:
       - stexs
@@ -51,7 +50,7 @@ services:
     restart: unless-stopped
     container_name: swagger
     environment:
-      SWAGGER_JSON_URL: http://localhost:3001/
+      SWAGGER_JSON_URL: http://localhost:8000/rest/v1
     networks:
       - stexs
 
