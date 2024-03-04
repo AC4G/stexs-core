@@ -172,7 +172,7 @@
         queryKey: ['unseenNotifications'],
         queryFn: async () => await fetchUnseenNotifications($userStore!.id),
         enabled: !!$userStore?.id && dropDownOpen === false,
-        refetchInterval: 3000
+        refetchInterval: 5000
     });
 
     $: notificationsQuery = createQuery({
@@ -272,7 +272,7 @@
                                 <div class="flex flex-row space-x-2">
                                     <Markdown class="" text={notification.message} />
                                     <div class="space-y-2">
-                                        <Button title="Remove Notification" on:click={async () => {
+                                        <Button on:click={async () => {
                                             const result = await deleteMessage(notification.id);
     
                                             if (result) removeNotificationByIndex(index);

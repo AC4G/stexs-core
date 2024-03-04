@@ -178,10 +178,10 @@ export async function authorizationCodeController(req: Request, res: Response) {
       {
         sub: userId,
         client_id,
-        organization_id
+        organization_id,
       },
       'authorization_code',
-      connectionId
+      connectionId,
     );
 
     logger.info(
@@ -266,7 +266,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
     const body = await generateAccessToken(
       {
         client_id,
-        organization_id
+        organization_id,
       },
       'client_credentials',
     );

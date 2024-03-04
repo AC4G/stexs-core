@@ -126,11 +126,7 @@ router.post(
               info: CLIENT_NOT_FOUND,
               data: {
                 location: 'body',
-                paths: [
-                  'client_id', 
-                  'redirect_url', 
-                  'scopes'
-                ],
+                paths: ['client_id', 'redirect_url', 'scopes'],
               },
             },
           ]),

@@ -1,11 +1,5 @@
 SET TIME ZONE 'UTC';
 
-CREATE EXTENSION IF NOT EXISTS 'uuid-ossp';
-CREATE EXTENSION IF NOT EXISTS 'pgcrypto';
-CREATE EXTENSION IF NOT EXISTS 'citext';  
-CREATE EXTENSION IF NOT EXISTS 'pgtap';
-
-
 CREATE ROLE authenticator LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER ENCRYPTED PASSWORD 'authenticator';
 CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
@@ -14,6 +8,19 @@ CREATE ROLE authenticated NOLOGIN;
 GRANT anon TO authenticator;
 GRANT authenticated TO authenticator;
 GRANT USAGE ON SCHEMA public TO anon;
+
+CREATE SCHEMA extensions;
+
+SET search_path TO extensions, public;
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS citext SCHEMA extensions;  
+CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA extensions;
+
+GRANT USAGE ON SCHEMA extensions TO authenticated;
+GRANT USAGE ON SCHEMA extensions TO anon;
+
 
 CREATE SCHEMA auth;
 
@@ -72,29 +79,50 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-GRANT USAGE ON SCHEMA auth to authenticated;
+GRANT USAGE ON SCHEMA auth TO authenticated;
+GRANT USAGE ON SCHEMA auth TO anon;
 
 GRANT EXECUTE ON FUNCTION auth.jwt() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.role() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.grant() TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.has_client_scope(_scope_id INT)
+
+
+CREATE SCHEMA IF NOT EXISTS utils;
+
+GRANT USAGE ON SCHEMA utils TO authenticated;
+GRANT USAGE ON SCHEMA utils TO anon;
+
+CREATE OR REPLACE FUNCTION utils.has_client_scope(_scope_id INT)
 RETURNS BOOLEAN AS $$
 BEGIN
-  RETURN EXISTS (
-    SELECT 1
-    FROM public.oauth2_connection_scopes AS cs
-    JOIN public.oauth2_connections AS c ON cs.connection_id = c.id
-    WHERE c.user_id = auth.uid()
-      AND c.client_id = (auth.jwt()->>'client_id')::UUID
-      AND cs.scope_id = _scope_id
-  );
+    IF auth.grant() IS NULL OR auth.grant() = 'password' THEN
+        RETURN FALSE;
+    END IF;
+
+    IF auth.grant() = 'client_credentials' THEN
+        RETURN EXISTS (
+            SELECT 1
+            FROM public.oauth2_apps_scopes AS oas
+            JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+            WHERE oas.app_id = oa.id
+                AND oas.scope_id = _scope_id
+        );
+    END IF;
+ 
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.oauth2_connection_scopes AS cs
+        JOIN public.oauth2_connections AS c ON cs.connection_id = c.id
+        WHERE c.user_id = auth.uid()
+            AND c.client_id = (auth.jwt()->>'client_id')::UUID
+            AND cs.scope_id = _scope_id
+    );
 END;
 $$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION public.has_client_scope(scope_id INT) TO authenticated;
-
+GRANT EXECUTE ON FUNCTION utils.has_client_scope(scope_id INT) TO authenticated;
 
 
 
@@ -230,29 +258,36 @@ EXECUTE FUNCTION auth.delete_connection();
  
 
 
-CREATE OR REPLACE FUNCTION public.is_url_valid(url TEXT)
+CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN DEFAULT FALSE)
 RETURNS BOOLEAN AS $$
 BEGIN
-    RETURN url ~ '(https?:\/\/)(\S*)?';
+    IF strict THEN
+        RETURN url ~ 'https:\/\/(?:\S+\.)?\S+\.[a-zA-Z]{2,63}(?:\/.*)?';
+    ELSE
+        RETURN url ~ '(https?:\/\/)(\S*)?';
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN) TO anon;
 
 
 
 CREATE TABLE public.profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username CITEXT NOT NULL UNIQUE,
-    description VARCHAR(150),
+    bio VARCHAR(150),
     url VARCHAR(150),
     is_private BOOLEAN NOT NULL DEFAULT FALSE,
     accept_friend_requests BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT username_max_length CHECK (length(username) <= 20),
     CONSTRAINT username_allowed_characters CHECK (username ~ '^[A-Za-z0-9._]+$'),
-    CONSTRAINT valid_url CHECK (is_url_valid(url))
+    CONSTRAINT valid_url CHECK (utils.is_url_valid(url, TRUE))
 );
 
-GRANT UPDATE (username, is_private, description, url) ON TABLE public.profiles TO authenticated;
+GRANT UPDATE (username, is_private, bio, url, accept_friend_requests) ON TABLE public.profiles TO authenticated;
 GRANT SELECT ON TABLE public.profiles TO anon;
 GRANT SELECT ON TABLE public.profiles TO authenticated;
 
@@ -291,7 +326,7 @@ CREATE TABLE public.organizations (
     CONSTRAINT display_name_max_length CHECK (length(display_name) <= 50),
     CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+$'),
     CONSTRAINT display_name_allowed_characters CHECK (display_name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
-    CONSTRAINT valid_url CHECK (is_url_valid(url))
+    CONSTRAINT valid_url CHECK (utils.is_url_valid(url, TRUE))
 );
 
 GRANT INSERT (name, display_name, description, readme, email, url) ON TABLE public.organizations TO authenticated;
@@ -315,7 +350,7 @@ CREATE TABLE public.projects (
     CONSTRAINT unique_project_combination UNIQUE (name, organization_id),
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
     CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
-    CONSTRAINT valid_url CHECK (is_url_valid(url))
+    CONSTRAINT valid_url CHECK (utils.is_url_valid(url, TRUE))
 );
 
 GRANT INSERT (name, organization_id, description, readme, email, url) ON TABLE public.projects TO authenticated;
@@ -341,8 +376,8 @@ CREATE TABLE public.oauth2_apps (
     CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id),
     CONSTRAINT name_max_length CHECK (length(name) <= 50),
     CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
-    CONSTRAINT valid_homepage_url CHECK (is_url_valid(homepage_url)),
-    CONSTRAINT valid_redirect_url CHECK (is_url_valid(redirect_url))
+    CONSTRAINT valid_homepage_url CHECK (utils.is_url_valid(homepage_url, TRUE)),
+    CONSTRAINT valid_redirect_url CHECK (utils.is_url_valid(redirect_url))
 );
 
 GRANT INSERT (name, organization_id, project_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
@@ -396,7 +431,7 @@ BEGIN
         OR 
         (
             auth.grant() = 'client_credentials' AND
-            public.has_client_scope(42) AND
+            utils.has_client_scope(42) AND
             EXISTS (
                 SELECT 1
                 FROM public.oauth2_apps 

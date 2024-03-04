@@ -82,16 +82,18 @@
                 classes: 'variant-glass-error',
                 timeout: 5000,
             };
-        } else {
-            $flash = {
-                message: `Successfully left ${organizationName} organization.`,
-                classes: 'variant-glass-success',
-                timeout: 5000,
-            };
 
-            organizationsMemberQueryStore.data.filter((organizationMember: { organizations: { id: number } }) => organizationMember.organizations.id !== organizationId);
-            organizationAmountQueryStore.data--;
+            return;
         }
+        
+        $flash = {
+            message: `Successfully left ${organizationName} organization.`,
+            classes: 'variant-glass-success',
+            timeout: 5000,
+        };
+
+        organizationsMemberQueryStore.data.filter((organizationMember: { organizations: { id: number } }) => organizationMember.organizations.id !== organizationId);
+        organizationAmountQueryStore.data--;
     }
 
     function openLeaveOrganizationModal(userId: string, organizationId: string, organizationName: string, role: string) {
@@ -122,9 +124,7 @@
         queryFn: async () => {
             const { count } = await stexs
                 .from('organization_members')
-                .select(`
-                    member_id
-                `, { 
+                .select('', { 
                     count: 'exact', 
                     head: true 
                 })
@@ -134,8 +134,6 @@
         },
         enabled: !!$profileStore?.userId
     });
-
-    $: paginationSettings.size = organizationAmountQueryStore.data;
 
     async function fetchOrganizations(userId: string, search: string, filter: string, page: number, limit: number) {
         if (search !== previousSearch) {
@@ -191,6 +189,8 @@
 
     $: organizationAmountQueryStore = $organizationAmountQuery;
     $: organizationsMemberQueryStore = $organizationsMemberQuery;
+
+    $: paginationSettings.size = organizationAmountQueryStore.data;
 </script>
 
 <div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
@@ -199,7 +199,7 @@
         <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
     {:else}
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
-            <div class="sm:max-w-[300px]">
+            <div class="sm:max-w-[300px] w-full">
                 <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
             </div>
             <div class="sm:w-fit">
@@ -244,7 +244,7 @@
 </div>
 <div class="grid gap-2">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
-        {#each Array(10) as _}
+        {#each Array(20) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-[98px]" />
         {/each}
     {:else}

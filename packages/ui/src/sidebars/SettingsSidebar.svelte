@@ -22,11 +22,6 @@
 					<Icon icon="octicon:gear-16" />
 				</svelte:fragment>
 			</SidebarItem>
-			<SidebarItem label="Notifications" href="/settings/notifications">
-				<svelte:fragment slot="icon">
-					<Icon icon="mdi:bell-outline" />
-				</svelte:fragment>
-			</SidebarItem>
 			<SidebarItem label="Applications" href="/settings/apps">
 				<svelte:fragment slot="icon">
 					<Icon icon="octicon:apps-16" />

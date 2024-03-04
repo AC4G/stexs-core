@@ -71,5 +71,5 @@ export async function deleteOrganizationRequest(
     isDeleted = true;
   }
 
-  return isDeleted
+  return isDeleted;
 }

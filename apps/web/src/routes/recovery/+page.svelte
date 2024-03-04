@@ -5,7 +5,7 @@
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
   import { isEmailValid } from '$lib/utils/validation';
   import { Recovery, RecoveryConfirm } from 'validation-schemas';
-  import { Button } from 'ui';
+  import { Button, Input } from 'ui';
   import { goto } from '$app/navigation';
   import { getFlash } from 'sveltekit-flash-message/client';
 
@@ -108,7 +108,7 @@
   }
 
   function cancel() {
-    return goto('/sign-in');
+    goto('/sign-in');
   }
 </script>
 
@@ -147,16 +147,11 @@
       on:submit|preventDefault={confirm ? confirmRecovery : requestRecovery}
     >
       {#if confirm}
-        <label for="password" class="label">
-          <span>New Password</span>
-          <input
-            id="password"
-            class="input"
-            type="password"
-            required
-            bind:value={$confirmForm.password}
-          />
-        </label>
+        <Input
+          field="password"
+          type="password"
+          required
+          bind:value={$confirmForm.password}>New Password</Input>
         {#if $confirmErrors.password && Array.isArray($confirmErrors.password)}
           <ul class="whitespace-normal text-[14px] text-error-400">
             {#each $confirmErrors.password as error (error)}
@@ -164,32 +159,22 @@
             {/each}
           </ul>
         {/if}
-        <label for="confirm" class="label">
-          <span>Confirm Password</span>
-          <input
-            id="confirm"
-            class="input"
-            type="password"
-            required
-            bind:value={$confirmForm.confirm}
-          />
-        </label>
+        <Input
+          field="confirm"
+          type="password"
+          required
+          bind:value={$confirmForm.confirm}>Confirm Password</Input>
         {#if $confirmErrors.confirm}
           <p class="whitespace-normal text-[14px] text-error-400">
             {$confirmErrors.confirm}
           </p>
         {/if}
       {:else}
-        <label for="email" class="label">
-          <span>Email</span>
-          <input
-            id="email"
-            class="input"
-            type="email"
-            required
-            bind:value={$recoveryForm.email}
-          />
-        </label>
+        <Input
+          field="email"
+          type="email"
+          required
+          bind:value={$recoveryForm.email}>Email</Input>
       {/if}
       <div class="flex justify-between">
         <Button

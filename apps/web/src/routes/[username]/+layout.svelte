@@ -38,12 +38,12 @@
             .select(`
                 user_id,
                 username,
-                description,
+                bio,
                 url,
                 is_private,
                 accept_friend_requests
             `)
-            .eq('username', username);
+            .ilike('username', username);
 
         if (data?.length === 0 && username !== undefined) {
             $flash = {
@@ -83,7 +83,7 @@
     async function fetchFriendsAmount(userId: string) {
         const { count } = await stexs
             .from('friends')
-            .select('id', { 
+            .select('', { 
                 count: 'exact',
                 head: true 
             })
@@ -135,7 +135,7 @@
     $: {
         $profileStore?.refetchProfileTrigger;
 
-        if ($profileStore?.userId) {
+        if ($profileStore?.userId && $userStore) {
             $profileQuery.refetch();
             $blockedQuery.refetch();
             $isFriendQuery.refetch();
@@ -154,7 +154,7 @@
     $: {
         $profileStore?.refetchFriendsTrigger;
 
-        if ($profileStore?.userId) {
+        if ($profileStore?.userId && $userStore) {
             $isFriendQuery.refetch();
             $friendsAmountQuery.refetch();
             $gotFriendRequestQuery.refetch();
@@ -191,7 +191,7 @@
                     <div class="placeholder animate-pulse w-[80%] sm:w-[50%] h-[24px]" />
                 </div>
             {:else}
-                <Avatar {userId} {stexs} {username} class="mx-auto w-[122px] sm:w-[168px]" draggable="false" />
+                <Avatar {userId} {stexs} {username} class="mx-auto w-[122px] sm:w-[168px] border-2 border-surface-500" draggable="false" />
                 <div class="grid gap-y-4 md:col-span-2 items-center">
                     <p class="text-[20px] sm:text-[24px] break-all">{$profileQuery.data?.username}</p>
                     {#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
@@ -201,9 +201,9 @@
                             <p class="text-[16px] va">Friends {$friendsAmountQuery.data ?? 0}</p>
                         {/if}
                     {/if}
-                    <div class="flex flex-col space-y-2">
-                        {#if $profileQuery.data?.description}
-                            <p class="text-[14px] dont-break-out">{$profileQuery.data.description}</p>
+                    <div class="flex flex-col space-y-4">
+                        {#if $profileQuery.data?.bio}
+                            <p class="text-[14px] dont-break-out">{$profileQuery.data.bio}</p>
                         {/if}
                         {#if $profileQuery.data?.url}
                             <a href="{$profileQuery.data?.url}" target=”_blank” class="text-[14px] w-fit text-secondary-500 hover:text-secondary-400 transition break-all">{$profileQuery.data.url.split('://')[1]}</a>

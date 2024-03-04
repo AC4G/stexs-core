@@ -70,7 +70,7 @@ router.post(
           FROM auth.users AS u
           LEFT JOIN public.profiles AS p ON u.id = p.user_id
           LEFT JOIN auth.mfa ON u.id = mfa.user_id
-          WHERE u.encrypted_password = crypt($2::text, u.encrypted_password)
+          WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
             AND (
                 (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
             );
@@ -97,10 +97,10 @@ router.post(
       }
 
       if (rows[0].banned_at) {
-        logger.warn(`Attempt to sign in to banned account for user: ${identifier}`);
-        return res
-          .status(400)
-          .json(errorMessages([{ info: ACCOUNT_BANNED }]));
+        logger.warn(
+          `Attempt to sign in to banned account for user: ${identifier}`,
+        );
+        return res.status(400).json(errorMessages([{ info: ACCOUNT_BANNED }]));
       }
 
       if (!rows[0].email_verified_at) {

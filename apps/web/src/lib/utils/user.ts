@@ -8,7 +8,7 @@ export async function blockUser(params: {
   blocker_id: string;
   username: string;
   flash: Writable<ToastSettings>;
-  onSuccess: () => void
+  onSuccess: () => void;
 }) {
   const { blocked_id, blocker_id, username, flash, onSuccess } = params;
   const { error } = await stexs
@@ -23,8 +23,8 @@ export async function blockUser(params: {
     });
 
     return;
-  } 
-  
+  }
+
   flash.set({
     message: `Blocked ${username}.`,
     classes: 'variant-glass-success',
@@ -39,8 +39,8 @@ export async function unblockUser(params: {
   currentUserId: string;
   username: string;
   flash: Writable<ToastSettings>;
-  onSuccess: () => void
-}){
+  onSuccess: () => void;
+}) {
   const { userId, currentUserId, username, flash, onSuccess } = params;
   const { error } = await stexs
     .from('blocked')
@@ -56,7 +56,7 @@ export async function unblockUser(params: {
     });
 
     return;
-  } 
+  }
 
   flash.set({
     message: `Unblocked ${username}.`,

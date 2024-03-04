@@ -17,7 +17,7 @@ CREATE POLICY blocked_select
             ) OR 
             (
                 auth.grant() = 'authorization_code' AND
-                public.has_client_scope(34)
+                utils.has_client_scope(34)
             )
         )
     );
@@ -32,7 +32,7 @@ CREATE POLICY blocked_delete
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                public.has_client_scope(36)
+                utils.has_client_scope(36)
             )
         )
     );
@@ -47,7 +47,7 @@ CREATE POLICY blocked_insert
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                public.has_client_scope(35)
+                utils.has_client_scope(35)
             )
         )
     );  
@@ -69,7 +69,7 @@ CREATE POLICY friend_requests_select
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                public.has_client_scope(30)
+                utils.has_client_scope(30)
             )
         )
     );
@@ -87,7 +87,7 @@ CREATE POLICY friend_requests_delete
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                public.has_client_scope(31)
+                utils.has_client_scope(31)
             )
         )
     );
@@ -108,7 +108,7 @@ CREATE POLICY friend_requests_insert
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                public.has_client_scope(29)
+                utils.has_client_scope(29)
             )
         ) AND 
         NOT EXISTS (
@@ -132,7 +132,7 @@ CREATE POLICY friend_requests_insert
 
 
 
-CREATE OR REPLACE FUNCTION public.is_selected_friend_a_friend_or_has_friend_with_current_user(_user_id UUID, _friend_id UUID) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.is_selected_friend_a_friend_or_has_friend_with_current_user(_user_id UUID, _friend_id UUID) RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1
@@ -147,6 +147,9 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION utils.is_selected_friend_a_friend_or_has_friend_with_current_user(_user_id UUID, _friend_id UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION utils.is_selected_friend_a_friend_or_has_friend_with_current_user(_user_id UUID, _friend_id UUID) TO anon;
 
 CREATE POLICY friends_select
     ON public.friends
@@ -180,12 +183,12 @@ CREATE POLICY friends_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                public.has_client_scope(1)
+                utils.has_client_scope(1)
             )  
             OR 
             (
                 auth.grant() = 'password' AND
-                public.is_selected_friend_a_friend_or_has_friend_with_current_user(user_id, friend_id)
+                utils.is_selected_friend_a_friend_or_has_friend_with_current_user(user_id, friend_id)
             )
             OR 
             (
@@ -239,7 +242,7 @@ CREATE POLICY friends_delete
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                public.has_client_scope(33)
+                utils.has_client_scope(33)
             )
         )
     );
@@ -265,7 +268,7 @@ CREATE POLICY friends_insert
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                public.has_client_scope(32)
+                utils.has_client_scope(32)
             )
         )
     );
@@ -325,7 +328,7 @@ CREATE POLICY inventories_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                public.has_client_scope(6)
+                utils.has_client_scope(6)
             )
         )
     );
@@ -337,7 +340,7 @@ CREATE POLICY inventories_update
     USING (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        public.has_client_scope(7)
+        utils.has_client_scope(7)
     );
     
 CREATE POLICY inventories_delete
@@ -347,7 +350,7 @@ CREATE POLICY inventories_delete
     USING (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        public.has_client_scope(8)
+        utils.has_client_scope(8)
     );
 
 CREATE POLICY inventories_insert
@@ -357,7 +360,7 @@ CREATE POLICY inventories_insert
     WITH CHECK (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        public.has_client_scope(9)
+        utils.has_client_scope(9)
     );
 
 
@@ -372,7 +375,7 @@ CREATE POLICY items_select
         (
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(2)
+                utils.has_client_scope(2)
             )
             OR
             (
@@ -390,7 +393,7 @@ CREATE POLICY items_update
         (
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(3) AND
+                utils.has_client_scope(3) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -425,7 +428,7 @@ CREATE POLICY items_delete
         (
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(4) AND
+                utils.has_client_scope(4) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -460,7 +463,7 @@ CREATE POLICY items_insert
         (
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(5) AND
+                utils.has_client_scope(5) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -628,7 +631,7 @@ CREATE POLICY oauth2_apps_insert
 
 ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
 
-CREATE OR REPLACE FUNCTION public.is_current_user_member_of_organization(_organization_id INTEGER) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.is_current_user_member_of_organization(_organization_id INT) RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1
@@ -638,6 +641,9 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION utils.is_current_user_member_of_organization(_organization_id INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION utils.is_current_user_member_of_organization(_organization_id INT) TO anon;
 
 CREATE POLICY organization_members_select
     ON public.organization_members
@@ -659,17 +665,17 @@ CREATE POLICY organization_members_select
         OR
         (
             auth.grant() = 'password' AND
-            public.is_current_user_member_of_organization(organization_id)
+            utils.is_current_user_member_of_organization(organization_id)
         )
         OR
         (
             auth.grant() = 'client_credentials' AND
-            public.has_client_scope(22) AND
+            utils.has_client_scope(22) AND
             organization_id = (auth.jwt()->>'organization_id')::INT
         )
     );
 
-CREATE OR REPLACE FUNCTION public.organization_members_update_policy(_organization_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.organization_members_update_policy(_organization_id INT, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
 DECLARE
     current_user_role TEXT;
 BEGIN
@@ -711,7 +717,7 @@ BEGIN
         OR
         (
             auth.grant() = 'client_credentials' AND
-            public.has_client_scope(23) AND
+            utils.has_client_scope(23) AND
             _organization_id = (auth.jwt()->>'organization_id')::INT AND
             role NOT IN ('Owner', 'Admin') AND
             NOT EXISTS (
@@ -726,15 +732,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+GRANT EXECUTE ON FUNCTION utils.organization_members_update_policy(_organization_id INT, _member_id UUID, _role TEXT) TO authenticated;
+
 CREATE POLICY organization_members_update
     ON public.organization_members
     AS PERMISSIVE
     FOR UPDATE
     USING (
-        public.organization_members_update_policy(organization_id, member_id, role)
+        utils.organization_members_update_policy(organization_id, member_id, role)
     );
 
-CREATE OR REPLACE FUNCTION public.is_current_user_allowed_to_delete_organization_member(_organization_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.is_current_user_allowed_to_delete_organization_member(_organization_id INT, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
 DECLARE
     current_user_role TEXT;
 BEGIN
@@ -782,24 +790,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+GRANT EXECUTE ON FUNCTION utils.is_current_user_allowed_to_delete_organization_member(_organization_id INT, _member_id UUID, _role TEXT) TO authenticated;
+
 CREATE POLICY organization_members_delete
     ON public.organization_members
     AS PERMISSIVE
     FOR DELETE
     USING (
         (
-            public.is_current_user_allowed_to_delete_organization_member(organization_id, member_id, role)
+            utils.is_current_user_allowed_to_delete_organization_member(organization_id, member_id, role)
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(24) AND
+                utils.has_client_scope(24) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin')
             )
         )
     );
 
-CREATE OR REPLACE FUNCTION public.is_user_allowed_to_join_organization(_organization_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.is_user_allowed_to_join_organization(_organization_id INT, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
 BEGIN
     RETURN (
         auth.grant() = 'password' AND
@@ -827,12 +837,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+GRANT EXECUTE ON FUNCTION utils.is_user_allowed_to_join_organization(_organization_id INT, _member_id UUID, _role TEXT) TO authenticated;
+
 CREATE POLICY organization_members_insert
     ON public.organization_members
     AS PERMISSIVE
     FOR INSERT
     WITH CHECK (
-        public.is_user_allowed_to_join_organization(organization_id, member_id, role)
+        utils.is_user_allowed_to_join_organization(organization_id, member_id, role)
     );
 
 
@@ -863,13 +875,13 @@ CREATE POLICY organization_requests_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(25) AND
+                utils.has_client_scope(25) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT
             )
         )
     );
 
-CREATE OR REPLACE FUNCTION public.is_organization_request_with_role_owner_or_admin(_organization_id integer, _addressee_id UUID) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.is_organization_request_with_role_owner_or_admin(_organization_id INT, _addressee_id UUID) RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1
@@ -880,6 +892,8 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION utils.is_organization_request_with_role_owner_or_admin(_organization_id INT, _addressee_id UUID) TO authenticated;
 
 CREATE POLICY organization_requests_update
     ON public.organization_requests
@@ -907,17 +921,17 @@ CREATE POLICY organization_requests_update
                                 AND om.role = 'Admin'
                         ) AND
                         role NOT IN ('Owner', 'Admin') AND
-                        NOT public.is_organization_request_with_role_owner_or_admin(organization_id, addressee_id)
+                        NOT utils.is_organization_request_with_role_owner_or_admin(organization_id, addressee_id)
                     )
                 )
             )
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(26) AND
+                utils.has_client_scope(26) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin') AND 
-                NOT public.is_organization_request_with_role_owner_or_admin(organization_id, addressee_id)
+                NOT utils.is_organization_request_with_role_owner_or_admin(organization_id, addressee_id)
             )
         )
     );
@@ -955,7 +969,7 @@ CREATE POLICY organization_requests_delete
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(27) AND
+                utils.has_client_scope(27) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin')
             )
@@ -1001,7 +1015,7 @@ CREATE POLICY organization_requests_insert
                 OR 
                 (
                     auth.grant() = 'client_credentials' AND
-                    public.has_client_scope(28) AND
+                    utils.has_client_scope(28) AND
                     organization_id = (auth.jwt()->>'organization_id')::INT AND
                     role NOT IN ('Owner', 'Admin')
                 )
@@ -1026,7 +1040,7 @@ CREATE POLICY organizations_select
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(20)
+                utils.has_client_scope(20)
             )
         )
     );
@@ -1050,7 +1064,7 @@ CREATE POLICY organizations_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(21) AND
+                utils.has_client_scope(21) AND
                 id = (auth.jwt()->>'organization_id')::INT
             )
         )
@@ -1100,7 +1114,7 @@ CREATE POLICY profiles_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                public.has_client_scope(10)
+                utils.has_client_scope(10)
             )
         )
     );
@@ -1142,7 +1156,7 @@ CREATE POLICY project_requests_select
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(16) AND
+                utils.has_client_scope(16) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1158,7 +1172,7 @@ CREATE POLICY project_requests_select
         )
     );
 
-CREATE OR REPLACE FUNCTION public.is_project_request_with_role_owner_or_admin(_project_id integer, _addressee_id UUID) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.is_project_request_with_role_owner_or_admin(_project_id INT, _addressee_id UUID) RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1
@@ -1169,6 +1183,8 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION utils.is_project_request_with_role_owner_or_admin(_project_id INT, _addressee_id UUID) TO authenticated;
 
 CREATE POLICY project_requests_update
     ON public.project_requests
@@ -1196,14 +1212,14 @@ CREATE POLICY project_requests_update
                                 AND pm.role = 'Admin'
                         ) AND
                         role NOT IN ('Owner', 'Admin') AND 
-                        public.is_project_request_with_role_owner_or_admin(project_id, addressee_id)
+                        utils.is_project_request_with_role_owner_or_admin(project_id, addressee_id)
                     )
                 )
             )
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(17) AND
+                utils.has_client_scope(17) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1216,7 +1232,7 @@ CREATE POLICY project_requests_update
                         AND p.organization_id = (auth.jwt()->>'organization_id')::INT
                 ) AND
                 role NOT IN ('Owner', 'Admin') AND
-                public.is_project_request_with_role_owner_or_admin(project_id, addressee_id)
+                utils.is_project_request_with_role_owner_or_admin(project_id, addressee_id)
             )
         )
     );
@@ -1254,7 +1270,7 @@ CREATE POLICY project_requests_delete
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(18) AND
+                utils.has_client_scope(18) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1311,7 +1327,7 @@ CREATE POLICY project_requests_insert
                 OR
                 (
                     auth.grant() = 'client_credentials' AND
-                    public.has_client_scope(19) AND
+                    utils.has_client_scope(19) AND
                     EXISTS (
                         SELECT 1
                         FROM public.projects AS p
@@ -1354,7 +1370,7 @@ CREATE POLICY project_members_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(13) AND
+                utils.has_client_scope(13) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1370,7 +1386,7 @@ CREATE POLICY project_members_select
         )
     );
 
-CREATE OR REPLACE FUNCTION public.project_member_update_policy(_project_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.project_member_update_policy(_project_id INT, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
 DECLARE
     current_user_role TEXT;
 BEGIN
@@ -1412,7 +1428,7 @@ BEGIN
         OR
         (
             auth.grant() = 'client_credentials' AND
-            public.has_client_scope(14) AND
+            utils.has_client_scope(14) AND
             EXISTS (
                 SELECT 1
                 FROM public.projects AS p
@@ -1437,15 +1453,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+GRANT EXECUTE ON FUNCTION utils.project_member_update_policy(_project_id INT, _member_id UUID, _role TEXT) TO authenticated;
+
 CREATE POLICY project_members_update
     ON public.project_members
     AS PERMISSIVE
     FOR UPDATE 
     USING (
-        public.project_member_update_policy(project_id, member_id, role)
+        utils.project_member_update_policy(project_id, member_id, role)
     );
 
-CREATE OR REPLACE FUNCTION public.is_current_user_allowed_to_delete_project_member(_project_id integer, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.is_current_user_allowed_to_delete_project_member(_project_id INT, _member_id UUID, _role TEXT) RETURNS BOOLEAN AS $$
 DECLARE
     current_user_role TEXT;
 BEGIN
@@ -1493,17 +1511,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+GRANT EXECUTE ON FUNCTION utils.is_current_user_allowed_to_delete_project_member(_project_id INT, _member_id UUID, _role TEXT) TO authenticated;
+
 CREATE POLICY project_members_delete
     ON public.project_members
     AS PERMISSIVE
     FOR DELETE
     USING (
         (
-            public.is_current_user_allowed_to_delete_project_member(project_id, member_id, role)
+            utils.is_current_user_allowed_to_delete_project_member(project_id, member_id, role)
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(15) AND
+                utils.has_client_scope(15) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1520,7 +1540,7 @@ CREATE POLICY project_members_delete
         )
     );
 
-CREATE OR REPLACE FUNCTION public.has_project_owner(_project_id integer) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION utils.has_project_owner(_project_id INT) RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1
@@ -1530,6 +1550,8 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION utils.has_project_owner(_project_id INT) TO authenticated;
 
 CREATE POLICY project_members_insert
     ON public.project_members
@@ -1548,7 +1570,7 @@ CREATE POLICY project_members_insert
             )
             OR
             (
-                NOT public.has_project_owner(project_id) AND
+                NOT utils.has_project_owner(project_id) AND
                 role = 'Owner'
             )
         )
@@ -1571,7 +1593,7 @@ CREATE POLICY projects_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(11)
+                utils.has_client_scope(11)
             )
         )
     );
@@ -1595,7 +1617,7 @@ CREATE POLICY projects_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                public.has_client_scope(12) AND
+                utils.has_client_scope(12) AND
                 EXISTS (
                     SELECT 1
                     FROM public.oauth2_apps AS oa
@@ -1768,7 +1790,7 @@ CREATE POLICY oauth2_connections_select
         OR
         (
             auth.grant() = 'client_credentials' AND
-            public.has_client_scope(43) AND
+            utils.has_client_scope(43) AND
             EXISTS (
                 SELECT 1
                 FROM public.oauth2_apps AS oa
@@ -1821,7 +1843,7 @@ CREATE POLICY oauth2_connection_scopes_select
         OR
         (
             auth.grant() = 'client_credentials' AND
-            public.has_client_scope(44) AND
+            utils.has_client_scope(44) AND
             EXISTS (
                 SELECT 1
                 FROM public.oauth2_apps AS oa

@@ -12,9 +12,7 @@
         getModalStore, 
         type ModalSettings, 
         ListBoxItem,
-
         ProgressRadial
-
     } from "@skeletonlabs/skeleton";
     import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";
@@ -65,7 +63,7 @@
         queryKey: ['itemsAmountInventory', $profileStore?.userId],
         queryFn: async () => {
             const { count } = await stexs.from('inventories')
-            .select('id', { 
+            .select('', { 
                 count: 'exact', 
                 head: true 
             })
@@ -209,7 +207,7 @@
             <div class="placeholder animate-pulse w-full sm:w-[85px] h-[44px]" />
         </div>
     {:else}
-        <div class="sm:max-w-[300px]">
+        <div class="sm:max-w-[300px] w-full">
             <Search size="lg" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
         <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
@@ -298,7 +296,7 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data as inventory (inventory.id)}
-                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border border-surface-600 cursor-pointer" on:click={() => openItemModal(inventory)}>
+                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border border-surface-600 hover:border-primary-500 cursor-pointer" on:click={() => openItemModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
             {/each}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button } from 'ui';
+  import { Button, Input } from 'ui';
   import { SignUp } from 'validation-schemas';
   import { superForm, superValidateSync } from 'sveltekit-superforms/client';
   import { stexs } from '../../stexsClient';
@@ -8,6 +8,7 @@
   import { getFlash } from 'sveltekit-flash-message/client';
   import { createQuery } from '@tanstack/svelte-query';
   import type { Session } from 'stexs-client/src/lib/types';
+  import { debounce } from 'lodash';
 
   let submitted: boolean = false;
   const flash = getFlash(page);
@@ -17,9 +18,13 @@
     queryFn: async () => {
       const session: Session = stexs.auth.getSession();
 
-      if (session) return goto('/');
+      if (session) {
+        goto('/');
 
-      return { data: true };
+        return false;
+      }
+
+      return true;
     }
   });
 
@@ -29,10 +34,51 @@
     clearOnSubmit: 'none',
   });
 
+  let usernameNotAvailable: boolean = false;
+  let checkedUsernames: { username: string, available: boolean }[] = [];
+
+  const checkUsernameAvailability: any = debounce(async () => {
+    if ($errors.username || $form.username.length === 0) return;
+
+    const checkExists = checkedUsernames.find(check => check.username === $form.username.toLocaleLowerCase());
+
+    if (checkExists) {
+      if (checkExists.available) {
+        usernameNotAvailable = false;
+      } else {
+        usernameNotAvailable = true;
+      }
+
+      return;
+    }
+
+    const { count } = await stexs
+        .from('profiles')
+        .select('', {
+            count: 'exact',
+            head: true 
+        })
+        .ilike('username', $form.username);
+
+    let available: boolean = true;
+
+    if (count === 1) {
+      usernameNotAvailable = true;
+      available = false;
+    } else {
+      usernameNotAvailable = false;
+    }
+
+    checkedUsernames.push({
+      username: $form.username.toLocaleLowerCase(),
+      available
+    });
+  }, 300);
+
   async function signUp() {
     const result = await validate();
  
-    if (!result.valid) return;
+    if (!result.valid || usernameNotAvailable) return;
 
     submitted = true;
 
@@ -46,7 +92,9 @@
         classes: 'variant-glass-success',
         timeout: 10000,
       };
-      return goto('/sign-in');
+      goto('/sign-in');
+
+      return;
     }
 
     response.errors.forEach(
@@ -72,9 +120,14 @@
 
     submitted = false;
   }
+
+  $: { 
+    if (usernameNotAvailable && $form.username.length === 0) 
+      usernameNotAvailable = false;
+  }
 </script>
 
-{#if !$signUpSetupQuery.isLoading && $signUpSetupQuery.data}
+{#if $signUpSetupQuery.data}
   <div class="flex items-center justify-center h-screen">
     <div class="card p-5 variant-ghost-surface space-y-6  w-full max-w-[400px]">
       <div class="text-center">
@@ -101,86 +154,75 @@
         class="space-y-6"
         on:submit|preventDefault={signUp}
       >
-        <label for="username" class="label">
-          <span>Username</span>
-          <input
-            id="username"
-            class="input"
-            type="text"
+        <div>
+          <Input
+            field="username"
             required
-            bind:value={$form.username}
-          />
-        </label>
-        {#if $errors.username && Array.isArray($errors.username)}
-          <ul class="whitespace-normal text-[14px] text-error-400">
-            {#each $errors.username as error (error)}
-              <li>{error}</li>
-            {/each}
-          </ul>
-        {/if}
-        <label for="email" class="label">
-          <span>Email</span>
-          <input
-            id="email"
-            class="input"
+            on:input={checkUsernameAvailability}
+            bind:value={$form.username}>Username</Input>
+          {#if $errors.username || usernameNotAvailable}
+            <div class="mt-2">
+              {#if $errors.username && Array.isArray($errors.username)}
+                <ul class="whitespace-normal text-[14px] text-error-400">
+                  {#each $errors.username as error (error)}
+                    <li>{error}</li>
+                  {/each}
+                </ul>
+              {/if}
+              {#if usernameNotAvailable}
+                <p class="text-[14px] text-error-400 whitespace-normal">Username is not available</p>
+              {/if}
+            </div>
+          {/if}
+        </div>
+        <div>
+          <Input
+            field="email"
             type="email"
             required
-            bind:value={$form.email}
-          />
-        </label>
-        {#if $errors.email}
-          <p class="whitespace-normal text-[14px] text-error-400">
-            {$errors.email}
-          </p>
-        {/if}
-        <label for="password" class="label">
-          <span>Password</span>
-          <input
-            id="password"
-            class="input"
+            bind:value={$form.email}>Email</Input>
+          {#if $errors.email}
+            <p class="whitespace-normal text-[14px] mt-2 text-error-400">
+              {$errors.email}
+            </p>
+          {/if}
+        </div>
+        <div>
+          <Input
+            field="password"
             type="password"
             required
-            bind:value={$form.password}
-          />
-        </label>
-        {#if $errors.password && Array.isArray($errors.password)}
-          <ul class="whitespace-normal text-[14px] text-error-400">
-            {#each $errors.password as error (error)}
-              <li>{error}</li>
-            {/each}
-          </ul>
-        {/if}
-        <label for="confirm" class="label">
-          <span>Confirm Password</span>
-          <input
-            id="confirm"
-            class="input"
+            bind:value={$form.password}>Password</Input>
+          {#if $errors.password && Array.isArray($errors.password)}
+            <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
+              {#each $errors.password as error (error)}
+                <li>{error}</li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+        <div>
+          <Input
+            field="confirm"
             type="password"
             required
-            bind:value={$form.confirm}
-          />
-        </label>
-        {#if $errors.confirm}
-          <p class="whitespace-normal text-[14px] text-error-400">
-            {$errors.confirm}
-          </p>
-        {/if}
-        <label class="flex items-center space-x-2">
-          <input
-            id="terms"
-            class="checkbox"
-            type="checkbox"
-            required
-            bind:checked={$form.terms}
-          />
-          <span
-            >I agree to <a
-              href="/terms-and-conditions"
-              class="text-secondary-500 hover:text-secondary-400 transition"
-              >Terms and Conditions</a
-            ></span
-          >
-        </label>
+            bind:value={$form.confirm}>Confirm Password</Input>
+          {#if $errors.confirm}
+            <p class="whitespace-normal text-[14px] mt-2 text-error-400">
+              {$errors.confirm}
+            </p>
+          {/if}
+        </div>
+        <Input
+          field="terms"
+          labelClass="flex items-center space-x-2"
+          labelAfter={true}
+          inputClass="checkbox"
+          type="checkbox"
+          required
+          bind:checked={$form.terms}>
+          I agree to <a href="/terms-and-conditions" class="text-secondary-500 hover:text-secondary-400 transition">Terms and Conditions</a>
+        </Input>
         <div class="flex justify-center">
           <Button type="submit" class="variant-filled-primary" {submitted}
             >Submit</Button
