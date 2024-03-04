@@ -63,7 +63,7 @@
         queryKey: ['itemsAmountInventory', $profileStore?.userId],
         queryFn: async () => {
             const { count } = await stexs.from('inventories')
-            .select('id', { 
+            .select('', { 
                 count: 'exact', 
                 head: true 
             })

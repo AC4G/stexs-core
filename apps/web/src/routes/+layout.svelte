@@ -43,10 +43,12 @@
   import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
   import { openAddFriendModal } from "$lib/utils/modals/friendModals";
   import Notifications from '$lib/Notifications.svelte';
+  import { createRerenderStore } from '$lib/stores/rerenderStore';
 
   initializeStores();
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
   const previousPageStore = createPreviousPageStore();
+  const rerenderStore = createRerenderStore();
   const profileStore = createProfileStore();
   const userStore = createUserStore();
   const toastStore = getToastStore();
@@ -100,7 +102,7 @@
 
   stexs.auth.onAuthStateChange(event => {
     if (event === 'SIGNED_IN') {
-      const session = stexs.auth.getSession();
+      const session = stexs.auth.getSession()!;
       userStore.set({
         id: session.user.id,
         username: session.user.username
@@ -115,7 +117,7 @@
     }
   });
 
-  onMount(async () => {
+  onMount(() => {
     initializeCopyButtonListener(flash);
 
     const session = stexs.auth.getSession();

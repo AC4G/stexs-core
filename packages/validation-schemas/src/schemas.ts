@@ -110,16 +110,32 @@ export const CreateOrganization = z.object({
     .max(150, {
       message: 'The url can be a maximum of 150 characters long.',
     })
-    .refine((value) => {
-      try {
-        const url = new URL(value);
-        return url.protocol === 'https:';
-      } catch (e) {
-         return false;
-      }
-    }, {
-      message: 'Url must use the HTTPS protocol'
-    })
+    .refine(
+      (value) => {
+        try {
+          const url = new URL(value);
+          return url.protocol === 'https:';
+        } catch (e) {
+          return false;
+        }
+      },
+      {
+        message: 'Url must use the HTTPS protocol',
+      },
+    )
+    .refine(
+      (value) => {
+        try {
+          const url = new URL(value);
+          return /\.[a-zA-Z]{2,63}$/.test(url.hostname);
+        } catch (e) {
+          return false;
+        }
+      },
+      {
+        message: 'Url must have an ending. Example: https://example.com',
+      },
+    )
     .nullable(),
 });
 
@@ -128,27 +144,41 @@ export const UpdateProfile = z.object({
   url: z
     .string()
     .max(150, {
-      message: 'The url can be a maximum of 150 characters long.'
+      message: 'The url can be a maximum of 150 characters long.',
     })
-    .refine((value) => {
-      try {
-        const url = new URL(value);
-        return url.protocol === 'https:';
-      } catch (e) {
-         return false;
-      }
-    }, {
-      message: 'Url must use the HTTPS protocol'
-    })
+    .refine(
+      (value) => {
+        try {
+          const url = new URL(value);
+          return url.protocol === 'https:';
+        } catch (e) {
+          return false;
+        }
+      },
+      {
+        message: 'Url must use the HTTPS protocol',
+      },
+    )
+    .refine(
+      (value) => {
+        try {
+          const url = new URL(value);
+          return /\.[a-zA-Z]{2,63}$/.test(url.hostname);
+        } catch (e) {
+          return false;
+        }
+      },
+      {
+        message: 'Url must have an ending. Example: https://example.com',
+      },
+    )
     .nullable(),
   bio: z
     .string()
     .max(250, {
-      message: 'The bio can be a maximum of 250 characters long.'
+      message: 'The bio can be a maximum of 250 characters long.',
     })
     .nullable(),
-  is_private: z
-    .boolean(),
-  accept_friend_requests: z
-    .boolean()
+  is_private: z.boolean(),
+  accept_friend_requests: z.boolean(),
 });

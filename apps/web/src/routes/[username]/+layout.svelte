@@ -43,7 +43,7 @@
                 is_private,
                 accept_friend_requests
             `)
-            .eq('username', username);
+            .ilike('username', username);
 
         if (data?.length === 0 && username !== undefined) {
             $flash = {
@@ -83,7 +83,7 @@
     async function fetchFriendsAmount(userId: string) {
         const { count } = await stexs
             .from('friends')
-            .select('id', { 
+            .select('', { 
                 count: 'exact',
                 head: true 
             })

@@ -282,17 +282,19 @@ export const ORGANIZATION_ID_NOT_NUMERIC = {
 };
 export const INSUFFICIENT_SCOPES = {
   code: 'INSUFFICIENT_SCOPES',
-  message: 'Provided token has insufficient scopes for accessing the requested endpoint.',
+  message:
+    'Provided token has insufficient scopes for accessing the requested endpoint.',
 };
 export const ACCOUNT_BANNED = {
   code: 'ACCOUNT_BANNED',
-  message: 'Your account is banned. If you believe you have been wrongly banned, please contact the support.'
+  message:
+    'Your account is banned. If you believe you have been wrongly banned, please contact the support.',
 };
 export const CONNECTION_ID_NOT_NUMERIC = {
   code: 'CONNECTION_ID_NOT_NUMER',
-  message: 'Connection id needs to be a number.'
+  message: 'Connection id needs to be a number.',
 };
 export const CONNECTION_ID_REQUIRED = {
   code: 'CONNECTION_ID_REQUIRED',
-  message: 'Please provide a connection id.'
+  message: 'Please provide a connection id.',
 };

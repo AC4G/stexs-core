@@ -13,5 +13,5 @@ export { default as formatJSON } from './utils/jsonFormater';
 export { hideImg } from './utils/image';
 export { default as Markdown } from './Markdown.svelte';
 export * from './utils/copyToClipboard';
-export { default as SettingsSidebar } from './sidebars/SettingsSidebar.svelte'; 
+export { default as SettingsSidebar } from './sidebars/SettingsSidebar.svelte';
 export { default as Input } from './Input.svelte';

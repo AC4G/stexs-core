@@ -12,7 +12,7 @@ export function openAddFriendModal(
   flash: Writable<ToastSettings>,
   modalStore: ModalStore,
   stexs: StexsClient,
-  onSendFriendRequest: () => void
+  onSendFriendRequest: () => void,
 ) {
   const modal: ModalSettings = {
     type: 'component',
@@ -23,7 +23,7 @@ export function openAddFriendModal(
       sendFriendRequest,
       revokeFriendRequest,
       stexsClient: stexs,
-      onSendFriendRequest
+      onSendFriendRequest,
     },
   };
   modalStore.set([modal]);

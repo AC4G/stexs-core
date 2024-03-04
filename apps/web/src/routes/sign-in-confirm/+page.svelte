@@ -145,6 +145,8 @@
     stexs.auth.cancelSignInConfirm();
     goto('/');
   }
+
+  $: $form.code = $form.code.toUpperCase();
 </script>
 
 {#if $signInConfirmSetupQuery.data}

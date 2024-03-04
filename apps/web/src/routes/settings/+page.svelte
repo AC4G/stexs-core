@@ -2,7 +2,7 @@
     import { stexs } from "../../stexsClient";
     import { getUserStore } from "$lib/stores/userStore";
     import { Avatar, Input, Button } from "ui";
-    import { SlideToggle, type PopupSettings, popup } from "@skeletonlabs/skeleton";
+    import { SlideToggle, type PopupSettings, popup, getModalStore } from "@skeletonlabs/skeleton";
     import { createQuery } from "@tanstack/svelte-query";
     import { getFlash } from "sveltekit-flash-message/client";
     import { page } from "$app/stores";
@@ -10,7 +10,11 @@
     import { superForm, superValidateSync } from 'sveltekit-superforms/client';
     import { UpdateProfile } from 'validation-schemas';
     import { debounce } from "lodash";
+    import { openRemoveAvatarModal } from "$lib/utils/modals/avatarModals";
+    import { getRerenderStore, getState } from "$lib/stores/rerenderStore";
 
+    const rerenderStore = getRerenderStore();
+    const modalStore = getModalStore();
     const userStore = getUserStore();
     const flash = getFlash(page);
 
@@ -20,8 +24,23 @@
         validationMethod: 'oninput',
         clearOnSubmit: 'none',
     });
+    let usernameNotAvailable: boolean = false;
+    let checkedUsernames: { username: string, available: boolean }[] = [];
+
     const checkUsernameAvailability = debounce(async () => {
-        if ($errors.username || $form.username === profile.username) return;
+        if ($errors.username || $form.username.toLowerCase() === profile.username.toLowerCase() || $form.username.length === 0) return;
+
+        const checkExists = checkedUsernames.find(check => check.username === $form.username.toLowerCase());
+
+        if (checkExists) {
+            if (checkExists.available) {
+                usernameNotAvailable = false;
+            } else {
+                usernameNotAvailable = true;
+            }
+
+            return;
+        }
 
         const { count } = await stexs
             .from('profiles')
@@ -29,13 +48,21 @@
                 count: 'exact',
                 head: true 
             })
-            .eq('username', $form.username);
+            .ilike('username', $form.username);
+
+        let available: boolean = true;
 
         if (count === 1) {
-            $errors.username = [
-                'Username is not available'
-            ];
+            usernameNotAvailable = true;
+            available = false;
+        } else {
+            usernameNotAvailable = false;
         }
+
+        checkedUsernames.push({
+            username: $form.username.toLowerCase(),
+            available
+        });
     }, 300);
     const profilePrivateInfoPopup: PopupSettings = { 
         event: 'click',
@@ -80,7 +107,7 @@
     async function saveChanges() {
         const result = await validate();
 
-        if (!result.valid || ($errors.username && $errors.username.length === 1)) return;
+        if (!result.valid || usernameNotAvailable) return;
 
         const cleanedForm = Object.fromEntries(
             Object.entries($form).filter(([key, value]) => value !== profile[key])
@@ -115,6 +142,19 @@
             ...cleanedForm
         };
     }
+
+    $: { 
+        if (usernameNotAvailable && $form.username.length === 0) 
+        usernameNotAvailable = false
+    }
+
+    /*
+    $: avatarState = $userStore?.id ? getState(`avatars:${$userStore.id}`, rerenderStore) : null;
+
+    $: state = $userStore && $avatarState ? $avatarState[`avatars:${$userStore.id}`] : true;
+    */
+
+    let state: boolean = true;
 </script>
 
 <div class="px-[4%] md:px-[8%] grid place-items-center">
@@ -126,24 +166,33 @@
         {#if $profileQuery.data}
             <div class="grid sm:grid-cols-2 pt-4">
                 <div class="relative w-fit h-fit mx-auto ">
-                    <Avatar userId={$userStore.id} {stexs} username={$userStore?.username} class="w-[200px] sm:col-start-2 border-2 border-surface-500" draggable="false" />
+                    {#key state}
+                        <Avatar userId={$userStore.id} {stexs} username={$userStore?.username} class="w-[200px] sm:col-start-2 border-2 border-surface-500" draggable="false" />
+                    {/key}
                     <button use:popup={avatarSettingPopup} class="btn rounded variant-glass-surface p-2 absolute top-36 right-1 border border-surface-500">
                         <Icon icon="octicon:pencil-16" class="text-[18px]" />
                     </button>
                     <div class="p-2 bg-surface-800 border border-surface-600 w-fit max-w-[240px] rounded-md !ml-0" data-popup="avatarSettingPopup">
                         <Button class="hover:!bg-surface-500 p-2 w-full">Upload Avatar</Button>
-                        <Button class="hover:!bg-surface-500 p-2 w-full text-red-600">Remove Avatar</Button>
+                        <Button on:click={() => openRemoveAvatarModal(state, modalStore)} class="hover:!bg-surface-500 p-2 w-full text-red-600">Remove Avatar</Button>
                     </div>
                 </div>
                 <form class="space-y-6 sm:row-start-1" on:submit|preventDefault={saveChanges}>
                     <div>
                         <Input labelClass="label" bind:value={$form.username} on:input={checkUsernameAvailability}>Username</Input>
-                        {#if $errors.username && Array.isArray($errors.username)}
-                            <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
-                                {#each $errors.username as error (error)}
-                                <li>{error}</li>
-                                {/each}
-                            </ul>
+                        {#if $errors.username || usernameNotAvailable}
+                            <div class="mt-2">
+                                {#if $errors.username && Array.isArray($errors.username)}
+                                    <ul class="whitespace-normal text-[14px] text-error-400">
+                                    {#each $errors.username as error (error)}
+                                        <li>{error}</li>
+                                    {/each}
+                                    </ul>
+                                {/if}
+                                {#if usernameNotAvailable}
+                                    <p class="text-[14px] text-error-400 whitespace-normal">Username is not available</p>
+                                {/if}
+                            </div>
                         {/if}
                     </div>
                     <div>

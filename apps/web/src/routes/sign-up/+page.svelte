@@ -8,6 +8,7 @@
   import { getFlash } from 'sveltekit-flash-message/client';
   import { createQuery } from '@tanstack/svelte-query';
   import type { Session } from 'stexs-client/src/lib/types';
+  import { debounce } from 'lodash';
 
   let submitted: boolean = false;
   const flash = getFlash(page);
@@ -33,10 +34,51 @@
     clearOnSubmit: 'none',
   });
 
+  let usernameNotAvailable: boolean = false;
+  let checkedUsernames: { username: string, available: boolean }[] = [];
+
+  const checkUsernameAvailability: any = debounce(async () => {
+    if ($errors.username || $form.username.length === 0) return;
+
+    const checkExists = checkedUsernames.find(check => check.username === $form.username.toLocaleLowerCase());
+
+    if (checkExists) {
+      if (checkExists.available) {
+        usernameNotAvailable = false;
+      } else {
+        usernameNotAvailable = true;
+      }
+
+      return;
+    }
+
+    const { count } = await stexs
+        .from('profiles')
+        .select('', {
+            count: 'exact',
+            head: true 
+        })
+        .ilike('username', $form.username);
+
+    let available: boolean = true;
+
+    if (count === 1) {
+      usernameNotAvailable = true;
+      available = false;
+    } else {
+      usernameNotAvailable = false;
+    }
+
+    checkedUsernames.push({
+      username: $form.username.toLocaleLowerCase(),
+      available
+    });
+  }, 300);
+
   async function signUp() {
     const result = await validate();
  
-    if (!result.valid) return;
+    if (!result.valid || usernameNotAvailable) return;
 
     submitted = true;
 
@@ -78,6 +120,11 @@
 
     submitted = false;
   }
+
+  $: { 
+    if (usernameNotAvailable && $form.username.length === 0) 
+      usernameNotAvailable = false;
+  }
 </script>
 
 {#if $signUpSetupQuery.data}
@@ -111,13 +158,21 @@
           <Input
             field="username"
             required
+            on:input={checkUsernameAvailability}
             bind:value={$form.username}>Username</Input>
-          {#if $errors.username && Array.isArray($errors.username)}
-            <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
-              {#each $errors.username as error (error)}
-                <li>{error}</li>
-              {/each}
-            </ul>
+          {#if $errors.username || usernameNotAvailable}
+            <div class="mt-2">
+              {#if $errors.username && Array.isArray($errors.username)}
+                <ul class="whitespace-normal text-[14px] text-error-400">
+                  {#each $errors.username as error (error)}
+                    <li>{error}</li>
+                  {/each}
+                </ul>
+              {/if}
+              {#if usernameNotAvailable}
+                <p class="text-[14px] text-error-400 whitespace-normal">Username is not available</p>
+              {/if}
+            </div>
           {/if}
         </div>
         <div>

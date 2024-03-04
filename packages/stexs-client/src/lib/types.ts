@@ -1,28 +1,30 @@
-export interface Session {
-  access_token: string;
-  refresh_token: string;
-  expires: number;
-  refresh: {
-    enabled: boolean;
-    count: number;
-  };
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    raw_user_meta_data: {
-      [key: string]: any;
-    };
-    created_at: string;
-    updated_at: string;
-  };
-}
+export type Session =
+  | {
+      access_token: string;
+      refresh_token: string;
+      expires: number;
+      refresh: {
+        enabled: boolean;
+        count: number;
+      };
+      user: {
+        id: string;
+        email: string;
+        username: string;
+        raw_user_meta_data: {
+          [key: string]: any;
+        };
+        created_at: string;
+        updated_at: string;
+      };
+    }
+  | undefined;
 
 /**
  * for future multi-user implementation
  */
 /*
-export interface Session {
+export type Session = {
   users: {
     [userId: string]: {
       access_token: string;
@@ -43,7 +45,7 @@ export interface Session {
     };
   };
   current_user: string; // User ID of the currently active user
-}
+} | undefined;
 */
 
 export interface SignInInit {

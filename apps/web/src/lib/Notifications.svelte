@@ -172,7 +172,7 @@
         queryKey: ['unseenNotifications'],
         queryFn: async () => await fetchUnseenNotifications($userStore!.id),
         enabled: !!$userStore?.id && dropDownOpen === false,
-        refetchInterval: 3000
+        refetchInterval: 5000
     });
 
     $: notificationsQuery = createQuery({

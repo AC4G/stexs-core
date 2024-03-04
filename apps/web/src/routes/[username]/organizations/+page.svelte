@@ -124,9 +124,7 @@
         queryFn: async () => {
             const { count } = await stexs
                 .from('organization_members')
-                .select(`
-                    member_id
-                `, { 
+                .select('', { 
                     count: 'exact', 
                     head: true 
                 })
@@ -136,8 +134,6 @@
         },
         enabled: !!$profileStore?.userId
     });
-
-    $: paginationSettings.size = organizationAmountQueryStore.data;
 
     async function fetchOrganizations(userId: string, search: string, filter: string, page: number, limit: number) {
         if (search !== previousSearch) {
@@ -193,6 +189,8 @@
 
     $: organizationAmountQueryStore = $organizationAmountQuery;
     $: organizationsMemberQueryStore = $organizationsMemberQuery;
+
+    $: paginationSettings.size = organizationAmountQueryStore.data;
 </script>
 
 <div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">

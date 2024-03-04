@@ -11,6 +11,8 @@ GRANT USAGE ON SCHEMA public TO anon;
 
 CREATE SCHEMA extensions;
 
+SET search_path TO extensions, public;
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS citext SCHEMA extensions;  
@@ -256,19 +258,19 @@ EXECUTE FUNCTION auth.delete_connection();
  
 
 
-CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, require_https BOOLEAN DEFAULT FALSE)
+CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN DEFAULT FALSE)
 RETURNS BOOLEAN AS $$
 BEGIN
-    IF require_https THEN
-        RETURN url ~ 'https:\/\/(\S*)?';
+    IF strict THEN
+        RETURN url ~ 'https:\/\/(?:\S+\.)?\S+\.[a-zA-Z]{2,63}(?:\/.*)?';
     ELSE
         RETURN url ~ '(https?:\/\/)(\S*)?';
     END IF;
 END;
 $$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, require_https BOOLEAN) TO authenticated;
-GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, require_https BOOLEAN) TO anon;
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN) TO anon;
 
 
 

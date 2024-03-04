@@ -1,8 +1,8 @@
-import { SignedUrl } from './lib/types';
+import { Session, SignedUrl } from './lib/types';
 
 export class StexsStorageClient {
   private storageUrl: string;
-  private fetch: typeof fetch;
+  protected fetch: typeof fetch;
 
   constructor(fetch: typeof fetch, storageUrl: string) {
     this.storageUrl = storageUrl;
@@ -41,6 +41,8 @@ export class StexsStorageClient {
    * @returns {Promise<Response>}
    */
   async deleteAvatar(): Promise<Response> {
+    sessionStorage.removeItem(`avatars:${this._getSession()?.user.id}`);
+
     return await this._request({
       path: 'avatars',
       method: 'DELETE',
@@ -209,6 +211,10 @@ export class StexsStorageClient {
     }
 
     return url;
+  }
+
+  private _getSession(): Session {
+    return JSON.parse(localStorage.getItem('session') as string) as Session;
   }
 
   private async _request({
