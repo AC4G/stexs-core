@@ -3,14 +3,14 @@
     import { getModalStore } from '@skeletonlabs/skeleton';
     import Button from '../Button.svelte';
 
+    export let parent: SvelteComponent;
+
     const modalStore = getModalStore();
 
     let submitted: boolean = false;
     let confirmBtnClass: string = $modalStore[0].meta.confirmBtnClass ?? 'variant-filled-primary';
     let confirmBtnLoaderMeter: string = $modalStore[0].meta.confirmBtnLoaderMeter ?? 'stroke-surface-50';
     let confirmBtnLoaderTrack: string = $modalStore[0].meta.confirmBtnLoaderTrack ?? '';
-
-    export let parent: SvelteComponent;
 </script>
 
 {#if $modalStore[0]}

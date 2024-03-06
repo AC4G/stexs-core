@@ -44,6 +44,7 @@
   import { openAddFriendModal } from "$lib/utils/modals/friendModals";
   import Notifications from '$lib/Notifications.svelte';
   import { createRerenderStore } from '$lib/stores/rerenderStore';
+    import { AuthEvents } from 'stexs-client';
 
   initializeStores();
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
@@ -68,7 +69,7 @@
     confirm: { ref: Confirm },
     inventoryItem: { ref: InventoryItem },
     addFriends: { ref: AddFriend },
-    createOrganization: { ref: CreateOrganization }
+    createOrganization: { ref: CreateOrganization },
   };
   const excludeRoutes = [
     '/sign-in',
@@ -100,20 +101,31 @@
     toastStore.trigger($flash);
   });
 
-  stexs.auth.onAuthStateChange(event => {
-    if (event === 'SIGNED_IN') {
+  stexs.auth.onAuthStateChange(async event => {
+    if (event === AuthEvents.SIGNED_IN) {
       const session = stexs.auth.getSession()!;
       userStore.set({
         id: session.user.id,
         username: session.user.username
-      })
+      });
       signedIn = true;
     }
 
-    if (event === 'SIGNED_OUT') {
+    if (event === AuthEvents.SIGNED_OUT) {
       userStore.set(null);
       signedIn = false;
       goto('/');
+    }
+
+    if (event === AuthEvents.USER_UPDATED) {
+      const session = await stexs.auth.updateUserInSession();
+
+      if (session) {
+        userStore.set({
+          id: session.user.id,
+          username: session.user.username
+        });
+      }
     }
   });
 

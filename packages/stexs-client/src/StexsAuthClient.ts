@@ -1,6 +1,15 @@
 import EventEmitter from 'events';
 import type { Session, SignInInit } from './lib/types';
 
+export enum AuthEvents {
+  SIGNED_IN = 'SIGNED_IN',
+  SIGN_IN_INIT = 'SIGN_IN_INIT',
+  SIGNED_OUT = 'SIGNED_OUT',
+  TOKEN_REFRESHED = 'TOKEN_REFRESHED',
+  USER_UPDATED = 'USER_UPDATED',
+  RECOVERY = 'RECOVERY',
+}
+
 export class StexsAuthClient {
   private authUrl: string;
   private fetch: typeof fetch;
@@ -189,7 +198,7 @@ export class StexsAuthClient {
           await this._requestCode();
         }
 
-        this._triggerEvent('SIGN_IN_INIT');
+        this.triggerEvent(AuthEvents.SIGN_IN_INIT);
       }
 
       if (body.access_token && body.refresh_token) {
@@ -209,7 +218,7 @@ export class StexsAuthClient {
           }),
         );
 
-        this._triggerEvent('SIGNED_IN');
+        this.triggerEvent(AuthEvents.SIGNED_IN);
       }
     }
 
@@ -280,7 +289,7 @@ export class StexsAuthClient {
       delete this.authHeaders['Authorization'];
     }
 
-    this._triggerEvent('SIGNED_OUT');
+    this.triggerEvent(AuthEvents.SIGNED_OUT);
   }
 
   /**
@@ -311,7 +320,7 @@ export class StexsAuthClient {
     });
 
     if (response.ok) {
-      this._triggerEvent('RECOVERY');
+      this.triggerEvent(AuthEvents.RECOVERY);
     }
 
     return response;
@@ -412,7 +421,7 @@ export class StexsAuthClient {
     });
 
     if (response.ok) {
-      this._triggerEvent('USER_UPDATED');
+      this.triggerEvent(AuthEvents.USER_UPDATED);
     }
 
     return response;
@@ -567,12 +576,36 @@ export class StexsAuthClient {
   }
 
   /**
-   * Retrieves a user session from local storage.
+   * Retrieves an user session from local storage.
    *
    * @returns {Session} The user session obtained from local storage.
    */
   getSession(): Session {
     return this._getSession();
+  }
+
+  /**
+   * Updates and retrieves user session from local storage.
+   *
+   * @returns {Session} The user session obtained from local storage.
+   */
+  async updateUserInSession(): Promise<Session> {
+    const session = this._getSession();
+
+    if (!session) {
+      return Promise.reject(new Error('Session is undefined'));
+    }
+
+    const user = await (await this.getUser()).json();
+
+    const newSession: Session = {
+      ...session,
+      user,
+    };
+
+    localStorage.setItem('session', JSON.stringify(newSession));
+
+    return newSession;
   }
 
   /**
@@ -584,33 +617,33 @@ export class StexsAuthClient {
     return this._getSignInInit();
   }
 
-  onAuthStateChange(callback: (event: string) => void) {
-    this.eventEmitter.on('SIGNED_IN', () => {
-      callback('SIGNED_IN');
+  onAuthStateChange(callback: (event: AuthEvents) => void) {
+    this.eventEmitter.on(AuthEvents.SIGNED_IN, () => {
+      callback(AuthEvents.SIGNED_IN);
     });
 
-    this.eventEmitter.on('SIGN_IN_INIT', () => {
-      callback('SIGN_IN_INIT');
+    this.eventEmitter.on(AuthEvents.SIGN_IN_INIT, () => {
+      callback(AuthEvents.SIGN_IN_INIT);
     });
 
-    this.eventEmitter.on('SIGNED_OUT', () => {
-      callback('SIGNED_OUT');
+    this.eventEmitter.on(AuthEvents.SIGNED_OUT, () => {
+      callback(AuthEvents.SIGNED_OUT);
     });
 
-    this.eventEmitter.on('TOKEN_REFRESHED', () => {
-      callback('TOKEN_REFRESHED');
+    this.eventEmitter.on(AuthEvents.TOKEN_REFRESHED, () => {
+      callback(AuthEvents.TOKEN_REFRESHED);
     });
 
-    this.eventEmitter.on('USER_UPDATED', () => {
-      callback('USER_UPDATED');
+    this.eventEmitter.on(AuthEvents.USER_UPDATED, () => {
+      callback(AuthEvents.USER_UPDATED);
     });
 
-    this.eventEmitter.on('RECOVERY', () => {
-      callback('RECOVERY');
+    this.eventEmitter.on(AuthEvents.RECOVERY, () => {
+      callback(AuthEvents.RECOVERY);
     });
   }
 
-  private _triggerEvent(eventType: string): void {
+  triggerEvent(eventType: AuthEvents): void {
     this.eventEmitter.emit(eventType);
   }
 
@@ -690,7 +723,7 @@ export class StexsAuthClient {
       }),
     );
 
-    this._triggerEvent('TOKEN_REFRESHED');
+    this.triggerEvent(AuthEvents.TOKEN_REFRESHED);
 
     return true;
   }

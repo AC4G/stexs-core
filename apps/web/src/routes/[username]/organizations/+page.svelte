@@ -257,11 +257,11 @@
                                     <OrganizationLogo {stexs} organizationId={organizationMember.organizations.id} alt={organizationMember.organizations.name} iconClass="text-[46px]" />
                                 </div>
                             </a>
-                            <div class="flex flex-col space-y-1">
-                                <a href="/organizations/{organizationMember.organizations.name}" class="text-secondary-500 group-hover:text-secondary-400 transition break-all text-[16px] sm:text-[18px]">
-                                    {organizationMember.organizations.name}
+                            <div>
+                                <a href="/organizations/{organizationMember.organizations.name}" class="group-hover:text-secondary-400 transition break-all text-[16px] sm:text-[18px] space-y-2">
+                                    <p>{organizationMember.organizations.name}</p>
+                                    <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit">{organizationMember.role}</span>
                                 </a>
-                                <span class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit">{organizationMember.role}</span>
                             </div>
                         </div>
                     <div class="h-fit w-fit space-x-2 flex flex-col space-y-2 sm:space-y-0 justify-center sm:flex-row">

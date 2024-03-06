@@ -11,10 +11,7 @@ export function getRerenderStore(): Writable<Record<string, boolean>> {
   return getContext<Writable<Record<string, boolean>>>('rerenderStore');
 }
 
-export function getState(
-  key: string,
-  store: Writable<Record<string, boolean>>,
-) {
+export function registerComponent(key: string, store: Writable<Record<string, boolean>>) {
   let dataStore = get(store);
 
   if (!(key in dataStore)) {
@@ -25,18 +22,13 @@ export function getState(
       };
     });
   }
+}
 
-  dataStore = get(store);
-
-  return {
-    subscribe: store.subscribe,
-    toggle: () => {
-      store.update((state) => {
-        return {
-          ...state,
-          [key]: !state[key],
-        };
-      });
-    },
-  };
+export function toggleRerender(key: string, store: Writable<Record<string, boolean>>) {
+  store.update((state) => {
+    return {
+      ...state,
+      [key]: !state[key],
+    };
+  });
 }
