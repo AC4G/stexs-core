@@ -1,12 +1,13 @@
 import type { ModalSettings, ModalStore } from '@skeletonlabs/skeleton';
 import { stexs } from '../../../stexsClient';
-import { getState } from '$lib/stores/rerenderStore';
 import type { Writable } from 'svelte/store';
+import { toggleRerender } from '$lib/stores/rerenderStore';
 
 export function openRemoveAvatarModal(
   userId: string,
-  store: Writable<Record<string, boolean>>,
+  rerenderStore: Writable<Record<string, boolean>>,
   modalStore: ModalStore,
+  onSuccess: () => void
 ) {
   const modal: ModalSettings = {
     type: 'component',
@@ -15,9 +16,9 @@ export function openRemoveAvatarModal(
       text: `Do you really want to remove your avatar?`,
       function: async () => {
         await stexs.storage.deleteAvatar();
-        const avatarState = getState(`avatars:${userId}`, store);
+        toggleRerender(`avatar:${userId}`, rerenderStore);
 
-        avatarState.toggle();
+        onSuccess();
       },
       fnAsync: true,
     },

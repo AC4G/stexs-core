@@ -76,12 +76,15 @@ router.post(
       Fields: {
         key: 'avatars/' + userId,
         'Content-Type': `image/webp`,
+        'Content-Encoding': 'gzip',
       },
       Conditions: [
-        ['content-length-range', 0, 1024 * 1024],
+        ['content-length-range', 0, 6 * 1024 * 1024],
         ['eq', '$Content-Type', `image/webp`],
+        ['eq', '$Content-Encoding', 'gzip'],
+        ['eq', '$key', 'avatars/' + userId],
       ],
-      Expires: 60 * 5, // 5 minutes
+      Expires: 10, // 10 seconds
     });
 
     logger.info(`Created signed post url for avatar: ${userId}`);

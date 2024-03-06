@@ -30,6 +30,7 @@
     "highlight.js": "^11.9.0",
     "lodash": "^4.17.21",
     "marked": "^11.1.1",
+    "svelte-easy-crop": "^2.0.3",
     "sveltekit-superforms": "^1.10.1"
   }
 }

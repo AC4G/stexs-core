@@ -6,7 +6,7 @@
     export let inputClass: string = 'input';
     export let withLabel: boolean = true;
     export let labelAfter: boolean = false;
-</script>
+</script> 
 
 {#if $$restProps.type === 'checkbox'}
     {#if withLabel}

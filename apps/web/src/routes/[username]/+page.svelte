@@ -296,7 +296,7 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data as inventory (inventory.id)}
-                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border border-surface-600 hover:border-primary-500 cursor-pointer" on:click={() => openItemModal(inventory)}>
+                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border-2 border-surface-600 hover:border-primary-500 cursor-pointer" on:click={() => openItemModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
             {/each}

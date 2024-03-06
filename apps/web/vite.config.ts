@@ -6,4 +6,7 @@ export default defineConfig({
   server: {
     port: 5172,
   },
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg'],
+  }
 });
