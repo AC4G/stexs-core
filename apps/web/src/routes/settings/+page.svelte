@@ -13,7 +13,7 @@
     import { openRemoveAvatarModal } from "$lib/utils/modals/avatarModals";
     import { getRerenderStore, registerComponent, toggleRerender } from "$lib/stores/rerenderStore";
     import { AuthEvents } from "stexs-client";
-    import { convertToWebP } from "$lib/utils/fileConverter";
+    import { convertGIFToWebP, convertImageToWebP, cropFile, isWebPAnimated } from "$lib/utils/fileConverters";
     import compressFile from "$lib/utils/compressFile";
 
     const rerenderStore = getRerenderStore();
@@ -163,14 +163,35 @@
                     classes: 'variant-glass-error',
                     timeout: 5000
             };
+            return;
+        }
 
+        if (file.type === 'image/webp' && await isWebPAnimated(file)) {
+            $flash = {
+                message: `Animated WebP images are not supported.`,
+                classes: 'variant-glass-error',
+                timeout: 5000
+            };
             return;
         }
 
         submittedAvatar = true;
 
-        if (file.type !== 'image/webp') {
-            file = await convertToWebP(file);
+        if (file.type === 'image/webp') {
+            const image = new Image();
+            image.src = URL.createObjectURL(file);
+
+            image.onload = async () => {
+                if (image.height !== 200 || image.width !== 200) file = await cropFile(file);
+            };
+        }
+
+        if (file.type === 'image/gif') {
+            file = await convertGIFToWebP(file);
+        }
+
+        if (file.type !== 'image/webp' && file.type !== 'image/gif') {
+            file = await convertImageToWebP(file);
         }
 
         const compressed = await compressFile(file);
@@ -193,9 +214,9 @@
 
         if (!uploadResponse.ok) {
             $flash = {
-                    message: `Failed to upload avatar.`,
-                    classes: 'variant-glass-error',
-                    timeout: 5000
+                message: `Failed to upload avatar.`,
+                classes: 'variant-glass-error',
+                timeout: 5000
             };
             submittedAvatar = false;
             return;
@@ -225,7 +246,7 @@
         </div>
         {#if $profileQuery.data && $userStore}
             <div class="grid sm:grid-cols-2 pt-4">
-                <div class="relative w-fit h-fit mx-auto ">
+                <div class="relative w-fit h-fit mx-auto">
                     {#key state}
                         <Avatar userId={$userStore.id} {stexs} username={$userStore?.username} class="w-[200px] sm:col-start-2 border-2 border-surface-500" draggable="false" />
                     {/key}

@@ -44,7 +44,7 @@
   import { openAddFriendModal } from "$lib/utils/modals/friendModals";
   import Notifications from '$lib/Notifications.svelte';
   import { createRerenderStore } from '$lib/stores/rerenderStore';
-    import { AuthEvents } from 'stexs-client';
+  import { AuthEvents } from 'stexs-client';
 
   initializeStores();
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
