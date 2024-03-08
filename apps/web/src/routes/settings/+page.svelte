@@ -13,7 +13,7 @@
     import { openRemoveAvatarModal } from "$lib/utils/modals/avatarModals";
     import { getRerenderStore, registerComponent, toggleRerender } from "$lib/stores/rerenderStore";
     import { AuthEvents } from "stexs-client";
-    import { convertGIFToWebP, convertImageToWebP, cropFile, isWebPAnimated } from "$lib/utils/fileConverters";
+    import { convertAnimatedToWebP, convertImageToWebP, cropFile, isWebPAnimated } from "$lib/utils/fileConverter";
     import compressFile from "$lib/utils/compressFile";
 
     const rerenderStore = getRerenderStore();
@@ -156,6 +156,23 @@
         let file = files[0];
     
         if (!file) return;
+        
+        const allowedTypes = [
+            'image/png', 
+            'image/gif', 
+            'image/jpeg', 
+            'image/webp',
+            'image/svg',
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            $flash = {
+                message: `Avatar must be one of the following types: ${allowedTypes.join(', ')}`,
+                classes: 'variant-glass-error',
+                timeout: 10000
+            };
+            return;
+        }
 
         if (file.size > 8 * 1024 * 1024) {
             $flash = {
@@ -184,35 +201,18 @@
             image.onload = async () => {
                 if (image.height !== 200 || image.width !== 200) file = await cropFile(file);
             };
-        }
-
-        if (file.type === 'image/gif') {
-            file = await convertGIFToWebP(file);
-        }
-
-        if (file.type !== 'image/webp' && file.type !== 'image/gif') {
+        } else if (file.type === 'image/gif') {
+            console.log({ size: file.size })
+            file = await convertAnimatedToWebP(file);
+        } else {
             file = await convertImageToWebP(file);
         }
 
         const compressed = await compressFile(file);
 
-        const response = await stexs.storage.getAvatarPostUrl();
+        const response = await stexs.storage.uploadAvatar(compressed);
 
-        const body = await response.json();
-
-        const formData = new FormData();
-
-        Object.keys(body.fields).forEach((key) => {
-            formData.append(key, body.fields[key]);
-        });
-        formData.append('file', compressed, body.fields.key);
-
-        const uploadResponse = await fetch(body.url, {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!uploadResponse.ok) {
+        if (!response.ok) {
             $flash = {
                 message: `Failed to upload avatar.`,
                 classes: 'variant-glass-error',
@@ -267,7 +267,7 @@
                                     bind:this={fileInput}
                                     bind:files
                                     hidden
-                                    accept="image/png, image/gif, image/jpeg, image/webp, image/svg"
+                                    accept="image/png,image/gif,image/jpeg,image/webp,image/svg"
                                     on:change={uploadAvatar}
                                 >
                             </label>

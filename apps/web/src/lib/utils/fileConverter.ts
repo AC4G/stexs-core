@@ -8,6 +8,8 @@ async function loadFFmpeg() {
 
     ffmpeg = new FFmpeg();
 
+    ffmpeg.on('log', (message) =>console.log(message));
+
     await ffmpeg.load({
         coreURL: `${baseURL}/ffmpeg-core.js`,
         wasmURL: `${baseURL}/ffmpeg-core.wasm`,
@@ -79,7 +81,7 @@ export async function convertImageToWebP(file: File): Promise<File> {
     });
 }
 
-export async function convertGIFToWebP(file: File): Promise<File> {
+export async function convertAnimatedToWebP(file: File): Promise<File> {
     return processFile(file, {
         additionalArgs: [
             '-loop', 
@@ -87,9 +89,11 @@ export async function convertGIFToWebP(file: File): Promise<File> {
             '-compression_level', 
             '6', 
             '-vf', 
-            'crop=min(iw\\,ih):min(iw\\,ih),scale=200:200', 
+            'crop=min(iw\\,ih):min(iw\\,ih),scale=200:200,fps=24', 
+            '-t',
+            '00:00:10',
             '-quality', 
-            '86'
+            '85'
         ]
     });
 }
