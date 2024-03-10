@@ -301,7 +301,7 @@
                         {/if}
                     </div>
                     <div>
-                        <Input labelClass="label" bind:value={$form.url}>Url</Input>
+                        <Input labelClass="label" bind:value={$form.url}>URL</Input>
                         {#if $errors.url && Array.isArray($errors.url)}
                             <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
                                 {#each $errors.url as error (error)}
