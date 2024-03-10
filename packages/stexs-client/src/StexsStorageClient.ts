@@ -20,16 +20,30 @@ export class StexsStorageClient {
   }
 
   /**
-   * Retrieves presigned post url for uploading a new avatar
+   * Uploads avatar
    *
    * Note: action available for authenticated users only
    *
-   * @returns {Promise<Response>}
+   * @returns {Promise<Response>} - response from s3
    */
-  async getAvatarPostUrl(): Promise<Response> {
-    return await this._request({
+  async uploadAvatar(file: Blob): Promise<Response> {
+    const response =  await this._request({
       path: `avatars`,
       method: 'POST',
+    });
+
+    const body = await response.json();
+
+    const formData = new FormData();
+
+    Object.keys(body.fields).forEach((key) => {
+        formData.append(key, body.fields[key]);
+    });
+    formData.append('file', file, body.fields.key);
+
+    return await fetch(body.url, {
+        method: 'POST',
+        body: formData
     });
   }
 
