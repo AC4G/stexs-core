@@ -21,7 +21,8 @@
     AddFriend,
     CreateOrganization,
     initializeCopyButtonListener,
-    SettingsSidebar
+    SettingsSidebar,
+    UpdatePassword
   } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
@@ -43,13 +44,11 @@
   import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
   import { openAddFriendModal } from "$lib/utils/modals/friendModals";
   import Notifications from '$lib/Notifications.svelte';
-  import { createRerenderStore } from '$lib/stores/rerenderStore';
   import { AuthEvents } from 'stexs-client';
 
   initializeStores();
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
   const previousPageStore = createPreviousPageStore();
-  const rerenderStore = createRerenderStore();
   const profileStore = createProfileStore();
   const userStore = createUserStore();
   const toastStore = getToastStore();
@@ -70,6 +69,7 @@
     inventoryItem: { ref: InventoryItem },
     addFriends: { ref: AddFriend },
     createOrganization: { ref: CreateOrganization },
+    updatePassword: { ref: UpdatePassword }
   };
   const excludeRoutes = [
     '/sign-in',
@@ -106,7 +106,8 @@
       const session = stexs.auth.getSession()!;
       userStore.set({
         id: session.user.id,
-        username: session.user.username
+        username: session.user.username,
+        email: session.user.email
       });
       signedIn = true;
     }
@@ -123,7 +124,8 @@
       if (session) {
         userStore.set({
           id: session.user.id,
-          username: session.user.username
+          username: session.user.username,
+          email: session.user.email
         });
       }
     }
@@ -138,7 +140,8 @@
 
     userStore.set({
       id: session.user.id,
-      username: session.user.username
+      username: session.user.username,
+      email: session.user.email
     })
     signedIn = true;
   });
@@ -192,7 +195,9 @@
               </button>
               <Notifications />
               <button use:popup={avatarPopup} class="btn relative p-0">
-                <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
+                {#key $profileStore?.avatarRerenderTrigger}
+                  <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
+                {/key}
                 <div class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px] !ml-0" data-popup="avatarPopup">
                   <p class="text-[14px] break-all">{$userStore?.username}</p>
                 </div>

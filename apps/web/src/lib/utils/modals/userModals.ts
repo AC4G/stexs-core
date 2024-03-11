@@ -5,6 +5,7 @@ import type {
 } from '@skeletonlabs/skeleton';
 import { blockUser, unblockUser } from '../user';
 import type { Writable } from 'svelte/store';
+import StexsClient from 'stexs-client';
 
 export function openBlockUserModal(
   userId: string,
@@ -55,6 +56,24 @@ export function openUnblockUserModal(
         onSuccess,
       },
       fnAsync: true,
+    },
+  };
+  modalStore.set([modal]);
+}
+
+export function openUpdatePasswordModal(
+  types: string[],
+  stexs: StexsClient,
+  flash: Writable<ToastSettings>,
+  modalStore: ModalStore,
+) {
+  const modal: ModalSettings = {
+    type: 'component',
+    component: 'updatePassword',
+    meta: {
+      stexs,
+      flash,
+      types
     },
   };
   modalStore.set([modal]);

@@ -47,7 +47,7 @@ export async function processFile(
     outputPath,
   ]);
 
-  const data = await ffmpeg.readFile(outputPath);
+  const data = await ffmpeg.readFile(outputPath) as Buffer;
 
   const blob = new Blob([data.buffer], { type: 'image/webp' });
 

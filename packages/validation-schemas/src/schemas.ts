@@ -50,7 +50,7 @@ export const Recovery = z.object({
   email: emailValidation,
 });
 
-export const SignInConfirm = z.object({
+export const MFA = z.object({
   code: z.string(),
 });
 
@@ -182,3 +182,17 @@ export const UpdateProfile = z.object({
   is_private: z.boolean(),
   accept_friend_requests: z.boolean(),
 });
+
+export const UpdatePassword = z
+  .object({
+    password: passwordValidation,
+    confirm: z.string(),
+  })
+  .superRefine(({ confirm, password }, ctx) => {
+    if (confirm !== password)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'The passwords did not match',
+        path: ['confirm'],
+      });
+  });
