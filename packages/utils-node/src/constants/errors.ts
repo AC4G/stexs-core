@@ -298,3 +298,7 @@ export const CONNECTION_ID_REQUIRED = {
   code: 'CONNECTION_ID_REQUIRED',
   message: 'Please provide a connection id.',
 };
+export const EMAIL_NOT_AVAILABLE = {
+  code: 'EMAIL_NOT_AVAILABLE',
+  message: 'Please provide a different email address.',
+};

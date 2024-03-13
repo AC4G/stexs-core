@@ -196,3 +196,13 @@ export const UpdatePassword = z
         path: ['confirm'],
       });
   });
+
+export const EmailChange = z
+  .object({
+    email: emailValidation
+  });
+
+export const VerifyEmailChange = z
+  .object({
+    code: z.string()
+  });

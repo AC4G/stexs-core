@@ -18,6 +18,7 @@
     let flash = $modalStore[0].meta.flash;
     let types = $modalStore[0].meta.types;
     let type = types.length === 1 && types[0];
+    const requestCodeTypes = ['email'];
 
     const { form, errors, validate } = superForm(superValidateSync(UpdatePassword), {
         validators: UpdatePassword,
@@ -30,7 +31,7 @@
 
         if (!result.valid || $errors._errors) return;
 
-        if (type) stexs.auth.mfa.requestCode(type);
+        if (requestCodeTypes.includes(type)) stexs.auth.mfa.requestCode(type);
 
         newPasswordEntered = true;
     }
@@ -50,9 +51,9 @@
         
         const updateErrors = (await response.json()).errors;
 
-        if (errors[0].code === 'NEW_PASSWORD_EQUALS_CURRENT') {
+        if (updateErrors[0].code === 'NEW_PASSWORD_EQUALS_CURRENT') {
             updateErrors.forEach((error: { message: string }) => {
-                $errors._errors.push(error.message);
+                $errors._errors = [error.message];
                 return;
             });
             newPasswordEntered = false;
@@ -62,9 +63,7 @@
         confirmErrors = updateErrors;
     }
 
-    function cancel() {
-        modalStore.close();
-    }
+    const cancel = () => modalStore.close();
 </script>
 
 {#if $modalStore[0]}
@@ -73,7 +72,7 @@
     {:else}
         <div class="card p-5 space-y-6 flex flex-col relative max-w-[380px]">
             <div class="h-fit">
-                <p class="text-[22px]">Password Change</p>
+                <p class="text-[22px] text-primary-500">Password Change</p>
             </div>
             {#if $errors._errors && Array.isArray($errors._errors)}
                 <ul class="whitespace-normal text-[14px] text-error-400 text-center">
@@ -113,7 +112,7 @@
                 {/if}
             </div>
             <div class="flex justify-between w-full">
-                <Button class="variant-ringed-surface hover:bg-surface-600" on:click={parent.onClose}>Cancel</Button>
+                <Button class="variant-ringed-surface hover:bg-surface-600" on:click={cancel}>Cancel</Button>
                 <Button on:click={submit} class="variant-filled-primary">Continue</Button>
             </div>
         </div>

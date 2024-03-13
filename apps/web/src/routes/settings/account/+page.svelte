@@ -4,7 +4,7 @@
     import { getUserStore } from "$lib/stores/userStore";
     import { Button } from "ui";
     import { stexs } from "../../../stexsClient";
-    import { openUpdatePasswordModal } from "$lib/utils/modals/userModals";
+    import { openUpdatePasswordModal, openChangeEmailModal } from "$lib/utils/modals/userModals";
     import { getFlash } from 'sveltekit-flash-message/client';
     import { page } from '$app/stores';
 
@@ -18,14 +18,6 @@
     function toggleShowEmail() {
         showEmail = !showEmail;
     }
-
-    const emailQuery = createQuery({
-        queryKey: ['settingsEmail'],
-        queryFn: () => {
-            return $userStore?.email;
-        },
-        enabled: !!$userStore
-    });
 
     const authQuery = createQuery({
         queryKey: ['authState'],
@@ -41,8 +33,7 @@
             .map(([key, _]) => key);
     }
 
-    $: email = $emailQuery.data;
-    $: emailHidden = email && email.split('@').map(part => part.length > 2 ? part[0] + '*'.repeat(part.length - 2) + part.slice(-1) : part).join('@');
+    $: emailHidden = $userStore && $userStore.email.split('@').map(part => part.length > 2 ? part[0] + '*'.repeat(part.length - 2) + part.slice(-1) : part).join('@');
 </script>
 
 <div class="px-[4%] md:px-[8%] grid place-items-center">
@@ -51,15 +42,15 @@
             <h2 class="h2">Account</h2>
             <hr class="!border-t-2">
         </div>
-        {#if $emailQuery.data && $userStore}
+        {#if $userStore}
             <div class="bg-surface-700 rounded-md p-4 border border-surface-600">
                 <p class="text-[16px] text-surface-300">Email</p>
                 <div class="flex flex-row justify-between items-center">
                     <div class="flex flex-row items-center space-x-2">
-                        <p class="text-[16px]">{#if showEmail}{email}{:else}{emailHidden}{/if}</p>
+                        <p class="text-[16px]">{#if showEmail}{$userStore.email}{:else}{emailHidden}{/if}</p>
                         <Button on:click={toggleShowEmail} class="variant-ghost-surface px-2 py-1">{#if showEmail}Hide{:else}Show{/if}</Button>
                     </div>
-                    <Button class="variant-filled-primary px-2 py-1">Edit</Button>
+                    <Button on:click={() => openChangeEmailModal($userStore.email, enabledMethods, stexs, flash, modalStore)} class="variant-filled-primary px-2 py-1">Edit</Button>
                 </div>
             </div>
         {/if}

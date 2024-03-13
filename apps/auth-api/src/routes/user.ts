@@ -5,6 +5,7 @@ import { body } from 'express-validator';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,
+  EMAIL_NOT_AVAILABLE,
   EMAIL_REQUIRED,
   INTERNAL_ERROR,
   INVALID_CODE,
@@ -451,6 +452,31 @@ router.post(
       res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
+    try {
+      const { rowCount } = await db.query(
+        `
+          SELECT 
+            id
+          FROM auth.users
+          WHERE email = $1::text;
+        `,
+        [newEmail],
+      );
+
+      if (rowCount > 0) {
+        logger.warn(`Provided email for change is already in use for user: ${userId}`);
+        return res.status(403).json(errorMessages([{ info: EMAIL_NOT_AVAILABLE }]));
+      }
+    } catch (e) {
+      logger.error(
+        `Error during email change check for user: ${userId}. Error: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+
+      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    }
+
     const confirmationCode = generateCode(8);
 
     try {
@@ -460,7 +486,7 @@ router.post(
           SET 
               email_change = $1::text,
               email_change_sent_at = CURRENT_TIMESTAMP,
-              email_change_code = $2::uuid
+              email_change_code = $2::text
           WHERE id = $3::uuid;
         `,
         [newEmail, confirmationCode, userId],

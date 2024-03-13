@@ -22,7 +22,8 @@
     CreateOrganization,
     initializeCopyButtonListener,
     SettingsSidebar,
-    UpdatePassword
+    UpdatePassword,
+    ChangeEmail
   } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
@@ -69,7 +70,8 @@
     inventoryItem: { ref: InventoryItem },
     addFriends: { ref: AddFriend },
     createOrganization: { ref: CreateOrganization },
-    updatePassword: { ref: UpdatePassword }
+    updatePassword: { ref: UpdatePassword },
+    changeEmail: { ref: ChangeEmail }
   };
   const excludeRoutes = [
     '/sign-in',
@@ -195,9 +197,7 @@
               </button>
               <Notifications />
               <button use:popup={avatarPopup} class="btn relative p-0">
-                {#key $profileStore?.avatarRerenderTrigger}
-                  <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
-                {/key}
+                <Avatar {stexs} username={$userStore?.username} userId={$userStore.id} class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen && "!border-primary-500"} transition" />
                 <div class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px] !ml-0" data-popup="avatarPopup">
                   <p class="text-[14px] break-all">{$userStore?.username}</p>
                 </div>

@@ -78,3 +78,23 @@ export function openUpdatePasswordModal(
   };
   modalStore.set([modal]);
 }
+
+export function openChangeEmailModal(
+  email: string,
+  types: string[],
+  stexs: StexsClient,
+  flash: Writable<ToastSettings>,
+  modalStore: ModalStore,
+) {
+  const modal: ModalSettings = {
+    type: 'component',
+    component: 'changeEmail',
+    meta: {
+      stexs,
+      flash,
+      types,
+      email
+    },
+  };
+  modalStore.set([modal]);
+}
