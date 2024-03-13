@@ -157,7 +157,7 @@
 </script>
 
 {#if parsed.length > 0}
-    <div class="bg-surface-800 rounded-md border border-surface-500 p-2 cursor-auto" {...$$restProps}>
+    <div class="bg-surface-800 rounded-md border border-surface-500 p-2 cursor-auto {$$restProps.class}" {...$$restProps}>
         {@html parsed}
     </div>
 {/if}

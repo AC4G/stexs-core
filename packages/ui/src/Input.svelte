@@ -24,7 +24,7 @@
     {/if}
 {:else}
     {#if withLabel}
-        <label for={field} class="{labelClass}">
+        <label for={field} class="{labelClass} w-full">
             {#if labelAfter}
                 <input id={field} class="{inputClass}" bind:value on:input {...$$restProps} />
                 <span><slot /></span>

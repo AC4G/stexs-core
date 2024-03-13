@@ -5,6 +5,7 @@ import { body } from 'express-validator';
 import {
   CODE_EXPIRED,
   CODE_REQUIRED,
+  EMAIL_NOT_AVAILABLE,
   EMAIL_REQUIRED,
   INTERNAL_ERROR,
   INVALID_CODE,
@@ -162,13 +163,13 @@ router.post(
         }
       }
 
-      if (type === 'email') {
+      if (type === 'email') { 
         const { rows, rowCount } = await db.query(
           `
             SELECT 
               email, 
               email_code, 
-              email_code_sent
+              email_code_sent_at
             FROM auth.mfa
             WHERE user_id = $1::uuid;
           `,
@@ -235,7 +236,7 @@ router.post(
         `
           SELECT 
             CASE 
-                WHEN crypt($1::text, encrypted_password) = encrypted_password 
+                WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password 
                 THEN true 
                 ELSE false 
             END AS is_current_password
@@ -275,7 +276,7 @@ router.post(
         `
           UPDATE auth.users
           SET
-              encrypted_password = crypt($1::text, gen_salt('bf'))
+              encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
           WHERE id = $2::uuid;
         `,
         [password, userId],
@@ -389,7 +390,7 @@ router.post(
             SELECT 
               email, 
               email_code, 
-              email_code_sent
+              email_code_sent_at
             FROM auth.mfa
             WHERE user_id = $1::uuid;
           `,
@@ -451,6 +452,31 @@ router.post(
       res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
+    try {
+      const { rowCount } = await db.query(
+        `
+          SELECT 
+            id
+          FROM auth.users
+          WHERE email = $1::text;
+        `,
+        [newEmail],
+      );
+
+      if (rowCount > 0) {
+        logger.warn(`Provided email for change is already in use for user: ${userId}`);
+        return res.status(403).json(errorMessages([{ info: EMAIL_NOT_AVAILABLE }]));
+      }
+    } catch (e) {
+      logger.error(
+        `Error during email change check for user: ${userId}. Error: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+
+      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    }
+
     const confirmationCode = generateCode(8);
 
     try {
@@ -460,7 +486,7 @@ router.post(
           SET 
               email_change = $1::text,
               email_change_sent_at = CURRENT_TIMESTAMP,
-              email_change_code = $2::uuid
+              email_change_code = $2::text
           WHERE id = $3::uuid;
         `,
         [newEmail, confirmationCode, userId],

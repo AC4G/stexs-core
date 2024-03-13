@@ -11,13 +11,13 @@
     import { UpdateProfile } from 'validation-schemas';
     import { debounce } from "lodash";
     import { openRemoveAvatarModal } from "$lib/utils/modals/avatarModals";
-    import { getRerenderStore, registerComponent, toggleRerender } from "$lib/stores/rerenderStore";
     import { AuthEvents } from "stexs-client";
     import { convertAnimatedToWebP, convertImageToWebP, cropFile, isWebPAnimated } from "$lib/utils/fileConverter";
     import compressFile from "$lib/utils/compressFile";
+    import { getProfileStore } from "$lib/stores/profileStore";
 
-    const rerenderStore = getRerenderStore();
     const modalStore = getModalStore();
+    const profileStore = getProfileStore()
     const userStore = getUserStore();
     const flash = getFlash(page);
 
@@ -32,6 +32,7 @@
     let fileInput: HTMLInputElement;
     let usernameNotAvailable: boolean = false;
     let checkedUsernames: { username: string, available: boolean }[] = [];
+    let state: boolean = false;
 
     const checkUsernameAvailability = debounce(async () => {
         if ($errors.username || $form.username.toLowerCase() === profile.username.toLowerCase() || $form.username.length === 0) return;
@@ -102,7 +103,6 @@
                 .single();
 
             updateForm(data);
-            registerComponent(`avatar:${$userStore.id}`, rerenderStore);
 
             return data;
         },
@@ -202,7 +202,6 @@
                 if (image.height !== 200 || image.width !== 200) file = await cropFile(file);
             };
         } else if (file.type === 'image/gif') {
-            console.log({ size: file.size })
             file = await convertAnimatedToWebP(file);
         } else {
             file = await convertImageToWebP(file);
@@ -228,14 +227,11 @@
             timeout: 5000
         };
 
-        toggleRerender(`avatar:${$userStore.id}`, rerenderStore);
-
         submittedAvatar = false;
+        state = !state;
     }
 
     $: if (usernameNotAvailable && $form.username.length === 0) usernameNotAvailable = false;
-
-    $: state = $userStore ? $rerenderStore[`avatar:${$userStore.id}`] : true;
 </script>
 
 <div class="px-[4%] md:px-[8%] grid place-items-center">
@@ -244,7 +240,18 @@
             <h2 class="h2">Profile</h2>
             <hr class="!border-t-2">
         </div>
-        {#if $profileQuery.data && $userStore}
+        {#if !$profileQuery.data || !$userStore}
+            <div class="grid sm:grid-cols-2 pt-4">
+                <div class="placeholder-circle animate-pulse mx-auto w-[200px] p-2" />
+                <div class="space-y-6 sm:row-start-1">
+                    <div class="placeholder animate-pulse h-[69.75px]" />
+                    <div class="placeholder animate-pulse h-[69.75px]" />
+                    <div class="placeholder animate-pulse h-[234.5px]" />
+                    <div class="placeholder animate-pulse h-[24px]" />
+                    <div class="placeholder animate-pulse h-[24px]" />
+                </div>
+            </div>
+        {:else}
             <div class="grid sm:grid-cols-2 pt-4">
                 <div class="relative w-fit h-fit mx-auto">
                     {#key state}
@@ -272,13 +279,14 @@
                                 >
                             </label>
                         </Button>
-                        <Button on:click={() => openRemoveAvatarModal($userStore.id, rerenderStore, modalStore, () => {
+                        <Button on:click={() => openRemoveAvatarModal(modalStore, () => {
                             $flash = {
                                 message: `Avatar successfully removed.`,
                                 classes: 'variant-glass-success',
                                 timeout: 5000
                             };
                             fileInput.value = '';
+                            state = !state;
                         })} class="hover:!bg-surface-500 p-2 w-full text-red-600 transition-none">Remove Avatar</Button>
                     </div>
                 </div>
@@ -338,7 +346,7 @@
                         <SlideToggle name="acceptFriendRequests" active="bg-primary-500" bind:checked={$form.accept_friend_requests} size="sm" />
                     </div>
                     <div class="w-fit h-fit mx-auto">
-                        <Button type="submit" class="variant-filled-primary" {submitted}>Save changes</Button>
+                        <Button type="submit" class="variant-filled-primary" {submitted}>Save</Button>
                     </div>
                 </form>
             </div>

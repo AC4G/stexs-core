@@ -65,7 +65,7 @@
                 </Button>
             </div>
             <div class="h-fit">
-                <p class="text-[22px]">Setup your Organization</p>
+                <p class="text-[22px] text-primary-500">Setup your Organization</p>
             </div>
         </div>
         {#if $errors._errors && Array.isArray($errors._errors)}
