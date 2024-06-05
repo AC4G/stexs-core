@@ -58,7 +58,7 @@
                     <div class="placeholder animate-pulse h-[24px] max-w-[220px]" />
                 </div>
             {:else}
-                <a href="/items/{data.items.id}" class="text-[24px] hover:text-secondary-400 transition">{data.items.name}</a>
+                <a href="/items/{data.items.id}" class="text-[24px] hover:text-secondary-400 transition font-bold">{data.items.name}</a>
                 <div class="flex flex-row space-x-2">
                     <a href="/organizations/{data.items.projects.organizations.name}/projects/{data.items.projects.name}">
                         <div class="w-[48px] h-[48px] bg-surface-600 transition border border-gray-600 hover:border-primary-500 rounded-md inline-flex items-center justify-center text-center">

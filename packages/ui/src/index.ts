@@ -16,5 +16,6 @@ export * from './utils/copyToClipboard';
 export { default as SettingsSidebar } from './sidebars/SettingsSidebar.svelte';
 export { default as Input } from './Input.svelte';
 export { default as MFA } from './MFA.svelte';
-export { default as UpdatePassword } from './modals/UpdatePassword.svelte';
+export { default as ChangePassword } from './modals/ChangePassword.svelte';
 export { default as ChangeEmail } from './modals/ChangeEmail.svelte';
+export { default as EnableTOTP } from './modals/EnableTOTP.svelte'

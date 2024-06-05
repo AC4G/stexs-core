@@ -193,7 +193,7 @@
             {:else}
                 <Avatar {userId} {stexs} {username} class="mx-auto w-[122px] sm:w-[168px] border-2 border-surface-500" draggable="false" />
                 <div class="grid gap-y-4 md:col-span-2 items-center">
-                    <p class="text-[20px] sm:text-[24px] break-all">{$profileQuery.data?.username}</p>
+                    <p class="text-[20px] sm:text-[24px] break-all font-bold">{$profileQuery.data?.username}</p>
                     {#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
                         {#if $friendsAmountQuery.isLoading}
                             <div class="placeholder animate-pulse w-[100px] h-[20px]" />

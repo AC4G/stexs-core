@@ -24,6 +24,7 @@
     "validation-schemas": "workspace:*"
   },
   "dependencies": {
+    "@skeletonlabs/tw-plugin": "^0.2.4",
     "ansi-to-html": "^0.7.2",
     "dompurify": "^3.0.8",
     "fast-xml-parser": "^4.3.2",

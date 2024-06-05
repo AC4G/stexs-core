@@ -61,7 +61,7 @@ export function openUnblockUserModal(
   modalStore.set([modal]);
 }
 
-export function openUpdatePasswordModal(
+export function openChangePasswordModal(
   types: string[],
   stexs: StexsClient,
   flash: Writable<ToastSettings>,
@@ -69,7 +69,7 @@ export function openUpdatePasswordModal(
 ) {
   const modal: ModalSettings = {
     type: 'component',
-    component: 'updatePassword',
+    component: 'changePassword',
     meta: {
       stexs,
       flash,
@@ -97,4 +97,12 @@ export function openChangeEmailModal(
     },
   };
   modalStore.set([modal]);
+}
+
+export function openEnableTOTPModal(
+  stexs: StexsClient,
+  flash: Writable<ToastSettings>,
+  modalStore: ModalStore,
+) {
+
 }

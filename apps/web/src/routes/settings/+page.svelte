@@ -2,7 +2,7 @@
     import { stexs } from "../../stexsClient";
     import { getUserStore } from "$lib/stores/userStore";
     import { Avatar, Input, Button } from "ui";
-    import { SlideToggle, type PopupSettings, popup, getModalStore, ProgressRadial } from "@skeletonlabs/skeleton";
+    import { SlideToggle, type PopupSettings, popup, getModalStore, ProgressRadial, type ToastSettings } from "@skeletonlabs/skeleton";
     import { createQuery } from "@tanstack/svelte-query";
     import { getFlash } from "sveltekit-flash-message/client";
     import { page } from "$app/stores";
@@ -14,10 +14,8 @@
     import { AuthEvents } from "stexs-client";
     import { convertAnimatedToWebP, convertImageToWebP, cropFile, isWebPAnimated } from "$lib/utils/fileConverter";
     import compressFile from "$lib/utils/compressFile";
-    import { getProfileStore } from "$lib/stores/profileStore";
 
     const modalStore = getModalStore();
-    const profileStore = getProfileStore()
     const userStore = getUserStore();
     const flash = getFlash(page);
 

@@ -7,7 +7,7 @@
     import { UpdatePassword } from 'validation-schemas';
     import Button from '../Button.svelte';
 
-    export let parent: SvelteComponent;
+    export const parent: SvelteComponent = undefined;
 
     const modalStore = getModalStore();
 
