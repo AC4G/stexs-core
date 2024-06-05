@@ -22,7 +22,7 @@
     CreateOrganization,
     initializeCopyButtonListener,
     SettingsSidebar,
-    UpdatePassword,
+    ChangePassword,
     ChangeEmail
   } from 'ui';
   import { stexs } from '../stexsClient';
@@ -70,7 +70,7 @@
     inventoryItem: { ref: InventoryItem },
     addFriends: { ref: AddFriend },
     createOrganization: { ref: CreateOrganization },
-    updatePassword: { ref: UpdatePassword },
+    changePassword: { ref: ChangePassword },
     changeEmail: { ref: ChangeEmail }
   };
   const excludeRoutes = [

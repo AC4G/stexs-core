@@ -4,7 +4,7 @@
     import { getUserStore } from "$lib/stores/userStore";
     import { Button } from "ui";
     import { stexs } from "../../../stexsClient";
-    import { openUpdatePasswordModal, openChangeEmailModal } from "$lib/utils/modals/userModals";
+    import { openChangePasswordModal, openChangeEmailModal } from "$lib/utils/modals/userModals";
     import { getFlash } from 'sveltekit-flash-message/client';
     import { page } from '$app/stores';
 
@@ -19,6 +19,30 @@
         showEmail = !showEmail;
     }
 
+    function enableTOTPFactor() {
+        
+    }
+
+    function isOnlyOneFactorEnabled(): boolean {
+        return enabledMethods.length === 1;
+    }
+
+    function showCantDisableAllFactorsMessage() {
+        $flash = {
+            message: "You can't disable all authentication methods. At least one method must be enabled.",
+            classes: 'variant-glass-error',
+            timeout: 5000,
+        };
+    }
+
+    function disableEmailFactor() {
+        if (isOnlyOneFactorEnabled()) {
+            showCantDisableAllFactorsMessage();
+
+            return;
+        }
+    }
+
     const authQuery = createQuery({
         queryKey: ['authState'],
         queryFn: async () => {
@@ -29,7 +53,7 @@
 
     $: if ($authQuery.data) {
         enabledMethods = Object.entries($authQuery.data)
-            .filter(([key, value]) => value === true)
+            .filter(([_, value]) => value === true)
             .map(([key, _]) => key);
     }
 
@@ -59,7 +83,7 @@
             <hr class="!border-t-2">
         </div>
         <div class="space-y-8">
-            <Button on:click={() => openUpdatePasswordModal(enabledMethods, stexs, flash, modalStore)} class="variant-filled-primary px-2 py-1">Change Password</Button>
+            <Button on:click={() => openChangePasswordModal(enabledMethods, stexs, flash, modalStore)} class="variant-filled-primary px-2 py-1">Change Password</Button>
             {#if $authQuery.data}
                 <div class="space-y-1">
                     <p class="text-surface-300">Authenticator App</p>
@@ -72,7 +96,7 @@
                 <div class="space-y-1">
                     <p class="text-surface-300">Email Authentication</p>
                     {#if $authQuery.data.email}
-                        <Button class="variant-ghost-surface px-2 py-1 text-red-600">Disable Email Authentication</Button>
+                        <Button on:click={disableEmailFactor} class="variant-ghost-surface px-2 py-1 text-red-600">Disable Email Authentication</Button>
                     {:else}
                         <Button class="variant-filled-primary px-2 py-1">Enable Email Authentication</Button>
                     {/if}

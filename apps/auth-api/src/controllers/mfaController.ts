@@ -23,7 +23,7 @@ import sendEmail from '../services/emailService';
 
 export async function enableTOTP(req: Request, res: Response) {
   const userId = req.auth?.sub;
-  let email;
+  let email; 
 
   try {
     const { rowCount, rows } = await db.query(
@@ -97,7 +97,7 @@ export async function enableTOTP(req: Request, res: Response) {
 
 export async function enableEmail(req: Request, res: Response) {
   const userId = req.auth?.sub;
-  const { code } = req.body;
+  const { code } = req.body; 
 
   try {
     const { rowCount, rows } = await db.query(

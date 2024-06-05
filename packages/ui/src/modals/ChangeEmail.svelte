@@ -7,7 +7,7 @@
     import Input from '../Input.svelte';
     import Button from '../Button.svelte';
     
-    export let parent: SvelteComponent;
+    export const parent: SvelteComponent = undefined;
 
     const modalStore = getModalStore();
 
@@ -165,7 +165,7 @@
                 required
                 bind:value={$form.email}
             >New Email</Input>
-            <Button on:click={jumpToVerification} class="p-0 text-secondary-500 hover:text-secondary-400 w-fit">Already email changed?</Button>
+            <Button on:click={jumpToVerification} class="p-0 text-secondary-500 hover:text-secondary-400 w-fit">Already issued email change?</Button>
             <div class="flex justify-between w-full">
                 <Button class="variant-ringed-surface hover:bg-surface-600" on:click={cancel}>Cancel</Button>
                 <Button on:click={submit} class="variant-filled-primary">Continue</Button>

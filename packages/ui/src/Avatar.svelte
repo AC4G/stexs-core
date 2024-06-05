@@ -16,6 +16,8 @@
         enabled: !!userId
     });
 
+    $: pathUrl = $urlQuery.data ? new URL($urlQuery.data) : null;
+
     $: imageQuery = createQuery({
         queryKey: ['avatarImage', userId],
         queryFn: async () => {
@@ -26,7 +28,9 @@
                     };
                 }
 
-                const response = await fetch($urlQuery.data, {
+                pathUrl.searchParams.set('timestamp', new Date().getTime().toString());
+
+                const response = await fetch(pathUrl, {
                     headers
                 });
 
