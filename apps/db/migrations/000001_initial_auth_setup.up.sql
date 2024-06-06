@@ -94,36 +94,6 @@ CREATE SCHEMA IF NOT EXISTS utils;
 GRANT USAGE ON SCHEMA utils TO authenticated;
 GRANT USAGE ON SCHEMA utils TO anon;
 
-CREATE OR REPLACE FUNCTION utils.has_client_scope(_scope_id INT)
-RETURNS BOOLEAN AS $$
-BEGIN
-    IF auth.grant() IS NULL OR auth.grant() = 'password' THEN
-        RETURN FALSE;
-    END IF;
-
-    IF auth.grant() = 'client_credentials' THEN
-        RETURN EXISTS (
-            SELECT 1
-            FROM public.oauth2_apps_scopes AS oas
-            JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
-            WHERE oas.app_id = oa.id
-                AND oas.scope_id = _scope_id
-        );
-    END IF;
- 
-    RETURN EXISTS (
-        SELECT 1
-        FROM public.oauth2_connection_scopes AS cs
-        JOIN public.oauth2_connections AS c ON cs.connection_id = c.id
-        WHERE c.user_id = auth.uid()
-            AND c.client_id = (auth.jwt()->>'client_id')::UUID
-            AND cs.scope_id = _scope_id
-    );
-END;
-$$ LANGUAGE plpgsql;
-
-GRANT EXECUTE ON FUNCTION utils.has_client_scope(scope_id INT) TO authenticated;
-
 
 
 CREATE TABLE auth.users (
@@ -143,7 +113,7 @@ CREATE TABLE auth.users (
     banned_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
-    CONSTRAINT unique_email_change_combination UNIQUE (email_change, email_change_token)
+    CONSTRAINT unique_email_change_combination UNIQUE (email_change, email_change_code)
 );
 
 CREATE OR REPLACE FUNCTION auth.create_mfa_for_user()
@@ -227,35 +197,6 @@ CREATE TABLE auth.mfa (
     email_code_sent_at TIMESTAMPTZ
 );
 
-CREATE TABLE auth.refresh_tokens (
-    id SERIAL PRIMARY KEY,
-    token UUID NOT NULL,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    connection_id REFERENCES public.oauth2_connections(id) ON DELETE CASCADE,
-    session_id UUID,
-    grant_type VARCHAR(50) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMPTZ,
-    CONSTRAINT unique_refresh_token_combination UNIQUE (user_id, session_id, grant_type, token, connection_id)
-);
-
-CREATE OR REPLACE FUNCTION auth.delete_connection()
-RETURNS TRIGGER AS $$
-BEGIN   
-    IF OLD.connection_id IS NOT NULL THEN
-        DELETE FROM public.oauth2_connections 
-        WHERE id = OLD.connection_id;
-    END IF;
-
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER create_mfa_trigger
-AFTER DELETE ON auth.refresh_tokens
-FOR EACH ROW
-EXECUTE FUNCTION auth.delete_connection();
- 
 
 
 CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN DEFAULT FALSE)
@@ -398,10 +339,7 @@ FROM public.oauth2_apps;
 
 GRANT SELECT ON public.oauth2_apps_public TO authenticated;
 
-CREATE TRIGGER generate_client_credentials_trigger
-BEFORE INSERT ON public.oauth2_apps
-FOR EACH ROW
-EXECUTE FUNCTION public.generate_client_credentials();
+
 
 CREATE OR REPLACE FUNCTION public.generate_client_credentials()
 RETURNS TRIGGER AS $$
@@ -411,52 +349,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.generate_new_client_secret(app_id INT)
-RETURNS TABLE (client_secret VARCHAR(64)) AS $$
-DECLARE
-    new_client_secret VARCHAR(64);
-BEGIN
-    IF (
-        (
-            auth.grant() = 'password' AND
-            EXISTS (
-                SELECT 1
-                FROM public.oauth2_apps AS oa
-                JOIN public.organization_members AS om ON oa.organization_id = om.organization_id
-                WHERE oa.id = app_id
-                    AND om.member_id = auth.uid()
-                    AND om.role IN ('Owner', 'Admin')
-            )
-        ) 
-        OR 
-        (
-            auth.grant() = 'client_credentials' AND
-            utils.has_client_scope(42) AND
-            EXISTS (
-                SELECT 1
-                FROM public.oauth2_apps 
-                WHERE id = app_id
-                    AND client_id = (auth.jwt()->>'client_id')::UUID
-            )
-        )
-    ) THEN
-        new_client_secret := encode(gen_random_bytes(32), 'hex');
-
-        UPDATE public.oauth2_apps
-        SET client_secret = new_client_secret
-        WHERE id = app_id;
-
-        RETURN QUERY
-        SELECT new_client_secret;
-    ELSE
-        RAISE sqlstate '42501' USING
-            message = 'Insufficient Privilege';
-        RETURN;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-GRANT EXECUTE ON FUNCTION public.generate_new_client_secret(INT) TO authenticated;
+CREATE TRIGGER generate_client_credentials_trigger
+BEFORE INSERT ON public.oauth2_apps
+FOR EACH ROW
+EXECUTE FUNCTION public.generate_client_credentials();
 
 
 
@@ -517,9 +413,121 @@ GRANT SELECT ON TABLE public.oauth2_connections TO authenticated;
 
 
 
+CREATE OR REPLACE FUNCTION utils.has_client_scope(_scope_id INT)
+RETURNS BOOLEAN AS $$
+BEGIN
+    IF auth.grant() IS NULL OR auth.grant() = 'password' THEN
+        RETURN FALSE;
+    END IF;
+
+    IF auth.grant() = 'client_credentials' THEN
+        RETURN EXISTS (
+            SELECT 1
+            FROM public.oauth2_apps_scopes AS oas
+            JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+            WHERE oas.app_id = oa.id
+                AND oas.scope_id = _scope_id
+        );
+    END IF;
+ 
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.oauth2_connection_scopes AS cs
+        JOIN public.oauth2_connections AS c ON cs.connection_id = c.id
+        WHERE c.user_id = auth.uid()
+            AND c.client_id = (auth.jwt()->>'client_id')::UUID
+            AND cs.scope_id = _scope_id
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION utils.has_client_scope(scope_id INT) TO authenticated;
+
+
+
+CREATE OR REPLACE FUNCTION public.generate_new_client_secret(app_id INT)
+RETURNS TABLE (client_secret VARCHAR(64)) AS $$
+DECLARE
+    new_client_secret VARCHAR(64);
+BEGIN
+    IF (
+        (
+            auth.grant() = 'password' AND
+            EXISTS (
+                SELECT 1
+                FROM public.oauth2_apps AS oa
+                JOIN public.organization_members AS om ON oa.organization_id = om.organization_id
+                WHERE oa.id = app_id
+                    AND om.member_id = auth.uid()
+                    AND om.role IN ('Owner', 'Admin')
+            )
+        ) 
+        OR 
+        (
+            auth.grant() = 'client_credentials' AND
+            utils.has_client_scope(42) AND
+            EXISTS (
+                SELECT 1
+                FROM public.oauth2_apps 
+                WHERE id = app_id
+                    AND client_id = (auth.jwt()->>'client_id')::UUID
+            )
+        )
+    ) THEN
+        new_client_secret := encode(gen_random_bytes(32), 'hex');
+
+        UPDATE public.oauth2_apps
+        SET client_secret = new_client_secret
+        WHERE id = app_id;
+
+        RETURN QUERY
+        SELECT new_client_secret;
+    ELSE
+        RAISE sqlstate '42501' USING
+            message = 'Insufficient Privilege';
+        RETURN;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION public.generate_new_client_secret(INT) TO authenticated;
+
+
+
+CREATE TABLE auth.refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    token UUID NOT NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    connection_id INT REFERENCES public.oauth2_connections(id) ON DELETE CASCADE,
+    session_id UUID,
+    grant_type VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ,
+    CONSTRAINT unique_refresh_token_combination UNIQUE (user_id, session_id, grant_type, token, connection_id)
+);
+
+CREATE OR REPLACE FUNCTION auth.delete_connection()
+RETURNS TRIGGER AS $$
+BEGIN   
+    IF OLD.connection_id IS NOT NULL THEN
+        DELETE FROM public.oauth2_connections 
+        WHERE id = OLD.connection_id;
+    END IF;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER create_mfa_trigger
+AFTER DELETE ON auth.refresh_tokens
+FOR EACH ROW
+EXECUTE FUNCTION auth.delete_connection();
+
+
+
 CREATE TABLE public.oauth2_connection_scopes (
     id SERIAL PRIMARY KEY,
-    connection_id INT REFERENCES public.oauth2_connections(id) ON DELETE CASCADE NULL,
+    connection_id INT REFERENCES public.oauth2_connections(id) ON DELETE CASCADE NOT NULL,
     scope_id INT REFERENCES public.scopes(id) ON DELETE CASCADE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT unique_oauth2_connection_scopes_combination UNIQUE (connection_id, scope_id)
