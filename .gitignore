@@ -17,3 +17,5 @@ docker/haproxy/certs
 **/.turbo
 
 **/coverage
+
+.DS_Store
