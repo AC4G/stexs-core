@@ -1674,6 +1674,8 @@ CREATE POLICY scopes_select
         auth.grant() <> 'authorization_code'
     );
 
+
+
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY notifications_select
@@ -1759,6 +1761,8 @@ CREATE POLICY notifications_insert
 
 
 
+ALTER TABLE public.oauth2_connections ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY oauth2_connections_select
     ON public.oauth2_connections
     AS PERMISSIVE
@@ -1805,6 +1809,8 @@ CREATE POLICY oauth2_connections_select
     );
 
 
+
+ALTER TABLE public.oauth2_connection_scopes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY oauth2_connection_scopes_select
     ON public.oauth2_connection_scopes
