@@ -10,16 +10,16 @@ DROP POLICY IF EXISTS friend_requests_select ON public.friend_requests;
 DROP POLICY IF EXISTS friend_requests_delete ON public.friend_requests;
 DROP POLICY IF EXISTS friend_requests_insert ON public.friend_requests;
 
-REVOKE EXECUTE ON FUNCTION utils.is_selected_friend_a_friend_or_has_friend_with_current_user(UUID, UUID) FROM authenticated;
-REVOKE EXECUTE ON FUNCTION utils.is_selected_friend_a_friend_or_has_friend_with_current_user(UUID, UUID) FROM anon;
-
-DROP FUNCTION IF EXISTS utils.is_selected_friend_a_friend_or_has_friend_with_current_user(UUID, UUID);
-
 ALTER TABLE public.friends DISABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS friends_select ON public.friends;
 DROP POLICY IF EXISTS friends_delete ON public.friends;
 DROP POLICY IF EXISTS friends_insert ON public.friends;
+
+REVOKE EXECUTE ON FUNCTION utils.is_selected_friend_a_friend_or_has_friend_with_current_user(UUID, UUID) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION utils.is_selected_friend_a_friend_or_has_friend_with_current_user(UUID, UUID) FROM anon;
+
+DROP FUNCTION IF EXISTS utils.is_selected_friend_a_friend_or_has_friend_with_current_user(UUID, UUID);
 
 ALTER TABLE public.inventories DISABLE ROW LEVEL SECURITY;
 

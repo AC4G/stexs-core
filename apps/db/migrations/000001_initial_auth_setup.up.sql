@@ -11,6 +11,8 @@ GRANT USAGE ON SCHEMA public TO anon;
 
 CREATE SCHEMA extensions;
 
+SET search_path TO extensions, public;
+
 ALTER DATABASE postgres SET search_path TO extensions, public;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA extensions;
