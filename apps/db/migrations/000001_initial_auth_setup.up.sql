@@ -13,6 +13,8 @@ CREATE SCHEMA extensions;
 
 SET search_path TO extensions, public;
 
+ALTER DATABASE postgres SET search_path TO extensions, public;
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS citext SCHEMA extensions;  
