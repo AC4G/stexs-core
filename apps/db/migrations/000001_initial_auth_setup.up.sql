@@ -192,7 +192,6 @@ EXECUTE FUNCTION auth.encrypt_password();
 CREATE TABLE auth.mfa (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email BOOLEAN DEFAULT TRUE NOT NULL,
-    totp BOOLEAN DEFAULT FALSE NOT NULL,
     totp_secret VARCHAR(32),
     totp_verified_at TIMESTAMPTZ,
     email_code VARCHAR(8),
@@ -330,10 +329,10 @@ GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
 CREATE OR REPLACE VIEW public.oauth2_apps_public AS
 SELECT
-    id,
     name,
     client_id,
     organization_id,
+    project_id,
     description,
     homepage_url,
     redirect_url

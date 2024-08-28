@@ -60,9 +60,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.warn(
-        `Invalid authorization code for client: ${client_id} and code: ${code}`,
-      );
+      logger.debug(`Invalid authorization code for client: ${client_id} and code: ${code}`);
       return res.status(400).json(
         errorMessages([
           {
@@ -77,9 +75,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
     }
 
     if (isExpired(rows[0].created_at, 5)) {
-      logger.warn(
-        `Authorization code expired for client: ${client_id} and code: ${code}`,
-      );
+      logger.debug(`Authorization code expired for client: ${client_id} and code: ${code}`);
       return res.status(400).json(
         errorMessages([
           {
@@ -95,9 +91,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 
     ({ id: tokenId, user_id: userId, scopes, organization_id } = rows[0]);
 
-    logger.info(
-      `Authorization code validated successfully for user: ${userId} and client: ${client_id}`,
-    );
+    logger.debug(`Authorization code validated successfully for user: ${userId} and client: ${client_id}`);
   } catch (e) {
     logger.error(
       `Error while processing authorization code for client: ${client_id} and code: ${code}. Error: ${
@@ -117,9 +111,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.error(
-        `Failed to delete authorization code for user: ${userId} and client: ${client_id}`,
-      );
+      logger.error(`Failed to delete authorization code for user: ${userId} and client: ${client_id}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
   } catch (e) {
@@ -151,9 +143,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.error(
-        `Failed to insert connection for user: ${userId} and client: ${client_id}`,
-      );
+      logger.error(`Failed to insert connection for user: ${userId} and client: ${client_id}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
@@ -167,9 +157,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
 
-  logger.info(
-    `Connection successfully created for user: ${userId} and client: ${client_id}`,
-  );
+  logger.debug(`Connection successfully created for user: ${userId} and client: ${client_id}`);
 
   let body;
 
@@ -184,9 +172,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
       connectionId,
     );
 
-    logger.info(
-      `Access token generated successfully for user: ${userId} and client: ${client_id}`,
-    );
+    logger.debug(`Access token generated successfully for user: ${userId} and client: ${client_id}`);
   } catch (e) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
@@ -227,7 +213,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.warn(`Invalid client credentials for client: ${client_id}`);
+      logger.debug(`Invalid client credentials for client: ${client_id}`);
       return res.status(400).json(
         errorMessages([
           {
@@ -244,15 +230,13 @@ export async function clientCredentialsController(req: Request, res: Response) {
     ({ scopes, organization_id } = rows[0]);
 
     if (!scopes || scopes.length === 0) {
-      logger.warn(`No client scopes selected for client: ${client_id}`);
+      logger.debug(`No client scopes selected for client: ${client_id}`);
       return res
         .status(400)
         .json(errorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]));
     }
 
-    logger.info(
-      `Client credentials validated successfully for client: ${client_id}`,
-    );
+    logger.debug(`Client credentials validated successfully for client: ${client_id}`);
   } catch (e) {
     logger.error(
       `Error while processing client credentials for client: ${client_id}. Error: ${
@@ -271,7 +255,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
       'client_credentials',
     );
 
-    logger.info(`Access token generated successfully for client: ${client_id}`);
+    logger.debug(`Access token generated successfully for client: ${client_id}`);
 
     res.json(body);
   } catch (e) {
@@ -296,9 +280,7 @@ export async function refreshTokenController(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.warn(
-        `Invalid refresh token for user: ${sub} and client: ${client_id}`,
-      );
+      logger.debug(`Invalid refresh token for user: ${sub} and client: ${client_id}`);
       return res.status(400).json(
         errorMessages([
           {
@@ -312,9 +294,7 @@ export async function refreshTokenController(req: Request, res: Response) {
       );
     }
 
-    logger.info(
-      `Refresh token validated successfully for user: ${sub} and client: ${client_id}`,
-    );
+    logger.debug(`Refresh token validated successfully for user: ${sub} and client: ${client_id}`);
   } catch (e) {
     logger.error(
       `Error while processing refresh token for user: ${sub} and client: ${client_id}. Error: ${
@@ -337,9 +317,7 @@ export async function refreshTokenController(req: Request, res: Response) {
       jti,
     );
 
-    logger.info(
-      `Access token retrieved successfully for user: ${sub} and client: ${client_id}`,
-    );
+    logger.debug(`Access token retrieved successfully for user: ${sub} and client: ${client_id}`);
 
     res.json(body);
   } catch (e) {

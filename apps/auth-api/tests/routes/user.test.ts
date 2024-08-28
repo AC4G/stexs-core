@@ -14,7 +14,7 @@ import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../src/server';
 import {
-  CODE_EXPIRED,
+  CODE_EXPIRED, 
   CODE_REQUIRED,
   EMAIL_REQUIRED,
   INVALID_CODE,
@@ -311,15 +311,6 @@ describe('User Routes', () => {
   });
 
   it('should handle password change with password having less then 10 characters', async () => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          is_current_password: true,
-        },
-      ],
-      rowCount: 1,
-    } as never);
-
     const response = await request(server).post('/user/password').send({
       password: 'Test123.',
       code: 'mfa_code',
@@ -397,6 +388,11 @@ describe('User Routes', () => {
         },
       ],
       rowCount: 1,
+    } as never);
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [],
+      rowCount: 0,
     } as never);
 
     mockQuery.mockResolvedValueOnce({

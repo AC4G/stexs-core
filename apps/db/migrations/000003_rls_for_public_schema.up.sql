@@ -291,7 +291,7 @@ CREATE POLICY inventories_select
                         SELECT 1 
                         FROM public.friends AS fr
                         WHERE fr.user_id = auth.uid() 
-                            AND fr.friend_id = user_id
+                            AND fr.friend_id = public.inventories.user_id
                     ) OR
                     (
                         EXISTS (
@@ -303,13 +303,13 @@ CREATE POLICY inventories_select
                         NOT EXISTS (
                             SELECT 1
                             FROM public.blocked AS b
-                            WHERE b.blocker_id = user_id 
+                            WHERE b.blocker_id = public.inventories.user_id 
                                 AND b.blocked_id = auth.uid()
                             UNION
                             SELECT 1
                             FROM public.blocked AS b
                             WHERE b.blocker_id = auth.uid() 
-                                AND b.blocked_id = user_id
+                                AND b.blocked_id = public.inventories.user_id
                         )
                     )
                 )
@@ -1793,8 +1793,17 @@ CREATE POLICY oauth2_connections_select
         )
         OR
         (
-            auth.grant() = 'client_credentials' AND
-            utils.has_client_scope(43) AND
+            (
+                (
+                    auth.grant() = 'client_credentials' AND
+                    utils.has_client_scope(43)
+                )
+                OR
+                (
+                    auth.grant() = 'authorization_code' AND
+                    utils.has_client_scope(45)
+                )
+            ) AND
             EXISTS (
                 SELECT 1
                 FROM public.oauth2_apps AS oa
@@ -1810,9 +1819,13 @@ CREATE POLICY oauth2_connections_select
 
 
 
+<<<<<<< HEAD
+CREATE POLICY oauth2_connection_scopes_select 
+=======
 ALTER TABLE public.oauth2_connection_scopes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY oauth2_connection_scopes_select
+>>>>>>> f1d30ef14c0cd359859d8f0cac889fb0f66b2731
     ON public.oauth2_connection_scopes
     FOR SELECT
     USING (
@@ -1848,8 +1861,18 @@ CREATE POLICY oauth2_connection_scopes_select
         )
         OR
         (
-            auth.grant() = 'client_credentials' AND
-            utils.has_client_scope(44) AND
+            (
+                (
+                    auth.grant() = 'client_credentials' AND
+                    utils.has_client_scope(44) AND
+                )
+                OR
+                (
+                    auth.grant() = 'authorization_code' AND
+                    utils.has_client_scope(46) AND
+                )
+
+            ) AND
             EXISTS (
                 SELECT 1
                 FROM public.oauth2_apps AS oa

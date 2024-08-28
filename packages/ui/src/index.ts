@@ -18,4 +18,7 @@ export { default as Input } from './Input.svelte';
 export { default as MFA } from './MFA.svelte';
 export { default as ChangePassword } from './modals/ChangePassword.svelte';
 export { default as ChangeEmail } from './modals/ChangeEmail.svelte';
-export { default as EnableTOTP } from './modals/EnableTOTP.svelte'
+export { default as EnableTOTP } from './modals/EnableTOTP.svelte';
+export { default as RemoveTOTP } from './modals/RemoveTOTP.svelte';
+export { default as DisableEmail } from './modals/DisableEmail.svelte';
+export { default as EnableEmail } from './modals/EnableEmail.svelte';

@@ -1,3 +1,4 @@
+import ip from 'ip';
 import express from 'express';
 import bodyParser from 'body-parser';
 import responseTime from 'response-time';
@@ -26,6 +27,22 @@ server.use(responseTime());
 server.use((req, res, next) => {
   logger.debug(`Request Headers: ${JSON.stringify(req.headers)}`);
   logger.debug(`Request Body: ${JSON.stringify(req.body)}`);
+
+  const originalSend = res.send;
+
+  res.send = function (body) {
+    logger.debug(`Response Body: ${body}`);
+
+    return originalSend.call(this, body);
+  };
+
+  next();
+});
+
+server.use((req, res, next) => {
+  res.on('finish', () => {
+    logger.info(`method=${req.method} url=${req.originalUrl} status=${res.statusCode} client_ip=${req.header('x-forwarded-for') || req.ip} server_ip=${ip.address()} duration=${res.get('X-Response-Time')}`);
+  });
   next();
 });
 
@@ -51,22 +68,10 @@ server.use((req, res, next) => {
   next();
 });
 
-server.use((req, res, next) => {
-  res.on('finish', () => {
-    logger.info(
-      `method=${req.method} url=${req.originalUrl} status=${
-        res.statusCode
-      } ip=${req.ip} duration=${res.get('X-Response-Time')}`,
-    );
-  });
-  next();
-});
-
-if (ENV !== 'test')
+if (ENV !== 'test') {
   server.listen(SERVER_PORT, () => {
-    logger.info(
-      `Server started in ${ENV} mode and is listening on port ${SERVER_PORT}`,
-    );
+    logger.info(`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`);
   });
+}
 
 export default server;

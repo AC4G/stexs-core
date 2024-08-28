@@ -2,7 +2,7 @@
     import { stexs } from "../../stexsClient";
     import { getUserStore } from "$lib/stores/userStore";
     import { Avatar, Input, Button } from "ui";
-    import { SlideToggle, type PopupSettings, popup, getModalStore, ProgressRadial, type ToastSettings } from "@skeletonlabs/skeleton";
+    import { SlideToggle, type PopupSettings, popup, getModalStore, ProgressRadial } from "@skeletonlabs/skeleton";
     import { createQuery } from "@tanstack/svelte-query";
     import { getFlash } from "sveltekit-flash-message/client";
     import { page } from "$app/stores";
@@ -26,11 +26,14 @@
         validationMethod: 'oninput',
         clearOnSubmit: 'none',
     });
+    const formKeys = Object.keys($form);
     let files: FileList = new DataTransfer().files;
     let fileInput: HTMLInputElement;
     let usernameNotAvailable: boolean = false;
     let checkedUsernames: { username: string, available: boolean }[] = [];
     let state: boolean = false;
+    let hasChanges: boolean = false;
+    let hasErrors: boolean = false;
 
     const checkUsernameAvailability = debounce(async () => {
         if ($errors.username || $form.username.toLowerCase() === profile.username.toLowerCase() || $form.username.length === 0) return;
@@ -230,6 +233,31 @@
     }
 
     $: if (usernameNotAvailable && $form.username.length === 0) usernameNotAvailable = false;
+    $: {
+        if (profile) {
+            let countChanges: number = 0;
+
+            for (let key of formKeys) {
+                // @ts-ignore
+                if (profile[key] !== $form[key]) {
+                    countChanges++;
+                }
+            }
+
+            if (countChanges > 0) {
+                hasChanges = true;
+            } else {
+                hasChanges = false;
+            }
+        }
+    }
+    $: {
+        $errors
+
+        if (hasChanges) {
+            (async () => hasErrors = !(await validate()).valid)();
+        }
+    }
 </script>
 
 <div class="px-[4%] md:px-[8%] grid place-items-center">
@@ -343,9 +371,14 @@
                         <p>Accept Friend Requests</p>
                         <SlideToggle name="acceptFriendRequests" active="bg-primary-500" bind:checked={$form.accept_friend_requests} size="sm" />
                     </div>
-                    <div class="w-fit h-fit mx-auto">
-                        <Button type="submit" class="variant-filled-primary" {submitted}>Save</Button>
-                    </div>
+                    {#if hasChanges}
+                        <div class="flex w-full h-fit mx-auto justify-evenly">
+                            <Button class="variant-ghost-surface" on:click={() => updateForm(profile)}>Reset</Button>
+                            {#if !hasErrors && !usernameNotAvailable}
+                                <Button type="submit" class="variant-filled-primary" {submitted}>Save</Button>
+                            {/if}
+                        </div>
+                    {/if}
                 </form>
             </div>
         {/if}

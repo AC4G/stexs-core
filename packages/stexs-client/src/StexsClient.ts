@@ -16,6 +16,7 @@ export default class StexsClient {
   protected rest: PostgrestClient;
 
   constructor(
+    // @ts-ignore
     fetch: typeof fetch,
     config: {
       authUrl: string;
@@ -25,6 +26,7 @@ export default class StexsClient {
   ) {
     this.auth = new StexsAuthClient(fetch, config.authUrl);
     this.rest = new PostgrestClient(config.restUrl, {
+      // @ts-ignore
       fetch: this._fetchWithAuth.bind(this, fetch),
     });
     this.storage = new StexsStorageClient(
@@ -33,17 +35,18 @@ export default class StexsClient {
     );
   }
 
+  // @ts-ignore
   from(relation: string): PostgrestQueryBuilder {
     return this.rest.from(relation);
   }
 
-  rpc(
-    fn: string,
+  rpc(fn: string,
     args = {},
     options?: {
       head?: boolean;
       count?: 'exact' | 'planned' | 'estimated';
     },
+  // @ts-ignore
   ): PostgrestFilterBuilder {
     return this.rest.rpc(fn, args, options);
   }
@@ -65,7 +68,7 @@ export default class StexsClient {
     return baseFetch(input, { ...init, headers });
   }
 
-  private async _checkAndWaitForNewAccessToken(retryCount: number = 0) {
+  private async _checkAndWaitForNewAccessToken(retryCount: number = 0): Promise<void> {
     const session = this._getSession();
     const maxRetries = 100;
 

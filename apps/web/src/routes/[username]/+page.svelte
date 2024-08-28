@@ -216,7 +216,7 @@
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[24px]"
                     /></Button>
-                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500 max-h-[400px] overflow-y-auto">
+                <Dropdown containerClass="!z-100" class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500 max-h-[400px] overflow-y-auto">
                     <ListBoxItem bind:group={filterTime} name="filter" value='Latest'>Latest</ListBoxItem>
                     <ListBoxItem bind:group={filterTime} name="filter" value='Oldest'>Oldest</ListBoxItem>
                     <ListBoxItem bind:group={filterTime} name="filter" value=''>No Filter</ListBoxItem>

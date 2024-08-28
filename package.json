@@ -24,16 +24,16 @@
     "apps/*"
   ],
   "devDependencies": {
-    "@swc/cli": "^0.3.10",
+    "@swc/cli": "^0.3.14",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.2.5",
-    "turbo": "^1.12.5"
+    "prettier": "^3.3.3",
+    "turbo": "^1.13.4"
   },
   "dependencies": {
-    "@turbo/gen": "^1.12.5",
-    "autoprefixer": "^10.4.18",
-    "dotenv-cli": "^7.4.1"
+    "@turbo/gen": "^1.13.4",
+    "autoprefixer": "^10.4.20",
+    "dotenv-cli": "^7.4.2"
   },
   "engines": {
     "npm": ">=10.1.0",

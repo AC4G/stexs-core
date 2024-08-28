@@ -102,7 +102,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          totp: true,
+          totp_verified_at: '2023-09-15T12:00:00',
           email: 'test@example.com',
         },
       ],
@@ -123,7 +123,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          totp: false,
+          totp_verified_at: null,
           email: 'test@example.com',
         },
       ],
@@ -171,7 +171,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          totp: false,
+          totp_verified_at: null,
           totp_secret: null,
         },
       ],
@@ -193,7 +193,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          totp: true,
+          totp_verified_at: '2023-09-15T12:00:00',
           email: true,
           totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
         },
@@ -228,7 +228,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          totp: true,
+          totp_verified_at: '2023-09-15T12:00:00',
           email: true,
           totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
         },
@@ -430,7 +430,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          totp: true,
+          totp_verified_at: '2023-09-15T12:00:00',
           email: true,
           email_code: 'valid-code',
           email_code_sent_at: '2023-09-15T12:00:00',
@@ -462,7 +462,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          totp: true,
+          totp_verified_at: '2023-09-15T12:00:00',
           email: true,
           email_code: 'code',
           email_code_sent_at: '2023-09-15T11:54:00',
@@ -494,7 +494,7 @@ describe('MFA Routes', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          totp: true,
+          totp_verified_at: '2023-09-15T12:00:00',
           email: true,
           email_code: 'code',
           email_code_sent_at: '2023-09-15T12:00:00',

@@ -100,9 +100,73 @@ export function openChangeEmailModal(
 }
 
 export function openEnableTOTPModal(
+  authQueryStore: any,
   stexs: StexsClient,
   flash: Writable<ToastSettings>,
-  modalStore: ModalStore,
+  modalStore: ModalStore
 ) {
+  const modal: ModalSettings = {
+    type: 'component',
+    component: 'enableTOTP',
+    meta: {
+      authQueryStore,
+      stexs,
+      flash
+    },
+  };
+  modalStore.set([modal]);
+}
 
+export function openRemoveTOTPModal(
+  authQueryStore: any,
+  stexs: StexsClient,
+  flash: Writable<ToastSettings>,
+  modalStore: ModalStore
+) {
+  const modal: ModalSettings = {
+    type: 'component',
+    component: 'removeTOTP',
+    meta: {
+      authQueryStore,
+      stexs,
+      flash
+    },
+  };
+  modalStore.set([modal]);
+}
+
+export function openDisableEmailModal(
+  authQueryStore: any,
+  stexs: StexsClient,
+  flash: Writable<ToastSettings>,
+  modalStore: ModalStore
+) {
+  const modal: ModalSettings = {
+    type: 'component',
+    component: 'disableEmail',
+    meta: {
+      authQueryStore,
+      stexs,
+      flash
+    },
+  };
+  modalStore.set([modal]);
+}
+
+export function openEnableEmailModal(
+  authQueryStore: any,
+  stexs: StexsClient,
+  flash: Writable<ToastSettings>,
+  modalStore: ModalStore
+) {
+  const modal: ModalSettings = {
+    type: 'component',
+    component: 'enableEmail',
+    meta: {
+      authQueryStore,
+      stexs,
+      flash
+    },
+  };
+  modalStore.set([modal]);
 }

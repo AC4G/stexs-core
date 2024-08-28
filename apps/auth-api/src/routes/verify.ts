@@ -63,7 +63,7 @@ router.get(
           'Your email has been already verified.',
         );
 
-        logger.warn(`Email already verified for email: ${email}`);
+        logger.debug(`Email already verified for email: ${email}`);
 
         return res.redirect(302, signInURL.toString());
       }
@@ -75,7 +75,7 @@ router.get(
           'Provided verification link is invalid.',
         );
 
-        logger.warn(`Invalid verification link for email: ${email}`);
+        logger.debug(`Invalid verification link for email: ${email}`);
 
         return res.redirect(302, signInURL.toString());
       }
@@ -87,7 +87,7 @@ router.get(
           'Verification link expired. Please request a new verification link.',
         );
 
-        logger.warn(`Verification token expired for email: ${email}`);
+        logger.debug(`Verification token expired for email: ${email}`);
 
         return res.redirect(302, signInURL.toString());
       }
@@ -117,7 +117,7 @@ router.get(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Email successfully verified for email: ${email}`);
+    logger.debug(`Email successfully verified for email: ${email}`);
 
     signInURL.searchParams.append('code', 'success');
     signInURL.searchParams.append('message', 'Email successfully verified.');
@@ -156,12 +156,12 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.warn(`Email not found for resend: ${email}`);
+        logger.debug(`Email not found for resend: ${email}`);
         return res.status(404).json(errorMessages([{ info: EMAIL_NOT_FOUND }]));
       }
 
       if (rows[0].email_confirmed_at) {
-        logger.warn(`Email already verified for resend: ${email}`);
+        logger.debug(`Email already verified for resend: ${email}`);
         return res
           .status(400)
           .json(errorMessages([{ info: EMAIL_ALREADY_VERIFIED }]));
@@ -190,9 +190,7 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.error(
-          `Verification token update failed during resend for email: ${email}`,
-        );
+        logger.error(`Verification token update failed during resend for email: ${email}`);
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
       }
     } catch (e) {
@@ -222,7 +220,7 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Verification email resent successful for email: ${email}`);
+    logger.debug(`Verification email resent successful for email: ${email}`);
 
     res.json(message(`New verification email has been sent to ${email}`));
   },

@@ -13,7 +13,7 @@ export enum AuthEvents {
 export class StexsAuthClient {
   private authUrl: string;
   private fetch: typeof fetch;
-  private authHeaders: Record<string, string>;
+  private authHeaders: Record<string, string>= {};
 
   private eventEmitter = new EventEmitter();
 
@@ -23,8 +23,12 @@ export class StexsAuthClient {
   private refreshTimeoutId: number | null = null;
   private refreshThreshhold = 120 * 1000; // 120s
 
-  constructor(fetch: typeof fetch, authUrl: string) {
+  constructor(fetch: {
+    (input: RequestInfo, init?: RequestInit): Promise<Response>;
+    (input: URL, init?: RequestInit): Promise<Response>;
+  }, authUrl: string) {
     this.authUrl = authUrl;
+    // @ts-ignore
     this.fetch = fetch;
 
     this.mfa = {
@@ -442,7 +446,7 @@ export class StexsAuthClient {
    * Enables Multi-Factor Authentication (MFA) for the authenticated user.
    *
    * @param {('totp' | 'email')} type - The MFA type to enable ('totp' for Time-based One-Time Password, 'email' for email-based MFA).
-   * @param {string | null} code - The MFA verification code (required for 'email' MFA).
+   * @param {string | null} code - The MFA verification code (only required for 'email' MFA).
    * @returns {Promise<Response>} A Promise that resolves with the enablement response.
    */
   private async _enable(type: 'totp' | 'email', code: string | null = null) {
@@ -484,15 +488,16 @@ export class StexsAuthClient {
    *
    * Note: As new MFA methods may be implemented in the future, the required parameters for this function may change.
    *
+   * @param {string} type - The MFA type to verify ('totp' supported for now. 'email' will be moved to this api endpoint).
    * @param {string} code - The MFA verification code.
    * @returns {Promise<Response>} A Promise that resolves with the verification response.
    */
-  private async _verify(code: string): Promise<Response> {
+  private async _verify(type: 'totp', code: string): Promise<Response> {
     return await this._request({
       path: 'mfa/verify',
       method: 'POST',
       body: {
-        type: 'totp',
+        type,
         code,
       },
     });
@@ -670,7 +675,7 @@ export class StexsAuthClient {
             ) {
               this._refreshAccessToken();
             }
-          }, expiresInMs - this.refreshThreshhold);
+          }, expiresInMs - this.refreshThreshhold) as unknown as number;
         }
       }
 
