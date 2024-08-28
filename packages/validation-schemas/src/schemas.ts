@@ -50,10 +50,6 @@ export const Recovery = z.object({
   email: emailValidation,
 });
 
-export const MFA = z.object({
-  code: z.string(),
-});
-
 export const SignIn = z.object({
   identifier: z.string(),
   password: z.string(),
@@ -202,7 +198,6 @@ export const EmailChange = z
     email: emailValidation
   });
 
-export const VerifyEmailChange = z
-  .object({
-    code: z.string()
-  });
+export const VerifyCode = z.object({
+  code: z.string().min(1, { message: 'Code is required' }),
+});

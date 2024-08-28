@@ -39,7 +39,7 @@
         return false;
       }
 
-      if (signInInit.types.length === 1) {
+      if (signInInit.types.length === 1) { 
         type = signInInit.types[0];
       }
 
@@ -81,6 +81,6 @@
 
 {#if $signInConfirmSetupQuery.data}
   <div class="flex items-center justify-center h-screen">
-    <MFA {stexs} cancel={cancelSignInConfirm} confirm={signInConfirm} {flash} types={signInInit.types} confirmErrors={errors} {type} />
+    <MFA {stexs} cancel={cancelSignInConfirm} confirm={signInConfirm} {flash} types={signInInit.types} confirmErrors={errors} bind:type />
   </div>
 {/if}

@@ -117,9 +117,7 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.warn(
-          `Client not found for client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`,
-        );
+        logger.debug(`Client not found for client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
         return res.status(404).json(
           errorMessages([
             {
@@ -133,9 +131,7 @@ router.post(
         );
       }
 
-      logger.info(
-        `Client found with client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`,
-      );
+      logger.debug(`Client found with client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
     } catch (e) {
       logger.error(
         `Error while authorizing client: ${client_id}. Error: ${
@@ -163,7 +159,7 @@ router.post(
       );
 
       if (rowCount !== 0) {
-        logger.warn(`Client is already connected with user: ${userId}`);
+        logger.debug(`Client is already connected with user: ${userId}`);
         return res
           .status(400)
           .json(errorMessages([{ info: CLIENT_ALREADY_CONNECTED }]));
@@ -199,15 +195,11 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.error(
-          `Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`,
-        );
+        logger.error(`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`);
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
       }
 
-      logger.info(
-        `Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`,
-      );
+      logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
 
       tokenId = rows[0].id;
     } catch (e) {
@@ -243,9 +235,7 @@ router.post(
         [tokenId, scopes],
       );
 
-      logger.info(
-        `Authorization token scopes inserted/updated successfully for token: ${tokenId}`,
-      );
+      logger.debug(`Authorization token scopes inserted/updated successfully for token: ${tokenId}`);
     } catch (e) {
       logger.error(
         `Error while inserting/updating authorization token scopes for token: ${tokenId}. Error: ${
@@ -365,9 +355,7 @@ router.post(
   async (req: Request, res: Response) => {
     const { grant_type } = req.body;
 
-    logger.info(
-      `OAuth2 Token Endpoint accessed with grant type: ${grant_type}`,
-    );
+    logger.debug(`OAuth2 Token Endpoint accessed with grant type: ${grant_type}`);
 
     switch (grant_type) {
       case 'authorization_code':
@@ -405,15 +393,15 @@ router.delete(
         `
           DELETE FROM auth.refresh_tokens
           WHERE connection_id = $1::integer
-            AND user_id = $2::uuid;
+            AND user_id = $2::uuid
+            AND session_id IS NULL
+            AND grant_type = 'authorization_code';
         `,
         [connectionId, userId],
       );
 
       if (rowCount === 0) {
-        logger.warn(
-          `No connection found for deletion for user: ${userId} and connection: ${connectionId}`,
-        );
+        logger.debug(`No connection found for deletion for user: ${userId} and connection: ${connectionId}`);
         return res
           .status(404)
           .json(errorMessages([{ info: CONNECTION_NOT_FOUND }]));
@@ -427,9 +415,7 @@ router.delete(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(
-      `Connection deleted successfully for user: ${userId} and connection: ${connectionId}`,
-    );
+    logger.debug(`Connection deleted successfully for user: ${userId} and connection: ${connectionId}`);
 
     res.send(message('Connection successfully deleted.'));
   },
@@ -460,9 +446,7 @@ router.delete(
       );
 
       if (rowCount === 0) {
-        logger.warn(
-          `No connection found for revocation for user: ${token?.sub}`,
-        );
+        logger.debug(`No connection found for revocation for user: ${token?.sub}`);
         return res
           .status(404)
           .json(errorMessages([{ info: CONNECTION_ALREADY_REVOKED }]));
@@ -476,7 +460,7 @@ router.delete(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Connection revoked successfully for user: ${token?.sub}`);
+    logger.debug(`Connection revoked successfully for user: ${token?.sub}`);
 
     res.json(message('Connection successfully revoked.'));
   },

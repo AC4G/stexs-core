@@ -54,7 +54,10 @@ router.get(
         `
           SELECT 
             email, 
-            totp 
+            CASE 
+              WHEN totp_verified_at IS NOT NULL THEN TRUE 
+              ELSE FALSE 
+            END AS totp
           FROM auth.mfa
           WHERE user_id = $1::uuid;
         `,
@@ -76,7 +79,7 @@ router.get(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`MFA flows successfully retrieved for user: ${userId}`);
+    logger.debug(`MFA flows successfully retrieved for user: ${userId}`);
 
     res.json(flows);
   },

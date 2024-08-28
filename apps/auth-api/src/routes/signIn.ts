@@ -64,7 +64,7 @@ router.post(
             u.email_verified_at,
             ARRAY_REMOVE(ARRAY[
               CASE WHEN mfa.email = TRUE THEN 'email' END,
-              CASE WHEN mfa.totp = TRUE THEN 'totp' END
+              CASE WHEN mfa.totp_verified_at IS NOT NULL THEN 'totp' END
             ], NULL) AS types,
             u.banned_at
           FROM auth.users AS u
@@ -79,7 +79,7 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.warn(`Invalid credentials for sign in for user: ${identifier}`);
+        logger.debug(`Invalid credentials for sign in for user: ${identifier}`);
         return res.status(400).json(
           errorMessages([
             {
@@ -97,14 +97,12 @@ router.post(
       }
 
       if (rows[0].banned_at) {
-        logger.warn(
-          `Attempt to sign in to banned account for user: ${identifier}`,
-        );
+        logger.debug(`Attempt to sign in to banned account for user: ${identifier}`);
         return res.status(400).json(errorMessages([{ info: ACCOUNT_BANNED }]));
       }
 
       if (!rows[0].email_verified_at) {
-        logger.warn(`Email not verified for user: ${identifier}`);
+        logger.debug(`Email not verified for user: ${identifier}`);
         return res
           .status(400)
           .json(errorMessages([{ info: EMAIL_NOT_VERIFIED }]));
@@ -123,7 +121,7 @@ router.post(
 
     const { token, expires } = generateSignInConfirmToken(uuid, types);
 
-    logger.info(`Sign-in initialized for user: ${identifier}`);
+    logger.debug(`Sign-in initialized for user: ${identifier}`);
 
     res.json({
       token,
@@ -161,7 +159,7 @@ router.post(
     const { type, code } = req.body;
 
     if (!supportedTypes.includes(type)) {
-      logger.warn(`Unsupported MFA type provided for user: ${userId}`);
+      logger.debug(`Unsupported MFA type provided for user: ${userId}`);
       return res.status(400).json(
         errorMessages([
           {
@@ -190,23 +188,21 @@ router.post(
         );
 
         if (rowCount === 0) {
-          logger.error(
-            `Failed to fetch MFA email code and timestamp for user: ${userId}`,
-          );
+          logger.error(`Failed to fetch MFA email code and timestamp for user: ${userId}`);
           return res
             .status(500)
             .json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         if (!rows[0].email) {
-          logger.warn(`MFA email is disabled for user: ${userId}`);
+          logger.debug(`MFA email is disabled for user: ${userId}`);
           return res
             .status(400)
             .json(errorMessages([{ info: MFA_EMAIL_DISABLED }]));
         }
 
         if (code !== rows[0].email_code) {
-          logger.warn(`Invalid MFA code provided for user: ${userId}`);
+          logger.debug(`Invalid MFA code provided for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -221,7 +217,7 @@ router.post(
         }
 
         if (isExpired(rows[0].email_code_sent_at, 5)) {
-          logger.warn(`MFA code expired for user: ${userId}`);
+          logger.debug(`MFA code expired for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -235,9 +231,7 @@ router.post(
           );
         }
 
-        logger.info(
-          `Sign in confirmation successful with MFA email for user: ${userId}`,
-        );
+        logger.debug(`Sign in confirmation successful with MFA email for user: ${userId}`);
 
         const { rowCount: count } = await db.query(
           `
@@ -267,7 +261,7 @@ router.post(
         const { rowCount, rows } = await db.query(
           `
             SELECT 
-              totp, 
+              totp_verified_at, 
               totp_secret 
             FROM auth.mfa
             WHERE user_id = $1::uuid;
@@ -282,17 +276,15 @@ router.post(
             .json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
-        if (!rows[0].totp) {
-          logger.warn(`MFA TOTP is disabled for user: ${userId}`);
+        if (!rows[0].totp_verified_at) {
+          logger.debug(`MFA TOTP is disabled for user: ${userId}`);
           return res.status(400).json(errorMessages([{ info: TOTP_DISABLED }]));
         }
 
         const totp = getTOTPForVerification(rows[0].totp_secret);
 
         if (totp.validate({ token: code, window: 1 })) {
-          logger.warn(
-            `Invalid code provided for MFA TOTP confirmation for user: ${userId}`,
-          );
+          logger.debug(`Invalid code provided for MFA TOTP confirmation for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -306,9 +298,7 @@ router.post(
           );
         }
 
-        logger.info(
-          `Sign in confirmation successful with MFA TOTP for user: ${userId}`,
-        );
+        logger.debug(`Sign in confirmation successful with MFA TOTP for user: ${userId}`);
       } catch (e) {
         logger.error(
           `Error during MFA TOTP confirmation for user: ${userId}. Error: ${
@@ -326,12 +316,12 @@ router.post(
 
       res.json(body);
 
-      logger.info(`New access token generated for user: ${userId}`);
+      logger.debug(`New access token generated for user: ${userId}`);
     } catch (e) {
       res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Sign-in successful for user: ${userId}`);
+    logger.debug(`Sign-in successful for user: ${userId}`);
   },
 );
 

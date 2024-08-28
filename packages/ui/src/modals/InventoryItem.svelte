@@ -41,7 +41,7 @@
             </Button>
         </div>
         <div class="space-y-6">
-            <ItemThumbnail {stexs} itemId={data.items.id} itemName={data.items.name} />
+            <ItemThumbnail {stexs} itemId={data.items.id} itemName={data.items.name} showOnFail={false} />
             {#if loading}
                 <div class="space-y-6">
                     <div class="placeholder animate-pulse h-[24px] max-w-[280px]" />

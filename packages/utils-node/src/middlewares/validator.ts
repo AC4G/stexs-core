@@ -16,7 +16,7 @@ export default function validate(logger: Logger) {
           return msg.code;
         })
         .join(', ');
-      logger.warn(`Validation errors - Codes: ${errorCodes}`);
+      logger.debug(`Validation errors - Codes: ${errorCodes}`);
 
       return res.status(400).json(errorMessagesFromValidator(errors));
     }

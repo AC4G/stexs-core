@@ -35,9 +35,7 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.warn(
-          `Sign-out: No refresh tokens found for user: ${auth?.sub} and session: ${auth?.session_id}`,
-        );
+        logger.debug(`Sign-out: No refresh tokens found for user: ${auth?.sub} and session: ${auth?.session_id}`);
         return res.status(404).send();
       }
     } catch (e) {
@@ -49,9 +47,7 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(
-      `Sign-out successful for user: ${auth?.sub} from session: ${auth?.session_id}`,
-    );
+    logger.debug(`Sign-out successful for user: ${auth?.sub} from session: ${auth?.session_id}`);
 
     res.status(204).send();
   },
@@ -78,9 +74,7 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.warn(
-          `Sign-out from all sessions: No refresh tokens found for user: ${sub}`,
-        );
+        logger.debug(`Sign-out from all sessions: No refresh tokens found for user: ${sub}`);
         return res.status(404).send();
       }
     } catch (e) {
@@ -92,7 +86,7 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Sign-out from all sessions successful for user: ${sub}`);
+    logger.debug(`Sign-out from all sessions successful for user: ${sub}`);
 
     res.status(204).send();
   },

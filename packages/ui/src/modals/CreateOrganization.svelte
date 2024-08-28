@@ -171,10 +171,8 @@
                 </p>
             {/if}
             <div class="flex justify-center">
-                <Button type="submit" class="variant-filled-primary" {submitted}
-                  >Create</Button
-                >
-              </div>
+                <Button type="submit" class="variant-filled-primary" {submitted}>Create</Button>
+            </div>
         </form>
     </div>
 {/if}

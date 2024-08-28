@@ -1,4 +1,5 @@
 <script lang="ts">
+    export let ref: HTMLInputElement | undefined = undefined;
     export let field: string = '';
     export let value: string | boolean | undefined | null = '';
     export let checked: boolean = false;
@@ -12,28 +13,28 @@
     {#if withLabel}
         <label for={field} class="{labelClass}">
             {#if labelAfter}
-                <input id={field} class="{inputClass}" type="checkbox" bind:checked on:input {...$$restProps} />
+                <input bind:this={ref} id={field} class="{inputClass}" type="checkbox" bind:checked on:input {...$$restProps} />
                 <span><slot /></span>
             {:else}
                 <span><slot /></span>
-                <input id={field} class="{inputClass}" type="checkbox" bind:checked on:input {...$$restProps} />
+                <input bind:this={ref} id={field} class="{inputClass}" type="checkbox" bind:checked on:input {...$$restProps} />
             {/if}
         </label>
     {:else}
-        <input id={field} class="{inputClass}" type="checkbox" bind:checked on:input {...$$restProps} />
+        <input bind:this={ref} id={field} class="{inputClass}" type="checkbox" bind:checked on:input {...$$restProps} />
     {/if}
 {:else}
     {#if withLabel}
         <label for={field} class="{labelClass} w-full">
             {#if labelAfter}
-                <input id={field} class="{inputClass}" bind:value on:input {...$$restProps} />
+                <input bind:this={ref} id={field} class="{inputClass}" bind:value on:input {...$$restProps} />
                 <span><slot /></span>
             {:else}
                 <span><slot /></span>
-                <input id={field} class="{inputClass}" bind:value on:input {...$$restProps} />
+                <input bind:this={ref} id={field} class="{inputClass}" bind:value on:input {...$$restProps} />
             {/if}
         </label>
     {:else}
-        <input id={field} class="{inputClass}" bind:value on:input {...$$restProps} />
+        <input bind:this={ref} id={field} class="{inputClass}" bind:value on:input {...$$restProps} />
     {/if}
 {/if}

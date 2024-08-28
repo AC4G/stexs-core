@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { clipboard, ProgressRadial } from '@skeletonlabs/skeleton';
 
   export let submitted: boolean = $$restProps.submitted || false;
   export let type: 'button' | 'submit' | 'reset' = 'button';
@@ -9,9 +9,12 @@
   export let progressClass: string = 'w-[24px]';
   export let loaderMeter: string = 'stroke-surface-50';
   export let loaderTrack: string = '';
+
+  export let clipboardData: string | undefined = undefined;
 </script>
 
 <button
+  use:clipboard={clipboardData}
   on:click
   on:mouseover
   on:mouseenter

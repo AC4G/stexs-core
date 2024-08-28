@@ -296,7 +296,7 @@
                                             </div>
                                         </div>
                                         <div class="flex flex-row justify-between items-center">
-                                            <div class="flex flex-row justify-evenly w-full">
+                                            <div class="flex flex-row justify-evenly w-full space-x-1">
                                                 <Button on:click={async () => {
                                                     const result = await acceptFriendRequest($userStore.id, profile.user_id, profile.username, flash, profileStore);
     
@@ -331,7 +331,7 @@
                                             </div>
                                         </div>
                                         <div class="flex flex-row justify-between items-center">
-                                            <div class="flex flex-row justify-evenly w-full">
+                                            <div class="flex flex-row justify-evenly w-full space-x-1">
                                                 <Button on:click={async () => {
                                                     const result = await acceptOrganizationRequest($userStore.id, organization.id, organization.name, notification.organization_requests.role, flash, profileStore);
 
@@ -367,7 +367,7 @@
                                             </div>
                                         </div>
                                         <div class="flex flex-row justify-between items-center">
-                                            <div class="flex flex-row justify-evenly w-full">
+                                            <div class="flex flex-row justify-evenly w-full space-x-1">
                                                 <Button on:click={async () => {
                                                     const result = await acceptProjectRequest($userStore.id, project.id, project.name, project.organizations.name, notification.project_requests.role, flash, profileStore);
 

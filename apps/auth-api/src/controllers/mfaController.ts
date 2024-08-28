@@ -29,9 +29,9 @@ export async function enableTOTP(req: Request, res: Response) {
     const { rowCount, rows } = await db.query(
       `
         SELECT 
-          t.totp, 
+          t.totp_verified_at,
           u.email
-        FROM auth.mfa AS t
+        FROM auth.mfa AS t 
         INNER JOIN auth.users AS u ON t.user_id = u.id
         WHERE t.user_id = $1::uuid;
       `,
@@ -43,8 +43,8 @@ export async function enableTOTP(req: Request, res: Response) {
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    if (rows[0].totp) {
-      logger.warn(`MFA TOTP is already enabled for user: ${userId}`);
+    if (rows[0].totp_verified_at) {
+      logger.debug(`MFA TOTP is already enabled for user: ${userId}`);
       return res
         .status(400)
         .json(errorMessages([{ info: TOTP_ALREADY_ENABLED }]));
@@ -113,21 +113,19 @@ export async function enableEmail(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.error(
-        `Failed to fetch MFA email code and timestamp for user: ${userId}`,
-      );
+      logger.error(`Failed to fetch MFA email code and timestamp for user: ${userId}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     if (rows[0].email) {
-      logger.warn(`MFA email is already enabled for user: ${userId}`);
+      logger.debug(`MFA email is already enabled for user: ${userId}`);
       return res
         .status(400)
         .json(errorMessages([{ info: MFA_EMAIL_ALREADY_ENABLED }]));
     }
 
     if (code !== rows[0].email_code) {
-      logger.warn(`Invalid MFA activation code provided for user: ${userId}`);
+      logger.debug(`Invalid MFA activation code provided for user: ${userId}`);
       return res.status(403).json(
         errorMessages([
           {
@@ -142,7 +140,7 @@ export async function enableEmail(req: Request, res: Response) {
     }
 
     if (isExpired(rows[0].email_code_sent_at, 5)) {
-      logger.warn(`MFA activation code expired for user: ${userId}`);
+      logger.debug(`MFA activation code expired for user: ${userId}`);
       return res.status(403).json(
         errorMessages([
           {
@@ -169,9 +167,7 @@ export async function enableEmail(req: Request, res: Response) {
     );
 
     if (count === 0) {
-      logger.error(
-        `Failed to update MFA email status, code and timestamp for user: ${userId}`,
-      );
+      logger.error(`Failed to update MFA email status, code and timestamp for user: ${userId}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
   } catch (e) {
@@ -183,7 +179,7 @@ export async function enableEmail(req: Request, res: Response) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
 
-  logger.info(`Successfully enabled MFA email for user: ${userId}`);
+  logger.debug(`Successfully enabled MFA email for user: ${userId}`);
 
   res.json(message('Email MFA successfully enabled.'));
 }
@@ -197,7 +193,7 @@ export async function disableTOTP(req: Request, res: Response) {
     const { rowCount, rows } = await db.query(
       `
         SELECT 
-          totp, 
+          totp_verified_at, 
           email, 
           totp_secret
         FROM auth.mfa
@@ -207,23 +203,19 @@ export async function disableTOTP(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.error(
-        `Failed to fetch MFA TOTP status and secret for user: ${userId}`,
-      );
+      logger.error(`Failed to fetch MFA TOTP status and secret for user: ${userId}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    if (!rows[0].totp) {
-      logger.warn(`MFA TOTP is already disabled for user: ${userId}`);
+    if (!rows[0].totp_verified_at) {
+      logger.debug(`MFA TOTP is already disabled for user: ${userId}`);
       return res
         .status(400)
         .json(errorMessages([{ info: TOTP_ALREADY_DISABLED }]));
     }
 
     if (!rows[0].email) {
-      logger.warn(
-        `MFA totp cant be disabled because this is the last active MFA method for user: ${userId}`,
-      );
+      logger.debug(`MFA totp cant be disabled because this is the last active MFA method for user: ${userId}`);
       return res
         .status(400)
         .json(errorMessages([{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }]));
@@ -242,7 +234,7 @@ export async function disableTOTP(req: Request, res: Response) {
   const totp = getTOTPForVerification(secret);
 
   if (totp.validate({ token: code, window: 1 }) === null) {
-    logger.warn(`Invalid code provided for MFA TOTP for user: ${userId}`);
+    logger.debug(`Invalid code provided for MFA TOTP for user: ${userId}`);
     return res.status(403).json(
       errorMessages([
         {
@@ -261,7 +253,6 @@ export async function disableTOTP(req: Request, res: Response) {
       `
         UPDATE auth.mfa
         SET
-            totp = FALSE,
             totp_secret = NULL,
             totp_verified_at = NULL
         WHERE user_id = $1::uuid;
@@ -270,9 +261,7 @@ export async function disableTOTP(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.error(
-        `Failed to update MFA TOTP status, secret and timestamp for user: ${userId}`,
-      );
+      logger.error(`Failed to update MFA TOTP status, secret and timestamp for user: ${userId}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
   } catch (e) {
@@ -284,7 +273,7 @@ export async function disableTOTP(req: Request, res: Response) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
 
-  logger.info(`Successfully disabled MFA TOTP for user: ${userId}`);
+  logger.debug(`Successfully disabled MFA TOTP for user: ${userId}`);
 
   res.json(message('TOTP MFA successfully disabled.'));
 }
@@ -298,7 +287,7 @@ export async function disableEmail(req: Request, res: Response) {
       `
         SELECT 
           email, 
-          totp, 
+          totp_verified_at, 
           email_code, 
           email_code_sent_at
         FROM auth.mfa
@@ -308,30 +297,26 @@ export async function disableEmail(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.error(
-        `Failed to fetch MFA email code and timestamp for user: ${userId}`,
-      );
+      logger.error(`Failed to fetch MFA email code and timestamp for user: ${userId}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     if (!rows[0].email) {
-      logger.warn(`MFA email is already disabled for user: ${userId}`);
+      logger.debug(`MFA email is already disabled for user: ${userId}`);
       return res
         .status(400)
         .json(errorMessages([{ info: MFA_EMAIL_ALREADY_DISABLED }]));
     }
 
-    if (!rows[0].totp) {
-      logger.warn(
-        `MFA email cant be disabled because this is the last active MFA method for user: ${userId}`,
-      );
+    if (!rows[0].totp_verified_at) {
+      logger.debug(`MFA email cant be disabled because this is the last active MFA method for user: ${userId}`);
       return res
         .status(400)
         .json(errorMessages([{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }]));
     }
 
     if (code !== rows[0].email_code) {
-      logger.warn(`Invalid MFA code provided for user: ${userId}`);
+      logger.debug(`Invalid MFA code provided for user: ${userId}`);
       return res.status(403).json(
         errorMessages([
           {
@@ -346,7 +331,7 @@ export async function disableEmail(req: Request, res: Response) {
     }
 
     if (isExpired(rows[0].email_code_sent_at, 5)) {
-      logger.warn(`MFA code expired for user: ${userId}`);
+      logger.debug(`MFA code expired for user: ${userId}`);
       return res.status(403).json(
         errorMessages([
           {
@@ -373,9 +358,7 @@ export async function disableEmail(req: Request, res: Response) {
     );
 
     if (count === 0) {
-      logger.error(
-        `Failed to update MFA email status, code and timestamp for user: ${userId}`,
-      );
+      logger.error(`Failed to update MFA email status, code and timestamp for user: ${userId}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
   } catch (e) {
@@ -387,7 +370,7 @@ export async function disableEmail(req: Request, res: Response) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
 
-  logger.info(`Successfully disabled MFA email for user: ${userId}`);
+  logger.debug(`Successfully disabled MFA email for user: ${userId}`);
 
   res.json(message('Email MFA successfully disabled.'));
 }
@@ -410,14 +393,12 @@ export async function verifyTOTP(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.error(
-        `Failed to fetch MFA TOTP secret and timestamp for user: ${userId}`,
-      );
+      logger.error(`Failed to fetch MFA TOTP secret and timestamp for user: ${userId}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
     if (rows[0].totp_verified_at) {
-      logger.warn(`MFA TOTP is already verified for user: ${userId}`);
+      logger.debug(`MFA TOTP is already verified for user: ${userId}`);
       return res
         .status(400)
         .json(errorMessages([{ info: TOTP_ALREADY_VERIFIED }]));
@@ -436,9 +417,7 @@ export async function verifyTOTP(req: Request, res: Response) {
   const totp = getTOTPForVerification(secret);
 
   if (totp.validate({ token: code, window: 1 }) === null) {
-    logger.warn(
-      `Invalid code provided for MFA TOTP verification for user: ${userId}`,
-    );
+    logger.debug(`Invalid code provided for MFA TOTP verification for user: ${userId}`);
     return res.status(403).json(
       errorMessages([
         {
@@ -457,7 +436,6 @@ export async function verifyTOTP(req: Request, res: Response) {
       `
         UPDATE auth.mfa
         SET
-            totp = TRUE,
             totp_verified_at = CURRENT_TIMESTAMP
         WHERE user_id = $1::uuid;
       `,
@@ -465,9 +443,7 @@ export async function verifyTOTP(req: Request, res: Response) {
     );
 
     if (rowCount === 0) {
-      logger.error(
-        `Failed to update MFA TOTP status and timestamp for user: ${userId}`,
-      );
+      logger.error(`Failed to update MFA TOTP status and timestamp for user: ${userId}`);
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
   } catch (e) {
@@ -479,7 +455,7 @@ export async function verifyTOTP(req: Request, res: Response) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
 
-  logger.info(`Successfully enabled MFA TOTP for user: ${userId}`);
+  logger.debug(`Successfully enabled MFA TOTP for user: ${userId}`);
 
   res.json(message('TOTP MFA successfully enabled.'));
 }
@@ -538,7 +514,7 @@ export async function sendEmailCode(req: Request, res: Response) {
     return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
   }
 
-  logger.info(`MFA code successfully sent to email: ${email}`);
+  logger.debug(`MFA code successfully sent to email: ${email}`);
 
   res.json(message('MFA code successfully send to users email.'));
 }

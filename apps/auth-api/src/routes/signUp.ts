@@ -109,7 +109,7 @@ router.post(
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
       }
 
-      logger.info(`Sign up successful for user: ${username}`);
+      logger.debug(`Sign up successful for user: ${username}`);
 
       res
         .status(201)
@@ -124,9 +124,7 @@ router.post(
       if (err.hint) {
         const path = err.hint.split(' ').pop()!;
 
-        logger.warn(
-          `Sign up validation failed for user: ${username}, path: ${path}`,
-        );
+        logger.debug(`Sign up validation failed for user: ${username}, path: ${path}`);
 
         return res.status(400).json(
           errorMessages([
@@ -144,9 +142,7 @@ router.post(
         );
       }
 
-      logger.error(
-        `Error during sign up: ${e instanceof Error ? e.message : e}`,
-      );
+      logger.error(`Error during sign up: ${e instanceof Error ? e.message : e}`);
 
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
@@ -160,9 +156,7 @@ router.post(
           ISSUER + '/verify?email=' + email + '&token=' + token
         }`,
       );
-      logger.info(
-        `Email verification message sent successfully for user: ${username}`,
-      );
+      logger.debug(`Email verification message sent successfully for user: ${username}`);
     } catch (e) {
       logger.error(
         `Sending verification email failed for email: ${email}. Error: ${

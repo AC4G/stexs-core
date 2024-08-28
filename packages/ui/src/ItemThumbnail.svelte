@@ -4,6 +4,7 @@
   export let stexs: any;
   export let itemId: string;
   export let itemName: string;
+  export let showOnFail: boolean = true;
 
   let loading: boolean = true;
   let loaded: boolean = false;
@@ -40,8 +41,8 @@
  
 {#if loading}
   <div class="placeholder animate-pulse w-full h-full" />
-{:else if failed}
-  <p class="text-[18px] whitespace-pre-line p-4">{itemName}</p>
+{:else if failed && showOnFail}
+  <p class="text-[18px] whitespace-pre-line p-4 text-center">{itemName}</p>
 {:else if loaded}
   <img class="h-full w-full object-cover rounded-none" draggable="false" src={prevUrl} alt={itemName} />
 {/if}

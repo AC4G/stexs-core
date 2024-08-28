@@ -56,7 +56,7 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.warn(`Invalid email for password recovery: ${email}`);
+        logger.debug(`Invalid email for password recovery: ${email}`);
         return res.status(400).json(
           errorMessages([
             {
@@ -73,7 +73,7 @@ router.post(
         );
       }
 
-      logger.info(`Email checked for password recovery: ${email}`);
+      logger.debug(`Email checked for password recovery: ${email}`);
     } catch (e) {
       logger.error(
         `Error while checking email for password recovery for email: ${email}. Error: ${
@@ -102,7 +102,7 @@ router.post(
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
       }
 
-      logger.info(`Recovery token successfully updated for email: ${email}`);
+      logger.debug(`Recovery token successfully updated for email: ${email}`);
     } catch (e) {
       logger.error(
         `Error while updating recovery token for email: ${email}. Error: ${
@@ -130,7 +130,7 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Recovery email sent to: ${email}`);
+    logger.debug(`Recovery email sent to: ${email}`);
 
     res.json(message('Recovery email was been send.'));
   },
@@ -185,9 +185,7 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.warn(
-          `Invalid request for password recovery confirmation with email: ${email}`,
-        );
+        logger.debug(`Invalid request for password recovery confirmation with email: ${email}`);
         return res.status(400).json(
           errorMessages([
             {
@@ -202,7 +200,7 @@ router.post(
       }
 
       if (isExpired(rows[0].recovery_sent_at, 60)) {
-        logger.warn(`Password recovery token expired for email: ${email}`);
+        logger.debug(`Password recovery token expired for email: ${email}`);
         return res.status(403).json(
           errorMessages([
             {
@@ -216,7 +214,7 @@ router.post(
         );
       }
 
-      logger.info(`Password recovery request confirmed for email: ${email}`);
+      logger.debug(`Password recovery request confirmed for email: ${email}`);
 
       const { rows: data } = await db.query(
         `
@@ -233,9 +231,7 @@ router.post(
       );
 
       if (data[0].is_current_password) {
-        logger.warn(
-          `New password matches the current password for email: ${email}`,
-        );
+        logger.debug(`New password matches the current password for email: ${email}`);
         return res.status(400).json(
           errorMessages([
             {
@@ -266,7 +262,7 @@ router.post(
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
       }
 
-      logger.info(`Password successfully recovered for email: ${email}`);
+      logger.debug(`Password successfully recovered for email: ${email}`);
 
       res.json(message('Password successfully recovered.'));
     } catch (e) {

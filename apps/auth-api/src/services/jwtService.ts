@@ -79,9 +79,7 @@ export default async function generateAccessToken(
     connectionId === null &&
     oldRefreshToken !== null
   ) {
-    throw Error(
-      'connectionId is required to generate initial access token for authorization_code grant tokens',
-    );
+    throw Error('connectionId is required to generate initial access token for authorization_code grant tokens');
   }
 
   const jti = refreshToken ? refreshToken : uuidv4();
@@ -129,9 +127,7 @@ export default async function generateAccessToken(
       );
     }
   } catch (e) {
-    logger.error(
-      `Error in generateAccessToken: ${e instanceof Error ? e.message : e}`,
-    );
+    logger.error(`Error in generateAccessToken: ${e instanceof Error ? e.message : e}`);
     throw e;
   }
 

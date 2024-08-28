@@ -23,7 +23,11 @@
     initializeCopyButtonListener,
     SettingsSidebar,
     ChangePassword,
-    ChangeEmail
+    ChangeEmail,
+    EnableTOTP,
+    RemoveTOTP,
+    DisableEmail,
+    EnableEmail
   } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
@@ -71,7 +75,11 @@
     addFriends: { ref: AddFriend },
     createOrganization: { ref: CreateOrganization },
     changePassword: { ref: ChangePassword },
-    changeEmail: { ref: ChangeEmail }
+    changeEmail: { ref: ChangeEmail },
+    enableTOTP: { ref: EnableTOTP },
+    removeTOTP: { ref: RemoveTOTP },
+    disableEmail: { ref: DisableEmail },
+    enableEmail: { ref: EnableEmail }
   };
   const excludeRoutes = [
     '/sign-in',
@@ -147,6 +155,8 @@
     })
     signedIn = true;
   });
+
+  $: pathname = $page.url.pathname.endsWith('/') ? $page.url.pathname.slice(0, -1) : $page.url.pathname;
 </script>
 
 <svelte:head>
@@ -155,7 +165,7 @@
 
 <QueryClientProvider client={queryClient}>
   <Toast buttonDismiss="btn aspect-square px-2 py-1 variant-ghost-surface" zIndex="z-[1000]" />
-  <Modal components={modalRegistry} position="items-center !py-4 !px-0" />
+  <Modal  components={modalRegistry} position="items-center !py-4 !px-0" />
   <Drawer regionDrawer="!w-full sm:!w-64">
     <div class="px-4">
       <div class="flex items-center justify-between h-[70px]">
@@ -170,7 +180,7 @@
       <SettingsSidebar activeUrl={$page.url.pathname} />
     {/if}
   </Drawer>
-  {#if !excludeRoutes.includes($page.url.pathname)}
+  {#if !excludeRoutes.includes(pathname)}
     <AppShell slotSidebarLeft="bg-surface-700 border-surface-500 w-0 {sidebarRoutes.find(route => $page.url.pathname.startsWith(route)) ? 'lg:w-64 lg:border-r' : '!w-0'}">
       <svelte:fragment slot="header">
         <Header {sidebarRoutes} {drawerStore}>
@@ -202,7 +212,7 @@
                   <p class="text-[14px] break-all">{$userStore?.username}</p>
                 </div>
               </button>
-              <Dropdown triggeredBy=".avatarDropDown" activeUrl={$page.url.pathname.startsWith('/settings') ? '/' + $page.url.pathname.split('/')[1] : $page.url.pathname} activeClass="variant-glass-primary text-primary-500" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
+              <Dropdown triggeredBy=".avatarDropDown" activeUrl={$page.url.pathname.startsWith('/settings') ? '/' + pathname.split('/')[1] : $page.url.pathname} activeClass="variant-glass-primary text-primary-500" bind:open={avatarDropDownOpen} class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500">
                 <div class="px-4 py-2 rounded variant-ghost-surface">
                   <p class="text-[16px] bg-gradient-to-br from-primary-500 to-secondary-500 bg-clip-text text-transparent box-decoration-clone break-all">{$userStore?.username}</p>
                 </div> 
@@ -229,9 +239,12 @@
     </AppShell>
   {:else}
     <div class="m-[20px] absolute">
-      <a href="/" class="btn-icon variant-filled-surface" title="Home">
+      <button on:click={() => {
+        window.history.go(-1); 
+        return false;
+      }} class="btn-icon variant-filled-surface" title="Home">
         <Icon icon="ph:arrow-left-bold" />
-      </a>
+      </button>
     </div>
     <AppShell>
       <QueryClientProvider client={queryClient}>

@@ -7,7 +7,7 @@
     import { UpdatePassword } from 'validation-schemas';
     import Button from '../Button.svelte';
 
-    export const parent: SvelteComponent = undefined;
+    export let parent: SvelteComponent;
 
     const modalStore = getModalStore();
 
@@ -17,8 +17,7 @@
     let stexs = $modalStore[0].meta.stexs;
     let flash = $modalStore[0].meta.flash;
     let types = $modalStore[0].meta.types;
-    let type = types.length === 1 && types[0];
-    const requestCodeTypes = ['email'];
+    let type = '_selection';
 
     const { form, errors, validate } = superForm(superValidateSync(UpdatePassword), {
         validators: UpdatePassword,
@@ -30,8 +29,6 @@
         const result = await validate();
 
         if (!result.valid || $errors._errors) return;
-
-        if (requestCodeTypes.includes(type)) stexs.auth.mfa.requestCode(type);
 
         newPasswordEntered = true;
     }
@@ -81,40 +78,46 @@
                     {/each}
                 </ul>
             {/if}
-            <div class="w-full">
-                <Input
-                    name="password"
-                    type="password"
-                    field="password"
-                    required
-                    bind:value={$form.password}
-                >New Password</Input>
-                {#if $errors.password && Array.isArray($errors.password)}
-                    <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
-                    {#each $errors.password as error (error)}
-                        <li>{error}</li>
-                    {/each}
-                    </ul>
-                {/if}
-            </div>
-            <div class="w-full">
-                <Input
-                    name="confirm"
-                    type="password"
-                    field="confirm"
-                    required
-                    bind:value={$form.confirm}
-                >Confirm Password</Input>
-                {#if $errors.confirm}
-                    <p class="whitespace-normal text-[14px] mt-2 text-error-400">
-                    {$errors.confirm}
-                    </p>
-                {/if}
-            </div>
-            <div class="flex justify-between w-full">
-                <Button class="variant-ringed-surface hover:bg-surface-600" on:click={cancel}>Cancel</Button>
-                <Button on:click={submit} class="variant-filled-primary">Continue</Button>
-            </div>
+            <form
+                class="space-y-6"
+                autocomplete="off"
+                on:submit|preventDefault={submit}
+            >
+                <div class="w-full">
+                    <Input
+                        name="password"
+                        type="password"
+                        field="password"
+                        required
+                        bind:value={$form.password}
+                    >New Password</Input>
+                    {#if $errors.password && Array.isArray($errors.password)}
+                        <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
+                        {#each $errors.password as error (error)}
+                            <li>{error}</li>
+                        {/each}
+                        </ul>
+                    {/if}
+                </div>
+                <div class="w-full">
+                    <Input
+                        name="confirm"
+                        type="password"
+                        field="confirm"
+                        required
+                        bind:value={$form.confirm}
+                    >Confirm Password</Input>
+                    {#if $errors.confirm}
+                        <p class="whitespace-normal text-[14px] mt-2 text-error-400">
+                        {$errors.confirm}
+                        </p>
+                    {/if}
+                </div>
+                <div class="flex justify-between w-full">
+                    <Button class="variant-ringed-surface hover:bg-surface-600" on:click={cancel}>Cancel</Button>
+                    <Button type="submit" class="variant-filled-primary">Continue</Button>
+                </div>
+            </form>
         </div>
     {/if}
 {/if}

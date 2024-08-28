@@ -1,25 +1,26 @@
 <script lang="ts">
-    import type { SvelteComponent } from 'svelte';
+    import { onMount, type SvelteComponent } from 'svelte';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import MFA from '../MFA.svelte';
     import { superForm, superValidateSync } from 'sveltekit-superforms/client';
-    import { EmailChange, VerifyEmailChange } from 'validation-schemas';
+    import { EmailChange, VerifyCode } from 'validation-schemas';
     import Input from '../Input.svelte';
     import Button from '../Button.svelte';
     
-    export const parent: SvelteComponent = undefined;
+    export let parent: SvelteComponent;
 
     const modalStore = getModalStore();
 
     let stexs = $modalStore[0].meta.stexs;
     let flash = $modalStore[0].meta.flash;
     let types = $modalStore[0].meta.types;
-    let type = types.length === 1 && types[0];
+    let type = '_selection';
     let currentEmail: string = $modalStore[0].meta.email;
     let newEmailEntered: boolean = false;
     let mfaEntered: boolean = false;
     let confirmErrors: string[] = [];
-    const requestCodeTypes = ['email'];
+
+    let codeInput: HTMLInputElement;
 
     const { form, errors, validate } = superForm(superValidateSync(EmailChange), {
         id: 'email-change',
@@ -28,9 +29,9 @@
         clearOnSubmit: 'none',
     });
 
-    const { form: verifyForm, errors: verifyErrors, validate: verifyValidate } = superForm(superValidateSync(VerifyEmailChange), {
+    const { form: verifyForm, errors: verifyErrors, validate: verifyValidate } = superForm(superValidateSync(VerifyCode), {
         id: 'verify-email-change',
-        validators: VerifyEmailChange,
+        validators: VerifyCode,
         validationMethod: 'oninput',
         clearOnSubmit: 'none',
     });
@@ -44,8 +45,6 @@
             $errors._errors = ['New email cannot be the same as current email.'];
             return;
         }
-
-        if (requestCodeTypes.includes(type)) stexs.auth.mfa.requestCode(type);
 
         newEmailEntered = true;
     }
@@ -116,12 +115,15 @@
     const cancel = () => modalStore.close();
 
     $: $verifyForm.code = $verifyForm.code.toUpperCase();
+    $: {
+        if (newEmailEntered && mfaEntered && codeInput) codeInput.focus();
+    }
 </script>
 
 {#if $modalStore[0]}
     {#if newEmailEntered}
         {#if mfaEntered}
-            <div class="card p-5 space-y-6 flex flex-col relative max-w-[380px]">
+            <div class="card p-5 space-y-6 flex flex-col relative max-w-[380px] w-full">
                 <div class="h-fit">
                     <p class="text-[22px] text-primary-500">Verify Email Change</p>
                 </div>
@@ -132,22 +134,37 @@
                         {/each}
                     </ul>
                 {/if}
-                <Input
-                    name="code"
-                    field="code"
-                    required
-                    bind:value={$verifyForm.code}
-                >Code</Input>
-                <div class="flex justify-between w-full">
-                    <Button class="variant-ringed-surface hover:bg-surface-600" on:click={cancel}>Cancel</Button>
-                    <Button on:click={verify} class="variant-filled-primary">Verify</Button>
-                </div>
+                <p class="text-center">Enter the code sent to the new email address</p>
+                <form
+                    class="space-y-6"
+                    autocomplete="off"
+                    on:submit|preventDefault={verify}
+                >
+                    <Input
+                        name="code"
+                        field="code"
+                        required
+                        bind:value={$verifyForm.code}
+                        bind:ref={codeInput}
+                    >Code</Input>
+                    {#if $errors.code && Array.isArray($errors.code)}
+                        <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
+                        {#each $errors.code as error (error)}
+                            <li>{error}</li>
+                        {/each}
+                        </ul>
+                    {/if}
+                    <div class="flex justify-between w-full">
+                        <Button class="variant-ringed-surface hover:bg-surface-600" on:click={cancel}>Cancel</Button>
+                        <Button type="submit" class="variant-filled-primary">Verify</Button>
+                    </div>
+                </form>
             </div>
         {:else}
             <MFA {stexs} {flash} {types} {cancel} confirm={confirmMFA} {confirmErrors} bind:type />
         {/if}
     {:else}
-        <div class="card p-5 space-y-6 flex flex-col relative max-w-[380px]">
+        <div class="card p-5 space-y-6 flex flex-col relative max-w-[380px] w-full">
             <div class="h-fit">
                 <p class="text-[22px] text-primary-500">Email Change</p>
             </div>
@@ -158,18 +175,23 @@
                     {/each}
                 </ul>
             {/if}
-            <Input
-                name="email"
-                type="email"
-                field="email"
-                required
-                bind:value={$form.email}
-            >New Email</Input>
-            <Button on:click={jumpToVerification} class="p-0 text-secondary-500 hover:text-secondary-400 w-fit">Already issued email change?</Button>
-            <div class="flex justify-between w-full">
-                <Button class="variant-ringed-surface hover:bg-surface-600" on:click={cancel}>Cancel</Button>
-                <Button on:click={submit} class="variant-filled-primary">Continue</Button>
-            </div>
+            <form
+                class="space-y-6"
+                on:submit|preventDefault={submit}
+            >
+                <Input
+                    name="email"
+                    type="email"
+                    field="email"
+                    required
+                    bind:value={$form.email}
+                >New Email</Input>
+                <Button on:click={jumpToVerification} class="p-0 text-secondary-500 hover:text-secondary-400 w-fit">Already issued email change?</Button>
+                <div class="flex justify-between w-full">
+                    <Button class="variant-ringed-surface hover:bg-surface-600" on:click={cancel}>Cancel</Button>
+                    <Button type="submit" class="variant-filled-primary">Continue</Button>
+                </div>
+            </form>
         </div>
     {/if}
 {/if}

@@ -66,7 +66,7 @@ router.get(
         [userId],
       );
 
-      logger.info(`User data retrieve successful for user: ${userId}`);
+      logger.debug(`User data retrieve successful for user: ${userId}`);
 
       res.json(rows[0]);
     } catch (e) {
@@ -130,25 +130,21 @@ router.post(
         );
 
         if (rowCount === 0) {
-          logger.error(
-            `Failed to fetch MFA totp code and totp_secret for user: ${userId}`,
-          );
+          logger.error(`Failed to fetch MFA totp code and totp_secret for user: ${userId}`);
           return res
             .status(500)
             .json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         if (!rows[0].totp) {
-          logger.warn(`MFA TOTP is disabled for user: ${userId}`);
+          logger.debug(`MFA TOTP is disabled for user: ${userId}`);
           return res.status(400).json(errorMessages([{ info: TOTP_DISABLED }]));
         }
 
         const totp = getTOTPForVerification(rows[0].totp_secret);
 
         if (totp.validate({ token: code, window: 1 })) {
-          logger.warn(
-            `Invalid code provided for MFA TOTP password change for user: ${userId}`,
-          );
+          logger.debug(`Invalid code provided for MFA TOTP password change for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -177,23 +173,21 @@ router.post(
         );
 
         if (rowCount === 0) {
-          logger.error(
-            `Failed to fetch MFA email status, code and timestamp for user: ${userId}`,
-          );
+          logger.error(`Failed to fetch MFA email status, code and timestamp for user: ${userId}`);
           return res
             .status(500)
             .json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         if (!rows[0].email) {
-          logger.warn(`MFA email is disabled for user: ${userId}`);
+          logger.debug(`MFA email is disabled for user: ${userId}`);
           return res
             .status(400)
             .json(errorMessages([{ info: MFA_EMAIL_DISABLED }]));
         }
 
         if (code !== rows[0].email_code) {
-          logger.warn(`Invalid MFA code provided for user: ${userId}`);
+          logger.debug(`Invalid MFA code provided for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -208,7 +202,7 @@ router.post(
         }
 
         if (isExpired(rows[0].email_code_sent_at, 5)) {
-          logger.warn(`MFA code expired for user: ${userId}`);
+          logger.debug(`MFA code expired for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -256,9 +250,7 @@ router.post(
       const isCurrentPassword = rows[0].is_current_password;
 
       if (isCurrentPassword) {
-        logger.warn(
-          `New password matches the current password for user: ${userId}`,
-        );
+        logger.debug(`New password matches the current password for user: ${userId}`);
         return res.status(400).json(
           errorMessages([
             {
@@ -289,7 +281,7 @@ router.post(
           .json(errorMessages([{ info: PASSWORD_CHANGE_FAILED }]));
       }
 
-      logger.info(`Password change successful for user: ${userId}`);
+      logger.debug(`Password change successful for user: ${userId}`);
 
       res.json(message('Password changed successfully.'));
     } catch (e) {
@@ -351,25 +343,21 @@ router.post(
         );
 
         if (rowCount === 0) {
-          logger.error(
-            `Failed to fetch MFA totp code and totp_secret for user: ${userId}`,
-          );
+          logger.error(`Failed to fetch MFA totp code and totp_secret for user: ${userId}`);
           return res
             .status(500)
             .json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         if (!rows[0].totp) {
-          logger.warn(`MFA TOTP is disabled for user: ${userId}`);
+          logger.debug(`MFA TOTP is disabled for user: ${userId}`);
           return res.status(400).json(errorMessages([{ info: TOTP_DISABLED }]));
         }
 
         const totp = getTOTPForVerification(rows[0].totp_secret);
 
         if (totp.validate({ token: code, window: 1 })) {
-          logger.warn(
-            `Invalid code provided for MFA TOTP password change for user: ${userId}`,
-          );
+          logger.debug(`Invalid code provided for MFA TOTP password change for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -398,23 +386,21 @@ router.post(
         );
 
         if (rowCount === 0) {
-          logger.error(
-            `Failed to fetch MFA email status, code and timestamp for user: ${userId}`,
-          );
+          logger.error(`Failed to fetch MFA email status, code and timestamp for user: ${userId}`);
           return res
             .status(500)
             .json(errorMessages([{ info: INTERNAL_ERROR }]));
         }
 
         if (!rows[0].email) {
-          logger.warn(`MFA email is disabled for user: ${userId}`);
+          logger.debug(`MFA email is disabled for user: ${userId}`);
           return res
             .status(400)
             .json(errorMessages([{ info: MFA_EMAIL_DISABLED }]));
         }
 
         if (code !== rows[0].email_code) {
-          logger.warn(`Invalid MFA code provided for user: ${userId}`);
+          logger.debug(`Invalid MFA code provided for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -429,7 +415,7 @@ router.post(
         }
 
         if (isExpired(rows[0].email_code_sent_at, 5)) {
-          logger.warn(`MFA code expired for user: ${userId}`);
+          logger.debug(`MFA code expired for user: ${userId}`);
           return res.status(403).json(
             errorMessages([
               {
@@ -463,8 +449,8 @@ router.post(
         [newEmail],
       );
 
-      if (rowCount > 0) {
-        logger.warn(`Provided email for change is already in use for user: ${userId}`);
+      if (rowCount && rowCount > 0) {
+        logger.debug(`Provided email for change is already in use for user: ${userId}`);
         return res.status(403).json(errorMessages([{ info: EMAIL_NOT_AVAILABLE }]));
       }
     } catch (e) {
@@ -497,7 +483,7 @@ router.post(
         return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
       }
 
-      logger.info(`Email change initiated for user: ${userId}`);
+      logger.debug(`Email change initiated for user: ${userId}`);
     } catch (e) {
       logger.error(
         `Error during email change initiation for user: ${userId}. Error: ${
@@ -524,7 +510,7 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Email change verification link sent to ${newEmail}`);
+    logger.debug(`Email change verification link sent to ${newEmail}`);
 
     res.json(
       message(
@@ -559,12 +545,12 @@ router.post(
       );
 
       if (rowCount === 0) {
-        logger.warn(`Invalid email verification code for user: ${userId}`);
+        logger.debug(`Invalid email verification code for user: ${userId}`);
         return res.status(400).json(errorMessages([{ info: INVALID_CODE }]));
       }
 
       if (isExpired(rows[0].email_change_sent_at, 60)) {
-        logger.warn(`Email change code expired for user: ${userId}`);
+        logger.debug(`Email change code expired for user: ${userId}`);
         return res.status(403).json(errorMessages([{ info: CODE_EXPIRED }]));
       }
 
@@ -596,7 +582,7 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    logger.info(`Email successfully verified and changed for user: ${userId}`);
+    logger.debug(`Email successfully verified and changed for user: ${userId}`);
 
     res.json(message('Email successfully changed.'));
   },
