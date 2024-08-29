@@ -118,7 +118,7 @@
         {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
             <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[42px] rounded-lg" />
             <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
-        {:else}
+        {:else if $connectionsQuery.data?.length > 0 && search.length > 0}
             <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
                 <div class="sm:max-w-[300px] w-full">
                     <Search size="lg" placeholder="Search..." on:input={handleSearch} class="!bg-surface-500" />
@@ -151,23 +151,6 @@
             </div>
         {/if}
     </div>
-    <div class="mb-[18px] w-full">
-        {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
-            <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-                <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-                <div class="placeholder animate-pulse h-[34px] w-[230px]" />
-            </div>
-        {:else}
-            <Paginator
-                bind:settings={paginationSettings}
-                showFirstLastButtons="{true}"
-                showPreviousNextButtons="{true}"
-                amountText="Apps"
-                select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-                controlVariant="bg-surface-500 border border-gray-600"
-            />
-        {/if}
-    </div>
     <div class="flex flex-col w-full space-y-4">
         {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
             {#each Array(20) as _}
@@ -178,7 +161,7 @@
                 {#each Array(20) as _}
                     <div class="placeholder h-[98px] w-full" />
                 {/each}
-            {:else if $connectionsQuery?.data.length > 0 && search.length > 0}
+            {:else if $connectionAmountQuery?.data > 0 && search.length > 0}
                 <div class="grid place-items-center rounded-md col-span-full">
                     <p class="text-[18px] p-4 text-center">No apps found</p>
                 </div>
@@ -189,21 +172,25 @@
             {/if}
         {/if}
     </div>
-    <div class="mt-[18px] w-full">
-        {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
+    {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
+        <div class="mt-[18px] w-full">
             <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
                 <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
                 <div class="placeholder animate-pulse h-[34px] w-[230px]" />
             </div>
-        {:else}
-            <Paginator
-                bind:settings={paginationSettings}
-                showFirstLastButtons="{true}"
-                showPreviousNextButtons="{true}"
-                amountText="Apps"
-                select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-                controlVariant="bg-surface-500 border border-gray-600"
-            />
+        </div>
+    {:else}
+        {#if $connectionsQuery?.data.length > 0}
+            <div class="mt-[18px] w-full">
+                <Paginator
+                    bind:settings={paginationSettings}
+                    showFirstLastButtons="{true}"
+                    showPreviousNextButtons="{true}"
+                    amountText="Apps"
+                    select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
+                    controlVariant="bg-surface-500 border border-gray-600"
+                />
+            </div>
         {/if}
-    </div>
+    {/if}
 </div>

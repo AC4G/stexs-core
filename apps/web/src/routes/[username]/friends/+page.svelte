@@ -91,18 +91,37 @@
         queryFn: async () => await fetchFriends($profileStore?.userId!, search, filter, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
+
+    $: {
+        if ($userStore && $friendsQuery.data?.length > 0 && $profileStore?.totalFriends === 0) {
+            (async () => {
+                const { count } = await stexs
+                    .from('friends')
+                    .select('', { 
+                        count: 'exact',
+                        head: true 
+                    })
+                    .eq('user_id', $userStore?.id);
+
+                profileStore.set({
+                    ...$profileStore,
+                    totalFriends: count
+                });
+            })();
+        }
+    }
 </script>
 
-<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
+<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2 items-center">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[44px] rounded-lg" />
         <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
-    {:else}
-        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
+    {:else if $profileStore && $profileStore.totalFriends > 0}
+        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 items-center">
             <div class="sm:max-w-[300px] w-full">
                 <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
             </div>
-            <div class="sm:w-fit">
+            <div class="sm:w-fit w-full">
                 <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[22px]"
@@ -124,30 +143,13 @@
                         refetchFriendsTrigger: !profile?.refetchFriendsTrigger
                     }
                 });
-            })} class="relative btn variant-ghost-primary p-[12.89px]">
+            })} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
                 <Icon icon="pepicons-pop:plus"/>
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendProfilePopup">
-                    <p class="text-[14px] break-all">Add Friend</p>
+                    <p class="text-[14px] break-all">Add Friends</p>
                 </div>
             </button>
         {/if}
-    {/if}
-</div>
-<div class="mb-[18px]">
-    {#if $friendsQuery.isLoading || !$friendsQuery.data}
-        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
-        </div>
-    {:else}
-        <Paginator
-            bind:settings={paginationSettings}
-            showFirstLastButtons="{true}"
-            showPreviousNextButtons="{true}"
-            amountText="Friends"
-            select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-gray-600"
-        />
     {/if}
 </div>
 <div class="grid gap-2 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
@@ -216,7 +218,7 @@
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
             <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
-    {:else}
+    {:else if $friendsQuery.data?.length > 0}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{true}"

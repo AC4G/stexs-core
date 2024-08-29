@@ -206,7 +206,7 @@
             <div class="placeholder animate-pulse w-full sm:w-[115px] h-[44px]" />
             <div class="placeholder animate-pulse w-full sm:w-[85px] h-[44px]" />
         </div>
-    {:else}
+    {:else if $itemsAmountQuery.data > 0}
         <div class="sm:max-w-[300px] w-full">
             <Search size="lg" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
@@ -271,23 +271,6 @@
         </div>
     {/if}
 </div>
-<div class="mb-[18px]">
-    {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
-        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
-        </div>
-    {:else}
-        <Paginator
-            bind:settings={paginationSettings}
-            showFirstLastButtons="{true}"
-            showPreviousNextButtons="{true}"
-            amountText="Items"
-            select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-gray-600"
-        />
-    {/if}
-</div>
 <div class="grid gap-3 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         {#each Array(50) as _}
@@ -317,7 +300,7 @@
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
             <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
-    {:else}
+    {:else if $inventoryQuery.data.length > 0}
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{true}"

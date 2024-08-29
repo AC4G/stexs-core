@@ -86,7 +86,7 @@
                 </Button>
             </div>
             <div class="h-fit">
-                <p class="text-[22px] text-primary-500">Add Friend</p>
+                <p class="text-[22px] text-primary-500">Add Friends</p>
             </div>
         </div>
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 sm:space-x-4 items-center">
@@ -102,21 +102,6 @@
                 </Dropdown>
             </div>
         </div>
-        {#if $searchForFriendsQuery.isLoading}
-            <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-                <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-                <div class="placeholder animate-pulse h-[38px] w-[240px]" />
-            </div>
-        {:else if paginationSettings.size > 0 }
-            <Paginator
-                bind:settings={paginationSettings}
-                showFirstLastButtons="{true}"
-                showPreviousNextButtons="{true}"
-                amountText="Users"
-                select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-                controlVariant="bg-surface-500 border border-gray-600"
-            />
-        {/if}
         <div class="flex flex-col items-center space-y-2">
             {#if $searchForFriendsQuery.isLoading}
                 {#each Array(10) as _}
@@ -179,8 +164,10 @@
                     </div>
                 {/each}
             {/if}
-            {#if $searchForFriendsQuery.data?.length === 0}
+            {#if $searchForFriendsQuery.data?.length === 0 && search.length > 0}
                 <p class="text-[18px]">No users found</p>
+            {:else if $searchForFriendsQuery.data?.length === 0 && search.length === 0 && filter === 'Pending'}
+                <p class="text-[18px]">No pending friend requests</p>
             {/if}
         </div>
         <div class="{search.length > 0 ? 'mt-[18px]' : ''}">

@@ -202,7 +202,7 @@
               })} class="btn relative hover:bg-surface-500 rounded-full transition p-3">
                 <Icon icon="octicon:person-add-16" width="18" />
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendPopup">
-                  <p class="text-[14px] break-all">Add Friend</p>
+                  <p class="text-[14px] break-all">Add Friends</p>
                 </div>
               </button>
               <Notifications />
@@ -240,9 +240,13 @@
   {:else}
     <div class="m-[20px] absolute">
       <button on:click={() => {
-        window.history.go(-1); 
-        return false;
-      }} class="btn-icon variant-filled-surface" title="Home">
+        if ($previousPageStore === '/') {
+          window.history.go(-1); 
+        } else {
+          previousPageStore.set('/');
+          goto('/');
+        }
+      }} class="btn-icon variant-filled-surface" title="Back">
         <Icon icon="ph:arrow-left-bold" />
       </button>
     </div>

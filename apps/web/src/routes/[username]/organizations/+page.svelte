@@ -193,16 +193,16 @@
     $: paginationSettings.size = organizationAmountQueryStore.data;
 </script>
 
-<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
+<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2 items-center">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
         <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[42px] rounded-lg" />
         <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
-    {:else}
-        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
+    {:else if organizationAmountQueryStore.data > 0}
+        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 items-center">
             <div class="sm:max-w-[300px] w-full">
                 <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
             </div>
-            <div class="sm:w-fit">
+            <div class="sm:w-fit w-full">
                 <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[22px]"
@@ -219,27 +219,10 @@
             <button use:popup={newOrganizationProfilePopup} on:click={() => openCreateOrganizationModal(flash, modalStore, stexs, organizationsMemberQueryStore)} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
                 <Icon icon="pepicons-pop:plus" />
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="newOrganizationProfilePopup">
-                    <p class="text-[14px]">New Organization</p>
+                    <p class="text-[14px]">Create Organization</p>
                 </div>
             </button>
         {/if}
-    {/if}
-</div>
-<div class="mb-[18px]">
-    {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
-        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]" />
-            <div class="placeholder animate-pulse h-[34px] w-[232px]" />
-        </div>
-    {:else}
-        <Paginator
-            bind:settings={paginationSettings}
-            showFirstLastButtons="{true}"
-            showPreviousNextButtons="{true}"
-            amountText="Organizations"
-            select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-gray-600"
-        />
     {/if}
 </div>
 <div class="grid gap-2">
@@ -274,7 +257,7 @@
                     </div>
                 </div>
             {/each}
-        {:else if organizationsMemberQueryStore?.data > 0 && search.length > 0}
+        {:else if organizationAmountQueryStore.data > 0 && search.length > 0}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
                 <p class="text-[18px] p-4 text-center">No organizations found</p>
             </div>
@@ -291,7 +274,7 @@
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]" />
             <div class="placeholder animate-pulse h-[34px] w-[232px]" />
         </div>
-    {:else}
+    {:else if organizationsMemberQueryStore.data.length > 0} 
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{true}"

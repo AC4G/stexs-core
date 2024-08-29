@@ -25,5 +25,5 @@
 </script>
 
 {#if $settingsSetupQuery.data}
-    <slot />
+    <slot /> 
 {/if}
