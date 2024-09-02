@@ -181,9 +181,9 @@
 
 <div class="grid place-items-center">
     <div class="sm:rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
-        <div class="grid grid-cols-2 gap-x-2 md:grid-cols-3 lg:grid-cols-4 gap-y-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-2 md:grid-cols-3 lg:grid-cols-4 gap-y-8">
             {#if $profileQuery.isLoading || !$profileQuery.data}
-                <div class="placeholder-circle animate-pulse mx-auto w-[122px] sm:w-[168px]" />
+                <div class="placeholder-circle animate-pulse mx-auto w-[168px]" />
                 <div class="grid gap-y-4 md:col-span-2 items-center">
                     <div class="placeholder animate-pulse w-[80%] sm:w-[120px] h-[24px]" />
                     <div class="placeholder animate-pulse w-[100px] h-[24px]" />
@@ -191,7 +191,7 @@
                     <div class="placeholder animate-pulse w-[80%] sm:w-[50%] h-[24px]" />
                 </div>
             {:else}
-                <Avatar {userId} {stexs} {username} class="mx-auto w-[122px] sm:w-[168px] border-2 border-surface-500" draggable="false" />
+                <Avatar {userId} {stexs} {username} class="mx-auto w-[168px] border-2 border-surface-500" draggable="false" />
                 <div class="grid gap-y-4 md:col-span-2 items-center">
                     <p class="text-[20px] sm:text-[24px] break-all font-bold">{$profileQuery.data?.username}</p>
                     {#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
@@ -321,7 +321,7 @@
                 <div class="grid row-start-2 col-span-full place-items-center placeholder animate-pulse h-[1000px] rounded-md" />
             {:else}
                 {#if ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
-                    <TabGroup regionList="flex flex-col sm:flex-row" active="variant-glass-primary text-primary-500" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
+                    <TabGroup regionList="flex flex-col sm:flex-row" active="variant-glass-primary text-primary-500" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4 relative" justify="justify-center" rounded="rounded-md">
                         <TabAnchor href="/{username}" selected={path === `/${username}`} >
                             <span>Inventory</span>
                         </TabAnchor>

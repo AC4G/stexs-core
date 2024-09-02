@@ -14,7 +14,7 @@
   "scripts": {},
   "devDependencies": {
     "@iconify/svelte": "^3.1.4",
-    "@skeletonlabs/skeleton": "^2.5.0",
+    "@skeletonlabs/skeleton": "^2.10.2",
     "@svelte-put/qr": "^1.2.1",
     "@tanstack/svelte-query": "^5.18.0",
     "@types/lodash": "^4.14.202",

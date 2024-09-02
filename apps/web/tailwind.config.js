@@ -18,7 +18,14 @@ export default {
 		)
   ],
   theme: {
-    extend: {},
+    extend: {
+      screens: {
+        'xs': '512px'
+      },
+      aspectRatio: {
+        '4/3': '4 / 3',
+      }
+    },
   },
   plugins: [
     skeleton({

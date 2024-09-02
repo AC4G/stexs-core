@@ -7,8 +7,8 @@ CREATE POLICY blocked_select
     USING (
         (
             (
-                auth.uid() = blocker_id OR
-                auth.uid() = blocked_id
+                auth.uid() = public.blocked.blocker_id OR
+                auth.uid() = public.blocked.blocked_id
             )
         ) AND 
         (
@@ -1819,13 +1819,9 @@ CREATE POLICY oauth2_connections_select
 
 
 
-<<<<<<< HEAD
-CREATE POLICY oauth2_connection_scopes_select 
-=======
 ALTER TABLE public.oauth2_connection_scopes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY oauth2_connection_scopes_select
->>>>>>> f1d30ef14c0cd359859d8f0cac889fb0f66b2731
     ON public.oauth2_connection_scopes
     FOR SELECT
     USING (

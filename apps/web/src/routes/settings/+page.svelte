@@ -160,10 +160,12 @@
         
         const allowedTypes = [
             'image/png', 
-            'image/gif', 
+            'image/gif',
+            'image/jpg',
             'image/jpeg', 
             'image/webp',
             'image/svg',
+            'image/svg+xml'
         ];
 
         if (!allowedTypes.includes(file.type)) {
@@ -268,7 +270,7 @@
         </div>
         {#if !$profileQuery.data || !$userStore}
             <div class="grid sm:grid-cols-2 pt-4">
-                <div class="placeholder-circle animate-pulse mx-auto w-[200px] p-2" />
+                <div class="placeholder-circle animate-pulse mx-auto w-[160px] xs:w-[200px] p-2" />
                 <div class="space-y-6 sm:row-start-1">
                     <div class="placeholder animate-pulse h-[69.75px]" />
                     <div class="placeholder animate-pulse h-[69.75px]" />
@@ -281,9 +283,9 @@
             <div class="grid sm:grid-cols-2 pt-4">
                 <div class="relative w-fit h-fit mx-auto">
                     {#key state}
-                        <Avatar userId={$userStore.id} {stexs} username={$userStore?.username} class="w-[200px] sm:col-start-2 border-2 border-surface-500" draggable="false" />
+                        <Avatar userId={$userStore.id} {stexs} username={$userStore?.username} class="w-[160px] xs:w-[200px] sm:col-start-2 border-2 border-surface-500" draggable="false" />
                     {/key}
-                    <button use:popup={avatarSettingPopup} class="btn rounded variant-glass-surface p-2 absolute top-36 right-1 border border-surface-500">
+                    <button use:popup={avatarSettingPopup} class="btn rounded variant-glass-surface p-2 absolute top-[114px] xs:top-[144px] right-1 border border-surface-500">
                         {#if submittedAvatar}
                             <ProgressRadial stroke={40} strokeLinecap="round" meter='stroke-surface-50' track='stroke-surface-500' class='w-[24px]' />
                         {:else}

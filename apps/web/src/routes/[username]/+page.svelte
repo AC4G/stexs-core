@@ -12,7 +12,7 @@
         getModalStore, 
         type ModalSettings, 
         ListBoxItem,
-        ProgressRadial
+        ProgressRadial,
     } from "@skeletonlabs/skeleton";
     import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";
@@ -21,6 +21,7 @@
     const profileStore = getProfileStore();
     const userStore = getUserStore();
     const modalStore = getModalStore();
+
     let search: string = '';
     let previousSearch: string = '';
     let projectSearch: string = '';
@@ -157,7 +158,9 @@
         return data;
     }
 
-    async function fetchItemFromInventory(userId: string, itemId: number) {
+    async function fetchItemFromInventory(params: { userId: string, itemId: number }) {
+        const { userId, itemId } = params;
+
         const { data } = await stexs.from('inventories')
             .select(`
                 amount,
@@ -185,7 +188,11 @@
             component: 'inventoryItem',
             meta: {
                 data: params,
-                fn: fetchItemFromInventory($profileStore?.userId!, params.items.id),
+                fn: fetchItemFromInventory,
+                fnParams: {
+                    userId: $profileStore?.userId!,
+                    itemId: params.items.id
+                },
                 stexsClient: stexs
             }
         };
@@ -201,14 +208,14 @@
 
 <div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
-        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[42px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[41.75px] rounded-lg" />
         <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <div class="placeholder animate-pulse w-full sm:w-[115px] h-[44px]" />
-            <div class="placeholder animate-pulse w-full sm:w-[85px] h-[44px]" />
+            <div class="placeholder animate-pulse w-full sm:w-[115px] h-[41.75px]" />
+            <div class="placeholder animate-pulse w-full sm:w-[85px] h-[41.75px]" />
         </div>
     {:else if $itemsAmountQuery.data > 0}
         <div class="sm:max-w-[300px] w-full">
-            <Search size="lg" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
+            <Search size="md" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
         </div>
         <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
             <div class="w-full sm:w-fit">
@@ -271,8 +278,8 @@
         </div>
     {/if}
 </div>
-<div class="grid gap-3 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-    {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
+<div class="grid gap-3 place-items-center grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    {#if $inventoryQuery.isLoading || !$inventoryQuery.data || ($inventoryQuery.isFetching && $inventoryQuery.data.length === 0)}
         {#each Array(50) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-full" />
         {/each}

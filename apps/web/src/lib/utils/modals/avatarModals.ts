@@ -10,7 +10,7 @@ export function openRemoveAvatarModal(
     component: 'confirm',
     meta: {
       text: `Do you really want to remove your avatar?`,
-      function: async () => {
+      fn: async () => {
         await stexs.storage.deleteAvatar();
         onSuccess();
       },

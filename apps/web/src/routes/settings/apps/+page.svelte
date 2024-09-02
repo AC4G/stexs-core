@@ -9,7 +9,7 @@
     import { page } from '$app/stores';
     import { createQuery } from "@tanstack/svelte-query";
     import { stexs } from "../../../stexsClient";
-
+    
     const userStore = getUserStore();
     const modalStore = getModalStore();
     const flash = getFlash(page);
@@ -112,7 +112,6 @@
             <h2 class="h2">Applications</h2>
             <hr class="!border-t-2">
         </div>
-        
     </div>
     <div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2 w-full mt-[24px]">
         {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
@@ -121,7 +120,7 @@
         {:else if $connectionsQuery.data?.length > 0 && search.length > 0}
             <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
                 <div class="sm:max-w-[300px] w-full">
-                    <Search size="lg" placeholder="Search..." on:input={handleSearch} class="!bg-surface-500" />
+                    <Search size="md" placeholder="Search..." on:input={handleSearch} class="!bg-surface-500" />
                 </div>
                 <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
                     <div class="w-full sm:w-fit">

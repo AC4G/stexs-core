@@ -24,9 +24,9 @@
         </Button>
       {/if}
       {#if $page.url.pathname === '/'}
-        <h4 class="h4 tracking-wider cursor-default">STEXS</h4>
+        <h4 class="h4 tracking-wider mt-[2px] md:mt-0">STEXS</h4>
       {:else}
-        <a href="/" class="h4 tracking-wider">STEXS</a>
+        <a href="/" class="h4 tracking-wider mt-[2px] md:mt-0">STEXS</a>
       {/if}
     </div>
   </svelte:fragment>

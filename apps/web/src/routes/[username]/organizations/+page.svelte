@@ -101,7 +101,7 @@
             type: 'component',
             component: 'confirm',
             meta: {
-                text: `Do you really want to leave ${organizationName}?`,
+                text: `Do you really want to leave ${organizationName} organization?`,
                 function: leaveOrganization,
                 fnParams: {
                     userId,
@@ -182,7 +182,6 @@
 
     $: {
         if ($profileStore && $profileStore.refetchOrganizationsTrigger !== undefined) {
-            $organizationAmountQuery.refetch();
             $organizationsMemberQuery.refetch();
         }
     }
@@ -195,12 +194,12 @@
 
 <div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2 items-center">
     {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
-        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[42px] rounded-lg" />
-        <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[41.75px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:w-[90px] w-full h-[41.75px] rounded-lg" />
     {:else if organizationAmountQueryStore.data > 0}
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 items-center">
             <div class="sm:max-w-[300px] w-full">
-                <Search size="lg" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
+                <Search size="md" placeholder="Organization Name" on:input={handleSearch} class="!bg-surface-500" />
             </div>
             <div class="sm:w-fit w-full">
                 <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
@@ -225,8 +224,8 @@
         {/if}
     {/if}
 </div>
-<div class="grid gap-2">
-    {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
+<div class="space-y-3">
+    {#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data || (organizationsMemberQueryStore.isFetching && organizationsMemberQueryStore.data.length === 0)}
         {#each Array(20) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-[98px]" />
         {/each}
@@ -264,6 +263,11 @@
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
                 <p class="text-[18px] p-6 text-center">{$userStore?.id === $profileStore?.userId ? 'You haven\'t join any organizations' : 'User is not a member of any organization'}</p>
+                {#if $userStore?.id === $profileStore?.userId}
+                    <button use:popup={newOrganizationProfilePopup} on:click={() => openCreateOrganizationModal(flash, modalStore, stexs, organizationsMemberQueryStore)} class="relative btn variant-filled-primary h-fit w-full sm:w-fit">
+                        Create Organization
+                    </button>
+                {/if}
             </div>
         {/if}
     {/if}

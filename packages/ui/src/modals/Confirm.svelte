@@ -21,13 +21,13 @@
             {#if $modalStore[0].meta.fnAsync}
                 <Button on:click={async () => { 
                     submitted = true;
-                    await $modalStore[0].meta.function($modalStore[0].meta.fnParams);
+                    await $modalStore[0].meta.fn($modalStore[0].meta.fnParams);
                     modalStore.close();
                 }} class={confirmBtnClass} loaderMeter={confirmBtnLoaderMeter} loaderTrack={confirmBtnLoaderTrack} {submitted}>{$modalStore[0].meta.confirmBtnText ? $modalStore[0].meta.confirmBtnText : 'Confirm'}</Button>
             {:else}
                 <Button on:click={() => {
                     submitted = true;
-                    $modalStore[0].meta.function($modalStore[0].meta.fnParams);
+                    $modalStore[0].meta.fn($modalStore[0].meta.fnParams);
                     modalStore.close();
                 }} class="variant-filled-primary" {submitted} loaderMeter={confirmBtnLoaderMeter} loaderTrack={confirmBtnLoaderTrack} >Confirm</Button>
             {/if}

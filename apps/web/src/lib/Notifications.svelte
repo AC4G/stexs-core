@@ -229,7 +229,7 @@
     }
 </script>
 
-<button use:popup={notificationsWindowPopup} use:popup={notificationsPopup} class="btn relative notifications hover:bg-surface-500 rounded-full transition p-3 {dropDownOpen && 'bg-surface-500'}">
+<button use:popup={notificationsWindowPopup} use:popup={notificationsPopup} class="btn hidden xs:block relative notifications hover:bg-surface-500 rounded-full transition p-3 {dropDownOpen && 'bg-surface-500'}">
     <div>
         <div class="relative">
             {#if $unseenNotificationsQuery.data > 0}
@@ -246,7 +246,7 @@
     <div class="absolute rounded-md right-[-86px] sm:right-[-74px] bg-surface-900 p-2 space-y-2 border border-surface-500 w-[100vw] sm:w-[400px]">
         {#if ($notificationsQuery.isSuccess) || search.length > 0 || filter !== 'All'}
             {#if filter !== 'All' && filter !== 'Messages'}
-                <Search size="lg" placeholder={filter.split(' ')[0] + ' Name'} on:input={handleSearch} class="!bg-surface-500" />
+                <Search size="md" placeholder={filter.split(' ')[0] + ' Name'} on:input={handleSearch} class="!bg-surface-500" />
             {/if}
             <Button class="bg-surface-500 border border-gray-600 w-full py-[8px]">
                 {filter}<Icon icon="iconamoon:arrow-down-2-duotone" class="text-[22px]" />

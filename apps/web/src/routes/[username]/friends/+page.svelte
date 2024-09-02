@@ -30,6 +30,7 @@
         target: 'addFriendProfilePopup',
         placement: 'top'
     };
+
     let search: string = '';
     let previousSearch: string = '';
     let filter: string = 'A-Z';
@@ -41,13 +42,18 @@
     };
     let removeFriendSubmitted: boolean = false;
 
-    $: paginationSettings.size = $profileStore?.totalFriends!;
-
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
     }, 200);
 
     async function fetchFriends(userId: string, search: string, filter: string, page: number, limit: number) {
+        if ($profileStore) {
+            profileStore.set({
+                ...$profileStore,
+                refetchFriendsTrigger: !$profileStore.refetchFriendsTrigger
+            });
+        }
+
         if (search !== previousSearch) {
             paginationSettings.page = 0;
             page = 0;
@@ -91,35 +97,16 @@
         queryFn: async () => await fetchFriends($profileStore?.userId!, search, filter, paginationSettings.page, paginationSettings.limit),
         enabled: !!$profileStore?.userId
     });
-
-    $: {
-        if ($userStore && $friendsQuery.data?.length > 0 && $profileStore?.totalFriends === 0) {
-            (async () => {
-                const { count } = await stexs
-                    .from('friends')
-                    .select('', { 
-                        count: 'exact',
-                        head: true 
-                    })
-                    .eq('user_id', $userStore?.id);
-
-                profileStore.set({
-                    ...$profileStore,
-                    totalFriends: count
-                });
-            })();
-        }
-    }
 </script>
 
 <div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2 items-center">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
-        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[44px] rounded-lg" />
-        <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[41.75px] rounded-lg" />
+        <div class="placeholder animate-pulse sm:w-[90px] w-full h-[41.75px] rounded-lg" />
     {:else if $profileStore && $profileStore.totalFriends > 0}
         <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 items-center">
             <div class="sm:max-w-[300px] w-full">
-                <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
+                <Search size="md" placeholder="Username" on:input={handleSearch} class="!bg-surface-500" />
             </div>
             <div class="sm:w-fit w-full">
                 <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
@@ -152,8 +139,8 @@
         {/if}
     {/if}
 </div>
-<div class="grid gap-2 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
-    {#if $friendsQuery.isLoading || !$friendsQuery.data}
+<div class="grid gap-3 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+    {#if $friendsQuery.isLoading || !$friendsQuery.data || ($friendsQuery.isFetching && $friendsQuery.data.length === 0)}
         {#each Array(20) as _}
             <div class="flex h-full w-full items-center justify-left space-x-2 p-2">
                 <div class="placeholder-circle animate-pulse w-[40px] h-[40px]" />
@@ -208,6 +195,19 @@
         {:else}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
                 <p class="text-[18px] p-6 text-center">{$userStore?.id === $profileStore?.userId ? 'You have no friends' : 'User has no friends'}</p>
+                {#if $userStore?.id === $profileStore?.userId}
+                    <button use:popup={addFriendProfilePopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
+                        //@ts-ignore
+                        profileStore.update(profile => {
+                            return {
+                                ...profile,
+                                refetchFriendsTrigger: !profile?.refetchFriendsTrigger
+                            }
+                        });
+                    })} class="relative btn variant-filled-primary h-fit w-full sm:w-fit">
+                        Add Friends
+                    </button>
+                {/if}
             </div>
         {/if}
     {/if}

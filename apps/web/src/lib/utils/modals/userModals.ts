@@ -20,7 +20,7 @@ export function openBlockUserModal(
     component: 'confirm',
     meta: {
       text: `Do you really want to block ${username}?`,
-      function: blockUser,
+      fn: blockUser,
       fnParams: {
         blocked_id: userId,
         blocker_id: currentUserId,
@@ -47,7 +47,7 @@ export function openUnblockUserModal(
     component: 'confirm',
     meta: {
       text: `Do you really want to unblock ${username}?`,
-      function: unblockUser,
+      fn: unblockUser,
       fnParams: {
         userId,
         currentUserId,
