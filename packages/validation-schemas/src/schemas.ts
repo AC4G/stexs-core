@@ -81,7 +81,8 @@ export const CreateOrganization = z.object({
     })
     .max(50, {
       message: 'The name can be a maximum of 50 characters long.',
-    }),
+    })
+    .nullable(),
   display_name: z
     .string()
     .max(50, {
@@ -104,10 +105,12 @@ export const CreateOrganization = z.object({
   url: z
     .string()
     .max(150, {
-      message: 'The url can be a maximum of 150 characters long.',
+      message: 'The link can be a maximum of 150 characters long.',
     })
     .refine(
       (value) => {
+        if (value.length === 0) return true;
+
         try {
           const url = new URL(value);
           return url.protocol === 'https:';
@@ -116,11 +119,13 @@ export const CreateOrganization = z.object({
         }
       },
       {
-        message: 'Url must use the HTTPS protocol',
+        message: 'Link must use the HTTPS protocol',
       },
     )
     .refine(
       (value) => {
+        if (value.length === 0) return true;
+
         try {
           const url = new URL(value);
           return /\.[a-zA-Z]{2,63}$/.test(url.hostname);
@@ -129,7 +134,7 @@ export const CreateOrganization = z.object({
         }
       },
       {
-        message: 'Url must have an ending. Example: https://example.com',
+        message: 'Link must have an ending. Example: https://example.com',
       },
     )
     .nullable(),
@@ -140,10 +145,12 @@ export const UpdateProfile = z.object({
   url: z
     .string()
     .max(150, {
-      message: 'The url can be a maximum of 150 characters long.',
+      message: 'The link can be a maximum of 150 characters long.',
     })
     .refine(
       (value) => {
+        if (value.length === 0) return true;
+
         try {
           const url = new URL(value);
           return url.protocol === 'https:';
@@ -152,11 +159,13 @@ export const UpdateProfile = z.object({
         }
       },
       {
-        message: 'Url must use the HTTPS protocol',
+        message: 'Link must use the HTTPS protocol',
       },
     )
     .refine(
       (value) => {
+        if (value.length === 0) return true;
+
         try {
           const url = new URL(value);
           return /\.[a-zA-Z]{2,63}$/.test(url.hostname);
@@ -165,7 +174,7 @@ export const UpdateProfile = z.object({
         }
       },
       {
-        message: 'Url must have an ending. Example: https://example.com',
+        message: 'Link must have an ending. Example: https://example.com',
       },
     )
     .nullable(),

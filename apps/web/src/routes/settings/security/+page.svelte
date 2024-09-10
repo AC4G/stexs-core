@@ -3,7 +3,7 @@
     import { createQuery } from "@tanstack/svelte-query";
     import { getUserStore } from "$lib/stores/userStore";
     import { Button } from "ui";
-    import { stexs } from "../../../stexsClient";
+    import { stexs } from '../../../stexsClient';
     import { openChangePasswordModal, openChangeEmailModal, openEnableTOTPModal, openRemoveTOTPModal, openDisableEmailModal, openEnableEmailModal } from "$lib/utils/modals/userModals";
     import { getFlash } from 'sveltekit-flash-message/client';
     import { page } from '$app/stores';
@@ -72,7 +72,7 @@
 <div class="px-[4%] md:px-[8%] grid place-items-center">
     <div class="w-full my-[40px] lg:max-w-[1200px] space-y-6">
         <div class="space-y-2">
-            <h2 class="h2">Account</h2>
+            <h2 class="h2">Security</h2>
             <hr class="!border-t-2">
         </div>
         {#if $userStore}
@@ -88,7 +88,7 @@
             </div>
         {/if}
         <div class="space-y-2">
-            <h3 class="h3">Security</h3>
+            <h3 class="h3">Password and Authentication</h3>
             <hr class="!border-t-2">
         </div>
         <div class="space-y-8">

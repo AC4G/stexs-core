@@ -50,6 +50,8 @@
     async function requestNewCode(showMessage: boolean = false) {
         const response = await (await stexs.auth.mfa.requestCode(type)).json();
 
+        console.log(response);
+
         requested = false;
 
         if (response.success && showMessage) {
@@ -70,12 +72,6 @@
             });
         }
     }
-
-    onMount(async () => {
-        if (types.length === 1) type = types[0];
-
-        if (requestCodeTypes.includes(type)) await requestNewCode();
-    });
 
     async function confirmCode() {
         const result = await validate();

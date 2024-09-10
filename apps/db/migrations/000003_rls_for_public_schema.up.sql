@@ -291,25 +291,25 @@ CREATE POLICY inventories_select
                         SELECT 1 
                         FROM public.friends AS fr
                         WHERE fr.user_id = auth.uid() 
-                            AND fr.friend_id = public.inventories.user_id
+                            AND fr.friend_id = user_id
                     ) OR
                     (
                         EXISTS (
                             SELECT 1
                             FROM public.profiles AS p
-                            WHERE p.user_id = public.inventories.user_id 
+                            WHERE p.user_id = user_id 
                                 AND p.is_private IS FALSE
                         ) AND
                         NOT EXISTS (
                             SELECT 1
                             FROM public.blocked AS b
-                            WHERE b.blocker_id = public.inventories.user_id 
+                            WHERE b.blocker_id = user_id 
                                 AND b.blocked_id = auth.uid()
                             UNION
                             SELECT 1
                             FROM public.blocked AS b
                             WHERE b.blocker_id = auth.uid() 
-                                AND b.blocked_id = public.inventories.user_id
+                                AND b.blocked_id = user_id
                         )
                     )
                 )

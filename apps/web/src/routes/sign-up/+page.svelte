@@ -170,7 +170,7 @@
                 </ul>
               {/if}
               {#if usernameNotAvailable}
-                <p class="text-[14px] text-error-400 whitespace-normal">Username is not available</p>
+                <p class="text-[14px] text-error-400 whitespace-normal">Username is already being used</p>
               {/if}
             </div>
           {/if}

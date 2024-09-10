@@ -15,7 +15,7 @@
     import { convertAnimatedToWebP, convertImageToWebP, cropFile, isWebPAnimated } from "$lib/utils/fileConverter";
     import compressFile from "$lib/utils/compressFile";
 
-    const modalStore = getModalStore();
+    const modalStore = getModalStore(); 
     const userStore = getUserStore();
     const flash = getFlash(page);
 
@@ -38,7 +38,9 @@
     const checkUsernameAvailability = debounce(async () => {
         if ($errors.username || $form.username.toLowerCase() === profile.username.toLowerCase() || $form.username.length === 0) return;
 
-        const checkExists = checkedUsernames.find(check => check.username === $form.username.toLowerCase());
+        let username = $form.username.toLowerCase();
+
+        const checkExists = checkedUsernames.find(check => check.username === username);
 
         if (checkExists) {
             if (checkExists.available) {
@@ -56,7 +58,7 @@
                 count: 'exact',
                 head: true 
             })
-            .ilike('username', $form.username);
+            .ilike('username', username);
 
         let available: boolean = true;
 
@@ -68,7 +70,7 @@
         }
 
         checkedUsernames.push({
-            username: $form.username.toLowerCase(),
+            username,
             available
         });
     }, 300);
@@ -253,12 +255,10 @@
             }
         }
     }
-    $: {
-        $errors
 
-        if (hasChanges) {
-            (async () => hasErrors = !(await validate()).valid)();
-        }
+    // $errors in if st. only for reactivity
+    $: if ($errors && hasChanges) {
+        (async () => hasErrors = !(await validate()).valid)();
     }
 </script>
 
@@ -331,13 +331,13 @@
                                     </ul>
                                 {/if}
                                 {#if usernameNotAvailable}
-                                    <p class="text-[14px] text-error-400 whitespace-normal">Username is not available</p>
+                                    <p class="text-[14px] text-error-400 whitespace-normal">Username is already being used</p>
                                 {/if}
                             </div>
                         {/if}
                     </div>
                     <div>
-                        <Input labelClass="label" bind:value={$form.url}>URL</Input>
+                        <Input labelClass="label" bind:value={$form.url}>Link</Input>
                         {#if $errors.url && Array.isArray($errors.url)}
                             <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
                                 {#each $errors.url as error (error)}

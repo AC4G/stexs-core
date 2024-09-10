@@ -9,7 +9,7 @@ export async function acceptOrganizationRequest(
   organizationName: string,
   role: string,
   flash: Writable<ToastSettings>,
-  profileStore: Writable<Profile | null>,
+  $profileStore: Profile,
 ): Promise<boolean> {
   let isMember: boolean = false;
   const { error } = await stexs.from('organization_members').insert([
@@ -27,12 +27,10 @@ export async function acceptOrganizationRequest(
       timeout: 5000,
     });
   } else {
-    profileStore.update((profile: Profile | null) => {
-      return {
-        ...profile!,
-        refetchOrganizationsTrigger: !profile?.refetchOrganizationsTrigger,
-      };
-    });
+    if ($profileStore.refetchOrganizationsFn) {
+      $profileStore.refetchOrganizationsFn();
+    }
+
     flash.set({
       message: `You are now member of ${organizationName} organization.`,
       classes: 'variant-glass-success',

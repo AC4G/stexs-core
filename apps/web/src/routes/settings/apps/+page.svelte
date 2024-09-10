@@ -120,7 +120,7 @@
         {:else if $connectionsQuery.data?.length > 0 && search.length > 0}
             <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
                 <div class="sm:max-w-[300px] w-full">
-                    <Search size="md" placeholder="Search..." on:input={handleSearch} class="!bg-surface-500" />
+                    <Search size="md" placeholder="Search by Connection Name..." on:input={handleSearch} class="!bg-surface-500" />
                 </div>
                 <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
                     <div class="w-full sm:w-fit">
@@ -151,7 +151,7 @@
         {/if}
     </div>
     <div class="flex flex-col w-full space-y-4">
-        {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
+        {#if $connectionsQuery.isLoading || !$connectionsQuery.data || ($connectionsQuery.isFetching && $connectionsQuery.data.length === 0)}
             {#each Array(20) as _}
                 <div class="placeholder animate-pulse h-[98px] w-full" />
             {/each}
@@ -160,7 +160,7 @@
                 {#each Array(20) as _}
                     <div class="placeholder h-[98px] w-full" />
                 {/each}
-            {:else if $connectionAmountQuery?.data > 0 && search.length > 0}
+            {:else if $connectionAmountQuery.data > 0 && (search.length > 0 || $connectionsQuery.data.length === 0)}
                 <div class="grid place-items-center rounded-md col-span-full">
                     <p class="text-[18px] p-4 text-center">No apps found</p>
                 </div>
@@ -172,14 +172,12 @@
         {/if}
     </div>
     {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
-        <div class="mt-[18px] w-full">
-            <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-                <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-                <div class="placeholder animate-pulse h-[34px] w-[230px]" />
-            </div>
+        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px] w-full">
+            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
+            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
         </div>
     {:else}
-        {#if $connectionsQuery?.data.length > 0}
+        {#if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
             <div class="mt-[18px] w-full">
                 <Paginator
                     bind:settings={paginationSettings}

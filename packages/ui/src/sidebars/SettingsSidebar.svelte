@@ -17,9 +17,9 @@
 					<Icon icon="octicon:person-16" />
 				</svelte:fragment>
 			</SidebarItem>
-			<SidebarItem label="Account" href="/settings/account">
+			<SidebarItem label="Security" href="/settings/security">
 				<svelte:fragment slot="icon">
-					<Icon icon="octicon:gear-16" />
+					<Icon icon="mdi:security-lock" />
 				</svelte:fragment>
 			</SidebarItem>
 			<SidebarItem label="Applications" href="/settings/apps">
