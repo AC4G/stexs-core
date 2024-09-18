@@ -198,6 +198,7 @@ export class StexsAuthClient {
           }),
         );
 
+        //subject to change in the future
         if (body.types.length === 1 && body.types[0] === 'email') {
           await this._requestCode();
         }
@@ -418,17 +419,11 @@ export class StexsAuthClient {
    * @returns {Promise<Response>} A Promise that resolves with the response data.
    */
   async verifyEmailChange(code: string): Promise<Response> {
-    const response = await this._request({
+    return await this._request({
       path: 'user/email/verify',
       method: 'POST',
       body: { code },
     });
-
-    if (response.ok) {
-      this.triggerEvent(AuthEvents.USER_UPDATED);
-    }
-
-    return response;
   }
 
   /**
@@ -717,14 +712,12 @@ export class StexsAuthClient {
       refresh.count++;
     }
 
-    const user = await (await this.getUser()).json();
-
     localStorage.setItem(
       'session',
       JSON.stringify({
         ...body,
         refresh,
-        user,
+        user: session.user,
       }),
     );
 

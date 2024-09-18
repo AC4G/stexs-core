@@ -10,7 +10,7 @@ export async function acceptProjectRequest(
   organizationName: string,
   role: string,
   flash: Writable<ToastSettings>,
-  profileStore: Writable<Profile | null>,
+  $profileStore: Profile,
 ): Promise<boolean> {
   let isMember: boolean = false;
   const { error } = await stexs.from('project_members').insert([
@@ -28,17 +28,16 @@ export async function acceptProjectRequest(
       timeout: 5000,
     });
   } else {
-    profileStore.update((profile: Profile | null) => {
-      return {
-        ...profile!,
-        refetchOrganizationsTrigger: !profile?.refetchOrganizationsTrigger,
-      };
-    });
+    if ($profileStore.refetchOrganizationsFn) {
+      $profileStore.refetchOrganizationsFn();
+    }
+
     flash.set({
       message: `You are now member of ${projectName} project from ${organizationName} organization.`,
       classes: 'variant-glass-success',
       timeout: 5000,
     });
+
     isMember = true;
   }
 
@@ -69,6 +68,7 @@ export async function deleteProjectRequest(
       classes: 'variant-glass-success',
       timeout: 5000,
     });
+    
     isDeleted = true;
   }
 

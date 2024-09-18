@@ -96,7 +96,7 @@ router.post(
             $1::text, 
             $2::text, 
             $3::jsonb, 
-            $4::uuid, 
+            $4::uuid,
             CURRENT_TIMESTAMP
           )
           RETURNING id;

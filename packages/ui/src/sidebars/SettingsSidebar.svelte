@@ -2,9 +2,9 @@
 	import { Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, SidebarDropdownWrapper, SidebarDropdownItem } from 'flowbite-svelte';
 	import Icon from '@iconify/svelte';
 		
-	const activeClass = 'flex items-center p-2 rounded-md  variant-glass-primary text-primary-500 pointer-events-none';
-	const nonActiveClass = 'flex items-center p-2 text-white rounded-md hover:bg-surface-500';
-	const btnClass = 'flex items-center p-2 w-full rounded-md transition duration-75 text-white group hover:!bg-surface-500';
+	export let activeClass: string;
+	export let nonActiveClass: string;
+	export let btnClass: string;
 
 	export let activeUrl;
 </script>
@@ -17,9 +17,9 @@
 					<Icon icon="octicon:person-16" />
 				</svelte:fragment>
 			</SidebarItem>
-			<SidebarItem label="Account" href="/settings/account">
+			<SidebarItem label="Security" href="/settings/security">
 				<svelte:fragment slot="icon">
-					<Icon icon="octicon:gear-16" />
+					<Icon icon="mdi:security-lock" />
 				</svelte:fragment>
 			</SidebarItem>
 			<SidebarItem label="Applications" href="/settings/apps">

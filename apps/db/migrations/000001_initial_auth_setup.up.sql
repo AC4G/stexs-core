@@ -50,7 +50,7 @@ BEGIN
     nullif(current_setting('jwt.claims.role', true), ''),
     (nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'role')
   )::TEXT;
-END;
+END;Kensington1980.
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION auth.uid()

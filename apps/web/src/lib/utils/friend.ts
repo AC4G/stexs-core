@@ -8,7 +8,7 @@ export async function acceptFriendRequest(
   friend_id: string,
   username: string,
   flash: Writable<ToastSettings>,
-  profileStore: Writable<Profile | null>,
+  $profileStore: Profile,
 ): Promise<boolean> {
   let isFriend: boolean = false;
   const { error } = await stexs
@@ -23,12 +23,8 @@ export async function acceptFriendRequest(
     });
   } else {
     isFriend = true;
-    profileStore.update((profile: Profile | null) => {
-      return {
-        ...profile!,
-        refetchTrigger: !profile!.refetchFriendsTrigger,
-      };
-    });
+    $profileStore.refetchIsFriendFn();
+    
     flash.set({
       message: `${username} is now your friend.`,
       classes: 'variant-glass-success',
@@ -43,7 +39,7 @@ export async function deleteFriendRequest(
   requesterId: string,
   addresseeId: string,
   flash: Writable<ToastSettings>,
-  profileStore: Writable<Profile | null>,
+  $profileStore: Profile,
 ) {
   let gotFriendRequest: boolean = true;
   const { error } = await stexs
@@ -60,12 +56,7 @@ export async function deleteFriendRequest(
     });
   } else {
     gotFriendRequest = false;
-    profileStore.update((profile: Profile | null) => {
-      return {
-        ...profile!,
-        refetchTrigger: !profile!.refetchFriendsTrigger,
-      };
-    });
+    $profileStore.refetchIsFriendFn();
     flash.set({
       message: 'Friend request successfully deleted.',
       classes: 'variant-glass-success',

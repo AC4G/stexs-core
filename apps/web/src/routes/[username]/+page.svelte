@@ -12,7 +12,7 @@
         getModalStore, 
         type ModalSettings, 
         ListBoxItem,
-        ProgressRadial
+        ProgressRadial,
     } from "@skeletonlabs/skeleton";
     import { Button, ProjectLogo, ItemThumbnail } from "ui";
     import Icon from "@iconify/svelte";
@@ -21,6 +21,7 @@
     const profileStore = getProfileStore();
     const userStore = getUserStore();
     const modalStore = getModalStore();
+
     let search: string = '';
     let previousSearch: string = '';
     let projectSearch: string = '';
@@ -46,10 +47,11 @@
         size: 0,
         amounts: [20, 50, 100],
     };
+    let previousLimit: number | undefined;
     let previousProject: number | undefined;
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
-    }, 200);
+    }, 300);
 
     async function fetchProjectsInUsersInventory(userId: string) {
         const { data } = await stexs.rpc('distinct_projects_from_inventory', {
@@ -89,7 +91,10 @@
     }, selectedProject: number | undefined, page: number, limit: number) {
         const { filterTime, filterAlphabet, filterAmount } = filters;
 
-        if (search !== previousSearch || previousProject !== selectedProject) {
+        if (!previousLimit) previousLimit = limit;
+
+        if (search !== previousSearch || previousProject !== selectedProject || previousLimit !== limit) {
+            previousLimit = limit;
             paginationSettings.page = 0;
             page = 0;
             previousSearch = search;
@@ -157,7 +162,9 @@
         return data;
     }
 
-    async function fetchItemFromInventory(userId: string, itemId: number) {
+    async function fetchItemFromInventory(params: { userId: string, itemId: number }) {
+        const { userId, itemId } = params;
+
         const { data } = await stexs.from('inventories')
             .select(`
                 amount,
@@ -185,7 +192,11 @@
             component: 'inventoryItem',
             meta: {
                 data: params,
-                fn: fetchItemFromInventory($profileStore?.userId!, params.items.id),
+                fn: fetchItemFromInventory,
+                fnParams: {
+                    userId: $profileStore?.userId!,
+                    itemId: params.items.id
+                },
                 stexsClient: stexs
             }
         };
@@ -199,24 +210,24 @@
     });
 </script>
 
-<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
+<div class="flex flex-col xs:flex-row justify-between mb-[18px] space-y-2 xs:space-y-0 xs:space-x-2">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
-        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[42px] rounded-lg" />
-        <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <div class="placeholder animate-pulse w-full sm:w-[115px] h-[44px]" />
-            <div class="placeholder animate-pulse w-full sm:w-[85px] h-[44px]" />
+        <div class="placeholder animate-pulse xs:max-w-[300px] w-full h-[41.75px] rounded-lg" />
+        <div class="w-full xs:w-fit flex flex-col xs:flex-row items-center space-y-2 xs:space-y-0 xs:space-x-2">
+            <div class="placeholder animate-pulse w-full xs:w-[115px] h-[41.75px]" />
+            <div class="placeholder animate-pulse w-full xs:w-[85px] h-[41.75px]" />
         </div>
-    {:else}
-        <div class="sm:max-w-[300px] w-full">
-            <Search size="lg" placeholder="Item Name" on:input={handleSearch} class="!bg-surface-500" />
+    {:else if $itemsAmountQuery.data > 0}
+        <div class="xs:max-w-[300px] w-full">
+            <Search size="md" placeholder="Search by Item Name..." on:input={handleSearch} class="!bg-surface-500" />
         </div>
-        <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <div class="w-full sm:w-fit">
-                <Button class="bg-surface-500 border border-gray-600 w-full py-[8px] sm:w-fit">Sort by<Icon
+        <div class="w-full xs:w-fit flex flex-col xs:flex-row items-center space-y-2 xs:space-y-0 xs:space-x-2">
+            <div class="w-full xs:w-fit">
+                <Button class="bg-surface-500 border border-gray-600 w-full py-[8px] xs:w-fit">Sort by<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[24px]"
                     /></Button>
-                <Dropdown containerClass="!z-100" class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500 max-h-[400px] overflow-y-auto">
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500 max-h-[400px] overflow-y-auto">
                     <ListBoxItem bind:group={filterTime} name="filter" value='Latest'>Latest</ListBoxItem>
                     <ListBoxItem bind:group={filterTime} name="filter" value='Oldest'>Oldest</ListBoxItem>
                     <ListBoxItem bind:group={filterTime} name="filter" value=''>No Filter</ListBoxItem>
@@ -271,24 +282,7 @@
         </div>
     {/if}
 </div>
-<div class="mb-[18px]">
-    {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
-        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
-        </div>
-    {:else}
-        <Paginator
-            bind:settings={paginationSettings}
-            showFirstLastButtons="{true}"
-            showPreviousNextButtons="{true}"
-            amountText="Items"
-            select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-gray-600"
-        />
-    {/if}
-</div>
-<div class="grid gap-3 place-items-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+<div class="grid gap-3 place-items-center grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
         {#each Array(50) as _}
             <div class="placeholder animate-pulse aspect-square w-full h-full" />
@@ -296,11 +290,11 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data as inventory (inventory.id)}
-                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border-2 border-surface-600 hover:border-primary-500 cursor-pointer" on:click={() => openItemModal(inventory)}>
+                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border-2 border-surface-600 hover:border-primary-500" on:click={() => openItemModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
             {/each}
-        {:else if $itemsAmountQuery?.data > 0 && search.length > 0}
+        {:else if $itemsAmountQuery?.data > 0 && (search.length > 0 || $inventoryQuery.data.length === 0)}
             <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
                 <p class="text-[18px] p-4 text-center">No items found</p>
             </div>
@@ -311,20 +305,20 @@
         {/if}
     {/if}
 </div>
-<div class="mt-[18px]">
-    {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
-        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
-        </div>
-    {:else}
+{#if $inventoryQuery.isLoading || !$inventoryQuery.data}
+    <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px]">
+        <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
+        <div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
+    </div>
+{:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || $itemsAmountQuery.data > 20 && search.length > 0 && $inventoryQuery.data.length > 0}
+    <div class="mt-[18px]">
         <Paginator
             bind:settings={paginationSettings}
             showFirstLastButtons="{true}"
             showPreviousNextButtons="{true}"
             amountText="Items"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-gray-600"
+            controlVariant="bg-surface-500 border border-gray-600 flex-wrap"
         />
-    {/if}
-</div>
+    </div>
+{/if}

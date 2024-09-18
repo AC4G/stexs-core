@@ -7,7 +7,7 @@ export { default as OrganizationLogo } from './OrganizationLogo.svelte';
 export { default as Truncated } from './Truncated.svelte';
 export { default as Confirm } from './modals/Confirm.svelte';
 export { default as InventoryItem } from './modals/InventoryItem.svelte';
-export { default as AddFriend } from './modals/AddFriend.svelte';
+export { default as AddFriends } from './modals/AddFriends.svelte';
 export { default as CreateOrganization } from './modals/CreateOrganization.svelte';
 export { default as formatJSON } from './utils/jsonFormater';
 export { hideImg } from './utils/image';

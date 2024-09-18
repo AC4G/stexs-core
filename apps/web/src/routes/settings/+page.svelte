@@ -15,7 +15,7 @@
     import { convertAnimatedToWebP, convertImageToWebP, cropFile, isWebPAnimated } from "$lib/utils/fileConverter";
     import compressFile from "$lib/utils/compressFile";
 
-    const modalStore = getModalStore();
+    const modalStore = getModalStore(); 
     const userStore = getUserStore();
     const flash = getFlash(page);
 
@@ -38,7 +38,9 @@
     const checkUsernameAvailability = debounce(async () => {
         if ($errors.username || $form.username.toLowerCase() === profile.username.toLowerCase() || $form.username.length === 0) return;
 
-        const checkExists = checkedUsernames.find(check => check.username === $form.username.toLowerCase());
+        let username = $form.username.toLowerCase();
+
+        const checkExists = checkedUsernames.find(check => check.username === username);
 
         if (checkExists) {
             if (checkExists.available) {
@@ -56,7 +58,7 @@
                 count: 'exact',
                 head: true 
             })
-            .ilike('username', $form.username);
+            .ilike('username', username);
 
         let available: boolean = true;
 
@@ -68,7 +70,7 @@
         }
 
         checkedUsernames.push({
-            username: $form.username.toLowerCase(),
+            username,
             available
         });
     }, 300);
@@ -160,10 +162,12 @@
         
         const allowedTypes = [
             'image/png', 
-            'image/gif', 
+            'image/gif',
+            'image/jpg',
             'image/jpeg', 
             'image/webp',
             'image/svg',
+            'image/svg+xml'
         ];
 
         if (!allowedTypes.includes(file.type)) {
@@ -251,12 +255,10 @@
             }
         }
     }
-    $: {
-        $errors
 
-        if (hasChanges) {
-            (async () => hasErrors = !(await validate()).valid)();
-        }
+    // $errors in if st. only for reactivity
+    $: if ($errors && hasChanges) {
+        (async () => hasErrors = !(await validate()).valid)();
     }
 </script>
 
@@ -268,7 +270,7 @@
         </div>
         {#if !$profileQuery.data || !$userStore}
             <div class="grid sm:grid-cols-2 pt-4">
-                <div class="placeholder-circle animate-pulse mx-auto w-[200px] p-2" />
+                <div class="placeholder-circle animate-pulse mx-auto w-[160px] xs:w-[200px] p-2" />
                 <div class="space-y-6 sm:row-start-1">
                     <div class="placeholder animate-pulse h-[69.75px]" />
                     <div class="placeholder animate-pulse h-[69.75px]" />
@@ -281,9 +283,9 @@
             <div class="grid sm:grid-cols-2 pt-4">
                 <div class="relative w-fit h-fit mx-auto">
                     {#key state}
-                        <Avatar userId={$userStore.id} {stexs} username={$userStore?.username} class="w-[200px] sm:col-start-2 border-2 border-surface-500" draggable="false" />
+                        <Avatar userId={$userStore.id} {stexs} username={$userStore?.username} class="w-[160px] xs:w-[200px] sm:col-start-2 border-2 border-surface-500" draggable="false" />
                     {/key}
-                    <button use:popup={avatarSettingPopup} class="btn rounded variant-glass-surface p-2 absolute top-36 right-1 border border-surface-500">
+                    <button use:popup={avatarSettingPopup} class="btn rounded variant-glass-surface p-2 absolute top-[114px] xs:top-[144px] right-1 border border-surface-500">
                         {#if submittedAvatar}
                             <ProgressRadial stroke={40} strokeLinecap="round" meter='stroke-surface-50' track='stroke-surface-500' class='w-[24px]' />
                         {:else}
@@ -329,13 +331,13 @@
                                     </ul>
                                 {/if}
                                 {#if usernameNotAvailable}
-                                    <p class="text-[14px] text-error-400 whitespace-normal">Username is not available</p>
+                                    <p class="text-[14px] text-error-400 whitespace-normal">Username is already being used</p>
                                 {/if}
                             </div>
                         {/if}
                     </div>
                     <div>
-                        <Input labelClass="label" bind:value={$form.url}>URL</Input>
+                        <Input labelClass="label" bind:value={$form.url}>Link</Input>
                         {#if $errors.url && Array.isArray($errors.url)}
                             <ul class="whitespace-normal text-[14px] mt-2 text-error-400">
                                 {#each $errors.url as error (error)}

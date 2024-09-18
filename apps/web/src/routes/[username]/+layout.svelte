@@ -29,6 +29,7 @@
     let removeFriendSubmitted: boolean = false;
     let acceptFriendRequestSubmitted: boolean = false;
     let deleteFriendRequestSubmitted: boolean = false;
+    let profileDropDownOpen: boolean = false
     $: username = $page.params.username;
     $: path = $page.url.pathname;
 
@@ -75,9 +76,7 @@
             .eq('user_id', userId)
             .eq('friend_id', friendId);
 
-        return { 
-            result: data.length === 1 
-        };
+        return data.length === 1;
     }
 
     async function fetchFriendsAmount(userId: string) {
@@ -109,7 +108,7 @@
     });
 
     $: blockedQuery = createQuery({
-        queryKey: ['blockedProfile', $userStore?.id, userId,],
+        queryKey: ['blockedProfile', $userStore?.id, userId],
         queryFn: async () => await fetchBlocked(userId, $userStore?.id!),
         enabled: !!$userStore?.id && !!userId && userId !== $userStore.id
     });
@@ -117,12 +116,12 @@
     $: isCurrentUserBlocker = $blockedQuery.data?.filter((blocked: { blocker_id: string }) => blocked.blocker_id === $userStore?.id).length > 0;
 
     $: isFriendQuery = createQuery({
-        queryKey: ['isFriend', $userStore?.id],
+        queryKey: ['isFriend', $userStore?.id, userId],
         queryFn: async () => await fetchIsFriend($userStore?.id!, userId),
-        enabled: !!$userStore?.id && !!userId && userId !== $userStore.id && !!$blockedQuery.data && $blockedQuery.data.length === 0
+        enabled: !!$userStore?.id && !!userId && userId !== $userStore.id && !!$blockedQuery.data && $blockedQuery.data.length === 0,
     });
 
-    $: isFriend = $isFriendQuery.data?.result as boolean;
+    $: isFriend = $isFriendQuery.data as boolean;
     $: userId = $profileQuery.data?.user_id;
     $: isPrivate = $profileQuery.data?.is_private as boolean;
 
@@ -132,34 +131,13 @@
         enabled: !!userId && ((!isPrivate && ($blockedQuery.data?.length === 0 || !$userStore)) || !!isFriend || userId === $userStore?.id)
     });
 
-    $: {
-        $profileStore?.refetchProfileTrigger;
-
-        if ($profileStore?.userId && $userStore) {
-            $profileQuery.refetch();
-            $blockedQuery.refetch();
-            $isFriendQuery.refetch();
-            $friendsAmountQuery.refetch();
-        }
-    };
-
     $: totalFriends = $friendsAmountQuery.data ?? 0;
 
     $: gotFriendRequestQuery = createQuery({
-        queryKey: ['gotFriendRequest', userId, $userStore?.id, $profileStore?.refetchFriendsTrigger],
+        queryKey: ['gotFriendRequest', userId, $userStore?.id],
         queryFn: async () => await fetchFriendRequest(userId, $userStore?.id!),
-        enabled: !!userId && !!$userStore?.id && !isFriend
+        enabled: !!userId && !!$userStore?.id && !isFriend && userId !== $userStore.id
     });
-
-    $: {
-        $profileStore?.refetchFriendsTrigger;
-
-        if ($profileStore?.userId && $userStore) {
-            $isFriendQuery.refetch();
-            $friendsAmountQuery.refetch();
-            $gotFriendRequestQuery.refetch();
-        }
-    };
     
     $: gotFriendRequest = $gotFriendRequestQuery.data;
 
@@ -171,19 +149,29 @@
 
     $: friendRequestSend = $friendRequestQuery.data;
 
-    $: profileStore.set({
-        userId,
-        isPrivate,
-        isFriend,
-        totalFriends
-    });
+    $: if ($profileQuery.isFetched && $friendsAmountQuery.isFetched && (($userStore && $userStore.id !== userId && $isFriendQuery.isFetched) || ($userStore && $userStore.id === userId))) {
+        profileStore.set({
+            userId,
+            isPrivate,
+            isFriend,
+            totalFriends,
+            refetchProfileFn: async () => {
+                $profileQuery.refetch();
+                $blockedQuery.refetch();
+                $isFriendQuery.refetch();
+                $friendsAmountQuery.refetch();
+            },
+            refetchFriendsFn: $friendsAmountQuery.refetch,
+            refetchIsFriendFn: $isFriendQuery.refetch
+        });
+    }
 </script>
 
 <div class="grid place-items-center">
-    <div class="sm:rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 backdrop-blur-sm border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
-        <div class="grid grid-cols-2 gap-x-2 md:grid-cols-3 lg:grid-cols-4 gap-y-8">
+    <div class="sm:rounded-md py-8 px-4 sm:px-8 bg-surface-600 bg-opacity-60 border-surface-800 border max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg w-full mt-[40px] mb-[40px]">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-2 md:grid-cols-3 lg:grid-cols-4 gap-y-8">
             {#if $profileQuery.isLoading || !$profileQuery.data}
-                <div class="placeholder-circle animate-pulse mx-auto w-[122px] sm:w-[168px]" />
+                <div class="placeholder-circle animate-pulse mx-auto w-[168px]" />
                 <div class="grid gap-y-4 md:col-span-2 items-center">
                     <div class="placeholder animate-pulse w-[80%] sm:w-[120px] h-[24px]" />
                     <div class="placeholder animate-pulse w-[100px] h-[24px]" />
@@ -191,14 +179,14 @@
                     <div class="placeholder animate-pulse w-[80%] sm:w-[50%] h-[24px]" />
                 </div>
             {:else}
-                <Avatar {userId} {stexs} {username} class="mx-auto w-[122px] sm:w-[168px] border-2 border-surface-500" draggable="false" />
+                <Avatar {userId} {stexs} {username} class="mx-auto w-[168px] {$userStore.id !== userId && $blockedQuery.data && $blockedQuery.data.length === 0 && (!isFriend || gotFriendRequest) ? 'md:w-[148px]' : ''} lg:w-[168px] border-2 border-surface-500" draggable="false" />
                 <div class="grid gap-y-4 md:col-span-2 items-center">
                     <p class="text-[20px] sm:text-[24px] break-all font-bold">{$profileQuery.data?.username}</p>
                     {#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
                         {#if $friendsAmountQuery.isLoading}
                             <div class="placeholder animate-pulse w-[100px] h-[20px]" />
                         {:else}
-                            <p class="text-[16px] va">Friends {$friendsAmountQuery.data ?? 0}</p>
+                            <p class="text-[16px]">Friends {$friendsAmountQuery.data ?? 0}</p>
                         {/if}
                     {/if}
                     <div class="flex flex-col space-y-4">
@@ -206,7 +194,12 @@
                             <p class="text-[14px] dont-break-out">{$profileQuery.data.bio}</p>
                         {/if}
                         {#if $profileQuery.data?.url}
-                            <a href="{$profileQuery.data?.url}" target=”_blank” class="text-[14px] w-fit text-secondary-500 hover:text-secondary-400 transition break-all">{$profileQuery.data.url.split('://')[1]}</a>
+                            <a href="{$profileQuery.data?.url}" target=”_blank” class="text-[14px] w-fit break-all group">
+                                <div class="flex flex-row space-x-2 items-center">
+                                    <Icon icon="flowbite:link-outline" class="text-white transition" /> 
+                                    <p class="text-secondary-500 group-hover:text-secondary-400 transition">{$profileQuery.data.url.split('://')[1]}</p>
+                                </div>
+                            </a>
                         {/if}
                     </div>
                 </div>
@@ -222,18 +215,13 @@
                                         <div class="flex flex-row mt-[4px] space-x-2">
                                             <Button on:click={async () => {
                                                 acceptFriendRequestSubmitted = true;
-
-                                                isFriend = await acceptFriendRequest($userStore.id, userId, username, flash, profileStore);
-
+                                                isFriend = await acceptFriendRequest($userStore.id, userId, username, flash, $profileStore);
                                                 if (isFriend) gotFriendRequest = false;
-
                                                 acceptFriendRequestSubmitted = false;
                                             }} submitted={acceptFriendRequestSubmitted} class="variant-filled-primary py-1 px-2">Accept</Button>
                                             <Button on:click={async () => {
                                                 deleteFriendRequestSubmitted = true;
-
-                                                gotFriendRequest = await deleteFriendRequest(userId, $userStore.id, flash, profileStore);
-                                                
+                                                gotFriendRequest = await deleteFriendRequest(userId, $userStore.id, flash, $profileStore);
                                                 deleteFriendRequestSubmitted = false;
                                             }} submitted={deleteFriendRequestSubmitted} loaderMeter="stroke-red-500" loaderTrack="stroke-red-500/20" class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-surface-500">Delete</Button>
                                         </div>
@@ -245,7 +233,7 @@
                                         friendRequestRevocationSubmitted = false;
                                         $friendRequestQuery.refetch();
                                     }} submitted={friendRequestRevocationSubmitted} class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-surface-500 text-red-600">Revoke Friend Request</Button>
-                                {:else if $profileQuery.data.accept_friend_requests && isFriend === false}
+                                {:else if $isFriendQuery.isFetched && $profileQuery.data.accept_friend_requests && !isFriend}
                                     <Button on:click={async () => {
                                         friendRequestSubmitted = true;
                                         await sendFriendRequest(username, $userStore.id, userId, flash);
@@ -257,9 +245,9 @@
                             {/if}
                         </div>
                         <Button class="w-fit h-fit p-1 group">
-                            <Icon icon="pepicons-pop:dots-y" class="text-[26px] group-hover:text-surface-400 transition" />
+                            <Icon icon="pepicons-pop:dots-y" class="text-[26px] group-hover:text-surface-400 transition {profileDropDownOpen ? 'text-surface-400' : ''}" />
                         </Button>
-                        <Dropdown placement="left" class="rounded-md bg-surface-900 p-2 space-y-2 border border-surface-500">
+                        <Dropdown bind:open={profileDropDownOpen} placement="left" class="rounded-md bg-surface-900 p-2 space-y-2 border border-surface-500">
                             {#if isFriend}
                                 <DropdownItem on:click={async () => {
                                     removeFriendSubmitted = true;
@@ -271,23 +259,15 @@
                             <DropdownItem class="hover:!bg-surface-500 rounded text-red-600">Report</DropdownItem>
                             {#if isCurrentUserBlocker}
                                 <DropdownItem on:click={() => openUnblockUserModal(userId, $userStore.id, username, flash, modalStore, () => {
-                                    //@ts-ignore
-                                    profileStore.update((profile) => {
-                                        return {
-                                            ...profile,
-                                            refetchTrigger: !profile?.refetchProfileTrigger,
-                                        };
-                                    });
+                                    if ($profileStore) {
+                                        $profileStore.refetchProfileFn();
+                                    }
                                 })} class="hover:!bg-surface-500 rounded text-primary-500">Unblock</DropdownItem>
                             {:else}
                                 <DropdownItem on:click={() => openBlockUserModal(userId, $userStore.id, username, flash, modalStore , () => {
-                                    //@ts-ignore
-                                    profileStore.update((profile) => {
-                                        return {
-                                            ...profile,
-                                            refetchProfileTrigger: !profile?.refetchProfileTrigger,
-                                        };
-                                    });
+                                    if ($profileStore) {
+                                        $profileStore.refetchProfileFn();
+                                    }
                                 })} class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem>
                             {/if}
                         </Dropdown>
@@ -321,7 +301,7 @@
                 <div class="grid row-start-2 col-span-full place-items-center placeholder animate-pulse h-[1000px] rounded-md" />
             {:else}
                 {#if ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
-                    <TabGroup regionList="flex flex-col sm:flex-row" active="variant-glass-primary text-primary-500" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4" justify="justify-center" rounded="rounded-md">
+                    <TabGroup regionList="flex flex-col xs:flex-row justify-evenly rounded-md bg-surface-700 p-1 space-y-1 xs:space-y-0" active="variant-glass-primary text-primary-500" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4 relative" justify="justify-center" rounded="rounded-md">
                         <TabAnchor href="/{username}" selected={path === `/${username}`} >
                             <span>Inventory</span>
                         </TabAnchor>

@@ -71,12 +71,6 @@
         }
     }
 
-    onMount(async () => {
-        if (types.length === 1) type = types[0];
-
-        if (requestCodeTypes.includes(type)) await requestNewCode();
-    });
-
     async function confirmCode() {
         const result = await validate();
 

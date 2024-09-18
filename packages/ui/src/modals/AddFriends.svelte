@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { SvelteComponent } from 'svelte';
+    import { onMount, type SvelteComponent } from 'svelte';
     import { 
         getModalStore, 
         Paginator, 
@@ -32,6 +32,13 @@
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
     }, 200);
+
+    onMount(() => {
+        const input = document.getElementById('add-friends-search');
+        if (input) {
+            input.focus();
+        }  
+    });
 
     async function fetchUserProfiles(search: string, filter: string, page: number, limit: number) {
         if (search.length === 0 && filter === 'All') {
@@ -78,21 +85,21 @@
 </script>
 
 {#if $modalStore[0]}
-    <div class="card p-3 sm:p-5 space-y-6 flex flex-col max-w-[600px] min-h-[90vh] w-full relative">
+    <div class="card p-3 sm:p-5 flex flex-col max-w-[600px] max-h-[90vh] min-h-[90vh] w-full relative">
         <div>
             <div class="absolute right-[8px] top-[8px]">
                 <Button on:click={parent.onClose} class="p-3 variant-ghost-surface">
                     <Icon icon="ph:x-bold" />
                 </Button>
             </div>
-            <div class="h-fit">
-                <p class="text-[22px] text-primary-500">Add Friend</p>
+            <div class="h-fit w-[74%]">
+                <p class="text-[22px] text-primary-500">Add Friends</p>
             </div>
         </div>
-        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 sm:space-x-4 items-center">
-            <Search size="lg" placeholder="Username" on:input={handleSearch} class="!bg-surface-500 !outline-none" />
-            <div class="w-full sm:w-fit">
-                <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+        <div class="flex py-6 flex-col xs:flex-row w-full justify-between space-y-2 xs:space-y-0 xs:space-x-4 items-center">
+            <Search id="add-friends-search" size="md" placeholder="Search by Username..." on:input={handleSearch} class="!bg-surface-500 !outline-none sm:max-w-[300px]" />
+            <div class="w-full xs:w-fit">
+                <Button class="bg-surface-500 border border-gray-600 w-full xs:w-fit py-[8px]">{filter}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[22px]"
                     /></Button>
@@ -102,25 +109,10 @@
                 </Dropdown>
             </div>
         </div>
-        {#if $searchForFriendsQuery.isLoading}
-            <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-                <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-                <div class="placeholder animate-pulse h-[38px] w-[240px]" />
-            </div>
-        {:else if paginationSettings.size > 0 }
-            <Paginator
-                bind:settings={paginationSettings}
-                showFirstLastButtons="{true}"
-                showPreviousNextButtons="{true}"
-                amountText="Users"
-                select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-                controlVariant="bg-surface-500 border border-gray-600"
-            />
-        {/if}
-        <div class="flex flex-col items-center space-y-2">
-            {#if $searchForFriendsQuery.isLoading}
-                {#each Array(10) as _}
-                    <div class="placeholder animate-pulse aspect-square w-full h-[62px] sm:h-[72px]" />
+        <div class="flex flex-col items-center space-y-2 overflow-y-auto">
+            {#if $searchForFriendsQuery.isLoading || (!$searchForFriendsQuery.data && ((search.length > 0 && filter === 'All') || filter === 'Pending'))}
+                {#each Array(20) as _}
+                    <div class="placeholder animate-pulse w-full min-h-[62px] sm:h-[72px]" />
                 {/each}
             {:else if $searchForFriendsQuery.data}
                 {#each $searchForFriendsQuery.data as profile, i (profile.user_id)}
@@ -179,26 +171,30 @@
                     </div>
                 {/each}
             {/if}
-            {#if $searchForFriendsQuery.data?.length === 0}
+            {#if $searchForFriendsQuery.data?.length === 0 && search.length > 0}
                 <p class="text-[18px]">No users found</p>
+            {:else if $searchForFriendsQuery.data?.length === 0 && search.length === 0 && filter === 'Pending' && !$searchForFriendsQuery.isFetching}
+                <p class="text-[18px]">No pending friend requests</p>
+            {:else if search.length === 0 && filter === 'All'}
+                <p class="text-[18px]">Start typing to search for friends</p>
             {/if}
         </div>
-        <div class="{search.length > 0 ? 'mt-[18px]' : ''}">
-            {#if $searchForFriendsQuery.isLoading}
-                <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-                    <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-                    <div class="placeholder animate-pulse h-[38px] w-[240px]" />
-                </div>
-            {:else if paginationSettings.size > 0 }
+        {#if $searchForFriendsQuery.isLoading || (!$searchForFriendsQuery.data && ((search.length > 0 && filter === 'All') || filter === 'Pending'))}
+            <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 pt-6">
+                <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
+                <div class="placeholder animate-pulse h-[38px] w-[240px]" />
+            </div>
+        {:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
+            <div class="pt-6">
                 <Paginator
                     bind:settings={paginationSettings}
                     showFirstLastButtons="{true}"
-	                showPreviousNextButtons="{true}"
+                    showPreviousNextButtons="{true}"
                     amountText="Users"
                     select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
                     controlVariant="bg-surface-500 border border-gray-600"
                 />
-            {/if}
-        </div>
+            </div>
+        {/if}
     </div>
 {/if}

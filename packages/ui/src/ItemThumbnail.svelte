@@ -5,6 +5,7 @@
   export let itemId: string;
   export let itemName: string;
   export let showOnFail: boolean = true;
+  export let imageClass: string = "";
 
   let loading: boolean = true;
   let loaded: boolean = false;
@@ -36,13 +37,12 @@
 
       prevUrl = $query.data;
   }
-
 </script>
  
 {#if loading}
-  <div class="placeholder animate-pulse w-full h-full" />
+  <div class="placeholder aspect-square animate-pulse w-full h-full" />
 {:else if failed && showOnFail}
-  <p class="text-[18px] whitespace-pre-line p-4 text-center">{itemName}</p>
+  <p class="text-[18px] whitespace-pre-line break-all p-4 text-center">{itemName}</p>
 {:else if loaded}
-  <img class="h-full w-full object-cover rounded-none" draggable="false" src={prevUrl} alt={itemName} />
+  <img class="h-full w-full object-cover rounded-none {imageClass}" draggable="false" src={prevUrl} alt={itemName} />
 {/if}
