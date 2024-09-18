@@ -47,6 +47,7 @@
         size: 0,
         amounts: [20, 50, 100],
     };
+    let previousLimit: number | undefined;
     let previousProject: number | undefined;
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
@@ -90,7 +91,10 @@
     }, selectedProject: number | undefined, page: number, limit: number) {
         const { filterTime, filterAlphabet, filterAmount } = filters;
 
-        if (search !== previousSearch || previousProject !== selectedProject) {
+        if (!previousLimit) previousLimit = limit;
+
+        if (search !== previousSearch || previousProject !== selectedProject || previousLimit !== limit) {
+            previousLimit = limit;
             paginationSettings.page = 0;
             page = 0;
             previousSearch = search;
@@ -206,20 +210,20 @@
     });
 </script>
 
-<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2">
+<div class="flex flex-col xs:flex-row justify-between mb-[18px] space-y-2 xs:space-y-0 xs:space-x-2">
     {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
-        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[41.75px] rounded-lg" />
-        <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <div class="placeholder animate-pulse w-full sm:w-[115px] h-[41.75px]" />
-            <div class="placeholder animate-pulse w-full sm:w-[85px] h-[41.75px]" />
+        <div class="placeholder animate-pulse xs:max-w-[300px] w-full h-[41.75px] rounded-lg" />
+        <div class="w-full xs:w-fit flex flex-col xs:flex-row items-center space-y-2 xs:space-y-0 xs:space-x-2">
+            <div class="placeholder animate-pulse w-full xs:w-[115px] h-[41.75px]" />
+            <div class="placeholder animate-pulse w-full xs:w-[85px] h-[41.75px]" />
         </div>
     {:else if $itemsAmountQuery.data > 0}
-        <div class="sm:max-w-[300px] w-full">
+        <div class="xs:max-w-[300px] w-full">
             <Search size="md" placeholder="Search by Item Name..." on:input={handleSearch} class="!bg-surface-500" />
         </div>
-        <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <div class="w-full sm:w-fit">
-                <Button class="bg-surface-500 border border-gray-600 w-full py-[8px] sm:w-fit">Sort by<Icon
+        <div class="w-full xs:w-fit flex flex-col xs:flex-row items-center space-y-2 xs:space-y-0 xs:space-x-2">
+            <div class="w-full xs:w-fit">
+                <Button class="bg-surface-500 border border-gray-600 w-full py-[8px] xs:w-fit">Sort by<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[24px]"
                     /></Button>
@@ -286,7 +290,7 @@
     {:else}
         {#if $inventoryQuery.data && $inventoryQuery.data.length > 0}
             {#each $inventoryQuery.data as inventory (inventory.id)}
-                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border-2 border-surface-600 hover:border-primary-500 cursor-pointer" on:click={() => openItemModal(inventory)}>
+                <Button title={inventory.items.name} class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border-2 border-surface-600 hover:border-primary-500" on:click={() => openItemModal(inventory)}>
                     <ItemThumbnail {stexs} itemId={inventory.items.id} itemName={inventory.items.name} />
                 </Button>
             {/each}
@@ -304,9 +308,9 @@
 {#if $inventoryQuery.isLoading || !$inventoryQuery.data}
     <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px]">
         <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-        <div class="placeholder animate-pulse h-[34px] w-[230px]" />
+        <div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
     </div>
-{:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
+{:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || $itemsAmountQuery.data > 20 && search.length > 0 && $inventoryQuery.data.length > 0}
     <div class="mt-[18px]">
         <Paginator
             bind:settings={paginationSettings}
@@ -314,7 +318,7 @@
             showPreviousNextButtons="{true}"
             amountText="Items"
             select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-            controlVariant="bg-surface-500 border border-gray-600"
+            controlVariant="bg-surface-500 border border-gray-600 flex-wrap"
         />
     </div>
 {/if}

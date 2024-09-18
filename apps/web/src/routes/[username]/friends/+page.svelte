@@ -42,6 +42,7 @@
         amounts: [20, 50, 100],
     };
     let removeFriendSubmitted: boolean = false;
+    let previousLimit: number | undefined;
 
     $: paginationSettings.size = $profileStore?.totalFriends || 0;
 
@@ -60,7 +61,10 @@
             }
         }
 
-        if (search !== previousSearch) {
+        if (!previousLimit) previousLimit = limit;
+
+        if (search !== previousSearch || previousLimit !== limit) {
+            paginationSettings.limit = limit;
             paginationSettings.page = 0;
             page = 0;
             previousSearch = search;
@@ -105,17 +109,17 @@
     });
 </script>
 
-<div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-    {#if $friendsQuery.isLoading || !$friendsQuery.data}
-        <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[41.75px] rounded-lg" />
-        <div class="placeholder animate-pulse sm:w-[90px] w-full h-[41.75px] rounded-lg" />
+<div class="flex flex-col xs:flex-row justify-between mb-[18px] space-y-2 xs:space-y-0 xs:space-x-2 items-center">
+    {#if $friendsQuery.isLoading || !$friendsQuery.data}sm
+        <div class="placeholder animate-pulse xs:max-w-[300px] w-full h-[41.75px] rounded-lg" />
+        <div class="placeholder animate-pulse xs:w-[90px] w-full h-[41.75px] rounded-lg" />
     {:else if $profileStore && $profileStore.totalFriends > 0}
-        <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0 items-center">
-            <div class="sm:max-w-[300px] w-full">
+        <div class="flex flex-col xs:flex-row w-full justify-between xs:space-x-2 space-y-2 xs:space-y-0 items-center">
+            <div class="xs:max-w-[300px] w-full">
                 <Search size="md" placeholder="Search by Username..." on:input={handleSearch} class="!bg-surface-500" />
             </div>
-            <div class="sm:w-fit w-full">
-                <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+            <div class="xs:w-fit w-full">
+                <Button class="bg-surface-500 border border-gray-600 w-full xs:w-fit py-[8px]">{filter}<Icon
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[22px]"
                     /></Button>
@@ -130,7 +134,7 @@
         {#if $userStore?.id === $profileStore?.userId}
             <button use:popup={addFriendProfilePopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
                 $profileStore?.refetchFriendsFn();
-            })} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full sm:w-fit">
+            })} class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full xs:w-fit">
                 <Icon icon="pepicons-pop:plus"/>
                 <div class="p-2 variant-filled-surface rounded-md !ml-0" data-popup="addFriendProfilePopup">
                     <p class="text-[14px] break-all">Add Friends</p>
@@ -139,7 +143,7 @@
         {/if}
     {/if}
 </div>
-<div class="grid gap-3 place-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+<div class="grid gap-3 place-items-center grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
     {#if $friendsQuery.isLoading || !$friendsQuery.data}
         {#each Array(20) as _}
             <div class="flex h-full w-full items-center justify-left space-x-2 p-2">
@@ -180,7 +184,7 @@
                 <p class="text-[18px] p-4 text-center">No friends found</p>
             </div>
         {:else}
-            <div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
+            <div class="grid place-items-center bg-surface-800 rounded-md col-span-full mb-[18px]">
                 <p class="text-[18px] p-6 text-center">{$userStore?.id === $profileStore?.userId ? 'You have no friends' : 'User has no friends'}</p>
                 {#if $userStore?.id === $profileStore?.userId}
                     <button use:popup={addFriendProfilePopup} on:click={() => openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
@@ -193,20 +197,20 @@
         {/if}
     {/if}
 </div>
-    {#if $friendsQuery.isLoading || !$friendsQuery.data}
-        <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px]">
-            <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
-        </div>
-    {:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
-        <div class="mt-[18px]">
-            <Paginator
-                bind:settings={paginationSettings}
-                showFirstLastButtons="{true}"
-                showPreviousNextButtons="{true}"
-                amountText="Friends"
-                select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-                controlVariant="bg-surface-500 border border-gray-600"
-            />
-        </div>
-    {/if}
+{#if $friendsQuery.isLoading || !$friendsQuery.data}
+    <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px]">
+        <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
+        <div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
+    </div>
+{:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || $profileStore && $profileStore.totalFriends > 20 && search.length > 0 && $friendsQuery.data.length > 0}
+    <div class="mt-[18px]">
+        <Paginator
+            bind:settings={paginationSettings}
+            showFirstLastButtons="{true}"
+            showPreviousNextButtons="{true}"
+            amountText="Friends"
+            select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
+            controlVariant="bg-surface-500 border border-gray-600 flex-wrap"
+        />
+    </div>
+{/if}

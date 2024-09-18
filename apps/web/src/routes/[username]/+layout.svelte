@@ -194,7 +194,12 @@
                             <p class="text-[14px] dont-break-out">{$profileQuery.data.bio}</p>
                         {/if}
                         {#if $profileQuery.data?.url}
-                            <a href="{$profileQuery.data?.url}" target=”_blank” class="text-[14px] w-fit text-secondary-500 hover:text-secondary-400 transition break-all">{$profileQuery.data.url.split('://')[1]}</a>
+                            <a href="{$profileQuery.data?.url}" target=”_blank” class="text-[14px] w-fit break-all group">
+                                <div class="flex flex-row space-x-2 items-center">
+                                    <Icon icon="flowbite:link-outline" class="text-white transition" /> 
+                                    <p class="text-secondary-500 group-hover:text-secondary-400 transition">{$profileQuery.data.url.split('://')[1]}</p>
+                                </div>
+                            </a>
                         {/if}
                     </div>
                 </div>
@@ -296,7 +301,7 @@
                 <div class="grid row-start-2 col-span-full place-items-center placeholder animate-pulse h-[1000px] rounded-md" />
             {:else}
                 {#if ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
-                    <TabGroup regionList="flex flex-col sm:flex-row" active="variant-glass-primary text-primary-500" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4 relative" justify="justify-center" rounded="rounded-md">
+                    <TabGroup regionList="flex flex-col xs:flex-row justify-evenly rounded-md bg-surface-700 p-1 space-y-1 xs:space-y-0" active="variant-glass-primary text-primary-500" border="border-none" hover="hover:bg-surface-500" class="row-start-2 col-span-full bg-surface-800 rounded-md p-4 relative" justify="justify-center" rounded="rounded-md">
                         <TabAnchor href="/{username}" selected={path === `/${username}`} >
                             <span>Inventory</span>
                         </TabAnchor>

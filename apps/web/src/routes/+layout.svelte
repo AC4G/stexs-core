@@ -45,7 +45,11 @@
     Dropdown, 
     DropdownItem, 
     DropdownDivider,
-    Search
+    Search,
+    Sidebar,
+    SidebarGroup,
+    SidebarItem,
+    SidebarWrapper
   } from 'flowbite-svelte';
   import { createQuery, QueryClient, QueryClientProvider, setQueryClientContext } from '@tanstack/svelte-query';
   import { goto } from '$app/navigation';
@@ -98,6 +102,7 @@
     '/sign-up',
     '/sign-in-confirm',
     '/recovery',
+    '/authorize'
   ];
   const sidebarRoutes = [
     '/settings'
@@ -208,7 +213,7 @@
 
   const handleSearch = debounce((e: Event) => {
     search = (e.target as HTMLInputElement)?.value || '';
-  }, 200);
+  }, 300);
 
   async function deleteMessage(id: number): Promise<boolean> {
     const { error } = await stexs
@@ -389,6 +394,12 @@
 
     notifications = notifications.filter((_, i) => i !== index);
   }
+
+  //sidebar
+
+  const sidebarActiveClass = 'flex items-center p-2 rounded-md  variant-glass-primary text-primary-500 pointer-events-none';
+	const sidebarNonActiveClass = 'flex items-center p-2 text-white rounded-md hover:bg-surface-500';
+	const sidebarBtnClass = 'flex items-center p-2 w-full rounded-md transition duration-75 text-white group hover:!bg-surface-500';
 </script>
 
 <svelte:head>
@@ -405,10 +416,29 @@
         <Icon icon="ph:x-bold" />
       </Button>
     </div>
-    <hr />
   </div>
-  {#if $page.url.pathname.startsWith('/settings')}
-    <SettingsSidebar activeUrl={$page.url.pathname} />
+  <hr />
+  <Sidebar class="w-full xs:hidden" activeUrl={$page.url.pathname} activeClass={sidebarActiveClass} nonActiveClass={sidebarNonActiveClass} btnClass={sidebarBtnClass}>
+    <SidebarWrapper class="flex flex-col justify-between h-full !bg-transparent">
+      <SidebarGroup>
+        <SidebarItem label="Add Friends" on:click={() => {
+          drawerStore.close();
+          openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
+            if ($profileStore) {
+              $profileStore.refetchFriendsFn();
+            }
+          });
+        }}>
+          <svelte:fragment slot="icon">
+            <Icon icon="octicon:person-add-16" />
+          </svelte:fragment>
+        </SidebarItem>
+      </SidebarGroup>
+    </SidebarWrapper>
+  </Sidebar>
+  {#if $page.url.pathname.startsWith('/settings') && $userStore}
+    <hr class="xs:hidden" />
+    <SettingsSidebar activeUrl={$page.url.pathname} activeClass={sidebarActiveClass} nonActiveClass={sidebarNonActiveClass} btnClass={sidebarBtnClass} />
   {/if}
 </Drawer>
 {#if !excludeRoutes.includes($page.url.pathname)}
@@ -634,8 +664,8 @@
     </svelte:fragment>
     <svelte:fragment slot="sidebarLeft">
       <div class="bg-surface-800 h-full">
-        {#if $page.url.pathname.startsWith('/settings')}
-          <SettingsSidebar activeUrl={$page.url.pathname} />
+        {#if $page.url.pathname.startsWith('/settings') && $userStore}
+          <SettingsSidebar activeUrl={$page.url.pathname} activeClass={sidebarActiveClass} nonActiveClass={sidebarNonActiveClass} btnClass={sidebarBtnClass} />
         {/if}
       </div>
     </svelte:fragment>

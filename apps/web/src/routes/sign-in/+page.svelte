@@ -15,6 +15,17 @@
   const signInSetupQuery = createQuery({
     queryKey: ['signInSetup'],
     queryFn: async () => {
+      const code = $page.url.searchParams.get('code');
+      const message = $page.url.searchParams.get('message');
+
+      if ((code === 'success' || code === 'error') && message) {
+        $flash = {
+          message,
+          classes: `variant-glass-${code}`,
+          timeout: 5000,
+        }
+      }
+      
       const session: Session = stexs.auth.getSession();
 
       if (session) {
@@ -28,17 +39,6 @@
         goto('/sign-in-confirm');
 
         return false;
-      }
-
-      const code = $page.url.searchParams.get('code');
-      const message = $page.url.searchParams.get('message');
-
-      if ((code === 'success' || code === 'error') && message) {
-        $flash = {
-          message,
-          classes: `variant-glass-${code}`,
-          timeout: 5000,
-        }
       }
 
       return true;

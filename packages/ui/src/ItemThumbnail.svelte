@@ -42,7 +42,7 @@
 {#if loading}
   <div class="placeholder aspect-square animate-pulse w-full h-full" />
 {:else if failed && showOnFail}
-  <p class="text-[18px] whitespace-pre-line p-4 text-center">{itemName}</p>
+  <p class="text-[18px] whitespace-pre-line break-all p-4 text-center">{itemName}</p>
 {:else if loaded}
   <img class="h-full w-full object-cover rounded-none {imageClass}" draggable="false" src={prevUrl} alt={itemName} />
 {/if}

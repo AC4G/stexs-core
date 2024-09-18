@@ -24,6 +24,7 @@
         size: 0,
         amounts: [20, 50, 100],
     };
+    let previousLimit : number | undefined;
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
     }, 200);
@@ -47,7 +48,10 @@
     $: paginationSettings.size = $connectionAmountQuery.data;
 
     async function fetchConnections(userId: string, search: string, filter: string, typeFilter: string, page: number, limit: number) {
-        if (search !== previousSearch) {
+        if (!previousLimit) previousLimit = limit;
+        
+        if (search !== previousSearch || previousLimit !== limit) {
+            previousLimit = limit;
             paginationSettings.page = 0;
             page = 0;
             previousSearch = search;
@@ -113,18 +117,18 @@
             <hr class="!border-t-2">
         </div>
     </div>
-    <div class="flex flex-col sm:flex-row justify-between mb-[18px] space-y-2 sm:space-y-0 sm:space-x-2 w-full mt-[24px]">
+    <div class="flex flex-col xs:flex-row justify-between mb-[18px] space-y-2 xs:space-y-0 xs:space-x-2 w-full mt-[24px]">
         {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
-            <div class="placeholder animate-pulse sm:max-w-[300px] w-full h-[42px] rounded-lg" />
-            <div class="placeholder animate-pulse sm:w-[90px] w-full h-[42px] rounded-lg" />
+            <div class="placeholder animate-pulse xs:max-w-[300px] w-full h-[42px] rounded-lg" />
+            <div class="placeholder animate-pulse xs:w-[90px] w-full h-[42px] rounded-lg" />
         {:else if $connectionsQuery.data?.length > 0 && search.length > 0}
-            <div class="flex flex-col sm:flex-row w-full justify-between space-y-2 sm:space-y-0">
-                <div class="sm:max-w-[300px] w-full">
+            <div class="flex flex-col xs:flex-row w-full justify-between space-y-2 xs:space-y-0">
+                <div class="xs:max-w-[300px] w-full">
                     <Search size="md" placeholder="Search by Connection Name..." on:input={handleSearch} class="!bg-surface-500" />
                 </div>
-                <div class="w-full sm:w-fit flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                    <div class="w-full sm:w-fit">
-                        <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{filter}<Icon
+                <div class="w-full xs:w-fit flex flex-col xs:flex-row items-center space-y-2 xs:space-y-0 xs:space-x-2">
+                    <div class="w-full xs:w-fit">
+                        <Button class="bg-surface-500 border border-gray-600 w-full xs:w-fit py-[8px]">{filter}<Icon
                             icon="iconamoon:arrow-down-2-duotone"
                             class="text-[22px]"
                             /></Button>
@@ -135,8 +139,8 @@
                             <ListBoxItem bind:group={filter} name="filter" value={'Oldest'} active="variant-glass-primary text-primary-500" hover="hover:variant-filled-surface" class="rounded-md px-4 py-2">Oldest</ListBoxItem>
                         </Dropdown>
                     </div>
-                    <div class="w-full sm:w-fit">
-                        <Button class="bg-surface-500 border border-gray-600 w-full sm:w-fit py-[8px]">{typeFilter}<Icon
+                    <div class="w-full xs:w-fit">
+                        <Button class="bg-surface-500 border border-gray-600 w-full xs:w-fit py-[8px]">{typeFilter}<Icon
                             icon="iconamoon:arrow-down-2-duotone"
                             class="text-[22px]"
                             /></Button>
@@ -174,10 +178,10 @@
     {#if $connectionsQuery.isLoading || !$connectionsQuery.data}
         <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px] w-full">
             <div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-            <div class="placeholder animate-pulse h-[34px] w-[230px]" />
+            <div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
         </div>
     {:else}
-        {#if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
+        {#if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || $connectionAmountQuery.data > 20 && search.length > 0 && $connectionsQuery.data.length > 0}
             <div class="mt-[18px] w-full">
                 <Paginator
                     bind:settings={paginationSettings}
@@ -185,7 +189,7 @@
                     showPreviousNextButtons="{true}"
                     amountText="Apps"
                     select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-                    controlVariant="bg-surface-500 border border-gray-600"
+                    controlVariant="bg-surface-500 border border-gray-600 flex-wrap"
                 />
             </div>
         {/if}
