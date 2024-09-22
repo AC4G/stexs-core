@@ -286,10 +286,14 @@ describe('OAuth2 Authorize', () => {
       rowCount: 0,
     } as never);
 
+    let created_at = new Date();
+    let expires = created_at.getTime() + 5 * 60 * 1000;
+
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
+          created_at,
         },
       ],
       rowCount: 1,
@@ -313,6 +317,7 @@ describe('OAuth2 Authorize', () => {
       code: expect.stringMatching(
         /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
       ),
+      expires: expires,
     });
   });
 });

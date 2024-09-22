@@ -110,11 +110,7 @@
             </div>
         </div>
         <div class="flex flex-col items-center space-y-2 overflow-y-auto">
-            {#if $searchForFriendsQuery.isLoading || (!$searchForFriendsQuery.data && ((search.length > 0 && filter === 'All') || filter === 'Pending'))}
-                {#each Array(20) as _}
-                    <div class="placeholder animate-pulse w-full min-h-[62px] sm:h-[72px]" />
-                {/each}
-            {:else if $searchForFriendsQuery.data}
+            {#if $searchForFriendsQuery.data}
                 {#each $searchForFriendsQuery.data as profile, i (profile.user_id)}
                     <div class="flex flex-row rounded-md transition items-center justify-between px-2 sm:px-4 py-2 w-full bg-surface-700 border border-surface-600 space-x-4">
                         <a href="/{profile.username}" on:click={parent.onClose} class="flex justify-left items-center group gap-4">
@@ -179,12 +175,7 @@
                 <p class="text-[18px]">Start typing to search for friends</p>
             {/if}
         </div>
-        {#if $searchForFriendsQuery.isLoading || (!$searchForFriendsQuery.data && ((search.length > 0 && filter === 'All') || filter === 'Pending'))}
-            <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 pt-6">
-                <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-                <div class="placeholder animate-pulse h-[38px] w-[240px]" />
-            </div>
-        {:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
+        {#if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
             <div class="pt-6">
                 <Paginator
                     bind:settings={paginationSettings}

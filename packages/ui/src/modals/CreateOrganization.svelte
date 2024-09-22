@@ -250,7 +250,7 @@
                         placeholder="README for the main page of your organization"
                         bind:value={$form.readme}
                     />
-                    <Button type="button" class="btn px-1 chip variant-ghost-surface" on:click={() => preview = !preview}>Preview</Button>
+                    <Button type="button" class="btn px-1 chip variant-ghost-surface" on:click={() => preview = !preview}>{preview ? 'Hide Preview' : 'Show Preview'}</Button>
                     {#if preview && $form.readme && $form.readme.length > 0}
                         <Markdown text={$form.readme} />
                     {/if}

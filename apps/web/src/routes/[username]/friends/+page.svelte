@@ -110,7 +110,7 @@
 </script>
 
 <div class="flex flex-col xs:flex-row justify-between mb-[18px] space-y-2 xs:space-y-0 xs:space-x-2 items-center">
-    {#if $friendsQuery.isLoading || !$friendsQuery.data}sm
+    {#if $friendsQuery.isLoading || !$friendsQuery.data}
         <div class="placeholder animate-pulse xs:max-w-[300px] w-full h-[41.75px] rounded-lg" />
         <div class="placeholder animate-pulse xs:w-[90px] w-full h-[41.75px] rounded-lg" />
     {:else if $profileStore && $profileStore.totalFriends > 0}

@@ -175,6 +175,7 @@ router.post(
 
     const token = uuidv4();
     let tokenId;
+    let expires;
 
     try {
       const { rowCount, rows } = await db.query(
@@ -189,7 +190,7 @@ router.post(
           ON CONFLICT (user_id, app_id)
           DO UPDATE
           SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
-          RETURNING id;
+          RETURNING id, created_at;
         `,
         [token, userId, client_id],
       );
@@ -202,6 +203,7 @@ router.post(
       logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
 
       tokenId = rows[0].id;
+      expires = rows[0].created_at.getTime() + 5 * 60 * 1000; // 5 minutes from now
     } catch (e) {
       logger.error(
         `Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
@@ -212,7 +214,7 @@ router.post(
     }
 
     try {
-      await db.query(
+      let { rowCount } = await db.query(
         `
           WITH scope_ids AS (
               SELECT id
@@ -235,6 +237,11 @@ router.post(
         [tokenId, scopes],
       );
 
+      if (rowCount === 0) {
+        logger.error(`Failed to insert/update authorization token scopes for token: ${tokenId}`);
+        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+      }
+
       logger.debug(`Authorization token scopes inserted/updated successfully for token: ${tokenId}`);
     } catch (e) {
       logger.error(
@@ -245,7 +252,7 @@ router.post(
       return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
     }
 
-    res.json({ code: token });
+    res.json({ code: token, expires });
   },
 );
 
