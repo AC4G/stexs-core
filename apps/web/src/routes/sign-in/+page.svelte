@@ -12,12 +12,12 @@
   let submitted: boolean = false;
   const flash = getFlash(page);
 
+  let code = $page.url.searchParams.get('code');
+  let message = $page.url.searchParams.get('message');
+
   const signInSetupQuery = createQuery({
     queryKey: ['signInSetup'],
     queryFn: async () => {
-      const code = $page.url.searchParams.get('code');
-      const message = $page.url.searchParams.get('message');
-
       if ((code === 'success' || code === 'error') && message) {
         $flash = {
           message,

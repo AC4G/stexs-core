@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
+    "preinstall": "npx only-allow pnpm && sudo ln -sf $(pwd)/start-dev-tmux.sh /usr/local/bin/stexs-dev",
     "build": "dotenv -- turbo run build",
     "build:main": "turbo run build:main",
     "build:module": "turbo run build:module",

@@ -39,8 +39,17 @@ GRANT DELETE ON TABLE public.inventories TO authenticated;
 GRANT SELECT ON TABLE public.inventories TO anon;
 GRANT SELECT ON TABLE public.inventories TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.distinct_projects_from_inventory(user_id_param UUID)
-RETURNS TABLE (id INT, name CITEXT, organization_name CITEXT)
+CREATE OR REPLACE FUNCTION public.get_distinct_projects_from_inventory(
+    user_id_param UUID,
+    pointer INT DEFAULT NULL,
+    limit_param INT DEFAULT 10,
+    search_param TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    id INT, 
+    name CITEXT, 
+    organization_name CITEXT
+)
 AS $$
 BEGIN
     RETURN QUERY
@@ -52,12 +61,16 @@ BEGIN
     JOIN items ON inventories.item_id = items.id
     JOIN projects ON items.project_id = projects.id
     JOIN organizations ON projects.organization_id = organizations.id
-    WHERE inventories.user_id = user_id_param;
+    WHERE inventories.user_id = user_id_param
+      AND (pointer IS NULL OR projects.id > pointer)
+      AND (search_param IS NULL OR projects.name ILIKE '%' || search_param || '%')
+    ORDER BY projects.id
+    LIMIT limit_param;
 END;
 $$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) TO anon;
-GRANT EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_distinct_projects_from_inventory(UUID, INT, INT, TEXT) TO anon;
+GRANT EXECUTE ON FUNCTION public.get_distinct_projects_from_inventory(UUID, INT, INT, TEXT) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.check_inventory_update()
 RETURNS TRIGGER AS $$

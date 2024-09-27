@@ -327,18 +327,34 @@ GRANT UPDATE (name, project_id, description, homepage_url, redirect_url) ON TABL
 GRANT DELETE ON TABLE public.oauth2_apps TO authenticated;
 GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
-CREATE OR REPLACE VIEW public.oauth2_apps_public AS
-SELECT
-    name,
-    client_id,
-    organization_id,
-    project_id,
-    description,
-    homepage_url,
-    redirect_url
-FROM public.oauth2_apps;
+CREATE OR REPLACE FUNCTION public.get_oauth2_app_by_client_id(client_id_param UUID)
+RETURNS TABLE(
+    name CITEXT,
+    client_id UUID,
+    organization_id INT,
+    project_id INT,
+    description VARCHAR,
+    homepage_url VARCHAR,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ
+) 
+SECURITY DEFINER AS $$
+BEGIN
+    IF auth.grant() = 'password' THEN
+        RETURN QUERY
+        SELECT oa.name, oa.client_id, oa.organization_id, oa.project_id, oa.description, oa.homepage_url, oa.created_at, oa.updated_at
+        FROM public.oauth2_apps AS oa
+        WHERE oa.client_id = client_id_param;
+    ELSE
+        RAISE sqlstate 'PT401' using
+            message = 'Unauthorized access',
+            detail = 'Access to the requested resource is denied.',
+            hint = 'Ensure you are signed in.';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
-GRANT SELECT ON public.oauth2_apps_public TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_oauth2_app_by_client_id(UUID) TO authenticated;
 
 
 

@@ -28,14 +28,7 @@
     let filterTime: string = 'Latest';
     let filterAlphabet: string = ''; 
     let filterAmount: string = '';
-    $: searchedProjects = $projectsQuery?.data?.filter((project: { id: number, name: string, organization_name: string }) => {
-        const searchTerms = projectSearch.toLowerCase().split(' ');
-
-        return searchTerms.some(term =>
-            project.name.toLowerCase().includes(term) ||
-            project.organization_name.toLowerCase().includes(term)
-        );
-    });
+    let projectWindow: any;
     let selectedProject: number;
     $: selectedProjectName = selectedProject === undefined || 
         typeof selectedProject === 'string' 
@@ -52,10 +45,15 @@
     const handleSearch = debounce((e: Event) => {
         search = (e.target as HTMLInputElement)?.value || '';
     }, 300);
+    const handleProjectSearch = debounce((e: Event) => {
+        projectSearch = (e.target as HTMLInputElement)?.value || '';
+    }, 300);
 
-    async function fetchProjectsInUsersInventory(userId: string) {
-        const { data } = await stexs.rpc('distinct_projects_from_inventory', {
-            user_id_param: userId
+    async function fetchProjectsInUsersInventory(userId: string, pointer: number|null = null, search: string|null = null) {
+        const { data } = await stexs.rpc('get_distinct_projects_from_inventory', {
+            user_id_param: userId,
+            pointer,
+            search_param: search
         });
 
         return data;
@@ -80,7 +78,7 @@
 
     $: projectsQuery = createQuery({
         queryKey: ['projectsInInventory', $profileStore?.userId],
-        queryFn: async () => await fetchProjectsInUsersInventory($profileStore?.userId!),
+        queryFn: async () => await fetchProjectsInUsersInventory($profileStore?.userId!, null, projectSearch),
         enabled: !!$profileStore?.userId
     });
 
@@ -205,9 +203,29 @@
 
     $: inventoryQuery = createQuery({
         queryKey: ['inventories', $profileStore?.userId],
-        queryFn: async () => await fetchInventory($profileStore?.userId!, search, { filterTime, filterAlphabet, filterAmount }, selectedProject, paginationSettings.page, paginationSettings.limit),
+        queryFn: async () => await fetchInventory($profileStore?.userId!, search, { filterTime, filterAlphabet, filterAmount }, selectedProject, page, limit),
         enabled: !!$profileStore?.userId
     });
+
+    $: page = paginationSettings.page;
+    $: limit = paginationSettings.limit;
+
+    let projects: { id: number, name: string, organization_name: string }[] = [];
+
+    $: projects = $projectsQuery.data || [];
+
+    async function handleScroll() {
+        if (
+            projectWindow &&
+            projectWindow.scrollHeight - projectWindow.scrollTop <= 
+            projectWindow.clientHeight + 1
+        ) {
+            projects = [
+                ...projects,
+                ...await fetchProjectsInUsersInventory($profileStore?.userId!, projects[-1].id, projectSearch)
+            ];
+        }
+    }
 </script>
 
 <div class="flex flex-col xs:flex-row justify-between mb-[18px] space-y-2 xs:space-y-0 xs:space-x-2">
@@ -247,34 +265,36 @@
                     icon="iconamoon:arrow-down-2-duotone"
                     class="text-[24px]"
                     /></Button>
-                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500">
-                    <Search size="md" placeholder="Project Name" bind:value={projectSearch} class="!bg-surface-500" />
+                <Dropdown class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500 xs:min-w-[240px]">
+                    <Search size="md" placeholder="Search..." on:input={handleProjectSearch} class="!bg-surface-500" />
                     <RadioItem bind:group={selectedProject} name="project" value={undefined}>All</RadioItem>
                     {#if $projectsQuery.isLoading || !$projectsQuery.data}
                         <div class="flex justify-center p-4">
                             <ProgressRadial stroke={40} value={undefined} width="w-[30px]" />
                         </div>
                     {:else}
-                        <RadioGroup class="max-h-[200px] overflow-auto" active="variant-glass-primary text-primary-500" hover="hover:bg-surface-500" display="flex-col space-y-1">
-                            {#if searchedProjects && searchedProjects.length > 0 }
-                                {#each searchedProjects as project (project.id)}
-                                    <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group">
-                                        <div class="flex flex-row space-x-2">
-                                            <div class="w-[48px] h-[48px] bg-surface-600 border border-gray-600 rounded-md inline-flex items-center justify-center text-center">
-                                                <ProjectLogo {stexs} projectId={project.id} alt={project.name} class="rounded-md" />
+                        <RadioGroup class="!bg-surface-800 !border-0" active="variant-glass-primary text-primary-500" hover="hover:bg-surface-500" display="flex-col space-y-1">
+                            <div bind:this={projectWindow} on:scroll={handleScroll} class="max-h-[200px] overflow-auto flex-col space-y-1">
+                                {#if $projectsQuery.data && $projectsQuery.data.length > 0 }
+                                    {#each $projectsQuery.data as project (project.id)}
+                                        <RadioItem bind:group={selectedProject} name="project" value={project.id} class="group !px-2 bg-surface-700 border border-surface-600">
+                                            <div class="flex flex-row space-x-2">
+                                                <div class="w-[48px] h-[48px] bg-surface-600 border border-gray-600 rounded-md inline-flex items-center justify-center text-center">
+                                                    <ProjectLogo {stexs} projectId={project.id} alt={project.name} class="rounded-md" />
+                                                </div>
+                                                <div class="flex flex-col">
+                                                    <p class="text-[14px]">{project.name}</p>
+                                                    <p class="text-[14px]">{project.organization_name}</p>
+                                                </div>
                                             </div>
-                                            <div class="flex flex-col">
-                                                <p class="text-[14px]">{project.name}</p>
-                                                <p class="text-[14px]">{project.organization_name}</p>
-                                            </div>
-                                        </div>
-                                    </RadioItem>
-                                {/each}
-                            {:else if searchedProjects?.length ===  0}
-                                <div class="h-[56px] px-4 p-1 flex justify-center items-center">
-                                    <p class="text-[18px]">No projects found</p>
-                                </div>
-                            {/if}
+                                        </RadioItem>
+                                    {/each}
+                                {:else if $projectsQuery.data?.length ===  0}
+                                    <div class="h-[56px] px-4 p-1 flex justify-center items-center">
+                                        <p class="text-[18px]">No projects found</p>
+                                    </div>
+                                {/if}
+                            </div>
                         </RadioGroup>
                     {/if}
                 </Dropdown>
