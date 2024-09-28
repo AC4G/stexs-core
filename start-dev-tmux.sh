@@ -9,8 +9,17 @@ SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 cleanup() {
-  tmux kill-session -t "$SESSION_NAME" 2>/dev/null
-  exit 1
+  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    tmux kill-session -t "$SESSION_NAME" 2>/dev/null
+
+    if [ -z "$TMUX" ]; then
+      echo -e "\n\e[1;32mtmux session '$SESSION_NAME' has been successfully killed.\e[0m"
+    fi
+  else 
+    echo "\ntmux session '$SESSION_NAME' does not exist. No session was killed."
+  fi
+
+  exit 0
 }
 
 trap cleanup SIGINT
@@ -38,14 +47,6 @@ get_package_manager() {
     echo "none"
   fi
 }
-
-PACKAGE_MANAGER=$(get_package_manager)
-
-if [ "$PACKAGE_MANAGER" = "none" ]; then
-  echo -e "\nNo supported package manager detected.\nPlease install one of the following package managers to continue:\n"
-  echo -e "\t- apt (Debian/Ubuntu)\n\t- yum (RHEL/CentOS)\n\t- dnf (Fedora)\n\t- pacman (Arch)\n\t- brew (macOS)\n\t- zypper (openSUSE)\n\t- apk (Alpine)\n\t- snap (Universal)\n\t- flatpak (Universal)"
-  exit 1
-fi
 
 install_ide() {
   case $1 in
@@ -152,13 +153,50 @@ repair_ide_selection() {
     select_ide
     open_ide
   else
-    echo -e "\n\e[1;31mPlease modify $HOME/.stexs_dev_config by hand and re-run this script.\e[0m"
-    exit 1
+    echo -e "\n\e[1;31mPlease manually edit $HOME/.stexs_dev_config or re-run this script to choose a valid IDE.\e[0m"
+    cleanup
   fi
 }
 
+show_help() {
+  echo -e "\nstexs-dev - This script automates the setup of your development environment using tmux, "
+  echo -e "installs the preferred IDE, and starts the development servers for all services."
+  echo -e "\nUsage: stexs-dev [command]\n"
+  
+  echo -e "Commands:"
+  echo -e "  • reconfig  Reconfigure the stexs-dev configuration, including the IDE."
+  echo -e "  • kill      Kill the stexs-dev tmux session if it is running."
+  echo -e "  • help      Display this help message."
+  
+  echo -e "\nConfiguration file location: $CONFIG_FILE"
+}
+
+
+if [[ "$1" == "help" ]]; then
+  show_help
+  exit 0
+fi
+
+if [[ "$1" == "reconfig" ]]; then
+  select_ide
+  echo -e "\n\e[1;32mstexs-dev successfully reconfigured.\e[0m"
+  exit 0
+fi
+
+if [[ "$1" == "kill" ]]; then
+  cleanup
+fi
+
 if [ ! -f "$CONFIG_FILE" ]; then
   select_ide
+fi
+
+PACKAGE_MANAGER=$(get_package_manager)
+
+if [ "$PACKAGE_MANAGER" = "none" ]; then
+  echo -e "\nNo supported package manager detected.\nPlease install one of the following package managers to continue:\n"
+  echo -e "\t- apt (Debian/Ubuntu)\n\t- yum (RHEL/CentOS)\n\t- dnf (Fedora)\n\t- pacman (Arch)\n\t- brew (macOS)\n\t- zypper (openSUSE)\n\t- apk (Alpine)\n\t- snap (Universal)\n\t- flatpak (Universal)"
+  exit 1
 fi
 
 if ! command -v tmux &> /dev/null; then
