@@ -6,14 +6,31 @@
   import { stexs } from "../../stexsClient";
   import type { Session } from "stexs-client/src/lib/types";
   import { goto } from "$app/navigation";
+  import { getUserStore } from '$lib/stores/userStore';
 
   const flash = getFlash(page);
   const previousPageStore = getPreviousPageStore();
+  const userStore = getUserStore();
 
   let clientId: string | null = $page.url.searchParams.get('client_id');
   let redirectUrl: string | null = $page.url.searchParams.get('redirect_url');
   let scopes: string[] = $page.url.searchParams.get('scope')?.split(' ') || [];
   let state: string | null = $page.url.searchParams.get('state');
+
+  const pleaseNotify = "Please notify the application operator.";
+  const couldNotProceed = "Authorization could not proceed due to the following issues:";
+
+  let clientData: {
+    id: number;
+    name: string;
+    client_id: string;
+    organization_id: number;
+    project_id: number | null;
+    description: string | null;
+    homepage_url: string | null;
+    created_at: string;
+    updated_at: string | null;
+  };
 
   const authorizeSetupQuery = createQuery({
     queryKey: ['authorizeSetup'],
@@ -31,8 +48,6 @@
       if (!clientId) {
         issues.push('missing client_id');
       }
-
-      console.log(clientId, redirectUrl, scopes, state);
 
       if (scopes.length === 0) {
         issues.push('missing scope');
@@ -57,7 +72,7 @@
         }
 
         $flash = {
-          message: `Authorization could not proceed due to the following issues: ${formattedIssues}. Please notify the operator of the application.`,
+          message: `${couldNotProceed} ${formattedIssues}. ${pleaseNotify}`,
           classes: 'variant-glass-error',
           autohide: false,
         }
@@ -66,18 +81,69 @@
         return false;
       }
 
-      let client = await stexs.rpc('get_oauth2_app_by_client_id', {
+      const responseClientData = await stexs.rpc('get_oauth2_app_by_client_id', {
         client_id_param: clientId
       });
 
-      console.log(client);
+      if (responseClientData.error) {
+        $flash = {
+          message: `${couldNotProceed} ${responseClientData.error.message}. ${pleaseNotify}`,
+          classes: 'variant-glass-error',
+          autohide: false,
+        }
+        goto('/');
+        return false;
+      }
 
-      // check if client exists by client id
-      // if redirectUrl is the one set in client conf,
-      // scopes are all set in client conf
-      // and if connection already exists for user and the client
+      if (responseClientData.data === 0) {
+        $flash = {
+          message: `Provided client_id does not exist. ${pleaseNotify}`,
+          classes: 'variant-glass-error',
+          autohide: false,
+        }
+        goto('/');
+        return false;
+      }
 
-      // fetch client data and send boolean check for scopes
+      clientData = responseClientData.data[0];
+
+      const responseConnectionExists = await stexs.from('oauth2_connections')
+        .select('', { 
+            count: 'exact', 
+            head: true 
+        })
+        .eq('user_id', $userStore?.id)
+        .eq('client_id', clientId);
+
+      if (responseConnectionExists.count > 0) {
+        $flash = {
+          message: `You already have an active connection with the application.`,
+          classes: 'variant-glass-success',
+          timeout: 5000,
+        }
+        goto('/');
+        return false;
+      }
+
+      const responseScopesValid = await stexs.from('oauth2_app_scopes')
+        .select('scopes(name)')
+        .eq('app_id', clientData.id)
+        .in('scopes.name', scopes)
+        .not('scopes', 'is', null);
+
+      const scopeData = responseScopesValid.data
+        .map((scope: { scopes: { name: string } }) => scope.scopes.name);
+      const invalidScopes = scopes.filter((scope) => !scopeData.includes(scope));
+
+      if (invalidScopes.length > 0) {
+        $flash = {
+          message: `Provided scopes are invalid or not assigned to the application: ${invalidScopes.join(', ')}. ${pleaseNotify}`,
+          classes: 'variant-glass-error',
+          autohide: false,
+        }
+        goto('/');
+        return false;
+      }
 
       return true;
     }

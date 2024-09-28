@@ -329,6 +329,7 @@ GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_oauth2_app_by_client_id(client_id_param UUID)
 RETURNS TABLE(
+    id INT,
     name CITEXT,
     client_id UUID,
     organization_id INT,
@@ -342,7 +343,7 @@ SECURITY DEFINER AS $$
 BEGIN
     IF auth.grant() = 'password' THEN
         RETURN QUERY
-        SELECT oa.name, oa.client_id, oa.organization_id, oa.project_id, oa.description, oa.homepage_url, oa.created_at, oa.updated_at
+        SELECT oa.id, oa.name, oa.client_id, oa.organization_id, oa.project_id, oa.description, oa.homepage_url, oa.created_at, oa.updated_at
         FROM public.oauth2_apps AS oa
         WHERE oa.client_id = client_id_param;
     ELSE
