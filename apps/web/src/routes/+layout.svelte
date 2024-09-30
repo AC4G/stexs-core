@@ -354,7 +354,7 @@
   $: unseenNotificationsQuery = createQuery({
     queryKey: ['unseenNotifications'],
     queryFn: async () => await fetchUnseenNotifications($userStore!.id),
-    enabled: !!$userStore?.id,
+    enabled: !!$userStore?.id && !excludeRoutes.includes($page.url.pathname),
     refetchInterval: 5000
   });
 

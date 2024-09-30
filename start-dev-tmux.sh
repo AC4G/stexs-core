@@ -63,6 +63,8 @@ install_ide() {
         "snap") sudo snap install code --classic ;;
         "flatpak") flatpak install flathub com.visualstudio.code ;;
       esac
+      IDE_COMMAND="code"
+      IDE_NAME="Visual Studio Code"
       ;;
     "vim")
       echo "Attempting to install Vim..."
@@ -77,6 +79,8 @@ install_ide() {
         "snap") sudo snap install vim ;;
         "flatpak") flatpak install flathub org.vim.Vim ;;
       esac
+      IDE_COMMAND="vim"
+      IDE_NAME="Vim"
       ;;
     "nvim")
       echo "Attempting to install Neovim..."
@@ -91,8 +95,20 @@ install_ide() {
         "snap") sudo snap install nvim --classic ;;
         "flatpak") flatpak install flathub io.neovim.nvim ;;
       esac
+      IDE_COMMAND="nvim"
+      IDE_NAME="Neovim"
       ;;
   esac
+
+  INSTALL_SUCCESS="\n\e[1;32m$IDE_NAME installed successfully.\e[0m"
+  INSTALL_FAILURE="\n\e[1;31mError: Failed to install $IDE_NAME. Please check your package manager or install $IDE_NAME manually.\e[0m"
+
+  if ! command -v $IDE_COMMAND &> /dev/null; then
+    echo -e "$INSTALL_FAILURE"
+    cleanup
+  else
+    echo -e "$INSTALL_SUCCESS"
+  fi
 }
 
 select_ide() {
@@ -165,7 +181,7 @@ show_help() {
   
   echo -e "Commands:"
   echo -e "  • reconfig  Reconfigure the stexs-dev configuration, including the IDE."
-  echo -e "  • kill      Kill the stexs-dev tmux session if it is running."
+  echo -e "  • kill      Kill the stexs-dev tmux session if it exists."
   echo -e "  • help      Display this help message."
   
   echo -e "\nConfiguration file location: $CONFIG_FILE"
@@ -185,6 +201,11 @@ fi
 
 if [[ "$1" == "kill" ]]; then
   cleanup
+fi
+
+if [[ "$1" != "" ]]; then
+  echo -e "\e[1;31mError: Command '$1' is not recognized. Supported commands can be found by running 'stexs-dev help'.\e[0m"
+  exit 1
 fi
 
 if [ ! -f "$CONFIG_FILE" ]; then
@@ -212,6 +233,13 @@ if ! command -v tmux &> /dev/null; then
     "snap") sudo snap install tmux ;;
     "flatpak") flatpak install flathub com.tmux.Tmux ;;
   esac
+
+  if command -v tmux &> /dev/null; then
+    echo -e "\n\e[1;32mtmux installed successfully.\e[0m"
+  else
+    echo -e "\n\e[1;31mError: Failed to install tmux. Please check your package manager or install tmux manually.\e[0m"
+    cleanup
+  fi
 fi
 
 tmux has-session -t $SESSION_NAME 2>/dev/null

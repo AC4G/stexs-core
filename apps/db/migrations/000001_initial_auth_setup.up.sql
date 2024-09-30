@@ -310,8 +310,6 @@ CREATE TABLE public.oauth2_apps (
     client_secret VARCHAR(64) NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE,
-    description VARCHAR(250),
-    homepage_url VARCHAR(100),
     redirect_url VARCHAR(200) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
@@ -333,21 +331,28 @@ RETURNS TABLE(
     name CITEXT,
     client_id UUID,
     organization_id INT,
-    project_id INT,
-    description VARCHAR,
-    homepage_url VARCHAR,
-    created_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ
+    organization_name CITEXT,
+    project_name CITEXT,
+    created_at TIMESTAMPTZ
 ) 
 SECURITY DEFINER AS $$
 BEGIN
     IF auth.grant() = 'password' THEN
         RETURN QUERY
-        SELECT oa.id, oa.name, oa.client_id, oa.organization_id, oa.project_id, oa.description, oa.homepage_url, oa.created_at, oa.updated_at
+        SELECT 
+            oa.id, 
+            oa.name, 
+            oa.client_id,
+            org.id AS organization_id,
+            org.name AS organization_name,
+            proj.name AS project_name,
+            oa.created_at
         FROM public.oauth2_apps AS oa
+        LEFT JOIN public.organizations AS org ON org.id = oa.organization_id
+        LEFT JOIN public.projects AS proj ON proj.id = oa.project_id
         WHERE oa.client_id = client_id_param;
     ELSE
-        RAISE sqlstate 'PT401' using
+        RAISE sqlstate 'PT401' USING
             message = 'Unauthorized access',
             detail = 'Access to the requested resource is denied.',
             hint = 'Ensure you are signed in.';

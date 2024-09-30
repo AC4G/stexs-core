@@ -1,11 +1,11 @@
 <script lang="ts">
+	import { debounce } from 'lodash';
     import Button from './Button.svelte';
     import Icon from '@iconify/svelte';
     import Input from './Input.svelte';
     import { VerifyCode } from 'validation-schemas';
     import { superForm, superValidateSync } from 'sveltekit-superforms/client';
     import { Dropdown, Radio } from 'flowbite-svelte';
-    import { onMount } from 'svelte';
 
     export let cancel: () => void;
     export let confirm: (code: string) => Promise<void>;
@@ -41,13 +41,19 @@
     };
     const requestCodeTypes = ['email'];
 
+    let codeRequested: { [key: string]: boolean  } = {
+        email: false
+    };
+
     const { form, errors, validate } = superForm(superValidateSync(VerifyCode), {
         validators: VerifyCode,
         validationMethod: 'oninput',
         clearOnSubmit: 'none',
     });
 
-    async function requestNewCode(showMessage: boolean = false) {
+    async function requestNewCode(type: string, showMessage: boolean = false) {
+        if (!codeRequested[type]) codeRequested[type] = true;
+
         const response = await (await stexs.auth.mfa.requestCode(type)).json();
 
         requested = false;
@@ -116,7 +122,7 @@
                 <Button
                     on:click={async () => {
                         type = currentType;
-                        requestCodeTypes.includes(type) && (await requestNewCode());
+                        requestCodeTypes.includes(type) && (await requestNewCode(currentType));
                     }}
                     class="flex variant-ringed-surface p-2 rounded-md hover:bg-surface-600 transition items-center space-x-2 justify-start"
                 >
@@ -136,7 +142,7 @@
             on:click={cancel}>Cancel</Button
         >
     {:else if type}
-        <div class="flex justify-center">
+        <div class="flex flex-row space-x-2 justify-center">
             {#if types && types.length > 1}
                 <Button class="p-2 variant-ghost-surface">
                     <span class="badge variant-filled-primary rounded">
@@ -152,7 +158,9 @@
                     class="bg-surface-800 rounded-md p-2 space-y-2 border border-surface-500"
                 >
                     {#each types as currentType}
-                        <Radio bind:group={type} value={currentType} custom>
+                        <Radio bind:group={type} on:click={async () => {
+                            if (!codeRequested[currentType] && requestCodeTypes.includes(currentType)) requestNewCode(currentType);
+                        }} value={currentType} custom>
                             <div
                                 class="flex justify-start cursor-pointer variant-ghost-surface p-2 rounded-md hover:bg-surface-500 peer-checked:bg-surface-500 peer-checked:cursor-default transition w-full items-center"
                             >
@@ -169,17 +177,17 @@
                 </Dropdown>
             {/if}
             {#if requestCodeTypes.includes(type)}
-                <div class="ml-[4px] flex justify-between">
+                <div class="h-[48px]">
                     <Button
                         title="Resend code"
-                        class="variant-ghost-secondary"
+                        class="variant-ghost-secondary h-[48px] w-[48px] px-2"
                         on:click={async () => {
                             requested = true;
-                            await requestNewCode(true);
+                            await requestNewCode(type, true);
                         }}
                         submitted={requested}
                     >
-                        <Icon icon="tabler:reload" class="text-[24px]" />
+                        <Icon icon="tabler:reload" class="text-[20px]" />
                     </Button>
                 </div>
             {/if}
