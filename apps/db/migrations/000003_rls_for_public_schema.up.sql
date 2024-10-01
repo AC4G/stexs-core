@@ -69,7 +69,7 @@ CREATE POLICY friend_requests_select
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                utils.has_client_scope(30)
+                utils.has_client_scope(29)
             )
         )
     );
@@ -87,7 +87,7 @@ CREATE POLICY friend_requests_delete
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                utils.has_client_scope(31)
+                utils.has_client_scope(30)
             )
         )
     );
@@ -108,7 +108,7 @@ CREATE POLICY friend_requests_insert
             auth.grant() = 'password' OR
             (
                 auth.grant() = 'authorization_code' AND
-                utils.has_client_scope(29)
+                utils.has_client_scope(28)
             )
         ) AND 
         NOT EXISTS (
@@ -183,7 +183,7 @@ CREATE POLICY friends_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                utils.has_client_scope(1)
+                utils.has_client_scope(31)
             )  
             OR 
             (
@@ -328,7 +328,7 @@ CREATE POLICY inventories_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                utils.has_client_scope(6)
+                utils.has_client_scope(5)
             )
         )
     );
@@ -340,7 +340,7 @@ CREATE POLICY inventories_update
     USING (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        utils.has_client_scope(7)
+        utils.has_client_scope(6)
     );
     
 CREATE POLICY inventories_delete
@@ -350,7 +350,7 @@ CREATE POLICY inventories_delete
     USING (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        utils.has_client_scope(8)
+        utils.has_client_scope(7)
     );
 
 CREATE POLICY inventories_insert
@@ -360,7 +360,7 @@ CREATE POLICY inventories_insert
     WITH CHECK (
         auth.grant() = 'authorization_code' AND
         auth.uid() = user_id AND
-        utils.has_client_scope(9)
+        utils.has_client_scope(8)
     );
 
 
@@ -375,7 +375,7 @@ CREATE POLICY items_select
         (
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(2)
+                utils.has_client_scope(1)
             )
             OR
             (
@@ -393,7 +393,7 @@ CREATE POLICY items_update
         (
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(3) AND
+                utils.has_client_scope(2) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -428,7 +428,7 @@ CREATE POLICY items_delete
         (
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(4) AND
+                utils.has_client_scope(3) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -463,7 +463,7 @@ CREATE POLICY items_insert
         (
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(5) AND
+                utils.has_client_scope(4) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -670,7 +670,7 @@ CREATE POLICY organization_members_select
         OR
         (
             auth.grant() = 'client_credentials' AND
-            utils.has_client_scope(22) AND
+            utils.has_client_scope(21) AND
             organization_id = (auth.jwt()->>'organization_id')::INT
         )
     );
@@ -717,7 +717,7 @@ BEGIN
         OR
         (
             auth.grant() = 'client_credentials' AND
-            utils.has_client_scope(23) AND
+            utils.has_client_scope(22) AND
             _organization_id = (auth.jwt()->>'organization_id')::INT AND
             role NOT IN ('Owner', 'Admin') AND
             NOT EXISTS (
@@ -802,7 +802,7 @@ CREATE POLICY organization_members_delete
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(24) AND
+                utils.has_client_scope(23) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin')
             )
@@ -875,7 +875,7 @@ CREATE POLICY organization_requests_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(25) AND
+                utils.has_client_scope(24) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT
             )
         )
@@ -928,7 +928,7 @@ CREATE POLICY organization_requests_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(26) AND
+                utils.has_client_scope(25) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin') AND 
                 NOT utils.is_organization_request_with_role_owner_or_admin(organization_id, addressee_id)
@@ -969,7 +969,7 @@ CREATE POLICY organization_requests_delete
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(27) AND
+                utils.has_client_scope(26) AND
                 organization_id = (auth.jwt()->>'organization_id')::INT AND
                 role NOT IN ('Owner', 'Admin')
             )
@@ -1015,7 +1015,7 @@ CREATE POLICY organization_requests_insert
                 OR 
                 (
                     auth.grant() = 'client_credentials' AND
-                    utils.has_client_scope(28) AND
+                    utils.has_client_scope(27) AND
                     organization_id = (auth.jwt()->>'organization_id')::INT AND
                     role NOT IN ('Owner', 'Admin')
                 )
@@ -1040,7 +1040,7 @@ CREATE POLICY organizations_select
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(20)
+                utils.has_client_scope(19)
             )
         )
     );
@@ -1064,7 +1064,7 @@ CREATE POLICY organizations_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(21) AND
+                utils.has_client_scope(20) AND
                 id = (auth.jwt()->>'organization_id')::INT
             )
         )
@@ -1114,7 +1114,7 @@ CREATE POLICY profiles_select
             (
                 auth.grant() = 'authorization_code' AND
                 auth.uid() = user_id AND
-                utils.has_client_scope(10)
+                utils.has_client_scope(9)
             )
         )
     );
@@ -1156,7 +1156,7 @@ CREATE POLICY project_requests_select
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(16) AND
+                utils.has_client_scope(15) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1219,7 +1219,7 @@ CREATE POLICY project_requests_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(17) AND
+                utils.has_client_scope(16) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1270,7 +1270,7 @@ CREATE POLICY project_requests_delete
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(18) AND
+                utils.has_client_scope(17) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1327,7 +1327,7 @@ CREATE POLICY project_requests_insert
                 OR
                 (
                     auth.grant() = 'client_credentials' AND
-                    utils.has_client_scope(19) AND
+                    utils.has_client_scope(18) AND
                     EXISTS (
                         SELECT 1
                         FROM public.projects AS p
@@ -1370,7 +1370,7 @@ CREATE POLICY project_members_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(13) AND
+                utils.has_client_scope(12) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1428,7 +1428,7 @@ BEGIN
         OR
         (
             auth.grant() = 'client_credentials' AND
-            utils.has_client_scope(14) AND
+            utils.has_client_scope(13) AND
             EXISTS (
                 SELECT 1
                 FROM public.projects AS p
@@ -1523,7 +1523,7 @@ CREATE POLICY project_members_delete
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(15) AND
+                utils.has_client_scope(14) AND
                 EXISTS (
                     SELECT 1
                     FROM public.projects AS p
@@ -1593,7 +1593,7 @@ CREATE POLICY projects_select
             OR 
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(11)
+                utils.has_client_scope(10)
             )
         )
     );
@@ -1617,7 +1617,7 @@ CREATE POLICY projects_update
             OR
             (
                 auth.grant() = 'client_credentials' AND
-                utils.has_client_scope(12) AND
+                utils.has_client_scope(11) AND
                 EXISTS (
                     SELECT 1
                     FROM public.oauth2_apps AS oa

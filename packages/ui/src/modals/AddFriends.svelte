@@ -12,6 +12,7 @@
     import { createQuery } from '@tanstack/svelte-query';
     import { debounce } from "lodash";
     import Avatar from '../Avatar.svelte';
+    import { page } from '$app/stores';
 
     export let parent: SvelteComponent;
 
@@ -110,19 +111,15 @@
             </div>
         </div>
         <div class="flex flex-col items-center space-y-2 overflow-y-auto">
-            {#if $searchForFriendsQuery.isLoading || (!$searchForFriendsQuery.data && ((search.length > 0 && filter === 'All') || filter === 'Pending'))}
-                {#each Array(20) as _}
-                    <div class="placeholder animate-pulse w-full min-h-[62px] sm:h-[72px]" />
-                {/each}
-            {:else if $searchForFriendsQuery.data}
+            {#if $searchForFriendsQuery.data}
                 {#each $searchForFriendsQuery.data as profile, i (profile.user_id)}
                     <div class="flex flex-row rounded-md transition items-center justify-between px-2 sm:px-4 py-2 w-full bg-surface-700 border border-surface-600 space-x-4">
                         <a href="/{profile.username}" on:click={parent.onClose} class="flex justify-left items-center group gap-4">
                             <div class="w-fit h-fit">
-                                <Avatar class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px] border-2 border-surface-600 group-hover:border-primary-500 !bg-surface-800 transition" userId={profile.user_id} username={profile.username} {stexs} />
+                                <Avatar class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px] border-2 border-surface-600 group-hover:border-primary-500 !bg-surface-800 transition {$page.url.pathname.startsWith(`/${profile.username}`) ? '!border-primary-500' : ''}" userId={profile.user_id} username={profile.username} {stexs} />
                             </div>
                             <div class="w-fit h-full">
-                                <p class="text-[14px] sm:text-[16px] text-left break-all group-hover:text-secondary-400 transition">{profile.username}</p>
+                                <p class="text-[14px] sm:text-[16px] text-left break-all group-hover:text-secondary-400 transition {$page.url.pathname.startsWith(`/${profile.username}`) ? '!text-secondary-400' : ''}">{profile.username}</p>
                             </div>
                         </a>
                         <div class="w-fit h-fit">
@@ -179,12 +176,7 @@
                 <p class="text-[18px]">Start typing to search for friends</p>
             {/if}
         </div>
-        {#if $searchForFriendsQuery.isLoading || (!$searchForFriendsQuery.data && ((search.length > 0 && filter === 'All') || filter === 'Pending'))}
-            <div class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 pt-6">
-                <div class="placeholder animate-pulse h-[44px] w-full md:w-[150px]" />
-                <div class="placeholder animate-pulse h-[38px] w-[240px]" />
-            </div>
-        {:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
+        {#if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
             <div class="pt-6">
                 <Paginator
                     bind:settings={paginationSettings}

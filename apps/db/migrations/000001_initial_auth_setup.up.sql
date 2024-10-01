@@ -310,8 +310,6 @@ CREATE TABLE public.oauth2_apps (
     client_secret VARCHAR(64) NOT NULL,
     organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
     project_id INT REFERENCES public.projects(id) ON DELETE CASCADE,
-    description VARCHAR(250),
-    homepage_url VARCHAR(100),
     redirect_url VARCHAR(200) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ,
@@ -327,18 +325,42 @@ GRANT UPDATE (name, project_id, description, homepage_url, redirect_url) ON TABL
 GRANT DELETE ON TABLE public.oauth2_apps TO authenticated;
 GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
-CREATE OR REPLACE VIEW public.oauth2_apps_public AS
-SELECT
-    name,
-    client_id,
-    organization_id,
-    project_id,
-    description,
-    homepage_url,
-    redirect_url
-FROM public.oauth2_apps;
+CREATE OR REPLACE FUNCTION public.get_oauth2_app_by_client_id(client_id_param UUID)
+RETURNS TABLE(
+    id INT,
+    name CITEXT,
+    client_id UUID,
+    organization_id INT,
+    organization_name CITEXT,
+    project_name CITEXT,
+    created_at TIMESTAMPTZ
+) 
+SECURITY DEFINER AS $$
+BEGIN
+    IF auth.grant() = 'password' THEN
+        RETURN QUERY
+        SELECT 
+            oa.id, 
+            oa.name, 
+            oa.client_id,
+            org.id AS organization_id,
+            org.name AS organization_name,
+            proj.name AS project_name,
+            oa.created_at
+        FROM public.oauth2_apps AS oa
+        LEFT JOIN public.organizations AS org ON org.id = oa.organization_id
+        LEFT JOIN public.projects AS proj ON proj.id = oa.project_id
+        WHERE oa.client_id = client_id_param;
+    ELSE
+        RAISE sqlstate 'PT401' USING
+            message = 'Unauthorized access',
+            detail = 'Access to the requested resource is denied.',
+            hint = 'Ensure you are signed in.';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
-GRANT SELECT ON public.oauth2_apps_public TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_oauth2_app_by_client_id(UUID) TO authenticated;
 
 
 

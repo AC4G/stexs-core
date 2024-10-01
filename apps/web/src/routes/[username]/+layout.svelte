@@ -149,7 +149,19 @@
 
     $: friendRequestSend = $friendRequestQuery.data;
 
-    $: if ($profileQuery.isFetched && $friendsAmountQuery.isFetched && (($userStore && $userStore.id !== userId && $isFriendQuery.isFetched) || ($userStore && $userStore.id === userId))) {
+    $: if (
+        $profileQuery.isFetched && $friendsAmountQuery.isFetched && (
+            (
+                $userStore && $userStore.id !== userId && $isFriendQuery.isFetched
+            ) 
+            || 
+            (
+                $userStore && $userStore.id === userId
+            )
+            || 
+            !$userStore
+        )
+    ) {
         profileStore.set({
             userId,
             isPrivate,
@@ -179,7 +191,7 @@
                     <div class="placeholder animate-pulse w-[80%] sm:w-[50%] h-[24px]" />
                 </div>
             {:else}
-                <Avatar {userId} {stexs} {username} class="mx-auto w-[168px] {$userStore.id !== userId && $blockedQuery.data && $blockedQuery.data.length === 0 && (!isFriend || gotFriendRequest) ? 'md:w-[148px]' : ''} lg:w-[168px] border-2 border-surface-500" draggable="false" />
+                <Avatar {userId} {stexs} {username} class="mx-auto w-[168px] {$userStore && $userStore.id !== userId && $blockedQuery.data && $blockedQuery.data.length === 0 && (!isFriend || gotFriendRequest) ? 'md:w-[148px]' : ''} lg:w-[168px] border-2 border-surface-500" draggable="false" />
                 <div class="grid gap-y-4 md:col-span-2 items-center">
                     <p class="text-[20px] sm:text-[24px] break-all font-bold">{$profileQuery.data?.username}</p>
                     {#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}

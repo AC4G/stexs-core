@@ -80,6 +80,12 @@ export class StexsAuthClient {
       }
     });
 
+    window.addEventListener('beforeunload', () => {
+      if (this._isInRefreshState()) {
+        this._unsetRefreshState();
+      }
+    });
+
     this._scheduleTokenRefresh();
   }
 
@@ -679,14 +685,22 @@ export class StexsAuthClient {
   }
 
   private async _refreshAccessToken(): Promise<boolean> {
+    if (this._isInRefreshState()) {
+      return false;
+    }
+
+    this._setRefreshState();
+    
     const session: Session = this._getSession();
 
     if (!session || !session.refresh_token) {
+      this._unsetRefreshState();
       return false;
     }
 
     if (session.refresh.count === 24) {
       this.signOut();
+      this._unsetRefreshState();
       return false;
     }
 
@@ -700,6 +714,7 @@ export class StexsAuthClient {
 
     if (!response.ok) {
       this.signOut();
+      this._unsetRefreshState();
       return false;
     }
 
@@ -721,9 +736,22 @@ export class StexsAuthClient {
       }),
     );
 
+    this._unsetRefreshState();
     this.triggerEvent(AuthEvents.TOKEN_REFRESHED);
 
     return true;
+  }
+
+  private _isInRefreshState(): boolean {
+    return localStorage.getItem('refresh') === 'true';
+  }
+
+  private _setRefreshState() {
+    localStorage.setItem('refresh', 'true');
+  }
+
+  private _unsetRefreshState() {
+    localStorage.removeItem('refresh');
   }
 
   private _getSession(): Session {

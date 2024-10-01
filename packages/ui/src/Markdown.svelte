@@ -149,11 +149,7 @@
     });
 
     //@ts-ignore
-    $: parsed = DOMPurify.sanitize(marked.parse(
-        text.replace(/```[\s\S]*?```|\n(?=\n)/g, match => {
-            return match.startsWith('```') ? match : '\n\n<br/>\n';
-        })
-    ), purifyConfig);
+    $: parsed = DOMPurify.sanitize(marked.parse(text), purifyConfig);
 </script>
 
 {#if parsed.length > 0}
