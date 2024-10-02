@@ -214,7 +214,7 @@ router.post(
     }
 
     try {
-      let { rowCount } = await db.query(
+      await db.query(
         `
           WITH scope_ids AS (
               SELECT id
@@ -236,13 +236,6 @@ router.post(
         `,
         [tokenId, scopes],
       );
-
-      if (rowCount === 0) {
-        logger.error(`Failed to insert/update authorization token scopes for token: ${tokenId}`);
-        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-      }
-
-      logger.debug(`Authorization token scopes inserted/updated successfully for token: ${tokenId}`);
     } catch (e) {
       logger.error(
         `Error while inserting/updating authorization token scopes for token: ${tokenId}. Error: ${

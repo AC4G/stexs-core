@@ -40,7 +40,6 @@ export class StexsAuthClient {
     };
     this.oauth = {
       authorize: this._authorize.bind(this),
-      getConnections: this._getConnections.bind(this),
       deleteConnection: this._deleteConnection.bind(this),
     };
 
@@ -551,17 +550,6 @@ export class StexsAuthClient {
         redirect_url,
         scopes,
       },
-    });
-  }
-
-  /**
-   * Retrieves the OAuth2 connections associated with the authenticated user.
-   *
-   * @returns {Promise<Response>} A Promise that resolves with the connections response.
-   */
-  private async _getConnections(): Promise<Response> {
-    return await this._request({
-      path: 'oauth2/connections',
     });
   }
 
