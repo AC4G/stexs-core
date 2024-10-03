@@ -32,7 +32,8 @@
 
 			if (
 				!signInInit ||
-				(signInInit !== null && new Date(signInInit.expires * 1000) < new Date())
+				(signInInit !== null &&
+					new Date(signInInit.expires * 1000) < new Date())
 			) {
 				goto('/sign-in');
 

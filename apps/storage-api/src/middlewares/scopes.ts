@@ -15,9 +15,8 @@ export function checkScopes(
 
 		const clientId = req.auth?.client_id;
 
-		db
-			.query(
-				`
+		db.query(
+			`
 					SELECT 1
 					FROM public.oauth2_app_scopes AS oas
 					JOIN public.oauth2_apps AS a ON oas.app_id = a.id
@@ -25,8 +24,8 @@ export function checkScopes(
 					WHERE a.client_id = $1::uuid
 						AND s.name = ANY($2::varchar[]);
 				`,
-				[clientId, requiredScopes],
-			)
+			[clientId, requiredScopes],
+		)
 			.then((result) => {
 				const { rowCount } = result;
 

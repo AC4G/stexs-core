@@ -121,8 +121,8 @@
 					<p>Choose a new password for {email}.</p>
 				{:else}
 					<p>
-						Enter your email to receive a recovery link. Make sure it's the email
-						linked to your account.
+						Enter your email to receive a recovery link. Make sure it's the
+						email linked to your account.
 					</p>
 				{/if}
 			</div>
@@ -172,8 +172,11 @@
 					</p>
 				{/if}
 			{:else}
-				<Input field="email" type="email" required bind:value={$recoveryForm.email}
-					>Email</Input
+				<Input
+					field="email"
+					type="email"
+					required
+					bind:value={$recoveryForm.email}>Email</Input
 				>
 			{/if}
 			<div class="flex justify-between">

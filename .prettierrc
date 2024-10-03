@@ -1,6 +1,6 @@
 {
 	"singleQuote": true,
-	"tabWidth": 1,
+	"tabWidth": 2,
 	"useTabs": true,
 	"plugins": ["prettier-plugin-svelte"],
 	"overrides": [

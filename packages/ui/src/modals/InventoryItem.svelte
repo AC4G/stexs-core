@@ -62,8 +62,8 @@
 				<div class="flex flex-row space-x-2">
 					<a
 						href="/organizations/{$inventoryItemQuery.data.items.projects
-							.organizations.name}/projects/{$inventoryItemQuery.data.items.projects
-							.name}"
+							.organizations.name}/projects/{$inventoryItemQuery.data.items
+							.projects.name}"
 					>
 						<div
 							class="w-[48px] h-[48px] bg-surface-600 transition border border-gray-600 hover:border-primary-500 rounded-md inline-flex items-center justify-center text-center"
@@ -79,8 +79,8 @@
 					<div class="flex flex-col">
 						<a
 							href="/organizations/{$inventoryItemQuery.data.items.projects
-								.organizations.name}/projects/{$inventoryItemQuery.data.items.projects
-								.name}"
+								.organizations.name}/projects/{$inventoryItemQuery.data.items
+								.projects.name}"
 							class="text-[14px] text-gray-500 hover:text-secondary-400 transition break-all"
 							>{$inventoryItemQuery.data.items.projects.name}</a
 						>

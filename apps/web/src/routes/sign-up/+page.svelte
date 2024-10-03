@@ -139,7 +139,8 @@
 						Already have an account?
 						<a
 							href="/sign-in"
-							class="text-secondary-500 hover:text-secondary-400 transition">Sign In</a
+							class="text-secondary-500 hover:text-secondary-400 transition"
+							>Sign In</a
 						>
 					</p>
 				</div>
@@ -202,8 +203,11 @@
 					{/if}
 				</div>
 				<div>
-					<Input field="confirm" type="password" required bind:value={$form.confirm}
-						>Confirm Password</Input
+					<Input
+						field="confirm"
+						type="password"
+						required
+						bind:value={$form.confirm}>Confirm Password</Input
 					>
 					{#if $errors.confirm}
 						<p class="whitespace-normal text-[14px] mt-2 text-error-400">

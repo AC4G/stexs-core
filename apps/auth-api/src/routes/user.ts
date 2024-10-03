@@ -298,7 +298,9 @@ router.post(
 				logger.debug(
 					`Provided email for change is already in use for user: ${userId}`,
 				);
-				return res.status(403).json(errorMessages([{ info: EMAIL_NOT_AVAILABLE }]));
+				return res
+					.status(403)
+					.json(errorMessages([{ info: EMAIL_NOT_AVAILABLE }]));
 			}
 		} catch (e) {
 			logger.error(

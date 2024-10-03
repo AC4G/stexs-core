@@ -45,7 +45,9 @@ export async function enableTOTP(req: Request, res: Response) {
 
 		if (rows[0].totp_verified_at) {
 			logger.debug(`MFA TOTP is already enabled for user: ${userId}`);
-			return res.status(400).json(errorMessages([{ info: TOTP_ALREADY_ENABLED }]));
+			return res
+				.status(400)
+				.json(errorMessages([{ info: TOTP_ALREADY_ENABLED }]));
 		}
 
 		email = rows[0].email;

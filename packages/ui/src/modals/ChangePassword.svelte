@@ -37,7 +37,11 @@
 	}
 
 	async function confirm(code: string) {
-		const response = await stexs.auth.updatePassword($form.password, code, type);
+		const response = await stexs.auth.updatePassword(
+			$form.password,
+			code,
+			type,
+		);
 
 		if (response.ok) {
 			$flash = {
@@ -81,7 +85,11 @@
 					{/each}
 				</ul>
 			{/if}
-			<form class="space-y-6" autocomplete="off" on:submit|preventDefault={submit}>
+			<form
+				class="space-y-6"
+				autocomplete="off"
+				on:submit|preventDefault={submit}
+			>
 				<div class="w-full">
 					<Input
 						name="password"

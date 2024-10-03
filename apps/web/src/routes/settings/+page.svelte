@@ -426,10 +426,10 @@
 								data-popup="profilePrivateInfoPopup"
 							>
 								<p class="text-[14px]">
-									Setting your profile to private will only allow your friends to see
-									your inventory, friends, projects, and organizations. Other members
-									within the projects or organizations will still recognize you as a
-									member.
+									Setting your profile to private will only allow your friends
+									to see your inventory, friends, projects, and organizations.
+									Other members within the projects or organizations will still
+									recognize you as a member.
 								</p>
 							</div>
 						</div>

@@ -129,7 +129,8 @@
 				},
 				fnAsync: true,
 				confirmBtnText: 'Leave',
-				confirmBtnClass: 'bg-surface-700 border border-surface-500 text-red-600',
+				confirmBtnClass:
+					'bg-surface-700 border border-surface-500 text-red-600',
 				confirmBtnLoaderMeter: 'stroke-red-500',
 				confirmBtnLoaderTrack: 'stroke-red-500/20',
 			},
@@ -191,7 +192,8 @@
 			.not('organizations', 'is', null)
 			.range(start, end);
 
-		if (filter === 'A-Z') query.order('organizations(name)', { ascending: true });
+		if (filter === 'A-Z')
+			query.order('organizations(name)', { ascending: true });
 
 		if (filter === 'Z-A')
 			query.order('organizations(name)', { ascending: false });
@@ -392,7 +394,9 @@
 			</div>
 		{/each}
 	{:else if organizationAmountQueryStore.data > 0 && (search.length > 0 || organizationsMemberQueryStore.data.length === 0)}
-		<div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
+		<div
+			class="grid place-items-center bg-surface-800 rounded-md col-span-full"
+		>
 			<p class="text-[18px] p-4 text-center">No organizations found</p>
 		</div>
 	{:else}
