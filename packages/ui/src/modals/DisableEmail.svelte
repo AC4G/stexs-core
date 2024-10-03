@@ -126,11 +126,7 @@
 				{/each}
 			</ul>
 		{/if}
-		<form
-			class="space-y-6"
-			autocomplete="off"
-			on:submit|preventDefault={submit}
-		>
+		<form class="space-y-6" autocomplete="off" on:submit|preventDefault={submit}>
 			<Input
 				name="code"
 				field="code"
@@ -150,9 +146,8 @@
 					class="variant-ringed-surface hover:bg-surface-600"
 					on:click={cancel}>Cancel</Button
 				>
-				<Button
-					type="submit"
-					class="variant-ghost-surface px-2 py-1 text-red-600">Disable</Button
+				<Button type="submit" class="variant-ghost-surface px-2 py-1 text-red-600"
+					>Disable</Button
 				>
 			</div>
 		</form>

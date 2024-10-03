@@ -85,14 +85,14 @@ router.post(
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
 					`
-            SELECT 1
-            FROM public.project_members AS pm
-            JOIN public.profiles AS p ON pm.member_id = p.user_id
-            JOIN public.items AS i ON pm.project_id = i.project_id
-            WHERE i.id = $1::integer 
-              AND pm.member_id = $2::uuid 
-              AND pm.role IN ('Admin', 'Owner');
-          `,
+						SELECT 1
+						FROM public.project_members AS pm
+						JOIN public.profiles AS p ON pm.member_id = p.user_id
+						JOIN public.items AS i ON pm.project_id = i.project_id
+						WHERE i.id = $1::integer 
+							AND pm.member_id = $2::uuid 
+							AND pm.role IN ('Admin', 'Owner');
+          			`,
 					[itemId, sub],
 				);
 
@@ -100,18 +100,18 @@ router.post(
 			} else {
 				const { rowCount } = await db.query(
 					`
-            SELECT 1
-            FROM public.items AS i
-            JOIN public.projects AS p ON p.id = i.project_id
-            JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
-            JOIN public.organizations AS o ON o.id = p.organization_id
-            WHERE i.id = $1::integer
-              AND (
-                oa.project_id = i.project_id OR
-                oa.project_id IS NULL
-              )
-              AND o.id = $2::integer;
-          `,
+						SELECT 1
+						FROM public.items AS i
+						JOIN public.projects AS p ON p.id = i.project_id
+						JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+						JOIN public.organizations AS o ON o.id = p.organization_id
+						WHERE i.id = $1::integer
+							AND (
+								oa.project_id = i.project_id OR
+								oa.project_id IS NULL
+							)
+							AND o.id = $2::integer;
+          			`,
 					[itemId, organizationId, clientId],
 				);
 
@@ -126,9 +126,7 @@ router.post(
 					`${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${consumerId}`,
 				);
 
-				return res
-					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+				return res.status(401).json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(

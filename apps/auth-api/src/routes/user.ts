@@ -50,17 +50,17 @@ router.get(
 		try {
 			const { rows } = await db.query(
 				`
-          SELECT 
-              u.id, 
-              u.email, 
-              p.username,
-              u.raw_user_meta_data,
-              u.created_at,
-              u.updated_at 
-          FROM auth.users AS u
-          JOIN public.profiles AS p ON u.id = p.user_id
-          WHERE id = $1::uuid;
-        `,
+					SELECT 
+						u.id, 
+						u.email, 
+						p.username,
+						u.raw_user_meta_data,
+						u.created_at,
+						u.updated_at 
+					FROM auth.users AS u
+					JOIN public.profiles AS p ON u.id = p.user_id
+					WHERE id = $1::uuid;
+        		`,
 				[userId],
 			);
 
@@ -91,11 +91,11 @@ router.get(
 		try {
 			const { rowCount } = await db.query(
 				`
-          SELECT 1
-          FROM auth.refresh_tokens
-          WHERE user_id = $1::uuid
-            AND grant_type = 'password';
-        `,
+					SELECT 1
+					FROM auth.refresh_tokens
+					WHERE user_id = $1::uuid
+						AND grant_type = 'password';
+        		`,
 				[userId],
 			);
 
@@ -167,15 +167,15 @@ router.post(
 		try {
 			const { rows, rowCount } = await db.query(
 				`
-          SELECT 
-            CASE 
-                WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password 
-                THEN true 
-                ELSE false 
-            END AS is_current_password
-          FROM auth.users
-          WHERE id = $2::uuid;
-        `,
+					SELECT 
+						CASE 
+							WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password 
+							THEN true 
+							ELSE false 
+						END AS is_current_password
+					FROM auth.users
+					WHERE id = $2::uuid;
+        		`,
 				[password, userId],
 			);
 
@@ -207,11 +207,11 @@ router.post(
 
 			const { rowCount: count } = await db.query(
 				`
-          UPDATE auth.users
-          SET
-              encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
-          WHERE id = $2::uuid;
-        `,
+					UPDATE auth.users
+					SET
+						encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
+					WHERE id = $2::uuid;
+        		`,
 				[password, userId],
 			);
 
@@ -286,11 +286,11 @@ router.post(
 		try {
 			const { rowCount } = await db.query(
 				`
-          SELECT 
-            id
-          FROM auth.users
-          WHERE email = $1::text;
-        `,
+					SELECT 
+						id
+					FROM auth.users
+					WHERE email = $1::text;
+        		`,
 				[newEmail],
 			);
 
@@ -298,9 +298,7 @@ router.post(
 				logger.debug(
 					`Provided email for change is already in use for user: ${userId}`,
 				);
-				return res
-					.status(403)
-					.json(errorMessages([{ info: EMAIL_NOT_AVAILABLE }]));
+				return res.status(403).json(errorMessages([{ info: EMAIL_NOT_AVAILABLE }]));
 			}
 		} catch (e) {
 			logger.error(
@@ -317,13 +315,13 @@ router.post(
 		try {
 			const { rowCount } = await db.query(
 				`
-          UPDATE auth.users
-          SET 
-              email_change = $1::text,
-              email_change_sent_at = CURRENT_TIMESTAMP,
-              email_change_code = $2::text
-          WHERE id = $3::uuid;
-        `,
+					UPDATE auth.users
+					SET 
+						email_change = $1::text,
+						email_change_sent_at = CURRENT_TIMESTAMP,
+						email_change_code = $2::text
+					WHERE id = $3::uuid;
+        		`,
 				[newEmail, confirmationCode, userId],
 			);
 
@@ -385,11 +383,11 @@ router.post(
 		try {
 			const { rowCount, rows } = await db.query(
 				`
-          SELECT email_change_sent_at 
-          FROM auth.users
-          WHERE id = $1::uuid 
-            AND email_change_code = $2::text
-        `,
+					SELECT email_change_sent_at 
+					FROM auth.users
+					WHERE id = $1::uuid 
+						AND email_change_code = $2::text
+        		`,
 				[userId, code],
 			);
 
@@ -405,16 +403,16 @@ router.post(
 
 			const { rowCount: count } = await db.query(
 				`
-          UPDATE auth.users
-          SET
-              email = email_change,
-              email_verified_at = CURRENT_TIMESTAMP,
-              email_change = NULL,
-              email_change_sent_at = NULL,
-              email_change_code = NULL
-          WHERE id = $1::uuid 
-            AND email_change_code = $2::text;
-        `,
+					UPDATE auth.users
+					SET
+						email = email_change,
+						email_verified_at = CURRENT_TIMESTAMP,
+						email_change = NULL,
+						email_change_sent_at = NULL,
+						email_change_code = NULL
+					WHERE id = $1::uuid 
+						AND email_change_code = $2::text;
+        		`,
 				[userId, code],
 			);
 

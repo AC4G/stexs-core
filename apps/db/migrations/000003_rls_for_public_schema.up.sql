@@ -86,8 +86,8 @@ CREATE POLICY friend_requests_delete
 		(
 			auth.grant() = 'password' OR
 			(
-					auth.grant() = 'authorization_code' AND
-					utils.has_client_scope(30)
+				auth.grant() = 'authorization_code' AND
+				utils.has_client_scope(30)
 			)
 		)
 	);

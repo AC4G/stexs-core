@@ -52,15 +52,15 @@ router.get(
 		try {
 			const { rowCount, rows } = await db.query(
 				`
-          SELECT 
-            email, 
-            CASE 
-              WHEN totp_verified_at IS NOT NULL THEN TRUE 
-              ELSE FALSE 
-            END AS totp
-          FROM auth.mfa
-          WHERE user_id = $1::uuid;
-        `,
+					SELECT 
+						email, 
+						CASE 
+							WHEN totp_verified_at IS NOT NULL THEN TRUE 
+						ELSE FALSE 
+						END AS totp
+					FROM auth.mfa
+					WHERE user_id = $1::uuid;
+        		`,
 				[userId],
 			);
 

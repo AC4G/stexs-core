@@ -93,7 +93,7 @@
 						username
 					),
 					created_at
-        `,
+        		`,
 				{ count: 'exact' },
 			)
 			.eq('user_id', userId)
@@ -101,11 +101,9 @@
 			.not('profiles', 'is', null)
 			.range(start, end);
 
-		if (filter === 'A-Z')
-			query.order('profiles(username)', { ascending: true });
+		if (filter === 'A-Z') query.order('profiles(username)', { ascending: true });
 
-		if (filter === 'Z-A')
-			query.order('profiles(username)', { ascending: false });
+		if (filter === 'Z-A') query.order('profiles(username)', { ascending: false });
 
 		if (filter === 'Latest') query.order('created_at', { ascending: false });
 
@@ -255,11 +253,7 @@
 						<DropdownItem
 							on:click={async () => {
 								removeFriendSubmitted = true;
-								await removeFriend(
-									$userStore.id,
-									friend.profiles.user_id,
-									flash,
-								);
+								await removeFriend($userStore.id, friend.profiles.user_id, flash);
 								removeFriendSubmitted = false;
 
 								$profileStore?.refetchFriendsFn();
@@ -283,17 +277,14 @@
 										$profileStore?.refetchFriendsFn();
 									},
 								)}
-							class="hover:!bg-surface-500 rounded text-red-600"
-							>Block</DropdownItem
+							class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem
 						>
 					</Dropdown>
 				{/if}
 			</div>
 		{/each}
 	{:else if $profileStore && $profileStore.totalFriends > 0 && (search.length > 0 || $friendsQuery.data.length === 0)}
-		<div
-			class="grid place-items-center bg-surface-800 rounded-md col-span-full"
-		>
+		<div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
 			<p class="text-[18px] p-4 text-center">No friends found</p>
 		</div>
 	{:else}

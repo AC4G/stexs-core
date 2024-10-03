@@ -1,20 +1,12 @@
 {
 	"singleQuote": true,
-	"tabWidth": 2,
+	"tabWidth": 1,
 	"useTabs": true,
 	"plugins": ["prettier-plugin-svelte"],
 	"overrides": [
 		{ 
 			"files": "*.svelte", 
 			"options": { "parser": "svelte" } 
-		},
-		{
-			"files": "*.sql",
-			"options": {
-					"tabWidth": 2,
-					"useTabs": true,
-					"language": "postgresql"
-			}
-	}
+		}
 	]
 }

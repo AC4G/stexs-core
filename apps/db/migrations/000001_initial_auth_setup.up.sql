@@ -44,12 +44,12 @@ CREATE OR REPLACE FUNCTION auth.role()
  STABLE
 AS $$
 BEGIN 
-  RETURN coalesce(
-    nullif(current_setting('request.jwt.claim.role', true), ''),
-    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'role'),
-    nullif(current_setting('jwt.claims.role', true), ''),
-    (nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'role')
-  )::TEXT;
+	RETURN coalesce(
+		nullif(current_setting('request.jwt.claim.role', true), ''),
+		(nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'role'),
+		nullif(current_setting('jwt.claims.role', true), ''),
+		(nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'role')
+	)::TEXT;
 END;Kensington1980.
 $$ LANGUAGE plpgsql;
 
@@ -58,12 +58,12 @@ CREATE OR REPLACE FUNCTION auth.uid()
  STABLE
 AS $$
 BEGIN
-  RETURN coalesce(
-    nullif(current_setting('request.jwt.claim.sub', true), ''),
-    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'sub'),
-    nullif(current_setting('jwt.claims.sub', true), ''),
-    (nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'sub')
-  )::UUID;
+	RETURN coalesce(
+		nullif(current_setting('request.jwt.claim.sub', true), ''),
+		(nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'sub'),
+		nullif(current_setting('jwt.claims.sub', true), ''),
+		(nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'sub')
+	)::UUID;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -72,12 +72,12 @@ CREATE OR REPLACE FUNCTION auth.grant()
  STABLE
 AS $$
 BEGIN
-  RETURN coalesce(
-    nullif(current_setting('request.jwt.claim.grant_type', true), ''),
-    (nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'grant_type'),
-    nullif(current_setting('jwt.claims.grant_type', true), ''),
-    (nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'grant_type')
-  )::TEXT;
+	RETURN coalesce(
+		nullif(current_setting('request.jwt.claim.grant_type', true), ''),
+		(nullif(current_setting('request.jwt.claims', true), '')::JSONB ->> 'grant_type'),
+		nullif(current_setting('jwt.claims.grant_type', true), ''),
+		(nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'grant_type')
+	)::TEXT;
 END;
 $$ LANGUAGE plpgsql;
 

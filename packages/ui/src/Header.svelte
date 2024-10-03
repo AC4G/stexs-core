@@ -18,9 +18,7 @@
 		<div class="flex items-center space-x-2">
 			<Button
 				on:click={() => drawerStore.open({})}
-				class="{sidebarRoutes.find((route) =>
-					$page.url.pathname.startsWith(route),
-				)
+				class="{sidebarRoutes.find((route) => $page.url.pathname.startsWith(route))
 					? 'lg:hidden'
 					: 'xs:hidden'} p-2 border rounded border-surface-500 bg-surface-700"
 			>

@@ -85,22 +85,22 @@ router.post(
 		try {
 			const { rowCount } = await db.query(
 				`
-          INSERT INTO auth.users (
-              email, 
-              encrypted_password, 
-              raw_user_meta_data,
-              verification_token,
-              verification_sent_at
-          )
-          VALUES (
-            $1::text, 
-            $2::text, 
-            $3::jsonb, 
-            $4::uuid,
-            CURRENT_TIMESTAMP
-          )
-          RETURNING id;
-        `,
+					INSERT INTO auth.users (
+						email, 
+						encrypted_password, 
+						raw_user_meta_data,
+						verification_token,
+						verification_sent_at
+					)
+					VALUES (
+						$1::text, 
+						$2::text, 
+						$3::jsonb, 
+						$4::uuid,
+						CURRENT_TIMESTAMP
+					)
+					RETURNING id;
+        		`,
 				[email, password, { username }, token],
 			);
 
@@ -114,9 +114,7 @@ router.post(
 			res
 				.status(201)
 				.json(
-					message(
-						'Sign up successful. Check your email for an verification link!',
-					),
+					message('Sign up successful. Check your email for an verification link!'),
 				);
 		} catch (e) {
 			const err = e as { hint: string | null };
@@ -144,9 +142,7 @@ router.post(
 				);
 			}
 
-			logger.error(
-				`Error during sign up: ${e instanceof Error ? e.message : e}`,
-			);
+			logger.error(`Error during sign up: ${e instanceof Error ? e.message : e}`);
 
 			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
 		}

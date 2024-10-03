@@ -22,40 +22,40 @@ export async function authorizationCodeController(req: Request, res: Response) {
 	try {
 		const { rowCount, rows } = await db.query(
 			`
-        WITH app_info AS (
-            SELECT 
-              id, 
-              organization_id
-            FROM public.oauth2_apps
-            WHERE client_id = $2::uuid
-              AND client_secret = $3::text
-        ),
-        token_info AS (
-            SELECT 
-              aot.id, 
-              aot.user_id, 
-              aot.created_at, 
-              ai.organization_id,
-              ai.project_id
-            FROM auth.oauth2_authorization_tokens AS aot
-            JOIN app_info AS ai ON aot.app_id = ai.id
-            WHERE aot.token = $1::uuid
-        ),
-        token_scopes AS (
-          SELECT ARRAY(SELECT scope_id
-            FROM auth.oauth2_authorization_token_scopes
-            WHERE token_id IN (SELECT id FROM token_info)
-          ) AS scopes
-        )
-        SELECT 
-          id, 
-          user_id, 
-          scopes, 
-          created_at, 
-          organization_id
-        FROM token_info
-        CROSS JOIN token_scopes;
-      `,
+				WITH app_info AS (
+					SELECT 
+						id, 
+						organization_id
+					FROM public.oauth2_apps
+					WHERE client_id = $2::uuid
+						AND client_secret = $3::text
+				),
+				token_info AS (
+					SELECT 
+						aot.id, 
+						aot.user_id, 
+						aot.created_at, 
+						ai.organization_id,
+						ai.project_id
+					FROM auth.oauth2_authorization_tokens AS aot
+					JOIN app_info AS ai ON aot.app_id = ai.id
+					WHERE aot.token = $1::uuid
+				),
+				token_scopes AS (
+				SELECT ARRAY(SELECT scope_id
+					FROM auth.oauth2_authorization_token_scopes
+					WHERE token_id IN (SELECT id FROM token_info)
+				) AS scopes
+				)
+				SELECT 
+					id, 
+					user_id, 
+					scopes, 
+					created_at, 
+					organization_id
+				FROM token_info
+				CROSS JOIN token_scopes;
+			`,
 			[code, client_id, clientSecret],
 		);
 
@@ -110,9 +110,9 @@ export async function authorizationCodeController(req: Request, res: Response) {
 	try {
 		const { rowCount } = await db.query(
 			`
-        DELETE FROM auth.oauth2_authorization_tokens
-        WHERE id = $1::integer;
-      `,
+				DELETE FROM auth.oauth2_authorization_tokens
+				WHERE id = $1::integer;
+			`,
 			[tokenId],
 		);
 
@@ -136,17 +136,17 @@ export async function authorizationCodeController(req: Request, res: Response) {
 	try {
 		const { rows, rowCount } = await db.query(
 			`
-        WITH inserted_connection AS (
-          INSERT INTO public.oauth2_connections (user_id, client_id)
-          VALUES ($1::uuid, $2::uuid)
-          RETURNING id
-        )
-        INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
-        SELECT inserted_connection.id, scope_id
-        FROM inserted_connection
-        CROSS JOIN UNNEST($3::int[]) AS scope_id
-        RETURNING connection_id AS id;      
-      `,
+				WITH inserted_connection AS (
+					INSERT INTO public.oauth2_connections (user_id, client_id)
+					VALUES ($1::uuid, $2::uuid)
+					RETURNING id
+				)
+				INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
+				SELECT inserted_connection.id, scope_id
+				FROM inserted_connection
+				CROSS JOIN UNNEST($3::int[]) AS scope_id
+				RETURNING connection_id AS id;      
+			`,
 			[userId, client_id, scopes],
 		);
 
@@ -202,27 +202,27 @@ export async function clientCredentialsController(req: Request, res: Response) {
 	try {
 		const { rowCount, rows } = await db.query(
 			`
-        WITH app_info AS (
-            SELECT 
-              id, 
-              organization_id
-            FROM public.oauth2_apps
-            WHERE client_id = $1::uuid
-              AND client_secret = $2::text
-        ),
-        app_scopes AS (
-            SELECT STRING_TO_ARRAY(STRING_AGG(s.name, ','), ',') AS scopes
-            FROM app_info AS ai
-            JOIN public.oauth2_app_scopes AS oas ON ai.id = oas.app_id
-            JOIN public.scopes AS s ON oas.scope_id = s.id
-            WHERE s.type = 'client'
-        )
-        SELECT 
-          scopes, 
-          organization_id
-        FROM app_info
-        CROSS JOIN app_scopes;
-      `,
+				WITH app_info AS (
+					SELECT 
+						id, 
+						organization_id
+					FROM public.oauth2_apps
+					WHERE client_id = $1::uuid
+						AND client_secret = $2::text
+				),
+				app_scopes AS (
+					SELECT STRING_TO_ARRAY(STRING_AGG(s.name, ','), ',') AS scopes
+					FROM app_info AS ai
+					JOIN public.oauth2_app_scopes AS oas ON ai.id = oas.app_id
+					JOIN public.scopes AS s ON oas.scope_id = s.id
+					WHERE s.type = 'client'
+				)
+				SELECT 
+					scopes, 
+					organization_id
+				FROM app_info
+				CROSS JOIN app_scopes;
+			`,
 			[client_id, client_secret],
 		);
 
@@ -271,9 +271,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
 			'client_credentials',
 		);
 
-		logger.debug(
-			`Access token generated successfully for client: ${client_id}`,
-		);
+		logger.debug(`Access token generated successfully for client: ${client_id}`);
 
 		res.json(body);
 	} catch (e) {
@@ -287,13 +285,13 @@ export async function refreshTokenController(req: Request, res: Response) {
 	try {
 		const { rowCount } = await db.query(
 			`
-        SELECT 1
-        FROM auth.refresh_tokens
-        WHERE token = $1::uuid 
-          AND user_id = $2::uuid 
-          AND grant_type = 'authorization_code' 
-          AND session_id IS NULL;
-      `,
+				SELECT 1
+				FROM auth.refresh_tokens
+				WHERE token = $1::uuid 
+					AND user_id = $2::uuid 
+					AND grant_type = 'authorization_code' 
+					AND session_id IS NULL;
+			`,
 			[jti, sub],
 		);
 

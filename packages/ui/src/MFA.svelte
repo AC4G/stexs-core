@@ -131,8 +131,7 @@
 				<Button
 					on:click={async () => {
 						type = currentType;
-						requestCodeTypes.includes(type) &&
-							(await requestNewCode(currentType));
+						requestCodeTypes.includes(type) && (await requestNewCode(currentType));
 					}}
 					class="flex variant-ringed-surface p-2 rounded-md hover:bg-surface-600 transition items-center space-x-2 justify-start"
 				>

@@ -29,8 +29,8 @@ export async function validateMFA(
 			const { rows, rowCount } = await db.query(
 				`
 					SELECT 
-							totp, 
-							totp_secret 
+						totp, 
+						totp_secret 
 					FROM auth.mfa
 					WHERE user_id = $1::uuid;
 				`,
@@ -79,9 +79,9 @@ export async function validateMFA(
 			const { rows, rowCount } = await db.query(
 				`
 					SELECT 
-							email, 
-							email_code, 
-							email_code_sent_at
+						email, 
+						email_code, 
+						email_code_sent_at
 					FROM auth.mfa
 					WHERE user_id = $1::uuid;
 				`,

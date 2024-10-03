@@ -87,7 +87,7 @@
 							name
 						)
 					)                
-        `,
+        		`,
 				{ count: 'exact' },
 			)
 			.eq('user_id', userId)
@@ -107,8 +107,7 @@
 
 		if (filter === 'Oldest') query.order('created_at', { ascending: true });
 
-		if (typeFilter === 'Projects')
-			query.not('oauth2_apps.projects', 'is', null);
+		if (typeFilter === 'Projects') query.not('oauth2_apps.projects', 'is', null);
 
 		if (typeFilter === 'Organizations') query.is('oauth2_apps.projects', null);
 
