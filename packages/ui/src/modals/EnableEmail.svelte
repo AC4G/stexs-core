@@ -126,7 +126,11 @@
 				{/each}
 			</ul>
 		{/if}
-		<form class="space-y-6" autocomplete="off" on:submit|preventDefault={submit}>
+		<form
+			class="space-y-6"
+			autocomplete="off"
+			on:submit|preventDefault={submit}
+		>
 			<Input
 				name="code"
 				field="code"

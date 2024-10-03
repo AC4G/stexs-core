@@ -196,19 +196,27 @@
 						</a>
 						<div class="w-fit h-fit">
 							{#if profile.friends?.length > 0}
-								<p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">
+								<p
+									class="text-[12px] sm:text-[16px] badge variant-ghost-surface"
+								>
 									Is Friend
 								</p>
 							{:else if profile.user_id === userId}
-								<p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">
+								<p
+									class="text-[12px] sm:text-[16px] badge variant-ghost-surface"
+								>
 									You
 								</p>
 							{:else if profile.have_blocked.length > 0}
-								<p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">
+								<p
+									class="text-[12px] sm:text-[16px] badge variant-ghost-surface"
+								>
 									Blocked
 								</p>
 							{:else if profile.been_blocked.length > 0}
-								<p class="text-[12px] sm:text-[16px] badge variant-ghost-surface">
+								<p
+									class="text-[12px] sm:text-[16px] badge variant-ghost-surface"
+								>
 									Blocked You
 								</p>
 							{:else if profile.friend_requests.length > 0}

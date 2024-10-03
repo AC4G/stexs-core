@@ -34,7 +34,8 @@
 		selectedProject === undefined || typeof selectedProject === 'string'
 			? 'All'
 			: $projectsQuery?.data.filter(
-					(project: { id: number; name: string }) => project.id === selectedProject,
+					(project: { id: number; name: string }) =>
+						project.id === selectedProject,
 				)[0].name;
 	let paginationSettings: PaginationSettings = {
 		page: 0,
@@ -171,7 +172,8 @@
 				nullsFirst: false,
 			});
 
-		if (filterAlphabet === 'A-Z') query.order('items(name)', { ascending: true });
+		if (filterAlphabet === 'A-Z')
+			query.order('items(name)', { ascending: true });
 
 		if (filterAlphabet === 'Z-A')
 			query.order('items(name)', { ascending: false });
@@ -364,8 +366,10 @@
 						on:input={handleProjectSearch}
 						class="!bg-surface-500"
 					/>
-					<RadioItem bind:group={selectedProject} name="project" value={undefined}
-						>All</RadioItem
+					<RadioItem
+						bind:group={selectedProject}
+						name="project"
+						value={undefined}>All</RadioItem
 					>
 					{#if $projectsQuery.isLoading || !$projectsQuery.data}
 						<div class="flex justify-center p-4">
@@ -410,7 +414,9 @@
 										</RadioItem>
 									{/each}
 								{:else if $projectsQuery.data?.length === 0}
-									<div class="h-[56px] px-4 p-1 flex justify-center items-center">
+									<div
+										class="h-[56px] px-4 p-1 flex justify-center items-center"
+									>
 										<p class="text-[18px]">No projects found</p>
 									</div>
 								{/if}
@@ -444,11 +450,15 @@
 			</Button>
 		{/each}
 	{:else if $itemsAmountQuery?.data > 0 && (search.length > 0 || $inventoryQuery.data.length === 0)}
-		<div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
+		<div
+			class="grid place-items-center bg-surface-800 rounded-md col-span-full"
+		>
 			<p class="text-[18px] p-4 text-center">No items found</p>
 		</div>
 	{:else}
-		<div class="grid place-items-center bg-surface-800 rounded-md col-span-full">
+		<div
+			class="grid place-items-center bg-surface-800 rounded-md col-span-full"
+		>
 			<p class="text-[18px] p-6 text-center">
 				{$userStore?.id === $profileStore?.userId
 					? 'You have no items in your inventory'

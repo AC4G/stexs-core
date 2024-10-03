@@ -100,7 +100,9 @@ router.post(
 
 			if (!rows[0].email_verified_at) {
 				logger.debug(`Email not verified for user: ${identifier}`);
-				return res.status(400).json(errorMessages([{ info: EMAIL_NOT_VERIFIED }]));
+				return res
+					.status(400)
+					.json(errorMessages([{ info: EMAIL_NOT_VERIFIED }]));
 			}
 
 			uuid = rows[0].id;

@@ -114,7 +114,9 @@ router.post(
 			res
 				.status(201)
 				.json(
-					message('Sign up successful. Check your email for an verification link!'),
+					message(
+						'Sign up successful. Check your email for an verification link!',
+					),
 				);
 		} catch (e) {
 			const err = e as { hint: string | null };
@@ -142,7 +144,9 @@ router.post(
 				);
 			}
 
-			logger.error(`Error during sign up: ${e instanceof Error ? e.message : e}`);
+			logger.error(
+				`Error during sign up: ${e instanceof Error ? e.message : e}`,
+			);
 
 			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
 		}

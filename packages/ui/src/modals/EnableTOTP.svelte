@@ -115,8 +115,8 @@
 					draggable="false"
 				/>
 				<p class="text-center">
-					Scan the QR code above with your authenticator app and enter the generated
-					code below.
+					Scan the QR code above with your authenticator app and enter the
+					generated code below.
 				</p>
 				<p class="text-center">Unable to scan the QR code?</p>
 				<div
@@ -135,7 +135,8 @@
 				<Button
 					clipboardData={totp.secret}
 					on:click={copied}
-					class="btn variant-ghost-secondary w-fit px-2 py-1">Copy Secret</Button
+					class="btn variant-ghost-secondary w-fit px-2 py-1"
+					>Copy Secret</Button
 				>
 			</div>
 			{#if $errors._errors && Array.isArray($errors._errors)}
@@ -145,7 +146,11 @@
 					{/each}
 				</ul>
 			{/if}
-			<form class="space-y-6" autocomplete="off" on:submit|preventDefault={submit}>
+			<form
+				class="space-y-6"
+				autocomplete="off"
+				on:submit|preventDefault={submit}
+			>
 				<Input
 					name="code"
 					field="code"
@@ -165,7 +170,9 @@
 						class="variant-ringed-surface hover:bg-surface-600"
 						on:click={cancel}>Cancel</Button
 					>
-					<Button on:click={submit} class="variant-filled-primary">Enable</Button>
+					<Button on:click={submit} class="variant-filled-primary"
+						>Enable</Button
+					>
 				</div>
 			</form>
 		{:else}

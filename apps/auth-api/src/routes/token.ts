@@ -45,7 +45,9 @@ router.post(
 			);
 
 			if (rowCount === 0) {
-				logger.debug(`Refresh token invalid or expired for user: ${token?.sub}`);
+				logger.debug(
+					`Refresh token invalid or expired for user: ${token?.sub}`,
+				);
 				return res.status(401).send(
 					errorMessages([
 						{

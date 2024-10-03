@@ -127,7 +127,9 @@
 {#if $modalStore[0]}
 	{#if newEmailEntered}
 		{#if mfaEntered}
-			<div class="card p-5 space-y-6 flex flex-col relative max-w-[380px] w-full">
+			<div
+				class="card p-5 space-y-6 flex flex-col relative max-w-[380px] w-full"
+			>
 				<div class="h-fit">
 					<p class="text-[22px] text-primary-500">Verify Email Change</p>
 				</div>

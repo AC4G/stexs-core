@@ -363,7 +363,9 @@ router.post(
 	async (req: Request, res: Response) => {
 		const { grant_type } = req.body;
 
-		logger.debug(`OAuth2 Token Endpoint accessed with grant type: ${grant_type}`);
+		logger.debug(
+			`OAuth2 Token Endpoint accessed with grant type: ${grant_type}`,
+		);
 
 		switch (grant_type) {
 			case 'authorization_code':
@@ -458,7 +460,9 @@ router.delete(
 			);
 
 			if (rowCount === 0) {
-				logger.debug(`No connection found for revocation for user: ${token?.sub}`);
+				logger.debug(
+					`No connection found for revocation for user: ${token?.sub}`,
+				);
 				return res
 					.status(404)
 					.json(errorMessages([{ info: CONNECTION_ALREADY_REVOKED }]));

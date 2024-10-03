@@ -126,7 +126,9 @@ router.post(
 					`${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${consumerId}`,
 				);
 
-				return res.status(401).json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+				return res
+					.status(401)
+					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(

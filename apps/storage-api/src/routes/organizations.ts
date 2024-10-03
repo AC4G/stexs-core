@@ -108,7 +108,9 @@ router.post(
 				logger.warn(
 					`${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
 				);
-				return res.status(401).json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+				return res
+					.status(401)
+					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(
@@ -189,7 +191,9 @@ router.delete(
 				logger.warn(
 					`${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
 				);
-				return res.status(401).json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+				return res
+					.status(401)
+					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(

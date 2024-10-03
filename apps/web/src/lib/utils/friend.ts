@@ -11,7 +11,9 @@ export async function acceptFriendRequest(
 	$profileStore: Profile,
 ): Promise<boolean> {
 	let isFriend: boolean = false;
-	const { error } = await stexs.from('friends').insert([{ user_id, friend_id }]);
+	const { error } = await stexs
+		.from('friends')
+		.insert([{ user_id, friend_id }]);
 
 	if (error) {
 		flash.set({

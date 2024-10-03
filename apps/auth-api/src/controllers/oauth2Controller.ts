@@ -271,7 +271,9 @@ export async function clientCredentialsController(req: Request, res: Response) {
 			'client_credentials',
 		);
 
-		logger.debug(`Access token generated successfully for client: ${client_id}`);
+		logger.debug(
+			`Access token generated successfully for client: ${client_id}`,
+		);
 
 		res.json(body);
 	} catch (e) {
