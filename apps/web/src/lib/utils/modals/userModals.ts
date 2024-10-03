@@ -179,7 +179,7 @@ export function openSignOutFromAllSessionsModal(
 		meta: {
 			text: `Do you really want to sign out from all sessions?`,
 			subText:
-				'Signing out from all sessions will log you out from all devices and browsers, including this one.',
+				'Signing out from all sessions will log you out from all sessions, including this one.',
 			fn: openMFAModal,
 			confirmBtnText: 'Continue',
 			close: false,

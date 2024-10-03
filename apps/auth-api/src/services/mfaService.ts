@@ -28,12 +28,12 @@ export async function validateMFA(
 		if (type === 'totp') {
 			const { rows, rowCount } = await db.query(
 				`
-                SELECT 
-                    totp, 
-                    totp_secret 
-                FROM auth.mfa
-                WHERE user_id = $1::uuid;
-                `,
+					SELECT 
+							totp, 
+							totp_secret 
+					FROM auth.mfa
+					WHERE user_id = $1::uuid;
+				`,
 				[userId],
 			);
 
@@ -78,13 +78,13 @@ export async function validateMFA(
 		if (type === 'email') {
 			const { rows, rowCount } = await db.query(
 				`
-                SELECT 
-                    email, 
-                    email_code, 
-                    email_code_sent_at
-                FROM auth.mfa
-                WHERE user_id = $1::uuid;
-                `,
+					SELECT 
+							email, 
+							email_code, 
+							email_code_sent_at
+					FROM auth.mfa
+					WHERE user_id = $1::uuid;
+				`,
 				[userId],
 			);
 

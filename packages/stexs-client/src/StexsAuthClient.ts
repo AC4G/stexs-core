@@ -713,7 +713,7 @@ export class StexsAuthClient {
 		localStorage.setItem('refresh_lock', 'true');
 		localStorage.setItem('priority_tab', currentTabId.toString());
 
-		await new Promise((resolve) => setTimeout(resolve, 10));
+		await new Promise((resolve) => setTimeout(resolve, 1));
 
 		const priorityTabId = localStorage.getItem('priority_tab');
 		if (priorityTabId !== currentTabId.toString()) {
