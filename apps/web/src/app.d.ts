@@ -3,14 +3,14 @@
 import type { ToastSettings } from '@skeletonlabs/skeleton';
 
 declare global {
-  namespace App {
-    // interface Error {}
-    // interface Locals {}
-    interface PageData {
-      flash: ToastSettings;
-    }
-    // interface Platform {}
-  }
+	namespace App {
+		// interface Error {}
+		// interface Locals {}
+		interface PageData {
+			flash: ToastSettings;
+		}
+		// interface Platform {}
+	}
 }
 
 export {};

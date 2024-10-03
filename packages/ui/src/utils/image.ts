@@ -1,3 +1,3 @@
-export function hideImg(event) {
-  event.currentTarget.classList.add('hidden');
+export function hideImg(event: any) {
+	event.currentTarget.classList.add('hidden');
 }

@@ -4,23 +4,23 @@ import { NextFunction, Request, Response } from 'express';
 import { Logger } from 'winston';
 
 export default function validate(logger: Logger) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req) as Result<ValidatorError>;
+	return (req: Request, res: Response, next: NextFunction) => {
+		const errors = validationResult(req) as Result<ValidatorError>;
 
-    if (!errors.isEmpty()) {
-      const errorCodes = errors
-        .array()
-        .map((error) => {
-          const msg =
-            typeof error.msg === 'string' ? JSON.parse(error.msg) : error.msg;
-          return msg.code;
-        })
-        .join(', ');
-      logger.debug(`Validation errors - Codes: ${errorCodes}`);
+		if (!errors.isEmpty()) {
+			const errorCodes = errors
+				.array()
+				.map((error) => {
+					const msg =
+						typeof error.msg === 'string' ? JSON.parse(error.msg) : error.msg;
+					return msg.code;
+				})
+				.join(', ');
+			logger.debug(`Validation errors - Codes: ${errorCodes}`);
 
-      return res.status(400).json(errorMessagesFromValidator(errors));
-    }
+			return res.status(400).json(errorMessagesFromValidator(errors));
+		}
 
-    return next();
-  };
+		return next();
+	};
 }

@@ -1,29 +1,29 @@
 <script lang="ts">
-    import { createQuery } from "@tanstack/svelte-query";
-    import { stexs } from "../../stexsClient";
-    import type { Session } from "stexs-client/src/lib/types";
-    import { goto } from "$app/navigation";
-    import { getPreviousPageStore } from "$lib/stores/previousPageStore";
-    import { page } from "$app/stores";
+	import { createQuery } from '@tanstack/svelte-query';
+	import { stexs } from '../../stexsClient';
+	import type { Session } from 'stexs-client/src/lib/types';
+	import { goto } from '$app/navigation';
+	import { getPreviousPageStore } from '$lib/stores/previousPageStore';
+	import { page } from '$app/stores';
 
-    const previousPageStore = getPreviousPageStore();
+	const previousPageStore = getPreviousPageStore();
 
-    const settingsSetupQuery = createQuery({
-        queryKey: ['settingsSetup'],
-        queryFn: async () => {
-            const session: Session = stexs.auth.getSession();
+	const settingsSetupQuery = createQuery({
+		queryKey: ['settingsSetup'],
+		queryFn: async () => {
+			const session: Session = stexs.auth.getSession();
 
-            if (!session) {
-                previousPageStore.set($page.url.pathname);
-                goto('/sign-in');
-                return false;
-            };
+			if (!session) {
+				previousPageStore.set($page.url.pathname);
+				goto('/sign-in');
+				return false;
+			}
 
-            return session;
-        }
-    });
+			return session;
+		},
+	});
 </script>
 
 {#if $settingsSetupQuery.data}
-    <slot /> 
+	<slot />
 {/if}

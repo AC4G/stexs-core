@@ -1,10 +1,10 @@
 <script lang="ts">
-  import '../app.postcss';
-  import { AppShell, setInitialClassState } from '@skeletonlabs/skeleton';
+	import '../app.postcss';
+	import { AppShell, setInitialClassState } from '@skeletonlabs/skeleton';
 
-  setInitialClassState();
+	setInitialClassState();
 </script>
 
 <AppShell>
-  <slot />
+	<slot />
 </AppShell>

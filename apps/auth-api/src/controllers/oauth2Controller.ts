@@ -1,12 +1,12 @@
 import { Response } from 'express';
 import { errorMessages } from 'utils-node/messageBuilder';
 import {
-  CODE_EXPIRED,
-  INTERNAL_ERROR,
-  INVALID_AUTHORIZATION_CODE,
-  INVALID_CLIENT_CREDENTIALS,
-  INVALID_REFRESH_TOKEN,
-  NO_CLIENT_SCOPES_SELECTED,
+	CODE_EXPIRED,
+	INTERNAL_ERROR,
+	INVALID_AUTHORIZATION_CODE,
+	INVALID_CLIENT_CREDENTIALS,
+	INVALID_REFRESH_TOKEN,
+	NO_CLIENT_SCOPES_SELECTED,
 } from 'utils-node/errors';
 import db from '../database';
 import generateAccessToken from '../services/jwtService';
@@ -15,13 +15,13 @@ import logger from '../loggers/logger';
 import { isExpired } from 'utils-node';
 
 export async function authorizationCodeController(req: Request, res: Response) {
-  const { code, client_id, client_secret: clientSecret } = req.body;
+	const { code, client_id, client_secret: clientSecret } = req.body;
 
-  let userId, tokenId, scopes, organization_id;
+	let userId, tokenId, scopes, organization_id;
 
-  try {
-    const { rowCount, rows } = await db.query(
-      `
+	try {
+		const { rowCount, rows } = await db.query(
+			`
         WITH app_info AS (
             SELECT 
               id, 
@@ -56,78 +56,86 @@ export async function authorizationCodeController(req: Request, res: Response) {
         FROM token_info
         CROSS JOIN token_scopes;
       `,
-      [code, client_id, clientSecret],
-    );
+			[code, client_id, clientSecret],
+		);
 
-    if (rowCount === 0) {
-      logger.debug(`Invalid authorization code for client: ${client_id} and code: ${code}`);
-      return res.status(400).json(
-        errorMessages([
-          {
-            info: INVALID_AUTHORIZATION_CODE,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
-          },
-        ]),
-      );
-    }
+		if (rowCount === 0) {
+			logger.debug(
+				`Invalid authorization code for client: ${client_id} and code: ${code}`,
+			);
+			return res.status(400).json(
+				errorMessages([
+					{
+						info: INVALID_AUTHORIZATION_CODE,
+						data: {
+							location: 'body',
+							path: 'code',
+						},
+					},
+				]),
+			);
+		}
 
-    if (isExpired(rows[0].created_at, 5)) {
-      logger.debug(`Authorization code expired for client: ${client_id} and code: ${code}`);
-      return res.status(400).json(
-        errorMessages([
-          {
-            info: CODE_EXPIRED,
-            data: {
-              location: 'body',
-              path: 'code',
-            },
-          },
-        ]),
-      );
-    }
+		if (isExpired(rows[0].created_at, 5)) {
+			logger.debug(
+				`Authorization code expired for client: ${client_id} and code: ${code}`,
+			);
+			return res.status(400).json(
+				errorMessages([
+					{
+						info: CODE_EXPIRED,
+						data: {
+							location: 'body',
+							path: 'code',
+						},
+					},
+				]),
+			);
+		}
 
-    ({ id: tokenId, user_id: userId, scopes, organization_id } = rows[0]);
+		({ id: tokenId, user_id: userId, scopes, organization_id } = rows[0]);
 
-    logger.debug(`Authorization code validated successfully for user: ${userId} and client: ${client_id}`);
-  } catch (e) {
-    logger.error(
-      `Error while processing authorization code for client: ${client_id} and code: ${code}. Error: ${
-        e instanceof Error ? e.message : e
-      }`,
-    );
-    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
+		logger.debug(
+			`Authorization code validated successfully for user: ${userId} and client: ${client_id}`,
+		);
+	} catch (e) {
+		logger.error(
+			`Error while processing authorization code for client: ${client_id} and code: ${code}. Error: ${
+				e instanceof Error ? e.message : e
+			}`,
+		);
+		return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+	}
 
-  try {
-    const { rowCount } = await db.query(
-      `
+	try {
+		const { rowCount } = await db.query(
+			`
         DELETE FROM auth.oauth2_authorization_tokens
         WHERE id = $1::integer;
       `,
-      [tokenId],
-    );
+			[tokenId],
+		);
 
-    if (rowCount === 0) {
-      logger.error(`Failed to delete authorization code for user: ${userId} and client: ${client_id}`);
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
-  } catch (e) {
-    logger.error(
-      `Error while deleting authorization code for user: ${userId} and client: ${client_id}. Error: ${
-        e instanceof Error ? e.message : e
-      }`,
-    );
-    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
+		if (rowCount === 0) {
+			logger.error(
+				`Failed to delete authorization code for user: ${userId} and client: ${client_id}`,
+			);
+			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+		}
+	} catch (e) {
+		logger.error(
+			`Error while deleting authorization code for user: ${userId} and client: ${client_id}. Error: ${
+				e instanceof Error ? e.message : e
+			}`,
+		);
+		return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+	}
 
-  let connectionId;
+	let connectionId;
 
-  try {
-    const { rows, rowCount } = await db.query(
-      `
+	try {
+		const { rows, rowCount } = await db.query(
+			`
         WITH inserted_connection AS (
           INSERT INTO public.oauth2_connections (user_id, client_id)
           VALUES ($1::uuid, $2::uuid)
@@ -139,55 +147,61 @@ export async function authorizationCodeController(req: Request, res: Response) {
         CROSS JOIN UNNEST($3::int[]) AS scope_id
         RETURNING connection_id AS id;      
       `,
-      [userId, client_id, scopes],
-    );
+			[userId, client_id, scopes],
+		);
 
-    if (rowCount === 0) {
-      logger.error(`Failed to insert connection for user: ${userId} and client: ${client_id}`);
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+		if (rowCount === 0) {
+			logger.error(
+				`Failed to insert connection for user: ${userId} and client: ${client_id}`,
+			);
+			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+		}
 
-    connectionId = rows[0].id;
-  } catch (e) {
-    logger.error(
-      `Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${
-        e instanceof Error ? e.message : e
-      }`,
-    );
-    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
+		connectionId = rows[0].id;
+	} catch (e) {
+		logger.error(
+			`Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${
+				e instanceof Error ? e.message : e
+			}`,
+		);
+		return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+	}
 
-  logger.debug(`Connection successfully created for user: ${userId} and client: ${client_id}`);
+	logger.debug(
+		`Connection successfully created for user: ${userId} and client: ${client_id}`,
+	);
 
-  let body;
+	let body;
 
-  try {
-    body = await generateAccessToken(
-      {
-        sub: userId,
-        client_id,
-        organization_id,
-      },
-      'authorization_code',
-      connectionId,
-    );
+	try {
+		body = await generateAccessToken(
+			{
+				sub: userId,
+				client_id,
+				organization_id,
+			},
+			'authorization_code',
+			connectionId,
+		);
 
-    logger.debug(`Access token generated successfully for user: ${userId} and client: ${client_id}`);
-  } catch (e) {
-    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
+		logger.debug(
+			`Access token generated successfully for user: ${userId} and client: ${client_id}`,
+		);
+	} catch (e) {
+		return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+	}
 
-  res.json(body);
+	res.json(body);
 }
 
 export async function clientCredentialsController(req: Request, res: Response) {
-  const { client_id, client_secret } = req.body;
+	const { client_id, client_secret } = req.body;
 
-  let scopes, organization_id;
+	let scopes, organization_id;
 
-  try {
-    const { rowCount, rows } = await db.query(
-      `
+	try {
+		const { rowCount, rows } = await db.query(
+			`
         WITH app_info AS (
             SELECT 
               id, 
@@ -209,66 +223,70 @@ export async function clientCredentialsController(req: Request, res: Response) {
         FROM app_info
         CROSS JOIN app_scopes;
       `,
-      [client_id, client_secret],
-    );
+			[client_id, client_secret],
+		);
 
-    if (rowCount === 0) {
-      logger.debug(`Invalid client credentials for client: ${client_id}`);
-      return res.status(400).json(
-        errorMessages([
-          {
-            info: INVALID_CLIENT_CREDENTIALS,
-            data: {
-              location: 'body',
-              paths: ['client_id', 'client_secret'],
-            },
-          },
-        ]),
-      );
-    }
+		if (rowCount === 0) {
+			logger.debug(`Invalid client credentials for client: ${client_id}`);
+			return res.status(400).json(
+				errorMessages([
+					{
+						info: INVALID_CLIENT_CREDENTIALS,
+						data: {
+							location: 'body',
+							paths: ['client_id', 'client_secret'],
+						},
+					},
+				]),
+			);
+		}
 
-    ({ scopes, organization_id } = rows[0]);
+		({ scopes, organization_id } = rows[0]);
 
-    if (!scopes || scopes.length === 0) {
-      logger.debug(`No client scopes selected for client: ${client_id}`);
-      return res
-        .status(400)
-        .json(errorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]));
-    }
+		if (!scopes || scopes.length === 0) {
+			logger.debug(`No client scopes selected for client: ${client_id}`);
+			return res
+				.status(400)
+				.json(errorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]));
+		}
 
-    logger.debug(`Client credentials validated successfully for client: ${client_id}`);
-  } catch (e) {
-    logger.error(
-      `Error while processing client credentials for client: ${client_id}. Error: ${
-        e instanceof Error ? e.message : e
-      }`,
-    );
-    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
+		logger.debug(
+			`Client credentials validated successfully for client: ${client_id}`,
+		);
+	} catch (e) {
+		logger.error(
+			`Error while processing client credentials for client: ${client_id}. Error: ${
+				e instanceof Error ? e.message : e
+			}`,
+		);
+		return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+	}
 
-  try {
-    const body = await generateAccessToken(
-      {
-        client_id,
-        organization_id,
-      },
-      'client_credentials',
-    );
+	try {
+		const body = await generateAccessToken(
+			{
+				client_id,
+				organization_id,
+			},
+			'client_credentials',
+		);
 
-    logger.debug(`Access token generated successfully for client: ${client_id}`);
+		logger.debug(
+			`Access token generated successfully for client: ${client_id}`,
+		);
 
-    res.json(body);
-  } catch (e) {
-    res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
+		res.json(body);
+	} catch (e) {
+		res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+	}
 }
 
 export async function refreshTokenController(req: Request, res: Response) {
-  const { sub, client_id, organization_id, jti } = req.auth!;
+	const { sub, client_id, organization_id, jti } = req.auth!;
 
-  try {
-    const { rowCount } = await db.query(
-      `
+	try {
+		const { rowCount } = await db.query(
+			`
         SELECT 1
         FROM auth.refresh_tokens
         WHERE token = $1::uuid 
@@ -276,51 +294,57 @@ export async function refreshTokenController(req: Request, res: Response) {
           AND grant_type = 'authorization_code' 
           AND session_id IS NULL;
       `,
-      [jti, sub],
-    );
+			[jti, sub],
+		);
 
-    if (rowCount === 0) {
-      logger.debug(`Invalid refresh token for user: ${sub} and client: ${client_id}`);
-      return res.status(400).json(
-        errorMessages([
-          {
-            info: INVALID_REFRESH_TOKEN,
-            data: {
-              location: 'body',
-              path: 'refresh_token',
-            },
-          },
-        ]),
-      );
-    }
+		if (rowCount === 0) {
+			logger.debug(
+				`Invalid refresh token for user: ${sub} and client: ${client_id}`,
+			);
+			return res.status(400).json(
+				errorMessages([
+					{
+						info: INVALID_REFRESH_TOKEN,
+						data: {
+							location: 'body',
+							path: 'refresh_token',
+						},
+					},
+				]),
+			);
+		}
 
-    logger.debug(`Refresh token validated successfully for user: ${sub} and client: ${client_id}`);
-  } catch (e) {
-    logger.error(
-      `Error while processing refresh token for user: ${sub} and client: ${client_id}. Error: ${
-        e instanceof Error ? e.message : e
-      }`,
-    );
-    return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
+		logger.debug(
+			`Refresh token validated successfully for user: ${sub} and client: ${client_id}`,
+		);
+	} catch (e) {
+		logger.error(
+			`Error while processing refresh token for user: ${sub} and client: ${client_id}. Error: ${
+				e instanceof Error ? e.message : e
+			}`,
+		);
+		return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+	}
 
-  try {
-    const body = await generateAccessToken(
-      {
-        sub,
-        client_id,
-        organization_id,
-      },
-      'authorization_code',
-      null,
-      null,
-      jti,
-    );
+	try {
+		const body = await generateAccessToken(
+			{
+				sub,
+				client_id,
+				organization_id,
+			},
+			'authorization_code',
+			null,
+			null,
+			jti,
+		);
 
-    logger.debug(`Access token retrieved successfully for user: ${sub} and client: ${client_id}`);
+		logger.debug(
+			`Access token retrieved successfully for user: ${sub} and client: ${client_id}`,
+		);
 
-    res.json(body);
-  } catch (e) {
-    res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-  }
+		res.json(body);
+	} catch (e) {
+		res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+	}
 }

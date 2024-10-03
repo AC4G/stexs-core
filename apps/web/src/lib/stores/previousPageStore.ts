@@ -4,27 +4,27 @@ import { goto } from '$app/navigation';
 import { getContext, setContext } from 'svelte';
 
 export function createPreviousPageStore(): Writable<string> {
-  const previousPage = writable<string>('/');
-  setContext<Writable<string>>('previousPage', previousPage);
-  return previousPage;
+	const previousPage = writable<string>('/');
+	setContext<Writable<string>>('previousPage', previousPage);
+	return previousPage;
 }
 
 export function getPreviousPageStore(): Writable<string> {
-  return getContext<Writable<string>>('previousPage');
+	return getContext<Writable<string>>('previousPage');
 }
 
 export function redirectToPreviousPage(previousPageStore: Writable<string>) {
-  let path: string = '/';
+	let path: string = '/';
 
-  const unsubscribe = previousPageStore.subscribe((currentPath: string) => {
-    path = currentPath;
-  });
+	const unsubscribe = previousPageStore.subscribe((currentPath: string) => {
+		path = currentPath;
+	});
 
-  unsubscribe();
+	unsubscribe();
 
-  previousPageStore.set('/');
+	previousPageStore.set('/');
 
-  if (typeof window === 'undefined') throw redirect(302, path);
+	if (typeof window === 'undefined') throw redirect(302, path);
 
-  return goto(path);
+	return goto(path);
 }

@@ -18,8 +18,8 @@ import { ROUTE_NOT_FOUND } from 'utils-node/errors';
 import cors from 'cors';
 
 process.on('uncaughtException', (err) => {
-  logger.error(`Uncaught Exception: ${err.message}`);
-  process.exit(1);
+	logger.error(`Uncaught Exception: ${err.message}`);
+	process.exit(1);
 });
 
 const server = express();
@@ -30,25 +30,27 @@ server.use(cors());
 server.use(responseTime());
 
 server.use((req, res, next) => {
-  logger.debug(`Request Headers: ${JSON.stringify(req.headers)}`);
-  logger.debug(`Request Body: ${JSON.stringify(req.body)}`);
+	logger.debug(`Request Headers: ${JSON.stringify(req.headers)}`);
+	logger.debug(`Request Body: ${JSON.stringify(req.body)}`);
 
-  const originalSend = res.send;
+	const originalSend = res.send;
 
-  res.send = function (body) {
-    logger.debug(`Response Body: ${body}`);
+	res.send = function (body) {
+		logger.debug(`Response Body: ${body}`);
 
-    return originalSend.call(this, body);
-  };
+		return originalSend.call(this, body);
+	};
 
-  next();
+	next();
 });
 
 server.use((req, res, next) => {
-  res.on('finish', () => {
-    logger.info(`method=${req.method} url=${req.originalUrl} status=${res.statusCode} client_ip=${req.header('x-forwarded-for') || req.ip} server_ip=${ip.address()} duration=${res.get('X-Response-Time')}`);
-  });
-  next();
+	res.on('finish', () => {
+		logger.info(
+			`method=${req.method} url=${req.originalUrl} status=${res.statusCode} client_ip=${req.header('x-forwarded-for') || req.ip} server_ip=${ip.address()} duration=${res.get('X-Response-Time')}`,
+		);
+	});
+	next();
 });
 
 server.use('/sign-up', signUpRouter);
@@ -62,26 +64,28 @@ server.use('/recovery', recoveryRouter);
 server.use('/mfa', mfaRouter);
 
 server.use((req, res, next) => {
-  logger.debug(`Route not found: ${req.method} ${req.path}`);
+	logger.debug(`Route not found: ${req.method} ${req.path}`);
 
-  res.status(404).json(
-    errorMessages([
-      {
-        info: ROUTE_NOT_FOUND,
-        data: {
-          method: req.method,
-          route: req.path,
-        },
-      },
-    ]),
-  );
-  next();
+	res.status(404).json(
+		errorMessages([
+			{
+				info: ROUTE_NOT_FOUND,
+				data: {
+					method: req.method,
+					route: req.path,
+				},
+			},
+		]),
+	);
+	next();
 });
 
 if (ENV !== 'test') {
-  server.listen(SERVER_PORT, () => {
-    logger.info(`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`);
-  });  
+	server.listen(SERVER_PORT, () => {
+		logger.info(
+			`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`,
+		);
+	});
 }
 
 export default server;
