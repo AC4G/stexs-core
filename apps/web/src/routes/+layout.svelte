@@ -335,7 +335,7 @@
 					),
 					created_at,
 					updated_at
-      			`,
+				`,
 			)
 			.order('id', { ascending: false })
 			.eq('user_id', userId);

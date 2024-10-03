@@ -28,17 +28,17 @@
 							</svg>
 						</a>
 					</h${level}>
-        		`;
+				`;
 			},
 			link(href, title, text) {
 				return `
 					<a target="_blank" rel="noopener noreferrer nofollow" href="${href}" title="${title}" class="text-secondary-500 hover:text-secondary-400 visited:text-secondary-400 transition">${text}</a>
-        		`;
+				`;
 			},
 			codespan(text) {
 				return `
 					<code class="pre p-1 bg-surface-900">${text}</code>
-        		`;
+				`;
 			},
 			code(code, language) {
 				if (code.length === 0) return;
@@ -68,7 +68,7 @@
 						<thead class="table-head">${header}</thead>
 						<tbody class="table-body">${body}</tbody>
 					</table>
-        		`;
+				`;
 			},
 			hr() {
 				return `<hr class="!border-t-2"></hr>`;
@@ -76,7 +76,7 @@
 			list(body, ordered) {
 				return `
 					<ol class="${ordered ? 'list-decimal' : 'list-disc'} pl-[20px]">${body}</ol>
-        		`;
+				`;
 			},
 			blockquote(quote) {
 				let borderColor = '';
@@ -108,7 +108,7 @@
 								</svg>
 								Tip
 							</span>
-            			`,
+						`,
 					);
 				} else if (quote.includes('[!IMPORTANT]')) {
 					borderColor += ' border-l-secondary-500';
@@ -121,7 +121,7 @@
 								</svg>
 								Important
 							</span>
-            			`,
+						`,
 					);
 				} else if (quote.includes('[!WARNING]')) {
 					borderColor += ' border-l-warning-500';
@@ -137,7 +137,7 @@
 								</svg>
 								Warning
 							</span>
-            			`,
+						`,
 					);
 				} else if (quote.includes('[!CAUTION]')) {
 					borderColor += ' border-l-error-500';
@@ -150,7 +150,7 @@
 								</svg>
 								Caution
 							</span>
-            			`,
+						`,
 					);
 				} else {
 					borderColor += ' border-l-primary-500';

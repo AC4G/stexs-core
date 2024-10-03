@@ -40,7 +40,7 @@ router.post(
 						AND grant_type = 'password' 
 						AND token = $2::uuid 
 						AND session_id = $3::uuid;
-        		`,
+				`,
 				[token?.sub, token?.jti, token?.session_id],
 			);
 

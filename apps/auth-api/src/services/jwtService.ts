@@ -98,7 +98,7 @@ export default async function generateAccessToken(
 						AND user_id = $3::uuid 
 						AND grant_type = 'authorization_code' 
 						AND session_id IS NULL;
-        		`,
+				`,
 				[jti, oldRefreshToken, additionalPayload.sub],
 			);
 		} else {
@@ -118,7 +118,7 @@ export default async function generateAccessToken(
 						$4::uuid,
 						$5::int
 					);
-        		`,
+				`,
 				[
 					jti,
 					additionalPayload.sub,

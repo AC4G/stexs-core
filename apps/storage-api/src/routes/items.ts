@@ -92,7 +92,7 @@ router.post(
 						WHERE i.id = $1::integer 
 							AND pm.member_id = $2::uuid 
 							AND pm.role IN ('Admin', 'Owner');
-          			`,
+					`,
 					[itemId, sub],
 				);
 
@@ -111,7 +111,7 @@ router.post(
 								oa.project_id IS NULL
 							)
 							AND o.id = $2::integer;
-          			`,
+					`,
 					[itemId, organizationId, clientId],
 				);
 

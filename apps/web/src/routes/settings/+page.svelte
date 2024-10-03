@@ -123,7 +123,7 @@
 						url,
 						is_private,
 						accept_friend_requests
-          			`,
+					`,
 				)
 				.eq('user_id', $userStore?.id)
 				.single();

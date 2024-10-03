@@ -69,7 +69,7 @@ router.post(
 						AND (
 							(CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
 						);
-        		`,
+				`,
 				[identifier, password],
 			);
 

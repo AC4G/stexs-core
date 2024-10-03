@@ -34,7 +34,7 @@ export async function enableTOTP(req: Request, res: Response) {
 				FROM auth.mfa AS t 
 				INNER JOIN auth.users AS u ON t.user_id = u.id
 				WHERE t.user_id = $1::uuid;
-      		`,
+			`,
 			[userId],
 		);
 

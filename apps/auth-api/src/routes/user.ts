@@ -60,7 +60,7 @@ router.get(
 					FROM auth.users AS u
 					JOIN public.profiles AS p ON u.id = p.user_id
 					WHERE id = $1::uuid;
-        		`,
+				`,
 				[userId],
 			);
 
@@ -95,7 +95,7 @@ router.get(
 					FROM auth.refresh_tokens
 					WHERE user_id = $1::uuid
 						AND grant_type = 'password';
-        		`,
+				`,
 				[userId],
 			);
 
@@ -175,7 +175,7 @@ router.post(
 						END AS is_current_password
 					FROM auth.users
 					WHERE id = $2::uuid;
-        		`,
+				`,
 				[password, userId],
 			);
 
@@ -211,7 +211,7 @@ router.post(
 					SET
 						encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
 					WHERE id = $2::uuid;
-        		`,
+				`,
 				[password, userId],
 			);
 
@@ -290,7 +290,7 @@ router.post(
 						id
 					FROM auth.users
 					WHERE email = $1::text;
-        		`,
+				`,
 				[newEmail],
 			);
 
@@ -321,7 +321,7 @@ router.post(
 						email_change_sent_at = CURRENT_TIMESTAMP,
 						email_change_code = $2::text
 					WHERE id = $3::uuid;
-        		`,
+				`,
 				[newEmail, confirmationCode, userId],
 			);
 
@@ -387,7 +387,7 @@ router.post(
 					FROM auth.users
 					WHERE id = $1::uuid 
 						AND email_change_code = $2::text
-        		`,
+				`,
 				[userId, code],
 			);
 
@@ -412,7 +412,7 @@ router.post(
 						email_change_code = NULL
 					WHERE id = $1::uuid 
 						AND email_change_code = $2::text;
-        		`,
+				`,
 				[userId, code],
 			);
 

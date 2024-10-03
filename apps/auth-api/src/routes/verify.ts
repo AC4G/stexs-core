@@ -52,7 +52,7 @@ router.get(
 					FROM auth.users 
 					WHERE email = $1::text 
 						AND verification_token = $2::uuid;
-        		`,
+				`,
 				[email, token],
 			);
 
@@ -100,7 +100,7 @@ router.get(
 						verification_sent_at = NULL,
 						email_verified_at = CURRENT_TIMESTAMP
 					WHERE email = $1::text;
-        		`,
+				`,
 				[email],
 			);
 
