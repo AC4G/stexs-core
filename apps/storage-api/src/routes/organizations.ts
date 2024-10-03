@@ -87,12 +87,12 @@ router.post(
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
 					`
-            SELECT 1
-            FROM public.organization_members
-            WHERE member_id = $1::uuid 
-              AND organization_id = $2::integer 
-              AND role IN ('Admin', 'Owner');
-          `,
+						SELECT 1
+						FROM public.organization_members
+						WHERE member_id = $1::uuid 
+							AND organization_id = $2::integer 
+							AND role IN ('Admin', 'Owner');
+          			`,
 					[sub, organizationId],
 				);
 
@@ -108,9 +108,7 @@ router.post(
 				logger.warn(
 					`${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
 				);
-				return res
-					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+				return res.status(401).json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(
@@ -170,12 +168,12 @@ router.delete(
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
 					`
-            SELECT 1
-            FROM public.organization_members
-            WHERE member_id = $1::uuid 
-              AND organization_id = $2::integer 
-              AND role IN ('Admin', 'Owner');
-          `,
+						SELECT 1
+						FROM public.organization_members
+						WHERE member_id = $1::uuid 
+							AND organization_id = $2::integer 
+							AND role IN ('Admin', 'Owner');
+          			`,
 					[sub, organizationId],
 				);
 
@@ -191,9 +189,7 @@ router.delete(
 				logger.warn(
 					`${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
 				);
-				return res
-					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+				return res.status(401).json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(

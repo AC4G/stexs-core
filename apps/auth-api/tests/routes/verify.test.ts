@@ -270,9 +270,7 @@ describe('Email Verification Routes', () => {
 			.send({ email: 'test@example.com' });
 
 		expect(response.status).toBe(404);
-		expect(response.body).toEqual(
-			testErrorMessages([{ info: EMAIL_NOT_FOUND }]),
-		);
+		expect(response.body).toEqual(testErrorMessages([{ info: EMAIL_NOT_FOUND }]));
 	});
 
 	it('should handle email resend with already verified email', async () => {
@@ -314,9 +312,7 @@ describe('Email Verification Routes', () => {
 
 		const email = 'test@example.com';
 
-		const response = await request(server)
-			.post('/verify/resend')
-			.send({ email });
+		const response = await request(server).post('/verify/resend').send({ email });
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(

@@ -45,14 +45,14 @@ router.get(
 		try {
 			const { rowCount, rows: users } = await db.query(
 				`
-          SELECT 
-            id, 
-            email_verified_at, 
-            verification_sent_at 
-          FROM auth.users 
-          WHERE email = $1::text 
-            AND verification_token = $2::uuid;
-        `,
+					SELECT 
+						id, 
+						email_verified_at, 
+						verification_sent_at 
+					FROM auth.users 
+					WHERE email = $1::text 
+						AND verification_token = $2::uuid;
+        		`,
 				[email, token],
 			);
 
@@ -94,13 +94,13 @@ router.get(
 
 			const { rowCount: count } = await db.query(
 				`
-          UPDATE auth.users
-          SET 
-              verification_token = NULL,
-              verification_sent_at = NULL,
-              email_verified_at = CURRENT_TIMESTAMP
-          WHERE email = $1::text;
-        `,
+					UPDATE auth.users
+					SET 
+						verification_token = NULL,
+						verification_sent_at = NULL,
+						email_verified_at = CURRENT_TIMESTAMP
+					WHERE email = $1::text;
+        		`,
 				[email],
 			);
 
@@ -146,12 +146,12 @@ router.post(
 		try {
 			const { rowCount, rows } = await db.query(
 				`
-          SELECT
-            id, 
-            email_verified_at 
-          FROM auth.users
-          WHERE email = $1::text;
-        `,
+					SELECT
+						id, 
+						email_verified_at 
+					FROM auth.users
+					WHERE email = $1::text;
+				`,
 				[email],
 			);
 
@@ -180,12 +180,12 @@ router.post(
 		try {
 			const { rowCount } = await db.query(
 				`
-          UPDATE auth.users
-          SET 
-              verification_token = $1::uuid,
-              verification_sent_at = CURRENT_TIMESTAMP
-          WHERE email = $2::text;
-        `,
+					UPDATE auth.users
+					SET 
+						verification_token = $1::uuid,
+						verification_sent_at = CURRENT_TIMESTAMP
+					WHERE email = $2::text;
+				`,
 				[token, email],
 			);
 

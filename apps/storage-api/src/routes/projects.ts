@@ -85,12 +85,12 @@ router.post(
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
 					`
-            SELECT 1
-            FROM public.project_members AS pm
-            WHERE pm.member_id = $1::uuid 
-              AND pm.project_id = $2::integer 
-              AND pm.role IN ('Admin', 'Owner');
-          `,
+						SELECT 1
+						FROM public.project_members AS pm
+						WHERE pm.member_id = $1::uuid 
+							AND pm.project_id = $2::integer 
+							AND pm.role IN ('Admin', 'Owner');
+          			`,
 					[sub, projectId],
 				);
 
@@ -98,16 +98,16 @@ router.post(
 			} else {
 				const { rowCount } = await db.query(
 					`
-            SELECT 1
-            FROM public.projects AS p
-            JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
-            WHERE pm.organization_id = $1::integer 
-              AND (
-                oa.project_id = $2::integer OR
-                oa.project_id IS NULL
-              )
-              AND p.id = $2::integer;
-          `,
+						SELECT 1
+						FROM public.projects AS p
+						JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+						WHERE pm.organization_id = $1::integer 
+							AND (
+								oa.project_id = $2::integer OR
+								oa.project_id IS NULL
+							)
+							AND p.id = $2::integer;
+          			`,
 					[organizationId, projectId, clientId],
 				);
 
@@ -122,9 +122,7 @@ router.post(
 					`${consumer} is not authorized to upload/update the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`,
 				);
 
-				return res
-					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+				return res.status(401).json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(
@@ -182,12 +180,12 @@ router.delete(
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
 					`
-            SELECT 1
-            FROM public.project_members AS pm
-            WHERE pm.member_id = $1::uuid 
-              AND pm.project_id = $2::integer 
-              AND pm.role IN ('Admin', 'Owner');
-          `,
+						SELECT 1
+						FROM public.project_members AS pm
+						WHERE pm.member_id = $1::uuid 
+							AND pm.project_id = $2::integer 
+							AND pm.role IN ('Admin', 'Owner');
+          			`,
 					[sub, projectId],
 				);
 
@@ -195,16 +193,16 @@ router.delete(
 			} else {
 				const { rowCount } = await db.query(
 					`
-            SELECT 1
-            FROM public.projects AS p
-            JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
-            WHERE p.organization_id = $1::integer
-              AND (
-                oa.project_id = $2::integer OR
-                oa.project_id IS NULL
-              )
-              AND p.id = $2::integer;
-          `,
+						SELECT 1
+						FROM public.projects AS p
+						JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+						WHERE p.organization_id = $1::integer
+							AND (
+								oa.project_id = $2::integer OR
+								oa.project_id IS NULL
+							)
+							AND p.id = $2::integer;
+          			`,
 					[organizationId, projectId, clientId],
 				);
 
@@ -219,9 +217,7 @@ router.delete(
 					`${consumer} is not authorized to delete the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`,
 				);
 
-				return res
-					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+				return res.status(401).json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(

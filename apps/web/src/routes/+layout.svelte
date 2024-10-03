@@ -335,7 +335,8 @@
 					),
 					created_at,
 					updated_at
-      	`)
+      			`,
+			)
 			.order('id', { ascending: false })
 			.eq('user_id', userId);
 
@@ -391,12 +392,7 @@
 	$: notificationsQuery = createQuery({
 		queryKey: ['notifications'],
 		queryFn: async () => {
-			const data = await fetchNotifications(
-				$userStore!.id,
-				filter,
-				search,
-				null,
-			);
+			const data = await fetchNotifications($userStore!.id, filter, search, null);
 
 			if (data) initialDataExists = true;
 
@@ -472,9 +468,7 @@
 		nonActiveClass={sidebarNonActiveClass}
 		btnClass={sidebarBtnClass}
 	>
-		<SidebarWrapper
-			class="flex flex-col justify-between h-full !bg-transparent"
-		>
+		<SidebarWrapper class="flex flex-col justify-between h-full !bg-transparent">
 			<SidebarGroup>
 				<SidebarItem
 					label="Add Friends"
@@ -533,17 +527,11 @@
 						<button
 							use:popup={addFriendPopup}
 							on:click={() =>
-								openAddFriendModal(
-									$userStore.id,
-									flash,
-									modalStore,
-									stexs,
-									() => {
-										if ($profileStore) {
-											$profileStore.refetchFriendsFn();
-										}
-									},
-								)}
+								openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
+									if ($profileStore) {
+										$profileStore.refetchFriendsFn();
+									}
+								})}
 							class="btn hidden xs:block relative hover:bg-surface-500 rounded-full transition p-3"
 						>
 							<Icon icon="octicon:person-add-16" width="18" />
@@ -585,16 +573,12 @@
 									{#if filter !== 'All' && filter !== 'Messages'}
 										<Search
 											size="md"
-											placeholder={'Search by ' +
-												filter.split(' ')[0] +
-												' Name...'}
+											placeholder={'Search by ' + filter.split(' ')[0] + ' Name...'}
 											on:input={handleSearch}
 											class="!bg-surface-500"
 										/>
 									{/if}
-									<Button
-										class="bg-surface-500 border border-gray-600 w-full py-[8px]"
-									>
+									<Button class="bg-surface-500 border border-gray-600 w-full py-[8px]">
 										{filter}<Icon
 											icon="iconamoon:arrow-down-2-duotone"
 											class="text-[22px]"
@@ -633,8 +617,7 @@
 											value={'Organization Requests'}
 											active="variant-glass-primary text-primary-500"
 											hover="hover:variant-filled-surface"
-											class="rounded-md px-4 py-2"
-											>Organization Requests</ListBoxItem
+											class="rounded-md px-4 py-2">Organization Requests</ListBoxItem
 										>
 										<ListBoxItem
 											bind:group={filter}
@@ -648,11 +631,7 @@
 								{/if}
 								{#if $notificationsQuery.isLoading}
 									<div class="flex items-center justify-center py-2">
-										<ProgressRadial
-											stroke={40}
-											value={undefined}
-											width="w-[30px]"
-										/>
+										<ProgressRadial stroke={40} value={undefined} width="w-[30px]" />
 									</div>
 								{:else if notifications.length > 0}
 									<div
@@ -672,9 +651,7 @@
 														<div class="space-y-2">
 															<Button
 																on:click={async () => {
-																	const result = await deleteMessage(
-																		notification.id,
-																	);
+																	const result = await deleteMessage(notification.id);
 
 																	if (result) removeNotificationByIndex(index);
 																}}
@@ -682,9 +659,7 @@
 															>
 																<Icon icon="ph:x-bold" />
 															</Button>
-															<p
-																class="text-[14px] w-[26px] text-surface-300 text-right pr-1"
-															>
+															<p class="text-[14px] w-[26px] text-surface-300 text-right pr-1">
 																{formatDistanceStrict(
 																	new Date(notification.created_at),
 																	new Date(),
@@ -693,8 +668,7 @@
 														</div>
 													</div>
 												{:else if notification.type === 'friend_request'}
-													{@const profile =
-														notification.friend_requests.profiles}
+													{@const profile = notification.friend_requests.profiles}
 													<div class="flex space-x-4 items-center">
 														<a href="/{profile.username}">
 															<Avatar
@@ -709,9 +683,7 @@
 															/>
 														</a>
 														<div class="w-full space-y-4">
-															<div
-																class="flex flex-row justify-between space-x-4"
-															>
+															<div class="flex flex-row justify-between space-x-4">
 																<p class="text-[16px] break-all">
 																	{profile.username}
 																</p>
@@ -719,12 +691,8 @@
 																	<Icon icon="octicon:person-add-16" />
 																</div>
 															</div>
-															<div
-																class="flex flex-row justify-between items-center"
-															>
-																<div
-																	class="flex flex-row justify-evenly w-full space-x-1"
-																>
+															<div class="flex flex-row justify-between items-center">
+																<div class="flex flex-row justify-evenly w-full space-x-1">
 																	<Button
 																		on:click={async () => {
 																			const result = await acceptFriendRequest(
@@ -735,8 +703,7 @@
 																				$profileStore,
 																			);
 
-																			if (result)
-																				removeNotificationByIndex(index);
+																			if (result) removeNotificationByIndex(index);
 																		}}
 																		class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
 																		>Accept</Button
@@ -750,8 +717,7 @@
 																				$profileStore,
 																			);
 
-																			if (!result)
-																				removeNotificationByIndex(index);
+																			if (!result) removeNotificationByIndex(index);
 																		}}
 																		class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
 																		>Delete</Button
@@ -772,10 +738,7 @@
 													{@const organization =
 														notification.organization_requests.organizations}
 													<div class="flex space-x-4 items-center">
-														<a
-															href="/organizations/{organization.name}"
-															class="group"
-														>
+														<a href="/organizations/{organization.name}" class="group">
 															<div
 																class="!w-[52px] h-[52px] xs:!w-[68px] xs:h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500"
 															>
@@ -788,65 +751,48 @@
 															</div>
 														</a>
 														<div class="w-full space-y-4">
-															<div
-																class="flex flex-row justify-between space-x-4"
-															>
-																<div
-																	class="flex flex-row space-x-2 justify-between w-full"
-																>
+															<div class="flex flex-row justify-between space-x-4">
+																<div class="flex flex-row space-x-2 justify-between w-full">
 																	<p class="text-[16px] break-all">
 																		{organization.name}
 																	</p>
 																	<span
 																		title="Role"
 																		class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit"
-																		>{notification.organization_requests
-																			.role}</span
+																		>{notification.organization_requests.role}</span
 																	>
 																</div>
-																<div
-																	class="pt-1 pr-1"
-																	title="Organization Request"
-																>
+																<div class="pt-1 pr-1" title="Organization Request">
 																	<Icon icon="octicon:organization-16" />
 																</div>
 															</div>
-															<div
-																class="flex flex-row justify-between items-center"
-															>
-																<div
-																	class="flex flex-row justify-evenly w-full space-x-1"
-																>
+															<div class="flex flex-row justify-between items-center">
+																<div class="flex flex-row justify-evenly w-full space-x-1">
 																	<Button
 																		on:click={async () => {
-																			const result =
-																				await acceptOrganizationRequest(
-																					$userStore.id,
-																					organization.id,
-																					organization.name,
-																					notification.organization_requests
-																						.role,
-																					flash,
-																					$profileStore,
-																				);
+																			const result = await acceptOrganizationRequest(
+																				$userStore.id,
+																				organization.id,
+																				organization.name,
+																				notification.organization_requests.role,
+																				flash,
+																				$profileStore,
+																			);
 
-																			if (result)
-																				removeNotificationByIndex(index);
+																			if (result) removeNotificationByIndex(index);
 																		}}
 																		class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
 																		>Accept</Button
 																	>
 																	<Button
 																		on:click={async () => {
-																			const result =
-																				await deleteOrganizationRequest(
-																					$userStore.id,
-																					organization.id,
-																					flash,
-																				);
+																			const result = await deleteOrganizationRequest(
+																				$userStore.id,
+																				organization.id,
+																				flash,
+																			);
 
-																			if (result)
-																				removeNotificationByIndex(index);
+																			if (result) removeNotificationByIndex(index);
 																		}}
 																		class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
 																		>Delete</Button
@@ -864,13 +810,9 @@
 														</div>
 													</div>
 												{:else}
-													{@const project =
-														notification.project_requests.projects}
+													{@const project = notification.project_requests.projects}
 													<div class="flex space-x-4 items-center">
-														<a
-															href="/organizations/projects/{project.name}"
-															class="group"
-														>
+														<a href="/organizations/projects/{project.name}" class="group">
 															<div
 																class="!w-[52px] h-[52px] xs:!w-[68px] xs:h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500"
 															>
@@ -883,16 +825,11 @@
 															</div>
 														</a>
 														<div class="w-full space-y-4">
-															<div
-																class="flex flex-row justify-between space-x-4"
-															>
-																<div
-																	class="flex flex-row space-x-2 justify-between w-full"
-																>
+															<div class="flex flex-row justify-between space-x-4">
+																<div class="flex flex-row space-x-2 justify-between w-full">
 																	<p class="text-[16px] break-words">
 																		<a
-																			href="/organizations/{project
-																				.organizations.name}"
+																			href="/organizations/{project.organizations.name}"
 																			class="hover:text-secondary-400 transition"
 																			>{project.organizations.name}</a
 																		>
@@ -908,12 +845,8 @@
 																	<Icon icon="octicon:project-symlink-16" />
 																</div>
 															</div>
-															<div
-																class="flex flex-row justify-between items-center"
-															>
-																<div
-																	class="flex flex-row justify-evenly w-full space-x-1"
-																>
+															<div class="flex flex-row justify-between items-center">
+																<div class="flex flex-row justify-evenly w-full space-x-1">
 																	<Button
 																		on:click={async () => {
 																			const result = await acceptProjectRequest(
@@ -926,8 +859,7 @@
 																				$profileStore,
 																			);
 
-																			if (result)
-																				removeNotificationByIndex(index);
+																			if (result) removeNotificationByIndex(index);
 																		}}
 																		class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
 																		>Accept</Button
@@ -940,8 +872,7 @@
 																				flash,
 																			);
 
-																			if (result)
-																				removeNotificationByIndex(index);
+																			if (result) removeNotificationByIndex(index);
 																		}}
 																		class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
 																		>Delete</Button
@@ -1019,13 +950,11 @@
 							<DropdownDivider />
 							<DropdownItem
 								href="/{$userStore?.username}"
-								class="hover:!bg-surface-500 rounded text-[16px]"
-								>Profile</DropdownItem
+								class="hover:!bg-surface-500 rounded text-[16px]">Profile</DropdownItem
 							>
 							<DropdownItem
 								href="/{$userStore?.username}/friends"
-								class="hover:!bg-surface-500 rounded text-[16px]"
-								>Friends</DropdownItem
+								class="hover:!bg-surface-500 rounded text-[16px]">Friends</DropdownItem
 							>
 							<DropdownItem
 								href="/{$userStore?.username}/organizations"
@@ -1034,8 +963,7 @@
 							>
 							<DropdownItem
 								href="/settings"
-								class="hover:!bg-surface-500 rounded text-[16px]"
-								>Settings</DropdownItem
+								class="hover:!bg-surface-500 rounded text-[16px]">Settings</DropdownItem
 							>
 							<DropdownDivider />
 							<DropdownItem

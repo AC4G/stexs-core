@@ -72,19 +72,14 @@
 			const session: Session = stexs.auth.getSession();
 
 			if (!session) {
-				previousPageStore.set(
-					$page.url.pathname + '?' + $page.url.searchParams,
-				);
+				previousPageStore.set($page.url.pathname + '?' + $page.url.searchParams);
 				goto('/sign-in');
 				return false;
 			}
 
-			const responseClientData = await stexs.rpc(
-				'get_oauth2_app_by_client_id',
-				{
-					client_id_param: clientId,
-				},
-			);
+			const responseClientData = await stexs.rpc('get_oauth2_app_by_client_id', {
+				client_id_param: clientId,
+			});
 
 			if (responseClientData.error) {
 				$flash = {
@@ -119,9 +114,7 @@
 			const scopeData = responseScopesValid.data.map(
 				(scope: { scopes: { name: string } }) => scope.scopes.name,
 			);
-			const invalidScopes = scopes.filter(
-				(scope) => !scopeData.includes(scope),
-			);
+			const invalidScopes = scopes.filter((scope) => !scopeData.includes(scope));
 
 			if (invalidScopes.length > 0 || scopeData.length === 0) {
 				$flash = {
@@ -145,8 +138,7 @@
 					};
 				})
 				.filter(
-					(node) =>
-						(node.children && node.children.length > 0) || !node.children,
+					(node) => (node.children && node.children.length > 0) || !node.children,
 				);
 
 			const totalChildCount = filteredNodes.reduce((count, node) => {
@@ -171,9 +163,7 @@
 
 		if (response.status !== 200) {
 			if (body.errors && body.errors[0].code === 'CLIENT_ALREADY_CONNECTED') {
-				goto(
-					`${redirectUrl}${state && state.length > 0 ? `?state=${state}` : ''}`,
-				);
+				goto(`${redirectUrl}${state && state.length > 0 ? `?state=${state}` : ''}`);
 				return;
 			}
 
@@ -262,8 +252,7 @@
 					{#if $authorizeSetupQuery.data.project_name}
 						<a
 							href="/organizations/{$authorizeSetupQuery.data
-								.organization_name}/projects/{$authorizeSetupQuery.data
-								.project_name}"
+								.organization_name}/projects/{$authorizeSetupQuery.data.project_name}"
 							class="text-secondary-500 hover:text-secondary-400 transition"
 							>{$authorizeSetupQuery.data.project_name}</a
 						>
@@ -278,9 +267,7 @@
 						class="p-0 text-[14px] text-secondary-500 hover:text-secondary-400"
 						on:click={async () => {
 							await stexs.auth.signOut();
-							previousPageStore.set(
-								$page.url.pathname + '?' + $page.url.searchParams,
-							);
+							previousPageStore.set($page.url.pathname + '?' + $page.url.searchParams);
 							goto('/sign-in');
 						}}>Not you?</Button
 					>

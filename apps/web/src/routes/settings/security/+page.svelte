@@ -140,9 +140,7 @@
 						<p class="text-[16px] break-all">
 							{#if showEmail}{$userStore.email}{:else}{emailHidden}{/if}
 						</p>
-						<Button
-							on:click={toggleShowEmail}
-							class="variant-ghost-surface px-2 py-1"
+						<Button on:click={toggleShowEmail} class="variant-ghost-surface px-2 py-1"
 							>{#if showEmail}Hide{:else}Show{/if}</Button
 						>
 					</div>
@@ -192,8 +190,7 @@
 						<Button
 							on:click={() =>
 								openEnableTOTPModal(authQueryStore, stexs, flash, modalStore)}
-							class="variant-filled-primary px-2 py-1"
-							>Enable Authenticator App</Button
+							class="variant-filled-primary px-2 py-1">Enable Authenticator App</Button
 						>
 					{/if}
 				</div>
@@ -232,8 +229,7 @@
 				</p>
 				<Button
 					class="variant-filled-primary px-2 py-1"
-					on:click={() =>
-						openSignOutFromAllSessionsModal(modalStore, openMFAModal)}
+					on:click={() => openSignOutFromAllSessionsModal(modalStore, openMFAModal)}
 					>Sign Out from All Sessions</Button
 				>
 			</div>

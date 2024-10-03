@@ -318,9 +318,7 @@
 			</div>
 			{#if hasChanges}
 				<div class="flex w-full h-fit mx-auto justify-evenly">
-					<Button class="variant-ghost-surface" on:click={resetForm}
-						>Reset</Button
-					>
+					<Button class="variant-ghost-surface" on:click={resetForm}>Reset</Button>
 					{#if !hasErrors && !nameNotAvailable}
 						<Button type="submit" class="variant-filled-primary" {submitted}
 							>Create</Button

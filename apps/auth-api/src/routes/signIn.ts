@@ -54,22 +54,22 @@ router.post(
 		try {
 			const { rowCount, rows } = await db.query(
 				`
-          SELECT 
-            u.id, 
-            u.email_verified_at,
-            ARRAY_REMOVE(ARRAY[
-              CASE WHEN mfa.email = TRUE THEN 'email' END,
-              CASE WHEN mfa.totp_verified_at IS NOT NULL THEN 'totp' END
-            ], NULL) AS types,
-            u.banned_at
-          FROM auth.users AS u
-          LEFT JOIN public.profiles AS p ON u.id = p.user_id
-          LEFT JOIN auth.mfa ON u.id = mfa.user_id
-          WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
-            AND (
-                (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
-            );
-        `,
+					SELECT 
+						u.id, 
+						u.email_verified_at,
+						ARRAY_REMOVE(ARRAY[
+							CASE WHEN mfa.email = TRUE THEN 'email' END,
+							CASE WHEN mfa.totp_verified_at IS NOT NULL THEN 'totp' END
+						], NULL) AS types,
+						u.banned_at
+					FROM auth.users AS u
+					LEFT JOIN public.profiles AS p ON u.id = p.user_id
+					LEFT JOIN auth.mfa ON u.id = mfa.user_id
+					WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
+						AND (
+							(CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
+						);
+        		`,
 				[identifier, password],
 			);
 
@@ -100,9 +100,7 @@ router.post(
 
 			if (!rows[0].email_verified_at) {
 				logger.debug(`Email not verified for user: ${identifier}`);
-				return res
-					.status(400)
-					.json(errorMessages([{ info: EMAIL_NOT_VERIFIED }]));
+				return res.status(400).json(errorMessages([{ info: EMAIL_NOT_VERIFIED }]));
 			}
 
 			uuid = rows[0].id;

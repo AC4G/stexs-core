@@ -88,8 +88,7 @@
 						Don't have an account?
 						<a
 							href="/sign-up"
-							class="text-secondary-500 hover:text-secondary-400 transition"
-							>Sign Up</a
+							class="text-secondary-500 hover:text-secondary-400 transition">Sign Up</a
 						>
 					</p>
 				</div>
@@ -102,17 +101,11 @@
 				</ul>
 			{/if}
 			<form class="space-y-6" on:submit|preventDefault={signIn}>
-				<Input
-					field="identifier"
-					type="text"
-					required
-					bind:value={$form.identifier}>Username or Email</Input
+				<Input field="identifier" type="text" required bind:value={$form.identifier}
+					>Username or Email</Input
 				>
-				<Input
-					field="password"
-					type="password"
-					required
-					bind:value={$form.password}>Password</Input
+				<Input field="password" type="password" required bind:value={$form.password}
+					>Password</Input
 				>
 				<div class="flex justify-between">
 					<Input

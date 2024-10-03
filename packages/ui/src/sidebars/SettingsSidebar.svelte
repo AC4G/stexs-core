@@ -4,7 +4,7 @@
 		SidebarGroup,
 		SidebarItem,
 		SidebarWrapper,
-		SidebarDropdownWrapper
+		SidebarDropdownWrapper,
 	} from 'flowbite-svelte';
 	import Icon from '@iconify/svelte';
 

@@ -116,9 +116,7 @@ router.delete(
 			logger.info(`Deleted avatar from user: ${userId}`);
 		} catch (e) {
 			logger.error(
-				`Error while deleting avatar. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+				`Error while deleting avatar. Error: ${e instanceof Error ? e.message : e}`,
 			);
 			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
 		}

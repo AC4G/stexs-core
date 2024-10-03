@@ -47,7 +47,8 @@
 					url,
 					is_private,
 					accept_friend_requests
-      	`)
+      			`,
+			)
 			.ilike('username', username);
 
 		if (data?.length === 0 && username !== undefined) {
@@ -66,10 +67,7 @@
 	async function fetchBlocked(userId: string, currentUserId: string) {
 		const filters = `and(blocker_id.eq.${userId},blocked_id.eq.${currentUserId}),and(blocker_id.eq.${currentUserId},blocked_id.eq.${userId})`;
 
-		const { data } = await stexs
-			.from('blocked')
-			.select('blocker_id')
-			.or(filters);
+		const { data } = await stexs.from('blocked').select('blocker_id').or(filters);
 
 		return data;
 	}
@@ -120,8 +118,7 @@
 
 	$: isCurrentUserBlocker =
 		$blockedQuery.data?.filter(
-			(blocked: { blocker_id: string }) =>
-				blocked.blocker_id === $userStore?.id,
+			(blocked: { blocker_id: string }) => blocked.blocker_id === $userStore?.id,
 		).length > 0;
 
 	$: isFriendQuery = createQuery({
@@ -207,9 +204,7 @@
 			{#if $profileQuery.isLoading || !$profileQuery.data}
 				<div class="placeholder-circle animate-pulse mx-auto w-[168px]" />
 				<div class="grid gap-y-4 md:col-span-2 items-center">
-					<div
-						class="placeholder animate-pulse w-[80%] sm:w-[120px] h-[24px]"
-					/>
+					<div class="placeholder animate-pulse w-[80%] sm:w-[120px] h-[24px]" />
 					<div class="placeholder animate-pulse w-[100px] h-[24px]" />
 					<div class="placeholder animate-pulse sm:w-full h-[40px]" />
 					<div class="placeholder animate-pulse w-[80%] sm:w-[50%] h-[24px]" />
@@ -250,10 +245,7 @@
 								class="text-[14px] w-fit break-all group"
 							>
 								<div class="flex flex-row space-x-2 items-center">
-									<Icon
-										icon="flowbite:link-outline"
-										class="text-white transition"
-									/>
+									<Icon icon="flowbite:link-outline" class="text-white transition" />
 									<p
 										class="text-secondary-500 group-hover:text-secondary-400 transition"
 									>
@@ -325,12 +317,7 @@
 									<Button
 										on:click={async () => {
 											friendRequestSubmitted = true;
-											await sendFriendRequest(
-												username,
-												$userStore.id,
-												userId,
-												flash,
-											);
+											await sendFriendRequest(username, $userStore.id, userId, flash);
 											friendRequestSubmitted = false;
 											$friendRequestQuery.refetch();
 											$isFriendQuery.refetch();
@@ -404,8 +391,7 @@
 												}
 											},
 										)}
-									class="hover:!bg-surface-500 rounded text-red-600"
-									>Block</DropdownItem
+									class="hover:!bg-surface-500 rounded text-red-600">Block</DropdownItem
 								>
 							{/if}
 						</Dropdown>
@@ -443,10 +429,7 @@
 					<TabAnchor href="/{username}" selected={path === `/${username}`}>
 						<span>Inventory</span>
 					</TabAnchor>
-					<TabAnchor
-						href="/{username}/friends"
-						selected={path.endsWith('/friends')}
-					>
+					<TabAnchor href="/{username}/friends" selected={path.endsWith('/friends')}>
 						<span>Friends</span>
 					</TabAnchor>
 					<TabAnchor

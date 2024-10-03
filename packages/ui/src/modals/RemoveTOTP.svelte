@@ -69,14 +69,8 @@
 				{/each}
 			</ul>
 		{/if}
-		<form
-			class="space-y-6"
-			autocomplete="off"
-			on:submit|preventDefault={submit}
-		>
-			<Input name="code" field="code" required bind:value={$form.code}
-				>Code</Input
-			>
+		<form class="space-y-6" autocomplete="off" on:submit|preventDefault={submit}>
+			<Input name="code" field="code" required bind:value={$form.code}>Code</Input>
 			{#if $errors.code && Array.isArray($errors.code)}
 				<ul class="whitespace-normal text-[14px] mt-2 text-error-400">
 					{#each $errors.code as error (error)}
@@ -89,9 +83,8 @@
 					class="variant-ringed-surface hover:bg-surface-600"
 					on:click={cancel}>Cancel</Button
 				>
-				<Button
-					type="submit"
-					class="variant-ghost-surface px-2 py-1 text-red-600">Remove</Button
+				<Button type="submit" class="variant-ghost-surface px-2 py-1 text-red-600"
+					>Remove</Button
 				>
 			</div>
 		</form>
