@@ -24,7 +24,7 @@ export function checkScopes(
 					JOIN public.scopes AS s ON oas.scope_id = s.id
 					WHERE a.client_id = $1::uuid
 						AND s.name = ANY($2::varchar[]);
-      			`,
+				`,
 				[clientId, requiredScopes],
 			)
 			.then((result) => {

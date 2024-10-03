@@ -90,7 +90,7 @@ router.post(
 						WHERE pm.member_id = $1::uuid 
 							AND pm.project_id = $2::integer 
 							AND pm.role IN ('Admin', 'Owner');
-          			`,
+					`,
 					[sub, projectId],
 				);
 
@@ -107,7 +107,7 @@ router.post(
 								oa.project_id IS NULL
 							)
 							AND p.id = $2::integer;
-          			`,
+					`,
 					[organizationId, projectId, clientId],
 				);
 
@@ -185,7 +185,7 @@ router.delete(
 						WHERE pm.member_id = $1::uuid 
 							AND pm.project_id = $2::integer 
 							AND pm.role IN ('Admin', 'Owner');
-          			`,
+					`,
 					[sub, projectId],
 				);
 
@@ -202,7 +202,7 @@ router.delete(
 								oa.project_id IS NULL
 							)
 							AND p.id = $2::integer;
-          			`,
+					`,
 					[organizationId, projectId, clientId],
 				);
 

@@ -51,7 +51,7 @@ router.post(
 					SELECT 1 
 					FROM auth.users
 					WHERE email = $1::text;
-        		`,
+				`,
 				[email],
 			);
 
@@ -93,7 +93,7 @@ router.post(
 						recovery_token = $1::uuid,
 						recovery_sent_at = CURRENT_TIMESTAMP
 					WHERE email = $2::text;
-        		`,
+				`,
 				[token, email],
 			);
 
@@ -180,7 +180,7 @@ router.post(
 					FROM auth.users
 					WHERE email = $1::text 
 						AND recovery_token = $2::uuid;
-        		`,
+				`,
 				[email, token],
 			);
 
@@ -228,7 +228,7 @@ router.post(
 						END AS is_current_password
 					FROM auth.users
 					WHERE email = $2::text;
-        		`,
+				`,
 				[password, email],
 			);
 
@@ -257,7 +257,7 @@ router.post(
 						recovery_token = NULL,
 						recovery_sent_at = NULL
 					WHERE email = $2::text;
-        		`,
+				`,
 				[password, email],
 			);
 

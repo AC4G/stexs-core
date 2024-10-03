@@ -93,7 +93,7 @@
 						username
 					),
 					created_at
-        		`,
+				`,
 				{ count: 'exact' },
 			)
 			.eq('user_id', userId)

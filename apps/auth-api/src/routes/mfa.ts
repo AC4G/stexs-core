@@ -60,7 +60,7 @@ router.get(
 						END AS totp
 					FROM auth.mfa
 					WHERE user_id = $1::uuid;
-        		`,
+				`,
 				[userId],
 			);
 

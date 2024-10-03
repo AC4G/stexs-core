@@ -41,7 +41,7 @@ router.post(
 					WHERE user_id = $1::uuid 
 						AND grant_type = 'password' 
 						AND session_id = $2::uuid;
-        		`,
+				`,
 				[auth?.sub, auth?.session_id],
 			);
 
@@ -112,7 +112,7 @@ router.post(
 					DELETE FROM auth.refresh_tokens
 					WHERE user_id = $1::uuid 
 						AND grant_type = 'password';
-        		`,
+				`,
 				[userId],
 			);
 

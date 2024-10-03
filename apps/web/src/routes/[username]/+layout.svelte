@@ -47,7 +47,7 @@
 					url,
 					is_private,
 					accept_friend_requests
-      			`,
+				`,
 			)
 			.ilike('username', username);
 

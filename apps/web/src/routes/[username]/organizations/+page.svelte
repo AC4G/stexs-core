@@ -183,7 +183,7 @@
 						name
 					),
 					role
-        		`,
+				`,
 				{ count: 'exact' },
 			)
 			.eq('member_id', userId)

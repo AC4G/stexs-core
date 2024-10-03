@@ -92,7 +92,7 @@ router.post(
 						WHERE member_id = $1::uuid 
 							AND organization_id = $2::integer 
 							AND role IN ('Admin', 'Owner');
-          			`,
+					`,
 					[sub, organizationId],
 				);
 
@@ -173,7 +173,7 @@ router.delete(
 						WHERE member_id = $1::uuid 
 							AND organization_id = $2::integer 
 							AND role IN ('Admin', 'Owner');
-          			`,
+					`,
 					[sub, organizationId],
 				);
 

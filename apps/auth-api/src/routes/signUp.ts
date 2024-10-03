@@ -100,7 +100,7 @@ router.post(
 						CURRENT_TIMESTAMP
 					)
 					RETURNING id;
-        		`,
+				`,
 				[email, password, { username }, token],
 			);
 

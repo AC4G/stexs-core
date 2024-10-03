@@ -87,7 +87,7 @@
 							name
 						)
 					)                
-        		`,
+				`,
 				{ count: 'exact' },
 			)
 			.eq('user_id', userId)

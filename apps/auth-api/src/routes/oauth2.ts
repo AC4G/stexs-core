@@ -112,7 +112,7 @@ router.post(
 									AND obj.scope = s.name::text
 							)
 						);
-        		`,
+				`,
 				[client_id, redirect_url, scopesStringified],
 			);
 
@@ -195,7 +195,7 @@ router.post(
 					DO UPDATE
 					SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
 					RETURNING id, created_at;
-        		`,
+				`,
 				[token, userId, client_id],
 			);
 
@@ -241,7 +241,7 @@ router.post(
 						id
 					FROM scope_ids
 					ON CONFLICT DO NOTHING;
-       			`,
+				`,
 				[tokenId, scopes],
 			);
 		} catch (e) {
@@ -404,7 +404,7 @@ router.delete(
 						AND user_id = $2::uuid
 						AND session_id IS NULL
 						AND grant_type = 'authorization_code';
-        		`,
+				`,
 				[connectionId, userId],
 			);
 
@@ -453,7 +453,7 @@ router.delete(
 						AND grant_type = 'authorization_code' 
 						AND token = $2::uuid 
 						AND session_id IS NULL;
-        		`,
+				`,
 				[token?.sub, token?.jti],
 			);
 
