@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { debounce } from 'lodash';
     import Button from './Button.svelte';
     import Icon from '@iconify/svelte';
     import Input from './Input.svelte';
@@ -8,7 +7,7 @@
     import { Dropdown, Radio } from 'flowbite-svelte';
 
     export let cancel: () => void;
-    export let confirm: (code: string) => Promise<void>;
+    export let confirm: (code: string, type: string) => Promise<Array<{ message: string }>|void>;
     export let flash;
     export let stexs;
     export let types;
@@ -84,8 +83,17 @@
 
         submitted = true;
 
-        await confirm($form.code);
-        
+        const resultErrors = await confirm($form.code, type);
+
+        if (resultErrors) {
+            resultErrors.forEach((error: { message: string }) => {
+                $errors._errors === undefined
+                    ? ($errors._errors = [error.message])
+                    : $errors._errors.push(error.message);
+                return;
+            });
+        }
+
         confirmErrors.forEach((error: { message: string }) => {
             $errors._errors === undefined
                 ? ($errors._errors = [error.message])

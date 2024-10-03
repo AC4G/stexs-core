@@ -112,7 +112,7 @@
   }
 </script>
 
-<div class="flex items-center justify-center h-screen flex-col">
+<div class="flex items-center justify-center h-full flex-col">
   <div class="card p-5 variant-ghost-surface space-y-6">
     <div class="text-center">
       <h3 class="h3 text-primary-500">Password Recovery</h3>

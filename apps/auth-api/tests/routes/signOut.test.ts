@@ -5,6 +5,7 @@ const mockQuery = jest.fn();
 import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../src/server';
+import { getTOTPForVerification } from '../../src/services/totpService';
 
 jest.mock('utils-node/jwtMiddleware', () => ({
   validateAccessToken: jest.fn(
@@ -69,12 +70,26 @@ describe('Sign Out Routes', () => {
       rowCount: 0,
     } as never);
 
-    const response = await request(server).post('/sign-out/everywhere');
+    const response = await request(server).post('/sign-out');
 
     expect(response.status).toBe(404);
   });
 
   it('should handle sign out from all devices', async () => {
+    const code = getTOTPForVerification(
+      'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
+    ).generate();
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          totp: true,
+          totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
+        },
+      ],
+      rowCount: 1,
+    } as never);
+    
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -87,7 +102,11 @@ describe('Sign Out Routes', () => {
       rowCount: 2,
     } as never);
 
-    const response = await request(server).post('/sign-out');
+
+    const response = await request(server).post('/sign-out/all-sessions').send({
+      code,
+      type: 'totp'
+    });
 
     expect(response.status).toBe(204);
   });

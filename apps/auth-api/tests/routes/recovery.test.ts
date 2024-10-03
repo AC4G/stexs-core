@@ -6,6 +6,7 @@ import {
   beforeAll,
   afterAll,
   it,
+  beforeEach,
 } from '@jest/globals';
 
 const mockQuery = jest.fn();
@@ -36,7 +37,19 @@ jest.mock('../../src/database', () => {
   };
 });
 
+jest.mock("nodemailer");
+
+const sendMailMock = jest.fn();
+
+const nodemailer = require("nodemailer");
+nodemailer.createTransport.mockReturnValue({"sendMail": sendMailMock});
+
 describe('Recovery Routes', () => {
+  beforeEach( () => {
+    sendMailMock.mockClear();
+    nodemailer.createTransport.mockClear();
+  });
+  
   afterEach(() => {
     jest.clearAllMocks();
   });

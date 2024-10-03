@@ -13,11 +13,9 @@ import {
   INVALID_PASSWORD,
   INVALID_PASSWORD_LENGTH,
   INVALID_TYPE,
-  MFA_EMAIL_DISABLED,
   NEW_PASSWORD_EQUALS_CURRENT,
   PASSWORD_CHANGE_FAILED,
   PASSWORD_REQUIRED,
-  TOTP_DISABLED,
   TYPE_REQUIRED,
 } from 'utils-node/errors';
 import {
@@ -35,7 +33,7 @@ import {
   transformJwtErrorMessages,
 } from 'utils-node/jwtMiddleware';
 import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
-import { getTOTPForVerification } from '../services/totpService';
+import { validateMFA } from '../services/mfaService';
 
 const router = Router();
 
@@ -80,6 +78,42 @@ router.get(
   },
 );
 
+router.get('/sessions', 
+  [
+    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+    checkTokenGrantType(['password']),
+    transformJwtErrorMessages(logger)
+  ],
+  async (req: Request, res: Response) => {
+    const userId = req.auth?.sub;
+
+    try {
+      const { rowCount } = await db.query(
+        `
+          SELECT 1
+          FROM auth.refresh_tokens
+          WHERE user_id = $1::uuid
+            AND grant_type = 'password';
+        `,
+        [userId],
+      );
+
+      logger.debug(`Sessions amount retrieve successful for user: ${userId}`);
+
+      res.json({
+        amount: rowCount,
+      })
+    } catch (e) {
+      logger.error(
+        `Error while fetching sessions amount for user: ${userId}. Error: ${
+          e instanceof Error ? e.message : e
+        }`,
+      );
+      res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    }
+  }
+);
+
 router.post(
   '/password',
   [
@@ -113,116 +147,18 @@ router.post(
     validate(logger),
   ],
   async (req: Request, res: Response) => {
-    const userId = req.auth?.sub;
+    const userId = req.auth?.sub!;
     const { password, code, type } = req.body;
 
-    try {
-      if (type === 'totp') {
-        const { rows, rowCount } = await db.query(
-          `
-            SELECT 
-              totp, 
-              totp_secret 
-            FROM auth.mfa
-            WHERE user_id = $1::uuid;
-          `,
-          [userId],
-        );
+    let mfaError = await validateMFA(userId, type, code);
 
-        if (rowCount === 0) {
-          logger.error(`Failed to fetch MFA totp code and totp_secret for user: ${userId}`);
-          return res
-            .status(500)
-            .json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }
-
-        if (!rows[0].totp) {
-          logger.debug(`MFA TOTP is disabled for user: ${userId}`);
-          return res.status(400).json(errorMessages([{ info: TOTP_DISABLED }]));
-        }
-
-        const totp = getTOTPForVerification(rows[0].totp_secret);
-
-        if (totp.validate({ token: code, window: 1 })) {
-          logger.debug(`Invalid code provided for MFA TOTP password change for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: INVALID_CODE,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-      }
-
-      if (type === 'email') { 
-        const { rows, rowCount } = await db.query(
-          `
-            SELECT 
-              email, 
-              email_code, 
-              email_code_sent_at
-            FROM auth.mfa
-            WHERE user_id = $1::uuid;
-          `,
-          [userId],
-        );
-
-        if (rowCount === 0) {
-          logger.error(`Failed to fetch MFA email status, code and timestamp for user: ${userId}`);
-          return res
-            .status(500)
-            .json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }
-
-        if (!rows[0].email) {
-          logger.debug(`MFA email is disabled for user: ${userId}`);
-          return res
-            .status(400)
-            .json(errorMessages([{ info: MFA_EMAIL_DISABLED }]));
-        }
-
-        if (code !== rows[0].email_code) {
-          logger.debug(`Invalid MFA code provided for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: INVALID_CODE,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-
-        if (isExpired(rows[0].email_code_sent_at, 5)) {
-          logger.debug(`MFA code expired for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: CODE_EXPIRED,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-      }
-    } catch (e) {
-      logger.error(
-        `Error while checking MFA code for user: ${userId}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    if (mfaError) {
+      return res
+        .status(mfaError.status)
+        .json(errorMessages([{ 
+          info: mfaError.info,
+          data: mfaError.data
+        }]));
     }
 
     try {
@@ -326,116 +262,18 @@ router.post(
     validate(logger),
   ],
   async (req: Request, res: Response) => {
-    const userId = req.auth?.sub;
+    const userId = req.auth?.sub!;
     const { email: newEmail, code, type } = req.body;
 
-    try {
-      if (type === 'totp') {
-        const { rows, rowCount } = await db.query(
-          `
-            SELECT 
-              totp, 
-              totp_secret 
-            FROM auth.mfa
-            WHERE user_id = $1::uuid;
-          `,
-          [userId],
-        );
+    let mfaError = await validateMFA(userId, type, code);
 
-        if (rowCount === 0) {
-          logger.error(`Failed to fetch MFA totp code and totp_secret for user: ${userId}`);
-          return res
-            .status(500)
-            .json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }
-
-        if (!rows[0].totp) {
-          logger.debug(`MFA TOTP is disabled for user: ${userId}`);
-          return res.status(400).json(errorMessages([{ info: TOTP_DISABLED }]));
-        }
-
-        const totp = getTOTPForVerification(rows[0].totp_secret);
-
-        if (totp.validate({ token: code, window: 1 })) {
-          logger.debug(`Invalid code provided for MFA TOTP password change for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: INVALID_CODE,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-      }
-
-      if (type === 'email') {
-        const { rows, rowCount } = await db.query(
-          `
-            SELECT 
-              email, 
-              email_code, 
-              email_code_sent_at
-            FROM auth.mfa
-            WHERE user_id = $1::uuid;
-          `,
-          [userId],
-        );
-
-        if (rowCount === 0) {
-          logger.error(`Failed to fetch MFA email status, code and timestamp for user: ${userId}`);
-          return res
-            .status(500)
-            .json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }
-
-        if (!rows[0].email) {
-          logger.debug(`MFA email is disabled for user: ${userId}`);
-          return res
-            .status(400)
-            .json(errorMessages([{ info: MFA_EMAIL_DISABLED }]));
-        }
-
-        if (code !== rows[0].email_code) {
-          logger.debug(`Invalid MFA code provided for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: INVALID_CODE,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-
-        if (isExpired(rows[0].email_code_sent_at, 5)) {
-          logger.debug(`MFA code expired for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: CODE_EXPIRED,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-      }
-    } catch (e) {
-      logger.error(
-        `Error while checking MFA code for user: ${userId}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+    if (mfaError) {
+      return res
+        .status(mfaError.status)
+        .json(errorMessages([{ 
+          info: mfaError.info,
+          data: mfaError.data
+        }]));
     }
 
     try {

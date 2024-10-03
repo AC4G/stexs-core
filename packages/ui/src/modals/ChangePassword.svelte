@@ -65,7 +65,7 @@
 
 {#if $modalStore[0]}
     {#if newPasswordEntered}
-        <MFA {stexs} {flash} {types} {cancel} {confirm} {confirmErrors} bind:type />
+        <MFA {stexs} {flash} {types} {cancel} {confirm} bind:type />
     {:else}
         <div class="card p-5 space-y-6 flex flex-col relative max-w-[380px]">
             <div class="h-fit">

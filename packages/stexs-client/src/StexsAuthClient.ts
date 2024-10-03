@@ -40,7 +40,6 @@ export class StexsAuthClient {
     };
     this.oauth = {
       authorize: this._authorize.bind(this),
-      getConnections: this._getConnections.bind(this),
       deleteConnection: this._deleteConnection.bind(this),
     };
 
@@ -81,8 +80,11 @@ export class StexsAuthClient {
     });
 
     window.addEventListener('beforeunload', () => {
-      if (this._isInRefreshState()) {
-        this._unsetRefreshState();
+      const isLocked = localStorage.getItem("refresh_lock") === 'true';
+
+      if (isLocked) {
+        localStorage.removeItem("refresh_lock");
+        localStorage.removeItem("priority_tab");
       }
     });
 
@@ -261,6 +263,18 @@ export class StexsAuthClient {
   }
 
   /**
+   * Gets the number of active sessions for the current user.
+   *
+   * @returns {Promise<Response>} A Promise that resolves with the active sessions response data.
+   */
+  async getActiveSessionsAmount(): Promise<Response> {
+    return await this._request({
+      path: 'user/sessions',
+      method: 'GET',
+    });
+  }
+
+  /**
    * Signs the user out from the current session.
    *
    * @returns {Promise<void>} A Promise that resolves with void.
@@ -272,10 +286,16 @@ export class StexsAuthClient {
   /**
    * Signs the user out from all active sessions.
    *
-   * @returns {Promise<void>} A Promise that resolves with void.
+   * @returns {Promise<Response>} A Promise that resolves with void.
    */
-  async signOutFromAllSessions(): Promise<void> {
-    await this._baseSignOut('sign-out/everywhere');
+  async signOutFromAllSessions(
+    code: string,
+    type: 'totp' | 'email',
+  ): Promise<Response> {
+    return await this._baseSignOut('sign-out/all-sessions', {
+      code,
+      type,
+    });
   }
 
   /**
@@ -284,14 +304,15 @@ export class StexsAuthClient {
    * @param {string} path - The path specifying the sign-out action.
    * @returns {Promise<void>} A Promise that resolves with void.
    */
-  private async _baseSignOut(path: string): Promise<void> {
-    const session: Session = this._getSession();
+  private async _baseSignOut(path: string, body: Record<string, any> | undefined = undefined): Promise<Response> {
+    const response = await this._request({
+      path,
+      method: 'POST',
+      body,
+    });
 
-    if (session?.access_token) {
-      await this._request({
-        path,
-        method: 'POST',
-      });
+    if (!response.ok) {
+      return response;
     }
 
     localStorage.clear();
@@ -301,6 +322,8 @@ export class StexsAuthClient {
     }
 
     this.triggerEvent(AuthEvents.SIGNED_OUT);
+
+    return response;
   }
 
   /**
@@ -555,17 +578,6 @@ export class StexsAuthClient {
   }
 
   /**
-   * Retrieves the OAuth2 connections associated with the authenticated user.
-   *
-   * @returns {Promise<Response>} A Promise that resolves with the connections response.
-   */
-  private async _getConnections(): Promise<Response> {
-    return await this._request({
-      path: 'oauth2/connections',
-    });
-  }
-
-  /**
    * Deletes an OAuth2 connection associated with the authenticated user and linked to a client.
    *
    * @param {string} client_id - The client identifier of the connection to be deleted.
@@ -685,73 +697,82 @@ export class StexsAuthClient {
   }
 
   private async _refreshAccessToken(): Promise<boolean> {
-    if (this._isInRefreshState()) {
-      return false;
-    }
-
-    this._setRefreshState();
+    const isLocked = localStorage.getItem("refresh_lock") === 'true';
+    const currentTabId = Date.now();
     
-    const session: Session = this._getSession();
+    if (isLocked) {
+        return false;
+    }
 
-    if (!session || !session.refresh_token) {
-      this._unsetRefreshState();
+    localStorage.setItem("refresh_lock", 'true');
+    localStorage.setItem("priority_tab", currentTabId.toString());
+
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const priorityTabId = localStorage.getItem("priority_tab");
+    if (priorityTabId !== currentTabId.toString()) {
+      localStorage.removeItem("refresh_lock");
+      return false; 
+    }
+
+    if (document.visibilityState !== 'visible') {
+      localStorage.removeItem("refresh_lock");
+      localStorage.removeItem("priority_tab");
       return false;
     }
 
-    if (session.refresh.count === 24) {
-      this.signOut();
-      this._unsetRefreshState();
+    try {
+      const session: Session = this._getSession();
+
+      if (!session || !session.refresh_token) {
+        return false;
+      }
+
+      if (session.refresh.count === 24) {
+        this.signOut();
+        return false;
+      }
+
+      const response = await this._request({
+        path: 'token',
+        method: 'POST',
+        body: {
+          refresh_token: session.refresh_token,
+        },
+      });
+
+      if (!response.ok) {
+        this.signOut();
+        return false;
+      }
+
+      const body = await response.json();
+      const refresh = { ...session.refresh };
+
+      this._setAccessTokenToAuthHeaders(body.access_token);
+
+      if (refresh.enabled === false) {
+        refresh.count++;
+      }
+
+      localStorage.setItem(
+        'session',
+        JSON.stringify({
+          ...body,
+          refresh,
+          user: session.user,
+        }),
+      );
+
+      this.triggerEvent(AuthEvents.TOKEN_REFRESHED);
+      return true;
+    } catch (error) {
+      console.error('Error refreshing access token:', error);
       return false;
+    } finally {
+      localStorage.removeItem("refresh_lock");
+      localStorage.removeItem("priority_tab");
     }
-
-    const response = await this._request({
-      path: 'token',
-      method: 'POST',
-      body: {
-        refresh_token: session.refresh_token,
-      },
-    });
-
-    if (!response.ok) {
-      this.signOut();
-      this._unsetRefreshState();
-      return false;
-    }
-
-    const body = await response.json();
-    const refresh = { ...session.refresh };
-
-    this._setAccessTokenToAuthHeaders(body.access_token);
-
-    if (refresh.enabled === false) {
-      refresh.count++;
-    }
-
-    localStorage.setItem(
-      'session',
-      JSON.stringify({
-        ...body,
-        refresh,
-        user: session.user,
-      }),
-    );
-
-    this._unsetRefreshState();
-    this.triggerEvent(AuthEvents.TOKEN_REFRESHED);
-
-    return true;
-  }
-
-  private _isInRefreshState(): boolean {
-    return localStorage.getItem('refresh') === 'true';
-  }
-
-  private _setRefreshState() {
-    localStorage.setItem('refresh', 'true');
-  }
-
-  private _unsetRefreshState() {
-    localStorage.removeItem('refresh');
   }
 
   private _getSession(): Session {

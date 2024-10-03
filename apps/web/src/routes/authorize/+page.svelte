@@ -30,14 +30,6 @@
   let authorizeSetupQuery = createQuery({
     queryKey: ['authorizeSetup'],
     queryFn: async () => {
-      const session: Session = stexs.auth.getSession();
-
-      if (!session) {
-          previousPageStore.set($page.url.pathname + "?" + $page.url.searchParams);
-          goto('/sign-in');
-          return false;
-      }
-
       let issues = [];
 
       if (!clientId) {
@@ -76,6 +68,14 @@
         return false;
       }
 
+      const session: Session = stexs.auth.getSession();
+
+      if (!session) {
+          previousPageStore.set($page.url.pathname + "?" + $page.url.searchParams);
+          goto('/sign-in');
+          return false;
+      }
+
       const responseClientData = await stexs.rpc('get_oauth2_app_by_client_id', {
         client_id_param: clientId
       });
@@ -101,24 +101,6 @@
       }
 
       const clientData = responseClientData.data[0];
-
-      const responseConnectionExists = await stexs.from('oauth2_connections')
-        .select('', { 
-            count: 'exact', 
-            head: true 
-        })
-        .eq('user_id', $userStore?.id)
-        .eq('client_id', clientId);
-
-      if (responseConnectionExists.count > 0) {
-        $flash = {
-          message: `You already have an active connection with the application.`,
-          classes: 'variant-glass-success',
-          timeout: 5000,
-        }
-        goto('/');
-        return false;
-      }
 
       const responseScopesValid = await stexs.from('oauth2_app_scopes')
         .select('scopes(name)')
@@ -165,7 +147,33 @@
   });
 
   async function authorize() {
+    const response = await stexs.auth.oauth.authorize(clientId!, redirectUrl!, scopes);
+    const body = await response.json();
 
+    if (response.status !== 200) {
+      if (body.errors && body.errors[0].code === 'CLIENT_ALREADY_CONNECTED') {
+        goto(`${redirectUrl}${state && state.length > 0 ? `?state=${state}` : ''}`);
+        return;
+      }
+
+      if (body.errors && body.errors[0].code === 'CLIENT_NOT_FOUND') {
+        $flash = {
+          message: `${couldNotProceed} the provided redirect URL does not match the application's configuration. ${pleaseNotify}`,
+          classes: 'variant-glass-error',
+          autohide: false,
+        }
+        return; 
+      }
+
+      $flash = {
+        message: `Authorization could not proceed due to internal server error. Please try again.`,
+        classes: 'variant-glass-error',
+        autohide: false,
+      }
+      return;
+    }
+
+    goto(`${redirectUrl}?code=${body.code}&expires=${body.expires}${state && state.length > 0 ? `&state=${state}` : ''}`);
   }
 </script>
 
@@ -182,7 +190,7 @@
       </div>
       <div class="h-[24px] placeholder animate-pulse w-full" />
       <div class="h-[80px] placeholder animate-pulse w-full" />
-      <div class="h-[344px] placeholder animate-pulse w-full" />
+      <div class="h-[200px] placeholder animate-pulse w-full" />
       <div class="flex flex-row justify-between">
         <Button class="variant-ringed-surface hover:bg-surface-600" on:click={() => goto('/')}>Cancel</Button>
         <div class="w-[108.71px] h-[42px] placeholder animate-pulse" />
@@ -225,7 +233,7 @@
       </div>
       <div class="flex flex-row justify-between">
         <Button class="variant-ringed-surface hover:bg-surface-600" on:click={() => goto('/')}>Cancel</Button>
-        <Button class="variant-filled-primary">Authorize</Button>
+        <Button class="variant-filled-primary" on:click={authorize}>Authorize</Button>
       </div>
       <div>
         <p class="text-[14px] text-surface-300 flex flex-row">

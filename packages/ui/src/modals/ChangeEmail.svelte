@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, type SvelteComponent } from 'svelte';
+    import { type SvelteComponent } from 'svelte';
     import { getModalStore } from '@skeletonlabs/skeleton';
     import MFA from '../MFA.svelte';
     import { superForm, superValidateSync } from 'sveltekit-superforms/client';
@@ -161,7 +161,7 @@
                 </form>
             </div>
         {:else}
-            <MFA {stexs} {flash} {types} {cancel} confirm={confirmMFA} {confirmErrors} bind:type />
+            <MFA {stexs} {flash} {types} {cancel} confirm={confirmMFA} bind:type />
         {/if}
     {:else}
         <div class="card p-5 space-y-6 flex flex-col relative max-w-[380px] w-full">

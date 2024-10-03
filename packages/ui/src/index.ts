@@ -22,3 +22,4 @@ export { default as EnableTOTP } from './modals/EnableTOTP.svelte';
 export { default as RemoveTOTP } from './modals/RemoveTOTP.svelte';
 export { default as DisableEmail } from './modals/DisableEmail.svelte';
 export { default as EnableEmail } from './modals/EnableEmail.svelte';
+export { default as MFAModal } from './modals/MFA.svelte';

@@ -11,25 +11,19 @@ import {
 } from 'utils-node/messageBuilder';
 import {
   ACCOUNT_BANNED,
-  CODE_EXPIRED,
   CODE_REQUIRED,
   EMAIL_NOT_VERIFIED,
   IDENTIFIER_REQUIRED,
   INTERNAL_ERROR,
-  INVALID_CODE,
   INVALID_CREDENTIALS,
   INVALID_TYPE,
-  MFA_EMAIL_DISABLED,
   PASSWORD_REQUIRED,
   TOKEN_REQUIRED,
-  TOTP_DISABLED,
   TYPE_REQUIRED,
   UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
 import validate from 'utils-node/validatorMiddleware';
 import logger from '../loggers/logger';
-import { isExpired } from 'utils-node';
-import { getTOTPForVerification } from '../services/totpService';
 import {
   validateSignInConfirmToken,
   checkTokenGrantType,
@@ -40,6 +34,7 @@ import {
   ISSUER,
   SIGN_IN_CONFIRM_TOKEN_SECRET,
 } from '../../env-config';
+import { validateMFA } from '../services/mfaService';
 
 const router = Router();
 
@@ -154,7 +149,7 @@ router.post(
     transformJwtErrorMessages(logger),
   ],
   async (req: JWTRequest, res: Response) => {
-    const userId = req.auth?.sub;
+    const userId = req.auth?.sub!;
     const supportedTypes = req.auth?.types;
     const { type, code } = req.body;
 
@@ -173,140 +168,15 @@ router.post(
       );
     }
 
-    if (type === 'email') {
-      try {
-        const { rowCount, rows } = await db.query(
-          `
-            SELECT 
-              email, 
-              email_code, 
-              email_code_sent_at
-            FROM auth.mfa
-            WHERE user_id = $1::uuid;
-          `,
-          [userId],
-        );
+    let mfaError = await validateMFA(userId, type, code);
 
-        if (rowCount === 0) {
-          logger.error(`Failed to fetch MFA email code and timestamp for user: ${userId}`);
-          return res
-            .status(500)
-            .json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }
-
-        if (!rows[0].email) {
-          logger.debug(`MFA email is disabled for user: ${userId}`);
-          return res
-            .status(400)
-            .json(errorMessages([{ info: MFA_EMAIL_DISABLED }]));
-        }
-
-        if (code !== rows[0].email_code) {
-          logger.debug(`Invalid MFA code provided for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: INVALID_CODE,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-
-        if (isExpired(rows[0].email_code_sent_at, 5)) {
-          logger.debug(`MFA code expired for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: CODE_EXPIRED,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-
-        logger.debug(`Sign in confirmation successful with MFA email for user: ${userId}`);
-
-        const { rowCount: count } = await db.query(
-          `
-            UPDATE auth.mfa
-            SET
-                email_code = NULL,
-                email_code_sent_at = NULL
-            WHERE user_id = $1::uuid;
-          `,
-          [userId],
-        );
-
-        if (count === 0)
-          logger.error(`No rows updated in MFA code reset for user: ${userId}`);
-      } catch (e) {
-        logger.error(
-          `Error during MFA email confirmation for user: ${userId}. Error: ${
-            e instanceof Error ? e.message : e
-          }`,
-        );
-        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-      }
-    }
-
-    if (type === 'totp') {
-      try {
-        const { rowCount, rows } = await db.query(
-          `
-            SELECT 
-              totp_verified_at, 
-              totp_secret 
-            FROM auth.mfa
-            WHERE user_id = $1::uuid;
-          `,
-          [userId],
-        );
-
-        if (rowCount === 0) {
-          logger.error(`Failed to fetch MFA TOTP secret for user: ${userId}`);
-          return res
-            .status(500)
-            .json(errorMessages([{ info: INTERNAL_ERROR }]));
-        }
-
-        if (!rows[0].totp_verified_at) {
-          logger.debug(`MFA TOTP is disabled for user: ${userId}`);
-          return res.status(400).json(errorMessages([{ info: TOTP_DISABLED }]));
-        }
-
-        const totp = getTOTPForVerification(rows[0].totp_secret);
-
-        if (totp.validate({ token: code, window: 1 })) {
-          logger.debug(`Invalid code provided for MFA TOTP confirmation for user: ${userId}`);
-          return res.status(403).json(
-            errorMessages([
-              {
-                info: INVALID_CODE,
-                data: {
-                  location: 'body',
-                  path: 'code',
-                },
-              },
-            ]),
-          );
-        }
-
-        logger.debug(`Sign in confirmation successful with MFA TOTP for user: ${userId}`);
-      } catch (e) {
-        logger.error(
-          `Error during MFA TOTP confirmation for user: ${userId}. Error: ${
-            e instanceof Error ? e.message : e
-          }`,
-        );
-        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-      }
+    if (mfaError) {
+      return res
+        .status(mfaError.status)
+        .json(errorMessages([{ 
+          info: mfaError.info,
+          data: mfaError.data
+        }]));
     }
 
     try {

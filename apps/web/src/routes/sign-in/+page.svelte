@@ -76,7 +76,7 @@
 </script>
 
 {#if !$signInSetupQuery.isLoading && $signInSetupQuery.data}
-  <div class="flex items-center justify-center h-screen flex-col">
+  <div class="flex items-center justify-center h-full flex-col">
     <div class="card p-5 variant-ghost-surface space-y-6 w-full max-w-[400px]">
       <div class="text-center">
         <h3 class="h3 text-primary-500">Sign In</h3>
