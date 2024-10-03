@@ -30,14 +30,6 @@
   let authorizeSetupQuery = createQuery({
     queryKey: ['authorizeSetup'],
     queryFn: async () => {
-      const session: Session = stexs.auth.getSession();
-
-      if (!session) {
-          previousPageStore.set($page.url.pathname + "?" + $page.url.searchParams);
-          goto('/sign-in');
-          return false;
-      }
-
       let issues = [];
 
       if (!clientId) {
@@ -74,6 +66,14 @@
 
         goto('/');
         return false;
+      }
+
+      const session: Session = stexs.auth.getSession();
+
+      if (!session) {
+          previousPageStore.set($page.url.pathname + "?" + $page.url.searchParams);
+          goto('/sign-in');
+          return false;
       }
 
       const responseClientData = await stexs.rpc('get_oauth2_app_by_client_id', {

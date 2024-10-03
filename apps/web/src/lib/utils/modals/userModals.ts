@@ -27,8 +27,7 @@ export function openBlockUserModal(
         username,
         flash,
         onSuccess,
-      },
-      fnAsync: true,
+      }
     },
   };
   modalStore.set([modal]);
@@ -54,8 +53,7 @@ export function openUnblockUserModal(
         username,
         flash,
         onSuccess,
-      },
-      fnAsync: true,
+      }
     },
   };
   modalStore.set([modal]);
@@ -166,6 +164,24 @@ export function openEnableEmailModal(
       authQueryStore,
       stexs,
       flash
+    },
+  };
+  modalStore.set([modal]);
+}
+
+export function openSignOutFromAllSessionsModal(
+  modalStore: ModalStore,
+  openMFAModal: () => void
+) {
+  const modal: ModalSettings = {
+    type: 'component',
+    component: 'confirm',
+    meta: {
+      text: `Do you really want to sign out from all sessions?`,
+      subText: 'Signing out from all sessions will log you out from all devices and browsers, including this one.',
+      fn: openMFAModal,
+      confirmBtnText: 'Continue',
+      close: false
     },
   };
   modalStore.set([modal]);

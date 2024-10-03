@@ -1,7 +1,6 @@
 import type { ToastSettings } from '@skeletonlabs/skeleton';
 import type { Writable } from 'svelte/store';
 import { stexs } from '../../stexsClient';
-import type { Profile } from '$lib/stores/profileStore';
 
 export async function blockUser(params: {
   blocked_id: string;

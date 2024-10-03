@@ -1,4 +1,4 @@
-import { expect, jest, describe, afterEach, it } from '@jest/globals';
+import { expect, jest, describe, afterEach, it, beforeEach } from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -25,7 +25,19 @@ jest.mock('../../src/database', () => {
   };
 });
 
+jest.mock("nodemailer");
+
+const sendMailMock = jest.fn();
+
+const nodemailer = require("nodemailer");
+nodemailer.createTransport.mockReturnValue({"sendMail": sendMailMock});
+
 describe('Sign Up', () => {
+  beforeEach( () => {
+    sendMailMock.mockClear();
+    nodemailer.createTransport.mockClear();
+  });
+  
   afterEach(() => {
     jest.clearAllMocks();
   });

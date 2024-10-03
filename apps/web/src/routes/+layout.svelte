@@ -32,7 +32,8 @@
     EnableEmail,
     Markdown,
     OrganizationLogo,
-    ProjectLogo
+    ProjectLogo,
+    MFAModal
   } from 'ui';
   import { stexs } from '../stexsClient';
   import { page } from '$app/stores';
@@ -95,7 +96,8 @@
     enableTOTP: { ref: EnableTOTP },
     removeTOTP: { ref: RemoveTOTP },
     disableEmail: { ref: DisableEmail },
-    enableEmail: { ref: EnableEmail }
+    enableEmail: { ref: EnableEmail },
+    MFAModal: { ref: MFAModal }
   };
   const excludeRoutes = [
     '/sign-in',

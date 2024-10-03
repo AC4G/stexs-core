@@ -13,8 +13,7 @@ export function openRemoveAvatarModal(
       fn: async () => {
         await stexs.storage.deleteAvatar();
         onSuccess();
-      },
-      fnAsync: true,
+      }
     },
   };
   modalStore.set([modal]);

@@ -128,7 +128,7 @@
 </script>
 
 {#if $signUpSetupQuery.data}
-  <div class="flex items-center justify-center h-screen">
+  <div class="flex items-center justify-center h-full">
     <div class="card p-5 variant-ghost-surface space-y-6  w-full max-w-[400px]">
       <div class="text-center">
         <h3 class="h3 text-primary-500">Sign Up</h3>

@@ -80,7 +80,7 @@
 </script>
 
 {#if $signInConfirmSetupQuery.data}
-  <div class="flex items-center justify-center h-screen">
+  <div class="flex items-center justify-center h-full">
     <MFA {stexs} cancel={cancelSignInConfirm} confirm={signInConfirm} {flash} types={signInInit.types} confirmErrors={errors} bind:type />
   </div>
 {/if}
