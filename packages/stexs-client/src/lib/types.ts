@@ -1,22 +1,24 @@
-export type Session = {
-  access_token: string;
-  refresh_token: string;
-  expires: number;
-  refresh: {
-    enabled: boolean;
-    count: number;
-  };
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    raw_user_meta_data: {
-      [key: string]: any;
-    };
-    created_at: string;
-    updated_at: string;
-  };
-} | undefined;
+export type Session =
+	| {
+			access_token: string;
+			refresh_token: string;
+			expires: number;
+			refresh: {
+				enabled: boolean;
+				count: number;
+			};
+			user: {
+				id: string;
+				email: string;
+				username: string;
+				raw_user_meta_data: {
+					[key: string]: any;
+				};
+				created_at: string;
+				updated_at: string;
+			};
+	  }
+	| undefined;
 
 /**
  * for future multi-user implementation
@@ -47,13 +49,13 @@ export type Session = {
 */
 
 export interface SignInInit {
-  continuousAutoRefresh: boolean;
-  expires: number;
-  token: string;
-  types: string[];
+	continuousAutoRefresh: boolean;
+	expires: number;
+	token: string;
+	types: string[];
 }
 
 export interface SignedUrl {
-  url: string;
-  expires: number;
+	url: string;
+	expires: number;
 }

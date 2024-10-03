@@ -2,100 +2,100 @@ import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
 import db from '../database';
 import {
-  CustomValidationError,
-  errorMessages,
-  message,
+	CustomValidationError,
+	errorMessages,
+	message,
 } from 'utils-node/messageBuilder';
 import { body, param } from 'express-validator';
 import {
-  ARRAY_REQUIRED,
-  CLIENT_ALREADY_CONNECTED,
-  CLIENT_ID_REQUIRED,
-  CLIENT_NOT_FOUND,
-  CLIENT_SECRET_REQUIRED,
-  CODE_REQUIRED,
-  CONNECTION_ALREADY_REVOKED,
-  CONNECTION_ID_NOT_NUMERIC,
-  CONNECTION_ID_REQUIRED,
-  CONNECTION_NOT_FOUND,
-  EMPTY_ARRAY,
-  GRANT_TYPE_REQUIRED,
-  INTERNAL_ERROR,
-  INVALID_GRANT_TYPE,
-  INVALID_TOKEN,
-  INVALID_URL,
-  INVALID_UUID,
-  REDIRECT_URL_REQUIRED,
-  REFRESH_TOKEN_REQUIRED,
-  SCOPES_REQUIRED,
+	ARRAY_REQUIRED,
+	CLIENT_ALREADY_CONNECTED,
+	CLIENT_ID_REQUIRED,
+	CLIENT_NOT_FOUND,
+	CLIENT_SECRET_REQUIRED,
+	CODE_REQUIRED,
+	CONNECTION_ALREADY_REVOKED,
+	CONNECTION_ID_NOT_NUMERIC,
+	CONNECTION_ID_REQUIRED,
+	CONNECTION_NOT_FOUND,
+	EMPTY_ARRAY,
+	GRANT_TYPE_REQUIRED,
+	INTERNAL_ERROR,
+	INVALID_GRANT_TYPE,
+	INVALID_TOKEN,
+	INVALID_URL,
+	INVALID_UUID,
+	REDIRECT_URL_REQUIRED,
+	REFRESH_TOKEN_REQUIRED,
+	SCOPES_REQUIRED,
 } from 'utils-node/errors';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import validate from 'utils-node/validatorMiddleware';
 import {
-  authorizationCodeController,
-  clientCredentialsController,
-  refreshTokenController,
+	authorizationCodeController,
+	clientCredentialsController,
+	refreshTokenController,
 } from '../controllers/oauth2Controller';
 import logger from '../loggers/logger';
 import { verify } from 'jsonwebtoken';
 import {
-  ACCESS_TOKEN_SECRET,
-  AUDIENCE,
-  ISSUER,
-  REFRESH_TOKEN_SECRET,
+	ACCESS_TOKEN_SECRET,
+	AUDIENCE,
+	ISSUER,
+	REFRESH_TOKEN_SECRET,
 } from '../../env-config';
 import {
-  validateAccessToken,
-  validateRefreshToken,
-  checkTokenGrantType,
-  transformJwtErrorMessages,
+	validateAccessToken,
+	validateRefreshToken,
+	checkTokenGrantType,
+	transformJwtErrorMessages,
 } from 'utils-node/jwtMiddleware';
 
 const router = Router();
 
 router.post(
-  '/authorize',
-  [
-    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType(['password']),
-    transformJwtErrorMessages(logger),
-    body('client_id')
-      .notEmpty()
-      .withMessage(CLIENT_ID_REQUIRED)
-      .bail()
-      .custom((value) => {
-        if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
+	'/authorize',
+	[
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password']),
+		transformJwtErrorMessages(logger),
+		body('client_id')
+			.notEmpty()
+			.withMessage(CLIENT_ID_REQUIRED)
+			.bail()
+			.custom((value) => {
+				if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
 
-        return true;
-      }),
-    body('redirect_url')
-      .notEmpty()
-      .withMessage(REDIRECT_URL_REQUIRED)
-      .bail()
-      .matches(/^(https?:\/\/)(\S*)?/)
-      .withMessage(INVALID_URL),
-    body('scopes')
-      .notEmpty()
-      .withMessage(SCOPES_REQUIRED)
-      .bail()
-      .isArray()
-      .withMessage(ARRAY_REQUIRED)
-      .bail()
-      .custom((value) => {
-        if (value.length === 0) throw new CustomValidationError(EMPTY_ARRAY);
+				return true;
+			}),
+		body('redirect_url')
+			.notEmpty()
+			.withMessage(REDIRECT_URL_REQUIRED)
+			.bail()
+			.matches(/^(https?:\/\/)(\S*)?/)
+			.withMessage(INVALID_URL),
+		body('scopes')
+			.notEmpty()
+			.withMessage(SCOPES_REQUIRED)
+			.bail()
+			.isArray()
+			.withMessage(ARRAY_REQUIRED)
+			.bail()
+			.custom((value) => {
+				if (value.length === 0) throw new CustomValidationError(EMPTY_ARRAY);
 
-        return true;
-      }),
-    validate(logger),
-  ],
-  async (req: Request, res: Response) => {
-    const { client_id, redirect_url, scopes } = req.body;
+				return true;
+			}),
+		validate(logger),
+	],
+	async (req: Request, res: Response) => {
+		const { client_id, redirect_url, scopes } = req.body;
 
-    try {
-      const scopesStringified = JSON.stringify(scopes);
+		try {
+			const scopesStringified = JSON.stringify(scopes);
 
-      const { rowCount } = await db.query(
-        `
+			const { rowCount } = await db.query(
+				`
           SELECT 1
           FROM public.oauth2_apps AS a
           WHERE a.client_id = $1::uuid
@@ -113,39 +113,43 @@ router.post(
               )
             );
         `,
-        [client_id, redirect_url, scopesStringified],
-      );
+				[client_id, redirect_url, scopesStringified],
+			);
 
-      if (rowCount === 0) {
-        logger.debug(`Client not found for client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
-        return res.status(404).json(
-          errorMessages([
-            {
-              info: CLIENT_NOT_FOUND,
-              data: {
-                location: 'body',
-                paths: ['client_id', 'redirect_url', 'scopes'],
-              },
-            },
-          ]),
-        );
-      }
+			if (rowCount === 0) {
+				logger.debug(
+					`Client not found for client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`,
+				);
+				return res.status(404).json(
+					errorMessages([
+						{
+							info: CLIENT_NOT_FOUND,
+							data: {
+								location: 'body',
+								paths: ['client_id', 'redirect_url', 'scopes'],
+							},
+						},
+					]),
+				);
+			}
 
-      logger.debug(`Client found with client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`);
-    } catch (e) {
-      logger.error(
-        `Error while authorizing client: ${client_id}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+			logger.debug(
+				`Client found with client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`,
+			);
+		} catch (e) {
+			logger.error(
+				`Error while authorizing client: ${client_id}. Error: ${
+					e instanceof Error ? e.message : e
+				}`,
+			);
+			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+		}
 
-    const userId = req.auth?.sub;
+		const userId = req.auth?.sub;
 
-    try {
-      const { rowCount } = await db.query(
-        `
+		try {
+			const { rowCount } = await db.query(
+				`
           SELECT 1 
           FROM auth.oauth2_connections
           WHERE user_id = $1::uuid 
@@ -155,31 +159,31 @@ router.post(
               WHERE client_id = $2::uuid
             );
         `,
-        [userId, client_id],
-      );
+				[userId, client_id],
+			);
 
-      if (rowCount !== 0) {
-        logger.debug(`Client is already connected with user: ${userId}`);
-        return res
-          .status(400)
-          .json(errorMessages([{ info: CLIENT_ALREADY_CONNECTED }]));
-      }
-    } catch (e) {
-      logger.error(
-        `Error while checking client connection for user: ${userId} and client: ${client_id}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+			if (rowCount !== 0) {
+				logger.debug(`Client is already connected with user: ${userId}`);
+				return res
+					.status(400)
+					.json(errorMessages([{ info: CLIENT_ALREADY_CONNECTED }]));
+			}
+		} catch (e) {
+			logger.error(
+				`Error while checking client connection for user: ${userId} and client: ${client_id}. Error: ${
+					e instanceof Error ? e.message : e
+				}`,
+			);
+			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+		}
 
-    const token = uuidv4();
-    let tokenId;
-    let expires;
+		const token = uuidv4();
+		let tokenId;
+		let expires;
 
-    try {
-      const { rowCount, rows } = await db.query(
-        `
+		try {
+			const { rowCount, rows } = await db.query(
+				`
           WITH app_info AS (
               SELECT id
               FROM public.oauth2_apps
@@ -192,30 +196,34 @@ router.post(
           SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
           RETURNING id, created_at;
         `,
-        [token, userId, client_id],
-      );
+				[token, userId, client_id],
+			);
 
-      if (rowCount === 0) {
-        logger.error(`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`);
-        return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-      }
+			if (rowCount === 0) {
+				logger.error(
+					`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`,
+				);
+				return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			}
 
-      logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
+			logger.debug(
+				`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`,
+			);
 
-      tokenId = rows[0].id;
-      expires = rows[0].created_at.getTime() + 5 * 60 * 1000; // 5 minutes from now
-    } catch (e) {
-      logger.error(
-        `Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+			tokenId = rows[0].id;
+			expires = rows[0].created_at.getTime() + 5 * 60 * 1000; // 5 minutes from now
+		} catch (e) {
+			logger.error(
+				`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
+					e instanceof Error ? e.message : e
+				}`,
+			);
+			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+		}
 
-    try {
-      await db.query(
-        `
+		try {
+			await db.query(
+				`
           WITH scope_ids AS (
               SELECT id
               FROM public.scopes
@@ -234,236 +242,244 @@ router.post(
           FROM scope_ids
           ON CONFLICT DO NOTHING;
         `,
-        [tokenId, scopes],
-      );
-    } catch (e) {
-      logger.error(
-        `Error while inserting/updating authorization token scopes for token: ${tokenId}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+				[tokenId, scopes],
+			);
+		} catch (e) {
+			logger.error(
+				`Error while inserting/updating authorization token scopes for token: ${tokenId}. Error: ${
+					e instanceof Error ? e.message : e
+				}`,
+			);
+			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+		}
 
-    res.json({ code: token, expires });
-  },
+		res.json({ code: token, expires });
+	},
 );
 
 const possibleGrantTypes = [
-  'client_credentials',
-  'authorization_code',
-  'refresh_token',
+	'client_credentials',
+	'authorization_code',
+	'refresh_token',
 ];
 
 router.post(
-  '/token',
-  [
-    body('grant_type')
-      .notEmpty()
-      .withMessage(GRANT_TYPE_REQUIRED)
-      .bail()
-      .custom((value) => {
-        if (!possibleGrantTypes.includes(value))
-          throw new CustomValidationError({
-            code: INVALID_GRANT_TYPE.code,
-            message: INVALID_GRANT_TYPE.messages[1],
-          });
+	'/token',
+	[
+		body('grant_type')
+			.notEmpty()
+			.withMessage(GRANT_TYPE_REQUIRED)
+			.bail()
+			.custom((value) => {
+				if (!possibleGrantTypes.includes(value))
+					throw new CustomValidationError({
+						code: INVALID_GRANT_TYPE.code,
+						message: INVALID_GRANT_TYPE.messages[1],
+					});
 
-        return true;
-      }),
-    body('client_id').custom((value, { req }) => {
-      if (
-        !possibleGrantTypes.includes(req.body?.grant_type) ||
-        req.body?.grant_type === 'refresh_token' ||
-        req.body?.grant_type === undefined
-      )
-        return true;
+				return true;
+			}),
+		body('client_id').custom((value, { req }) => {
+			if (
+				!possibleGrantTypes.includes(req.body?.grant_type) ||
+				req.body?.grant_type === 'refresh_token' ||
+				req.body?.grant_type === undefined
+			)
+				return true;
 
-      if (value === undefined || value.length === 0)
-        throw new CustomValidationError(CLIENT_ID_REQUIRED);
+			if (value === undefined || value.length === 0)
+				throw new CustomValidationError(CLIENT_ID_REQUIRED);
 
-      if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
+			if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
 
-      return true;
-    }),
-    body('client_secret').custom((value, { req }) => {
-      if (
-        !possibleGrantTypes.includes(req.body?.grant_type) ||
-        req.body?.grant_type === 'refresh_token' ||
-        req.body?.grant_type === undefined
-      )
-        return true;
+			return true;
+		}),
+		body('client_secret').custom((value, { req }) => {
+			if (
+				!possibleGrantTypes.includes(req.body?.grant_type) ||
+				req.body?.grant_type === 'refresh_token' ||
+				req.body?.grant_type === undefined
+			)
+				return true;
 
-      if (value === undefined || value.length === 0)
-        throw new CustomValidationError(CLIENT_SECRET_REQUIRED);
+			if (value === undefined || value.length === 0)
+				throw new CustomValidationError(CLIENT_SECRET_REQUIRED);
 
-      return true;
-    }),
-    body('code').custom((value, { req }) => {
-      if (
-        req.body?.grant_type !== 'authorization_code' ||
-        req.body?.grant_type === undefined
-      )
-        return true;
+			return true;
+		}),
+		body('code').custom((value, { req }) => {
+			if (
+				req.body?.grant_type !== 'authorization_code' ||
+				req.body?.grant_type === undefined
+			)
+				return true;
 
-      if (value === undefined || value.length === 0)
-        throw new CustomValidationError(CODE_REQUIRED);
+			if (value === undefined || value.length === 0)
+				throw new CustomValidationError(CODE_REQUIRED);
 
-      return true;
-    }),
-    body('refresh_token').custom((value, { req }) => {
-      if (
-        req.body?.grant_type !== 'refresh_token' ||
-        req.body?.grant_type === undefined
-      )
-        return true;
+			return true;
+		}),
+		body('refresh_token').custom((value, { req }) => {
+			if (
+				req.body?.grant_type !== 'refresh_token' ||
+				req.body?.grant_type === undefined
+			)
+				return true;
 
-      if (value === undefined || value.length === 0)
-        throw new CustomValidationError(REFRESH_TOKEN_REQUIRED);
+			if (value === undefined || value.length === 0)
+				throw new CustomValidationError(REFRESH_TOKEN_REQUIRED);
 
-      if (req.body?.grant_type === 'refresh_token') {
-        const token = req.body.refresh_token;
+			if (req.body?.grant_type === 'refresh_token') {
+				const token = req.body.refresh_token;
 
-        verify(
-          token,
-          REFRESH_TOKEN_SECRET,
-          {
-            audience: AUDIENCE,
-            issuer: ISSUER,
-            algorithms: ['HS256'],
-          },
-          (e, decoded) => {
-            if (e) throw new CustomValidationError(INVALID_TOKEN);
+				verify(
+					token,
+					REFRESH_TOKEN_SECRET,
+					{
+						audience: AUDIENCE,
+						issuer: ISSUER,
+						algorithms: ['HS256'],
+					},
+					(e, decoded) => {
+						if (e) throw new CustomValidationError(INVALID_TOKEN);
 
-            if (typeof decoded === 'object' && 'grant_type' in decoded) {
-              if (decoded?.grant_type !== 'authorization_code')
-                throw new CustomValidationError({
-                  message: INVALID_GRANT_TYPE.messages[0],
-                  code: INVALID_GRANT_TYPE.code,
-                });
-            }
+						if (typeof decoded === 'object' && 'grant_type' in decoded) {
+							if (decoded?.grant_type !== 'authorization_code')
+								throw new CustomValidationError({
+									message: INVALID_GRANT_TYPE.messages[0],
+									code: INVALID_GRANT_TYPE.code,
+								});
+						}
 
-            req.auth = decoded;
-          },
-        );
-      }
+						req.auth = decoded;
+					},
+				);
+			}
 
-      return true;
-    }),
-    validate(logger),
-  ],
-  async (req: Request, res: Response) => {
-    const { grant_type } = req.body;
+			return true;
+		}),
+		validate(logger),
+	],
+	async (req: Request, res: Response) => {
+		const { grant_type } = req.body;
 
-    logger.debug(`OAuth2 Token Endpoint accessed with grant type: ${grant_type}`);
+		logger.debug(
+			`OAuth2 Token Endpoint accessed with grant type: ${grant_type}`,
+		);
 
-    switch (grant_type) {
-      case 'authorization_code':
-        authorizationCodeController(req, res);
-        break;
-      case 'client_credentials':
-        clientCredentialsController(req, res);
-        break;
-      case 'refresh_token':
-        refreshTokenController(req, res);
-    }
-  },
+		switch (grant_type) {
+			case 'authorization_code':
+				authorizationCodeController(req, res);
+				break;
+			case 'client_credentials':
+				clientCredentialsController(req, res);
+				break;
+			case 'refresh_token':
+				refreshTokenController(req, res);
+		}
+	},
 );
 
 router.delete(
-  '/connections/:connectionId',
-  [
-    validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType(['password']),
-    transformJwtErrorMessages(logger),
-    param('connectionId')
-      .notEmpty()
-      .withMessage(CONNECTION_ID_REQUIRED)
-      .bail()
-      .isNumeric()
-      .withMessage(CONNECTION_ID_NOT_NUMERIC),
-    validate(logger),
-  ],
-  async (req: Request, res: Response) => {
-    const { connectionId } = req.params;
-    const userId = req.auth?.sub;
+	'/connections/:connectionId',
+	[
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password']),
+		transformJwtErrorMessages(logger),
+		param('connectionId')
+			.notEmpty()
+			.withMessage(CONNECTION_ID_REQUIRED)
+			.bail()
+			.isNumeric()
+			.withMessage(CONNECTION_ID_NOT_NUMERIC),
+		validate(logger),
+	],
+	async (req: Request, res: Response) => {
+		const { connectionId } = req.params;
+		const userId = req.auth?.sub;
 
-    try {
-      const { rowCount } = await db.query(
-        `
+		try {
+			const { rowCount } = await db.query(
+				`
           DELETE FROM auth.refresh_tokens
           WHERE connection_id = $1::integer
             AND user_id = $2::uuid
             AND session_id IS NULL
             AND grant_type = 'authorization_code';
         `,
-        [connectionId, userId],
-      );
+				[connectionId, userId],
+			);
 
-      if (rowCount === 0) {
-        logger.debug(`No connection found for deletion for user: ${userId} and connection: ${connectionId}`);
-        return res
-          .status(404)
-          .json(errorMessages([{ info: CONNECTION_NOT_FOUND }]));
-      }
-    } catch (e) {
-      logger.error(
-        `Error while deleting connection for user: ${userId} and connection: ${connectionId}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+			if (rowCount === 0) {
+				logger.debug(
+					`No connection found for deletion for user: ${userId} and connection: ${connectionId}`,
+				);
+				return res
+					.status(404)
+					.json(errorMessages([{ info: CONNECTION_NOT_FOUND }]));
+			}
+		} catch (e) {
+			logger.error(
+				`Error while deleting connection for user: ${userId} and connection: ${connectionId}. Error: ${
+					e instanceof Error ? e.message : e
+				}`,
+			);
+			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+		}
 
-    logger.debug(`Connection deleted successfully for user: ${userId} and connection: ${connectionId}`);
+		logger.debug(
+			`Connection deleted successfully for user: ${userId} and connection: ${connectionId}`,
+		);
 
-    res.send(message('Connection successfully deleted.'));
-  },
+		res.send(message('Connection successfully deleted.'));
+	},
 );
 
 router.delete(
-  '/revoke',
-  [
-    body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
-    validate(logger),
-    validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
-    checkTokenGrantType(['authorization_code']),
-    transformJwtErrorMessages(logger),
-  ],
-  async (req: Request, res: Response) => {
-    const token = req.auth;
+	'/revoke',
+	[
+		body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
+		validate(logger),
+		validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['authorization_code']),
+		transformJwtErrorMessages(logger),
+	],
+	async (req: Request, res: Response) => {
+		const token = req.auth;
 
-    try {
-      const { rowCount } = await db.query(
-        `
+		try {
+			const { rowCount } = await db.query(
+				`
           DELETE FROM auth.refresh_tokens
           WHERE user_id = $1::uuid 
             AND grant_type = 'authorization_code' 
             AND token = $2::uuid 
             AND session_id IS NULL;
         `,
-        [token?.sub, token?.jti],
-      );
+				[token?.sub, token?.jti],
+			);
 
-      if (rowCount === 0) {
-        logger.debug(`No connection found for revocation for user: ${token?.sub}`);
-        return res
-          .status(404)
-          .json(errorMessages([{ info: CONNECTION_ALREADY_REVOKED }]));
-      }
-    } catch (e) {
-      logger.error(
-        `Error while revoking connection for user: ${token?.sub}. Error: ${
-          e instanceof Error ? e.message : e
-        }`,
-      );
-      return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-    }
+			if (rowCount === 0) {
+				logger.debug(
+					`No connection found for revocation for user: ${token?.sub}`,
+				);
+				return res
+					.status(404)
+					.json(errorMessages([{ info: CONNECTION_ALREADY_REVOKED }]));
+			}
+		} catch (e) {
+			logger.error(
+				`Error while revoking connection for user: ${token?.sub}. Error: ${
+					e instanceof Error ? e.message : e
+				}`,
+			);
+			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+		}
 
-    logger.debug(`Connection revoked successfully for user: ${token?.sub}`);
+		logger.debug(`Connection revoked successfully for user: ${token?.sub}`);
 
-    res.json(message('Connection successfully revoked.'));
-  },
+		res.json(message('Connection successfully revoked.'));
+	},
 );
 
 export default router;
