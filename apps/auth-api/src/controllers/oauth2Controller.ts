@@ -35,17 +35,16 @@ export async function authorizationCodeController(req: Request, res: Response) {
 						aot.id, 
 						aot.user_id, 
 						aot.created_at, 
-						ai.organization_id,
-						ai.project_id
+						ai.organization_id
 					FROM auth.oauth2_authorization_tokens AS aot
 					JOIN app_info AS ai ON aot.app_id = ai.id
 					WHERE aot.token = $1::uuid
 				),
 				token_scopes AS (
-				SELECT ARRAY(SELECT scope_id
-					FROM auth.oauth2_authorization_token_scopes
-					WHERE token_id IN (SELECT id FROM token_info)
-				) AS scopes
+					SELECT ARRAY(SELECT scope_id
+						FROM auth.oauth2_authorization_token_scopes
+						WHERE token_id IN (SELECT id FROM token_info)
+					) AS scopes
 				)
 				SELECT 
 					id, 

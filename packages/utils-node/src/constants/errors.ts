@@ -13,7 +13,7 @@ export const INVALID_USERNAME = {
 		'Username cannot look like an email address!',
 		'Please enter only letters, numbers, dots, and underscores.',
 	],
-};
+}; 
 export const EMAIL_REQUIRED = {
 	code: 'EMAIL_REQUIRED',
 	message: 'Please provide an email.',
@@ -301,4 +301,12 @@ export const CONNECTION_ID_REQUIRED = {
 export const EMAIL_NOT_AVAILABLE = {
 	code: 'EMAIL_NOT_AVAILABLE',
 	message: 'Please provide a different email address.',
+};
+export const INVALID_REDIRECT_URL = {
+	code: 'INVALID_REDIRECT_URL',
+	message: 'Please provide the right redirect url as specified in client settings.',
+};
+export const INVALID_SCOPES = {
+	code: 'INVALID_SCOPES',
+	message: 'Please provide only the scopes that are specified in client settings.',
 };

@@ -151,7 +151,7 @@ router.post(
 		transformJwtErrorMessages(logger),
 	],
 	async (req: JWTRequest, res: Response) => {
-		const userId = req.auth?.sub!;
+		const userId = req.auth?.sub;
 		const supportedTypes = req.auth?.types;
 		const { type, code } = req.body;
 
@@ -170,7 +170,7 @@ router.post(
 			);
 		}
 
-		let mfaError = await validateMFA(userId, type, code);
+		let mfaError = await validateMFA(userId!, type, code);
 
 		if (mfaError) {
 			return res.status(mfaError.status).json(

@@ -90,10 +90,10 @@ router.post(
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
-		const userId = req.auth?.sub!;
+		const userId = req.auth?.sub;
 		const { code, type } = req.body;
 
-		let mfaError = await validateMFA(userId, type, code);
+		let mfaError = await validateMFA(userId!, type, code);
 
 		if (mfaError) {
 			return res.status(mfaError.status).json(

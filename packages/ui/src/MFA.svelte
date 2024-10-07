@@ -5,6 +5,8 @@
 	import { VerifyCode } from 'validation-schemas';
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
 	import { Dropdown, Radio } from 'flowbite-svelte';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	export let cancel: () => void;
 	export let confirm: (
@@ -68,13 +70,27 @@
 			};
 			return;
 		}
+		 
+		page
 
 		if (response.errors) {
+			const invalidToken = response.errors
+				.map((error) => error.code)
+				.includes('INVALID_TOKEN');
+
+			if ($page.url.pathname === '/sign-in-confirm' && invalidToken) {
+				$flash = {
+					message: 'Your session has expired. Please sign in again.',
+					classes: 'variant-glass-error',
+					timeout: 5000,
+				};
+				goto('/sign-in');
+			}
+
 			response.errors.forEach((error: { message: string }) => {
 				$errors._errors === undefined
 					? ($errors._errors = [error.message])
 					: $errors._errors.push(error.message);
-				return;
 			});
 		}
 	}

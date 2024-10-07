@@ -22,6 +22,8 @@ import {
 	GRANT_TYPE_REQUIRED,
 	INTERNAL_ERROR,
 	INVALID_GRANT_TYPE,
+	INVALID_REDIRECT_URL,
+	INVALID_SCOPES,
 	INVALID_TOKEN,
 	INVALID_URL,
 	INVALID_UUID,
@@ -89,56 +91,87 @@ router.post(
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { client_id, redirect_url, scopes } = req.body;
+		const { 
+			client_id, 
+			redirect_url, 
+			scopes 
+		}: { 
+			client_id: string; 
+			redirect_url: string; 
+			scopes: string[] 
+		} = req.body;
 
 		try {
-			const scopesStringified = JSON.stringify(scopes);
-
-			const { rowCount } = await db.query(
+			const { rowCount, rows } = await db.query(
 				`
-					SELECT 1
-					FROM public.oauth2_apps AS a
-					WHERE a.client_id = $1::uuid
-						AND a.redirect_url = $2::text
-						AND NOT EXISTS (
-							SELECT 1
-							FROM jsonb_array_elements_text($3) AS obj(scope)
-							WHERE NOT EXISTS (
-								SELECT 1
-								FROM public.oauth2_app_scopes AS ascs
-								JOIN public.scopes AS s ON ascs.scope_id = s.id
-								WHERE ascs.app_id = a.id
-									AND s.type = 'user'
-									AND obj.scope = s.name::text
-							)
-						);
+					SELECT 
+						oa.redirect_url,
+						ARRAY_AGG(s.name) AS scopes
+					FROM public.oauth2_apps AS oa
+					JOIN public.oauth2_app_scopes AS oas ON oa.id = oas.app_id
+					JOIN public.scopes AS s ON oas.scope_id = s.id
+					WHERE oa.client_id = $1::uuid
+					GROUP BY oa.redirect_url;
 				`,
-				[client_id, redirect_url, scopesStringified],
+				[client_id]
 			);
 
 			if (rowCount === 0) {
-				logger.debug(
-					`Client not found for client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`,
-				);
+				logger.debug(`Client not found for client id: ${client_id}`);
 				return res.status(404).json(
 					errorMessages([
-						{
-							info: CLIENT_NOT_FOUND,
-							data: {
+						{ 
+							info: CLIENT_NOT_FOUND, 
+							data: { 
 								location: 'body',
-								paths: ['client_id', 'redirect_url', 'scopes'],
-							},
-						},
+								paths: ['client_id']
+							} 
+						}
 					]),
 				);
 			}
 
-			logger.debug(
-				`Client found with client: ${client_id}, redirect url: ${redirect_url} and scopes: ${scopesStringified}`,
-			);
+			if (rows[0].redirect_url !== redirect_url) {
+				logger.debug(`Invalid redirect url for client: ${client_id}`);
+				return res.status(400).json(
+					errorMessages([
+						{ 
+							info: INVALID_REDIRECT_URL, 
+							data: { 
+								location: 'body',
+								paths: ['redirect_url']
+							} 
+						}
+					]),
+				);
+			}
+
+			let invalidScopes: string[] = [];
+
+			scopes.forEach((scope) => {
+				if (!rows[0].scopes.includes(scope)) {
+					invalidScopes.push(scope);
+				}
+			});
+
+			if (invalidScopes.length > 0) {
+				logger.debug(`Invalid scope for client: ${client_id}`);
+				return res.status(400).json(
+					errorMessages([
+						{ 
+							info: INVALID_SCOPES, 
+							data: { 
+								location: 'body',
+								paths: ['scopes'],
+								scopes: invalidScopes
+							}
+						}
+					]),
+				);	
+			}
 		} catch (e) {
 			logger.error(
-				`Error while authorizing client: ${client_id}. Error: ${
+				`Error while fetching redirect url and scopes for client: ${client_id}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
@@ -150,27 +183,43 @@ router.post(
 		try {
 			const { rowCount } = await db.query(
 				`
-					SELECT 1 
-					FROM auth.oauth2_connections
-					WHERE user_id = $1::uuid 
-						AND app_id = (
-							SELECT id
-							FROM public.oauth2_apps
-							WHERE client_id = $2::uuid
-						);
+					SELECT 1
+					FROM public.oauth2_connections
+					WHERE 
+						user_id = $1::uuid 
+						AND client_id = $2::uuid;
 				`,
 				[userId, client_id],
 			);
 
 			if (rowCount !== 0) {
-				logger.debug(`Client is already connected with user: ${userId}`);
-				return res
-					.status(400)
-					.json(errorMessages([{ info: CLIENT_ALREADY_CONNECTED }]));
+				await db.query(
+					`
+						INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
+						SELECT
+							c.id AS connection_id,
+							s.id AS scope_id
+						FROM public.oauth2_connections AS c
+						JOIN public.oauth2_apps AS a ON c.client_id = a.client_id  -- Ensure client_id matches type
+						JOIN public.scopes AS s ON s.name = ANY($3::text[])
+						WHERE c.user_id = $1::uuid
+						AND a.client_id = $2::uuid
+						AND NOT EXISTS (
+							SELECT 1
+							FROM public.oauth2_connection_scopes ocs
+							WHERE ocs.connection_id = c.id
+							AND ocs.scope_id = s.id
+						)
+						RETURNING connection_id, scope_id;
+					`,
+					[userId, client_id, scopes],
+				);
+
+				return res.sendStatus(204);
 			}
 		} catch (e) {
 			logger.error(
-				`Error while checking client connection for user: ${userId} and client: ${client_id}. Error: ${
+				`Error while checking client connection for user or inserting new scopes to an existing connection: ${userId} and client: ${client_id}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);

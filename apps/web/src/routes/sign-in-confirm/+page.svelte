@@ -56,7 +56,7 @@
 			$flash = {
 				message: 'Your session has expired. Please sign in again.',
 				classes: 'variant-glass-error',
-				timeout: 10000,
+				timeout: 5000,
 			};
 			goto('/sign-in');
 		}
