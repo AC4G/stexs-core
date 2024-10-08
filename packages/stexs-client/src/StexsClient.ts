@@ -81,11 +81,7 @@ export default class StexsClient {
 			);
 		}
 
-		if (
-			retryCount < maxRetries &&
-			session &&
-			session.expires * 1000 - 120 * 1000 <= Date.now()
-		) {
+		if (session && session.expires * 1000 - 2 * 60 * 1000 <= Date.now()) {
 			await new Promise((resolve) => setTimeout(resolve, 100));
 			return this._checkAndWaitForNewAccessToken(retryCount + 1);
 		}

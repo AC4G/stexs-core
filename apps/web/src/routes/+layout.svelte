@@ -56,7 +56,7 @@
 		createQuery,
 		QueryClient,
 		QueryClientProvider,
-		setQueryClientContext,
+		setQueryClientContext
 	} from '@tanstack/svelte-query';
 	import { goto } from '$app/navigation';
 	import { createProfileStore } from '$lib/stores/profileStore';
@@ -98,8 +98,9 @@
 		defaultOptions: {
 			queries: {
 				enabled: browser,
+				refetchOnWindowFocus: false
 			},
-		},
+		}
 	});
 
 	setQueryClientContext(queryClient);

@@ -74,7 +74,7 @@
 		queryFn: async () => {
 			return await (await stexs.auth.mfa.factorStatus()).json();
 		},
-		enabled: !!$userStore,
+		enabled: !!$userStore
 	});
 
 	$: if ($authStatusQuery.data) {

@@ -224,7 +224,7 @@ router.delete(
 			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
 		}
 
-		return res.status(204).json();
+		return res.sendStatus(204);
 	},
 );
 

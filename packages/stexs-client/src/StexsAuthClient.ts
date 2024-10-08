@@ -12,16 +12,18 @@ export enum AuthEvents {
 
 export class StexsAuthClient {
 	private authUrl: string;
+	// @ts-ignore
 	private fetch: typeof fetch;
 	private authHeaders: Record<string, string> = {};
 
+	// @ts-ignore
 	private eventEmitter = new EventEmitter();
 
 	mfa;
 	oauth;
 
 	private refreshTimeoutId: number | null = null;
-	private refreshThreshhold = 120 * 1000; // 120s
+	private refreshThreshhold = 2 * 60 * 1000; // 120s
 
 	constructor(
 		fetch: {
@@ -544,12 +546,11 @@ export class StexsAuthClient {
 		);
 
 		const body = {
-			type,
-			token: '',
+			type
 		};
 
 		if (signInInitData && signInInitData.token) {
-			body.token = signInInitData.token;
+			body['token'] = signInInitData.token; 
 		}
 
 		return await this._request({

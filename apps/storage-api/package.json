@@ -35,7 +35,6 @@
     "express-validator": "^7.0.1",
     "ip": "^2.0.1",
     "pg": "^8.11.2",
-    "redis": "^4.6.12",
     "response-time": "^2.3.2",
     "utils-node": "workspace:*",
     "uuid": "^9.0.1",

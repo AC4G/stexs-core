@@ -1817,6 +1817,15 @@ CREATE POLICY oauth2_connections_select
 		)
 	);
 
+CREATE POLICY oauth2_connections_delete
+	ON public.oauth2_connections
+	AS PERMISSIVE
+	FOR DELETE
+	USING (
+		auth.grant() = 'password' AND
+		user_id = auth.uid()
+	);
+
 
 
 ALTER TABLE public.oauth2_connection_scopes ENABLE ROW LEVEL SECURITY;

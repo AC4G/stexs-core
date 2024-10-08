@@ -200,19 +200,19 @@ CREATE TABLE auth.mfa (
 
 
 
-CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN DEFAULT FALSE)
+CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, secure BOOLEAN DEFAULT FALSE)
 RETURNS BOOLEAN AS $$
 BEGIN
-	IF strict THEN
-		RETURN url ~ 'https:\/\/(?:\S+\.)?\S+\.[a-zA-Z]{2,63}(?:\/.*)?';
+	IF secure THEN
+		RETURN url ~ '^https:\/\/[^\s]+$';
 	ELSE
-		RETURN url ~ '(https?:\/\/)(\S*)?';
+		RETURN url ~ '^https?:\/\/[^\s]+$';
 	END IF;
 END;
 $$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN) TO authenticated;
-GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN) TO anon;
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, secure BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, secure BOOLEAN) TO anon;
 
 
 
@@ -433,6 +433,7 @@ CREATE TABLE public.oauth2_connections (
 );
 
 GRANT SELECT ON TABLE public.oauth2_connections TO authenticated;
+GRANT DELETE ON TABLE public.oauth2_connections TO authenticated;
 
 
 
@@ -541,7 +542,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER create_mfa_trigger
+CREATE TRIGGER delete_connection_trigger
 AFTER DELETE ON auth.refresh_tokens
 FOR EACH ROW
 EXECUTE FUNCTION auth.delete_connection();
@@ -555,20 +556,3 @@ CREATE TABLE public.oauth2_connection_scopes (
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	CONSTRAINT unique_oauth2_connection_scopes_combination UNIQUE (connection_id, scope_id)
 );
-
-GRANT SELECT ON TABLE public.oauth2_connection_scopes TO authenticated;
-DELETE ON auth.refresh_tokens
-FOR EACH ROW
-EXECUTE FUNCTION auth.delete_connection();
-
-
-
-CREATE TABLE public.oauth2_connection_scopes (
-	id SERIAL PRIMARY KEY,
-	connection_id INT REFERENCES public.oauth2_connections(id) ON DELETE CASCADE NOT NULL,
-	scope_id INT REFERENCES public.scopes(id) ON DELETE CASCADE NOT NULL,
-	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	CONSTRAINT unique_oauth2_connection_scopes_combination UNIQUE (connection_id, scope_id)
-);
-
-GRANT SELECT ON TABLE public.oauth2_connection_scopes TO authenticated;

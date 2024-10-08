@@ -34,7 +34,7 @@
 			let issues = [];
 
 			if (!clientId) {
-				issues.push('missing client_id');
+				issues.push('missing client ID');
 			}
 
 			if (scopes.length === 0) {
@@ -46,7 +46,7 @@
 			}
 
 			if (!redirectUrl) {
-				issues.push('missing redirect_url');
+				issues.push('missing redirect URL');
 			}
 
 			if (issues.length > 0) {
@@ -98,7 +98,7 @@
 
 			if (responseClientData.data === 0) {
 				$flash = {
-					message: `Provided client_id does not exist. ${pleaseNotify}`,
+					message: `${couldNotProceed} no client found by the provided client ID. ${pleaseNotify}`,
 					classes: 'variant-glass-error',
 					autohide: false,
 				};
@@ -108,37 +108,12 @@
 
 			const clientData = responseClientData.data[0];
 
-			const responseScopesValid = await stexs
-				.from('oauth2_app_scopes')
-				.select('scopes(name)')
-				.eq('app_id', clientData.id)
-				.eq('scopes.type', 'user')
-				.in('scopes.name', scopes)
-				.not('scopes', 'is', null);
-
-			const scopeData = responseScopesValid.data.map(
-				(scope: { scopes: { name: string } }) => scope.scopes.name,
-			);
-			const invalidScopes = scopes.filter(
-				(scope) => !scopeData.includes(scope),
-			);
-
-			if (invalidScopes.length > 0 || scopeData.length === 0) {
-				$flash = {
-					message: `Provided scopes are invalid, not assigned to the application or are not of type user: ${invalidScopes.join(', ')}. ${pleaseNotify}`,
-					classes: 'variant-glass-error',
-					autohide: false,
-				};
-				goto('/');
-				return false;
-			}
-
 			filteredNodes = scopesTreeViewNodes
 				.map((node) => {
 					const filteredChildren = node.children?.filter((child) =>
 						scopes.includes(child.id),
 					);
-
+					
 					return {
 						...node,
 						children: filteredChildren,
@@ -148,6 +123,16 @@
 					(node) =>
 						(node.children && node.children.length > 0) || !node.children,
 				);
+
+			if (filteredNodes.length === 0) {
+				$flash = {
+					message: `${couldNotProceed} no valid scopes provided. ${pleaseNotify}`,
+					classes: 'variant-glass-error',
+					autohide: false,
+				};
+				goto('/');
+				return false;
+			}
 
 			const totalChildCount = filteredNodes.reduce((count, node) => {
 				return count + (node.children ? node.children.length : 0);
@@ -167,19 +152,47 @@
 			redirectUrl!,
 			scopes,
 		);
-		const body = await response.json();
 
+		if (response.status === 204) {
+			goto(`${redirectUrl}${state && state.length > 0 ? `?state=${state}` : ''}`);
+			return;
+		}
+
+		const body = await response.json();
+ 
 		if (response.status !== 200) {
-			if (body.errors && body.errors[0].code === 'CLIENT_ALREADY_CONNECTED') {
-				goto(
-					`${redirectUrl}${state && state.length > 0 ? `?state=${state}` : ''}`,
-				);
+			if (body.errors && body.errors[0].code === 'CLIENT_NOT_FOUND') {
+				$flash = {
+					message: `${couldNotProceed} client does not exists by the provided client ID. ${pleaseNotify}`,
+					classes: 'variant-glass-error',
+					autohide: false,
+				};
 				return;
 			}
 
-			if (body.errors && body.errors[0].code === 'CLIENT_NOT_FOUND') {
+			if (body.errors && body.errors[0].code === 'INVALID_REDIRECT_URL') {
 				$flash = {
-					message: `${couldNotProceed} the provided redirect URL does not match the application's configuration. ${pleaseNotify}`,
+					message: `${couldNotProceed} the provided redirect URL does not match the client settings. ${pleaseNotify}`,
+					classes: 'variant-glass-error',
+					autohide: false,
+				};
+				return;
+			}
+
+			if (body.errors && body.errors[0].code === 'INVALID_SCOPES') {
+				const invalidScopes = body.errors[0].data.scopes;
+
+				let formattedScopes = '';
+
+				if (invalidScopes.length === 1) {
+					formattedScopes = invalidScopes[0];
+				} else {
+					const lastIssue = invalidScopes.pop();
+					formattedScopes = invalidScopes.join(', ') + ', and ' + lastIssue;
+				}
+
+				$flash = {
+					message: `${couldNotProceed} the following requested scopes are not configured in the client settings: ${formattedScopes}. ${pleaseNotify}`,
 					classes: 'variant-glass-error',
 					autohide: false,
 				};
@@ -194,9 +207,7 @@
 			return;
 		}
 
-		goto(
-			`${redirectUrl}?code=${body.code}&expires=${body.expires}${state && state.length > 0 ? `&state=${state}` : ''}`,
-		);
+		goto(`${redirectUrl}?code=${body.code}&expires=${body.expires}${state && state.length > 0 ? `&state=${state}` : ''}`);
 	}
 </script>
 

@@ -321,7 +321,7 @@
 	{:else if organizationsMemberQueryStore.data.length > 0}
 		{#each organizationsMemberQueryStore.data as organizationMember (organizationMember.organizations.id)}
 			<div
-				class="flex space-x-4 px-2 sm:px-4 py-2 flex-row bg-surface-700 border border-surface-600 rounded-lg items-center justify-between"
+				class="flex space-x-4 px-2 py-2 flex-row bg-surface-700 border border-surface-600 rounded-lg items-center justify-between"
 			>
 				<div class="flex flex-row items-center space-x-4 group">
 					<a
