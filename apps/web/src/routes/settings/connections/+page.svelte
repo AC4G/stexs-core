@@ -134,6 +134,30 @@
 			),
 		enabled: !!$userStore?.id,
 	});
+
+	async function removeConnection(id: number) {
+		const { status } = await stexs
+			.from('oauth2_connections')
+			.delete()
+			.eq('id', id);
+
+		if (status === 204) {
+			$flash = {
+				message: 'Connection removed successfully.',
+				classes: 'variant-glass-success',
+				autohide: true,
+			};
+			$connectionAmountQuery.refetch();
+			$connectionsQuery.refetch();
+			return;
+		}
+
+		$flash = {
+			message: 'Failed to remove connection. Please retry.',
+			classes: 'variant-glass-error',
+			autohide: true,
+		};
+	}
 </script>
 
 <div class="px-[4%] md:px-[8%] grid place-items-center mb-[18px]">
@@ -254,8 +278,8 @@
 			</div>
 		{/if}
 	</div>
-	<div class="flex flex-col w-full space-y-4">
-		{#if $connectionsQuery.isLoading || !$connectionsQuery.data || ($connectionsQuery.isFetching && $connectionsQuery.data.length === 0)}
+	<div class="gap-3 grid grid-cols-1 md:grid-cols-2 w-full">
+		{#if $connectionsQuery.isLoading || !$connectionsQuery.data}
 			{#each Array(20) as _}
 				<div class="placeholder animate-pulse h-[98px] w-full" />
 			{/each}
@@ -281,11 +305,11 @@
 							</div>
 						</a>
 						<div class="items-center space-y-2">
-							<p class="text-[20px] font-bold">{connection.oauth2_apps.name}</p>
+							<Button class="text-[18px] font-bold p-0 break-all">{connection.oauth2_apps.name}</Button>
 							<p class="flex flex-col sm:flex-row sm:space-x-2">
-								<a href="/organizations/{connection.oauth2_apps.organizations.name}" class="hover:text-secondary-400 transition break-all">{connection.oauth2_apps.organizations.name}</a>
+								<a href="/organizations/{connection.oauth2_apps.organizations.name}" class="text-[14px] hover:text-secondary-400 text-gray-400 transition break-all">{connection.oauth2_apps.organizations.name}</a>
 								{#if connection.oauth2_apps.projects}
-									<a href="/organizations/{connection.oauth2_apps.organizations.name}/projects/{connection.oauth2_apps.projects.name}" class="hover:text-secondary-400 transition break-all">{connection.oauth2_apps.projects.name}</a>
+									<a href="/organizations/{connection.oauth2_apps.organizations.name}/projects/{connection.oauth2_apps.projects.name}" class="text-[14px] hover:text-secondary-400 text-gray-400 transition break-all">{connection.oauth2_apps.projects.name}</a>
 								{/if}
 							</p>
 						</div>
@@ -309,12 +333,8 @@
 							class="rounded-md bg-surface-900 p-2 space-y-2 border border-surface-500"
 						>
 							<DropdownItem
-								class="hover:!bg-surface-500 rounded"
-								on:click={() => {}}>Permissions</DropdownItem
-							>
-							<DropdownItem
 								class="hover:!bg-surface-500 rounded text-red-600"
-								on:click={() => {}}>Remove Connection</DropdownItem
+								on:click={() => removeConnection(connection.id)}>Remove Connection</DropdownItem
 							>
 						</Dropdown>
 					</div>
@@ -322,12 +342,12 @@
 			{/each}
 		{:else if $connectionAmountQuery.data > 0 && (search.length > 0 || $connectionsQuery.data.length === 0)}
 			<div class="grid place-items-center rounded-md col-span-full">
-				<p class="text-[18px] p-4 text-center">No apps found</p>
+				<p class="text-[18px] p-4 text-center">No connections found</p>
 			</div>
 		{:else}
 			<div class="grid place-items-center rounded-md col-span-full">
 				<p class="text-[18px] p-6 text-center">
-					You have no apps connected to your account
+					You have no connections connected to your account
 				</p>
 			</div>
 		{/if}
@@ -345,7 +365,7 @@
 				bind:settings={paginationSettings}
 				showFirstLastButtons={true}
 				showPreviousNextButtons={true}
-				amountText="Apps"
+				amountText="Connections"
 				select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
 				controlVariant="bg-surface-500 border border-gray-600 flex-wrap"
 			/>

@@ -433,6 +433,7 @@ CREATE TABLE public.oauth2_connections (
 );
 
 GRANT SELECT ON TABLE public.oauth2_connections TO authenticated;
+GRANT DELETE ON TABLE public.oauth2_connections TO authenticated;
 
 
 
