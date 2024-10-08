@@ -28,9 +28,9 @@
 					<Icon icon="mdi:security-lock" />
 				</svelte:fragment>
 			</SidebarItem>
-			<SidebarItem label="Applications" href="/settings/apps">
+			<SidebarItem label="Connections" href="/settings/connections">
 				<svelte:fragment slot="icon">
-					<Icon icon="octicon:apps-16" />
+					<Icon icon="ep:connection" />
 				</svelte:fragment>
 			</SidebarItem>
 			<SidebarDropdownWrapper label="Billing" {btnClass}>

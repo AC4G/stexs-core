@@ -200,19 +200,19 @@ CREATE TABLE auth.mfa (
 
 
 
-CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN DEFAULT FALSE)
+CREATE OR REPLACE FUNCTION utils.is_url_valid(url TEXT, secure BOOLEAN DEFAULT FALSE)
 RETURNS BOOLEAN AS $$
 BEGIN
-	IF strict THEN
-		RETURN url ~ 'https:\/\/(?:\S+\.)?\S+\.[a-zA-Z]{2,63}(?:\/.*)?';
+	IF secure THEN
+		RETURN url ~ '^https:\/\/[^\s]+$';
 	ELSE
-		RETURN url ~ '(https?:\/\/)(\S*)?';
+		RETURN url ~ '^https?:\/\/[^\s]+$';
 	END IF;
 END;
 $$ LANGUAGE plpgsql;
 
-GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN) TO authenticated;
-GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, strict BOOLEAN) TO anon;
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, secure BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION utils.is_url_valid(url TEXT, secure BOOLEAN) TO anon;
 
 
 

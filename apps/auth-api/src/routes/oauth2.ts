@@ -74,7 +74,6 @@ router.post(
 			.notEmpty()
 			.withMessage(REDIRECT_URL_REQUIRED)
 			.bail()
-			.matches(/^(https?:\/\/)(\S*)?/)
 			.withMessage(INVALID_URL),
 		body('scopes')
 			.notEmpty()

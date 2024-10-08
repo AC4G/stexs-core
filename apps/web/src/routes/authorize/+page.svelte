@@ -34,7 +34,7 @@
 			let issues = [];
 
 			if (!clientId) {
-				issues.push('missing client_id');
+				issues.push('missing client ID');
 			}
 
 			if (scopes.length === 0) {
@@ -46,7 +46,7 @@
 			}
 
 			if (!redirectUrl) {
-				issues.push('missing redirect_url');
+				issues.push('missing redirect URL');
 			}
 
 			if (issues.length > 0) {
@@ -98,7 +98,7 @@
 
 			if (responseClientData.data === 0) {
 				$flash = {
-					message: `Provided client_id does not exist. ${pleaseNotify}`,
+					message: `${couldNotProceed} no client found by the provided client ID. ${pleaseNotify}`,
 					classes: 'variant-glass-error',
 					autohide: false,
 				};
@@ -123,6 +123,16 @@
 					(node) =>
 						(node.children && node.children.length > 0) || !node.children,
 				);
+
+			if (filteredNodes.length === 0) {
+				$flash = {
+					message: `${couldNotProceed} no valid scopes provided. ${pleaseNotify}`,
+					classes: 'variant-glass-error',
+					autohide: false,
+				};
+				goto('/');
+				return false;
+			}
 
 			const totalChildCount = filteredNodes.reduce((count, node) => {
 				return count + (node.children ? node.children.length : 0);
