@@ -281,7 +281,7 @@
 	<div class="gap-3 grid grid-cols-1 md:grid-cols-2 w-full">
 		{#if $connectionsQuery.isLoading || !$connectionsQuery.data}
 			{#each Array(20) as _}
-				<div class="placeholder animate-pulse h-[98px] w-full" />
+				<div class="placeholder animate-pulse h-[85.75px] w-full" />
 			{/each}
 		{:else if $connectionsQuery.data.length > 0}
 			{#each $connectionsQuery.data as connection (connection.id)}
