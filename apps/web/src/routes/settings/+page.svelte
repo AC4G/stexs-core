@@ -210,18 +210,19 @@
 			return;
 		}
 
-		if (file.type === 'image/webp' && (await isWebPAnimated(file))) {
+		if (file.type === 'image/webp' && file.size > 1 * 1024 * 1024) {
 			$flash = {
-				message: `Animated WebP images are not supported.`,
+				message: `WebP images can only be up to 1MB in size.`,
 				classes: 'variant-glass-error',
 				timeout: 5000,
 			};
 			return;
 		}
 
+		const initFileType = file.type;
 		submittedAvatar = true;
 
-		if (file.type === 'image/webp') {
+		if (file.type === 'image/webp' && !(await isWebPAnimated(file))) {
 			const image = new Image();
 			image.src = URL.createObjectURL(file);
 
@@ -231,13 +232,11 @@
 			};
 		} else if (file.type === 'image/gif') {
 			file = await convertAnimatedToWebP(file);
-		} else {
+		} else if (file.type !== 'image/webp') {
 			file = await convertImageToWebP(file);
 		}
 
-		const compressed = await compressFile(file);
-
-		const response = await stexs.storage.uploadAvatar(compressed);
+		const response = await stexs.storage.uploadAvatar(file);
 
 		if (!response.ok) {
 			$flash = {

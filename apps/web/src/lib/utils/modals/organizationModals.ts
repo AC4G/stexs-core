@@ -9,7 +9,7 @@ import type { Writable } from 'svelte/store';
 export function openCreateOrganizationModal(
 	flash: Writable<ToastSettings>,
 	modalStore: ModalStore,
-	stexs: StexsClient,
+	stexsClient: StexsClient,
 	organizationsMemberStore: any,
 ) {
 	const modal: ModalSettings = {
@@ -17,7 +17,7 @@ export function openCreateOrganizationModal(
 		component: 'createOrganization',
 		meta: {
 			flash,
-			stexsClient: stexs,
+			stexsClient,
 			organizationsMemberStore,
 		},
 	};

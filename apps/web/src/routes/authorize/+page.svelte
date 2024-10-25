@@ -10,7 +10,7 @@
 	import { Avatar, Button, OrganizationLogo } from 'ui';
 	import Icon from '@iconify/svelte';
 	import { RecursiveTreeView, type TreeViewNode } from '@skeletonlabs/skeleton';
-	import { scopesTreeViewNodes } from '$lib/treeNodes/scopesTreeViewNodes';
+	import { scopesTreeViewNodes } from '$lib/utils/scopes';
 
 	const flash = getFlash(page);
 	const previousPageStore = getPreviousPageStore();

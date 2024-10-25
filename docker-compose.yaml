@@ -69,12 +69,15 @@ services:
       - stexs
 
 
-  redis:
-    image: redis/redis-stack:latest
-    ports: 
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    container_name: dragonfly
+    ports:
       - 6379:6379
-      - 8008:8001
-    container_name: redis
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     restart: unless-stopped
     networks:
       - stexs

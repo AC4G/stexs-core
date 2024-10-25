@@ -34,6 +34,7 @@
 		OrganizationLogo,
 		ProjectLogo,
 		MFAModal,
+		ConnectionScopes
 	} from 'ui';
 	import { stexs } from '../stexsClient';
 	import { page } from '$app/stores';
@@ -117,6 +118,7 @@
 		disableEmail: { ref: DisableEmail },
 		enableEmail: { ref: EnableEmail },
 		MFA: { ref: MFAModal },
+		connectionScopes: { ref: ConnectionScopes }
 	};
 	const excludeRoutes = [
 		'/sign-in',

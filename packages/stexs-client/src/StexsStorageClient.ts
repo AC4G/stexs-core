@@ -4,6 +4,7 @@ export class StexsStorageClient {
 	private storageUrl: string;
 	protected fetch: typeof fetch;
 
+	// @ts-ignore
 	constructor(fetch: typeof fetch, storageUrl: string) {
 		this.storageUrl = storageUrl;
 		this.fetch = fetch;
@@ -29,7 +30,7 @@ export class StexsStorageClient {
 	async uploadAvatar(file: Blob): Promise<Response> {
 		const response = await this._request({
 			path: `avatars`,
-			method: 'POST',
+			method: 'POST'
 		});
 
 		const body = await response.json();

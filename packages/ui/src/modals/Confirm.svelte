@@ -8,7 +8,7 @@
 	const modalStore = getModalStore();
 
 	let submitted: boolean = false;
-	let text: string = $modalStore[0].meta.text;
+	let question: string = $modalStore[0].meta.question;
 	let subText = $modalStore[0].meta.subText || '';
 	let confirmBtnClass: string =
 		$modalStore[0].meta.confirmBtnClass || 'variant-filled-primary';
@@ -22,7 +22,7 @@
 
 {#if $modalStore[0]}
 	<div class="card p-5 space-y-6 flex items-center flex-col">
-		<p class="text-[18px] max-w-[320px] font-bold">{text}</p>
+		<p class="text-[18px] max-w-[320px] font-bold">{question}</p>
 		{#if subText.length > 0}
 			<p class="text-surface-300 max-w-[320px]">{subText}</p>
 		{/if}

@@ -19,7 +19,7 @@ export function openBlockUserModal(
 		type: 'component',
 		component: 'confirm',
 		meta: {
-			text: `Do you really want to block ${username}?`,
+			question: `Do you really want to block ${username}?`,
 			fn: blockUser,
 			fnParams: {
 				blocked_id: userId,
@@ -45,7 +45,7 @@ export function openUnblockUserModal(
 		type: 'component',
 		component: 'confirm',
 		meta: {
-			text: `Do you really want to unblock ${username}?`,
+			question: `Do you really want to unblock ${username}?`,
 			fn: unblockUser,
 			fnParams: {
 				userId,
@@ -61,7 +61,7 @@ export function openUnblockUserModal(
 
 export function openChangePasswordModal(
 	types: string[],
-	stexs: StexsClient,
+	stexsClient: StexsClient,
 	flash: Writable<ToastSettings>,
 	modalStore: ModalStore,
 ) {
@@ -69,7 +69,7 @@ export function openChangePasswordModal(
 		type: 'component',
 		component: 'changePassword',
 		meta: {
-			stexs,
+			stexsClient,
 			flash,
 			types,
 		},
@@ -80,7 +80,7 @@ export function openChangePasswordModal(
 export function openChangeEmailModal(
 	email: string,
 	types: string[],
-	stexs: StexsClient,
+	stexsClient: StexsClient,
 	flash: Writable<ToastSettings>,
 	modalStore: ModalStore,
 ) {
@@ -88,7 +88,7 @@ export function openChangeEmailModal(
 		type: 'component',
 		component: 'changeEmail',
 		meta: {
-			stexs,
+			stexsClient,
 			flash,
 			types,
 			email,
@@ -99,7 +99,7 @@ export function openChangeEmailModal(
 
 export function openEnableTOTPModal(
 	authQueryStore: any,
-	stexs: StexsClient,
+	stexsClient: StexsClient,
 	flash: Writable<ToastSettings>,
 	modalStore: ModalStore,
 ) {
@@ -108,7 +108,7 @@ export function openEnableTOTPModal(
 		component: 'enableTOTP',
 		meta: {
 			authQueryStore,
-			stexs,
+			stexsClient,
 			flash,
 		},
 	};
@@ -117,7 +117,7 @@ export function openEnableTOTPModal(
 
 export function openRemoveTOTPModal(
 	authQueryStore: any,
-	stexs: StexsClient,
+	stexsClient: StexsClient,
 	flash: Writable<ToastSettings>,
 	modalStore: ModalStore,
 ) {
@@ -126,7 +126,7 @@ export function openRemoveTOTPModal(
 		component: 'removeTOTP',
 		meta: {
 			authQueryStore,
-			stexs,
+			stexsClient,
 			flash,
 		},
 	};
@@ -135,7 +135,7 @@ export function openRemoveTOTPModal(
 
 export function openDisableEmailModal(
 	authQueryStore: any,
-	stexs: StexsClient,
+	stexsClient: StexsClient,
 	flash: Writable<ToastSettings>,
 	modalStore: ModalStore,
 ) {
@@ -144,7 +144,7 @@ export function openDisableEmailModal(
 		component: 'disableEmail',
 		meta: {
 			authQueryStore,
-			stexs,
+			stexsClient,
 			flash,
 		},
 	};
@@ -153,7 +153,7 @@ export function openDisableEmailModal(
 
 export function openEnableEmailModal(
 	authQueryStore: any,
-	stexs: StexsClient,
+	stexsClient: StexsClient,
 	flash: Writable<ToastSettings>,
 	modalStore: ModalStore,
 ) {
@@ -162,7 +162,7 @@ export function openEnableEmailModal(
 		component: 'enableEmail',
 		meta: {
 			authQueryStore,
-			stexs,
+			stexsClient,
 			flash,
 		},
 	};
@@ -177,7 +177,7 @@ export function openSignOutFromAllSessionsModal(
 		type: 'component',
 		component: 'confirm',
 		meta: {
-			text: `Do you really want to sign out from all sessions?`,
+			question: `Do you really want to sign out from all sessions?`,
 			subText:
 				'Signing out from all sessions will log you out from all sessions, including this one.',
 			fn: openMFAModal,

@@ -102,11 +102,10 @@
 			timeout: 5000,
 		};
 
-		organizationsMemberQueryStore.data.filter(
-			(organizationMember: { organizations: { id: number } }) =>
-				organizationMember.organizations.id !== organizationId,
-		);
-		organizationAmountQueryStore.data--;
+		if ($profileStore && $profileStore.refetchOrganizationAmountFn && $profileStore.refetchOrganizationsFn) {
+			$profileStore.refetchOrganizationAmountFn();
+			$profileStore.refetchOrganizationsFn();
+		}
 	}
 
 	function openLeaveOrganizationModal(
@@ -226,31 +225,30 @@
 		$profileStore &&
 		$userStore &&
 		$profileStore.userId === $userStore.id &&
-		$profileStore.refetchOrganizationsFn === undefined
+		$profileStore.refetchOrganizationsFn === undefined &&
+		$profileStore.refetchOrganizationAmountFn === undefined
 	) {
 		profileStore.set({
 			...$profileStore,
 			refetchOrganizationsFn: $organizationsMemberQuery.refetch,
+			refetchOrganizationAmountFn: $organizationAmountQuery.refetch,
 		});
 	}
 
-	$: organizationAmountQueryStore = $organizationAmountQuery;
-	$: organizationsMemberQueryStore = $organizationsMemberQuery;
-
-	$: paginationSettings.size = organizationAmountQueryStore.data;
+	$: paginationSettings.size = $organizationAmountQuery.data;
 </script>
 
 <div
 	class="flex flex-col xs:flex-row justify-between mb-[18px] space-y-2 xs:space-y-0 xs:space-x-2 items-center"
 >
-	{#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
+	{#if $organizationsMemberQuery.isLoading || !$organizationsMemberQuery.data}
 		<div
 			class="placeholder animate-pulse xs:max-w-[300px] w-full h-[41.75px] rounded-lg"
 		/>
 		<div
 			class="placeholder animate-pulse xs:w-[90px] w-full h-[41.75px] rounded-lg"
 		/>
-	{:else if organizationAmountQueryStore.data > 0}
+	{:else if $organizationAmountQuery.data > 0}
 		<div
 			class="flex flex-col xs:flex-row w-full justify-between space-y-2 xs:space-x-2 xs:space-y-0 items-center"
 		>
@@ -296,7 +294,7 @@
 						flash,
 						modalStore,
 						stexs,
-						organizationsMemberQueryStore,
+						$organizationsMemberQuery,
 					)}
 				class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full xs:w-fit"
 			>
@@ -311,15 +309,15 @@
 		{/if}
 	{/if}
 </div>
-<div class="gap-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-	{#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
+<div class="gap-3 grid grid-cols-1 md:grid-cols-2">
+	{#if $organizationsMemberQuery.isLoading || !$organizationsMemberQuery.data}
 		{#each Array(20) as _}
 			<div
 				class="placeholder animate-pulse aspect-square w-full h-[77.75px] xs:h-[85.75px]"
 			/>
 		{/each}
-	{:else if organizationsMemberQueryStore.data.length > 0}
-		{#each organizationsMemberQueryStore.data as organizationMember (organizationMember.organizations.id)}
+	{:else if $organizationsMemberQuery.data.length > 0}
+		{#each $organizationsMemberQuery.data as organizationMember (organizationMember.organizations.id)}
 			<div
 				class="flex space-x-4 px-2 py-2 flex-row bg-surface-700 border border-surface-600 rounded-lg items-center justify-between"
 			>
@@ -393,7 +391,7 @@
 				</div>
 			</div>
 		{/each}
-	{:else if organizationAmountQueryStore.data > 0 && (search.length > 0 || organizationsMemberQueryStore.data.length === 0)}
+	{:else if $organizationAmountQuery.data > 0 && (search.length > 0 || $organizationsMemberQuery.data.length === 0)}
 		<div
 			class="grid place-items-center bg-surface-800 rounded-md col-span-full"
 		>
@@ -416,7 +414,7 @@
 							flash,
 							modalStore,
 							stexs,
-							organizationsMemberQueryStore,
+							$organizationsMemberQuery,
 						)}
 					class="relative btn variant-filled-primary h-fit w-full sm:w-fit"
 				>
@@ -426,14 +424,14 @@
 		</div>
 	{/if}
 </div>
-{#if organizationsMemberQueryStore.isLoading || !organizationsMemberQueryStore.data}
+{#if $organizationsMemberQuery.isLoading || !$organizationsMemberQuery.data}
 	<div
 		class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px]"
 	>
 		<div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]" />
 		<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
 	</div>
-{:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || (organizationAmountQueryStore.data > 20 && search.length > 0 && organizationsMemberQueryStore.data.length > 0)}
+{:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || ($organizationAmountQuery.data > 20 && search.length > 0 && $organizationsMemberQuery.data.length > 0)}
 	<div class="mt-[18px]">
 		<Paginator
 			bind:settings={paginationSettings}

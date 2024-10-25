@@ -6,6 +6,7 @@
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
 	import { UpdatePassword } from 'validation-schemas';
 	import Button from '../Button.svelte';
+	import StexsClient from 'stexs-client';
 
 	export let parent: SvelteComponent;
 
@@ -14,7 +15,7 @@
 	let newPasswordEntered: boolean = false;
 	let confirmErrors: string[] = [];
 
-	let stexs = $modalStore[0].meta.stexs;
+	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 	let types = $modalStore[0].meta.types;
 	let type = '_selection';

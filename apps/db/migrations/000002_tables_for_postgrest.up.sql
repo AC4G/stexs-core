@@ -1,9 +1,9 @@
-CREATE TABLE public.items (	    id SERIAL PRIMARY KEY,
+CREATE TABLE public.items (id SERIAL PRIMARY KEY,
 	name CITEXT NOT NULL,
 	parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
 	description VARCHAR(800),
-	project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
-	creator_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
+	project_id INT REFERENCES public.projects (id) ON DELETE CASCADE NOT NULL,
+	creator_id UUID REFERENCES public.profiles (user_id) ON DELETE SET NULL,
 	is_private BOOLEAN DEFAULT FALSE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated_at TIMESTAMPTZ,
@@ -23,8 +23,8 @@ GRANT SELECT ON TABLE public.items TO authenticated;
 
 CREATE TABLE public.inventories (
 	id SERIAL PRIMARY KEY,
-	item_id INT REFERENCES public.items(id) ON DELETE CASCADE NOT NULL,
-	user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	item_id INT REFERENCES public.items (id) ON DELETE CASCADE NOT NULL,
+	user_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	amount BIGINT,
 	parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -45,8 +45,8 @@ CREATE OR REPLACE FUNCTION public.get_distinct_projects_from_inventory(
 	search_param TEXT DEFAULT NULL
 )
 RETURNS TABLE (
-	id INT, 
-	name CITEXT, 
+	id INT,
+	name CITEXT,
 	organization_name CITEXT
 )
 AS $$
@@ -78,7 +78,7 @@ BEGIN
 		SELECT 1
 		FROM public.projects AS p
 		JOIN public.items AS i ON p.id = i.project_id
-		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt() ->> 'client_id')::UUID
 		WHERE i.id = NEW.item_id
 			AND (
 				oa.project_id = p.id OR
@@ -93,7 +93,7 @@ BEGIN
 	EXISTS (
 		SELECT 1
 		FROM public.items AS i
-		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt() ->> 'client_id')::UUID
 		WHERE i.id = NEW.item_id
 			AND (
 				i.is_private IS TRUE OR
@@ -111,7 +111,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER check_inventory_update_trigger
 BEFORE UPDATE ON public.inventories
-FOR EACH ROW 
+FOR EACH ROW
 EXECUTE FUNCTION public.check_inventory_update();
 
 CREATE OR REPLACE FUNCTION public.check_inventory_delete()
@@ -121,7 +121,7 @@ BEGIN
 		SELECT 1
 		FROM public.projects AS p
 		JOIN public.items AS i ON p.id = i.project_id
-		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt() ->> 'client_id')::UUID
 		WHERE i.id = NEW.item_id
 			AND (
 				oa.project_id = p.id OR
@@ -135,7 +135,7 @@ BEGIN
 	IF EXISTS (
 		SELECT 1
 		FROM public.items AS i
-		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt() ->> 'client_id')::UUID
 		WHERE i.id = NEW.item_id
 			AND (
 				i.is_private IS TRUE OR
@@ -152,7 +152,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER check_inventory_delete_trigger
 BEFORE DELETE ON public.inventories
-FOR EACH ROW 
+FOR EACH ROW
 EXECUTE FUNCTION public.check_inventory_delete();
 
 CREATE OR REPLACE FUNCTION public.check_inventory_insert()
@@ -162,7 +162,7 @@ BEGIN
 		SELECT 1
 		FROM public.projects AS p
 		JOIN public.items AS i ON p.id = i.project_id
-		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt()->>'client_id')::UUID
+		JOIN public.oauth2_apps AS oa ON oa.client_id = (auth.jwt() ->> 'client_id')::UUID
 		WHERE i.id = NEW.item_id
 			AND (
 				oa.project_id = p.id OR
@@ -179,22 +179,22 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER check_inventory_insert_trigger
 BEFORE INSERT ON public.inventories
-FOR EACH ROW 
+FOR EACH ROW
 EXECUTE FUNCTION public.check_inventory_insert();
- 
+
 
 
 CREATE TABLE public.friends (
 	id SERIAL PRIMARY KEY,
-	user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-	friend_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	user_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
+	friend_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	CONSTRAINT unique_friends_combination UNIQUE (user_id, friend_id)
-);  
+);
 
 GRANT INSERT (user_id, friend_id) ON TABLE public.friends TO authenticated;
 GRANT DELETE ON TABLE public.friends TO authenticated;
-GRANT SELECT ON TABLE public.friends TO anon; 
+GRANT SELECT ON TABLE public.friends TO anon;
 GRANT SELECT ON TABLE public.friends TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.friend_insert()
@@ -220,7 +220,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER friend_insert_trigger
 AFTER INSERT ON public.friends
-FOR EACH ROW 
+FOR EACH ROW
 EXECUTE FUNCTION public.friend_insert();
 
 CREATE OR REPLACE FUNCTION public.check_friends_limit()
@@ -275,8 +275,8 @@ EXECUTE FUNCTION public.friend_delete();
 
 CREATE TABLE public.friend_requests (
 	id SERIAL PRIMARY KEY,
-	requester_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-	addressee_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	requester_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
+	addressee_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	CHECK (requester_id <> addressee_id)
 );
@@ -361,8 +361,8 @@ EXECUTE FUNCTION public.check_accept_friend_requests_before_insert();
 
 CREATE TABLE public.blocked (
 	id SERIAL PRIMARY KEY,
-	blocker_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
-	blocked_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	blocker_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
+	blocked_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	CONSTRAINT unique_blocked_combination UNIQUE (blocker_id, blocked_id),
 	CHECK (blocker_id <> blocked_id)
@@ -397,8 +397,8 @@ EXECUTE FUNCTION public.delete_friend_request_or_friend_if_exists();
 
 CREATE TABLE public.organization_members (
 	id SERIAL PRIMARY KEY,
-	organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
-	member_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	organization_id INT REFERENCES public.organizations (id) ON DELETE CASCADE NOT NULL,
+	member_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	role VARCHAR(100) DEFAULT 'Member' NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated_at TIMESTAMPTZ,
@@ -424,15 +424,15 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER delete_organization_request_trigger
 AFTER INSERT ON public.organization_members
-FOR EACH ROW 
+FOR EACH ROW
 EXECUTE FUNCTION public.delete_organization_request();
 
 
 
 CREATE TABLE public.organization_requests (
 	id SERIAL PRIMARY KEY,
-	organization_id INT REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
-	addressee_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	organization_id INT REFERENCES public.organizations (id) ON DELETE CASCADE NOT NULL,
+	addressee_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	role VARCHAR(100) DEFAULT 'Member' NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated_at TIMESTAMPTZ,
@@ -495,8 +495,11 @@ EXECUTE FUNCTION public.check_organization_request_limit();
 CREATE OR REPLACE FUNCTION public.make_organization_creator_as_owner()
 RETURNS TRIGGER AS $$
 BEGIN
-	INSERT INTO public.organization_members (organization_id, member_id, role)
-	VALUES (NEW.id, auth.uid(), 'Owner');
+
+	IF auth.uid() IS NOT NULL THEN
+		INSERT INTO public.organization_members (organization_id, member_id, role)
+		VALUES (NEW.id, auth.uid(), 'Owner');
+	END IF;
 
 	RETURN NEW;
 END;
@@ -511,8 +514,8 @@ EXECUTE FUNCTION public.make_organization_creator_as_owner();
 
 CREATE TABLE public.project_members (
 	id SERIAL PRIMARY KEY,
-	project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
-	member_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	project_id INT REFERENCES public.projects (id) ON DELETE CASCADE NOT NULL,
+	member_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	role VARCHAR(100) DEFAULT 'Member' NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated_at TIMESTAMPTZ,
@@ -539,15 +542,15 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER project_members_insert_trigger
 AFTER INSERT ON public.project_members
-FOR EACH ROW 
+FOR EACH ROW
 EXECUTE FUNCTION public.delete_project_request();
 
 
 
 CREATE TABLE public.project_requests (
 	id SERIAL PRIMARY KEY,
-	project_id INT REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
-	addressee_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	project_id INT REFERENCES public.projects (id) ON DELETE CASCADE NOT NULL,
+	addressee_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	role VARCHAR(100) DEFAULT 'Member' NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated_at TIMESTAMPTZ,
@@ -600,7 +603,9 @@ BEGIN
 
 	RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;GRANT DELETE ON TABLE public.oauth2_app_scopes TO authenticated;
+$$ LANGUAGE plpgsql;
+
+GRANT DELETE ON TABLE public.oauth2_app_scopes TO authenticated;
 
 CREATE TRIGGER enforce_project_request_limit_trigger
 BEFORE INSERT ON public.project_requests
@@ -664,16 +669,16 @@ EXECUTE FUNCTION public.make_project_creator_a_member();
 
 CREATE TABLE public.notifications (
 	id SERIAL PRIMARY KEY,
-	user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE NOT NULL,
+	user_id UUID REFERENCES public.profiles (user_id) ON DELETE CASCADE NOT NULL,
 	message TEXT,
 	type VARCHAR(100) NOT NULL,
 	seen BOOLEAN DEFAULT FALSE NOT NULL,
-	friend_request_id INT REFERENCES public.friend_requests(id) ON DELETE CASCADE UNIQUE,
-	organization_request_id INT REFERENCES public.organization_requests(id) ON DELETE CASCADE UNIQUE,
-	project_request_id INT REFERENCES public.project_requests(id) ON DELETE CASCADE UNIQUE,
+	friend_request_id INT REFERENCES public.friend_requests (id) ON DELETE CASCADE UNIQUE,
+	organization_request_id INT REFERENCES public.organization_requests (id) ON DELETE CASCADE UNIQUE,
+	project_request_id INT REFERENCES public.project_requests (id) ON DELETE CASCADE UNIQUE,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated_at TIMESTAMPTZ,
-	CHECK (type in ('message', 'friend_request', 'organization_request', 'project_request')),
+	CHECK (type IN ('message', 'friend_request', 'organization_request', 'project_request')),
 	CHECK (
 		(friend_request_id IS NOT NULL)::INT +
 		(organization_request_id IS NOT NULL)::INT +
