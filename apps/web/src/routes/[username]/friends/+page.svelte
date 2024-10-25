@@ -206,7 +206,7 @@
 	{/if}
 </div>
 <div
-	class="grid gap-3 place-items-center grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+	class="grid gap-3 place-items-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
 >
 	{#if $friendsQuery.isLoading || !$friendsQuery.data}
 		{#each Array(20) as _}

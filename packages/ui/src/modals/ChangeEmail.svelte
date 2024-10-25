@@ -1,4 +1,5 @@
 <script lang="ts">
+	import StexsClient from 'stexs-client';
 	import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import MFA from '../MFA.svelte';
@@ -11,7 +12,7 @@
 
 	const modalStore = getModalStore();
 
-	let stexs = $modalStore[0].meta.stexs;
+	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 	let types = $modalStore[0].meta.types;
 	let type = '_selection';

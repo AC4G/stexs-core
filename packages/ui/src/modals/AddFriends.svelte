@@ -13,11 +13,12 @@
 	import { debounce } from 'lodash';
 	import Avatar from '../Avatar.svelte';
 	import { page } from '$app/stores';
+	import StexsClient from 'stexs-client';
 
 	export let parent: SvelteComponent;
 
 	const modalStore = getModalStore();
-	const stexs = $modalStore[0].meta.stexsClient;
+	const stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	const userId = $modalStore[0].meta.userId;
 	const flash = $modalStore[0].meta.flash;
 	let search: string = '';

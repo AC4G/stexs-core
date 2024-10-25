@@ -7,6 +7,7 @@
 	import ItemThumbnail from '../ItemThumbnail.svelte';
 	import ProjectLogo from '../ProjectLogo.svelte';
 	import { createQuery } from '@tanstack/svelte-query';
+	import StexsClient from 'stexs-client';
 
 	export let parent: SvelteComponent;
 
@@ -16,7 +17,7 @@
 		$modalStore[0].meta.fn;
 	let fnParams: { userId: string; projectId: number } =
 		$modalStore[0].meta.fnParams;
-	let stexs = $modalStore[0].meta.stexsClient;
+	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 
 	$: inventoryItemQuery = createQuery({
 		queryKey: ['inventoryItemView', data.id],

@@ -7,6 +7,7 @@
 	import { VerifyCode } from 'validation-schemas';
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
 	import { tick } from 'svelte';
+	import StexsClient from 'stexs-client';
 
 	export let parent: SvelteComponent;
 
@@ -16,7 +17,7 @@
 	let codeInput: HTMLInputElement;
 
 	let authQueryStore = $modalStore[0].meta.authQueryStore;
-	let stexs = $modalStore[0].meta.stexs;
+	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 
 	const { form, errors, validate } = superForm(superValidateSync(VerifyCode), {

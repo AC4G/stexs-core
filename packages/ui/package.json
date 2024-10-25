@@ -22,7 +22,8 @@
     "flowbite-svelte": "^0.44.19",
     "svelte": "^4.2.8",
     "svelte-markdown": "^0.4.1",
-    "validation-schemas": "workspace:*"
+    "validation-schemas": "workspace:*",
+    "stexs-client": "workspace:*"
   },
   "dependencies": {
     "@skeletonlabs/tw-plugin": "^0.2.4",

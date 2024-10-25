@@ -49,6 +49,7 @@ export async function processFile(
 
 	const data = (await ffmpeg.readFile(outputPath)) as Buffer;
 
+	// @ts-ignore
 	const blob = new Blob([data.buffer], { type: 'image/webp' });
 
 	const processedFile = new File([blob], outputPath, { type: 'image/webp' });
@@ -58,20 +59,18 @@ export async function processFile(
 
 export async function cropFile(file: File): Promise<File> {
 	return processFile(file, {
-		beforeArgs: ['-c:v', 'webp'],
-		additionalArgs: ['-vf', 'crop=min(iw\\,ih):min(iw\\,ih),scale=200:200'],
+		additionalArgs: [
+			'-pix_fmt', 'yuva420p',
+			'-vf', 'crop=min(iw\\,ih):min(iw\\,ih),scale=200:200'
+		],
 	});
 }
 
 export async function convertImageToWebP(file: File): Promise<File> {
 	return processFile(file, {
 		additionalArgs: [
-			'-compression_level',
-			'6',
-			'-vf',
-			'crop=min(iw\\,ih):min(iw\\,ih),scale=200:200',
-			'-quality',
-			'85',
+			'-pix_fmt', 'yuva420p',
+			'-vf', 'crop=min(iw\\,ih):min(iw\\,ih),scale=200:200'
 		],
 	});
 }
@@ -79,16 +78,10 @@ export async function convertImageToWebP(file: File): Promise<File> {
 export async function convertAnimatedToWebP(file: File): Promise<File> {
 	return processFile(file, {
 		additionalArgs: [
-			'-loop',
-			'0',
-			'-compression_level',
-			'6',
-			'-vf',
-			'crop=min(iw\\,ih):min(iw\\,ih),scale=200:200,fps=24',
-			'-t',
-			'00:00:10',
-			'-quality',
-			'85',
+			'-loop', '0',
+			'-pix_fmt', 'yuva420p',
+			'-vf', 'crop=min(iw\\,ih):min(iw\\,ih),scale=200:200,fps=24',
+			'-t', '00:00:10'
 		],
 	});
 }

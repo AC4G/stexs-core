@@ -13,7 +13,7 @@ CREATE SCHEMA extensions;
 
 SET search_path TO extensions, public;
 
-ALTER DATABASE postgres SET search_path TO extensions, public;
+ALTER DATABASE postgres SET search_path TO extensions, public; -- noqa: 
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA extensions;
@@ -50,7 +50,7 @@ BEGIN
 		nullif(current_setting('jwt.claims.role', true), ''),
 		(nullif(current_setting('jwt.claims', true), '')::JSONB ->> 'role')
 	)::TEXT;
-END;Kensington1980.
+END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION auth.uid()
@@ -316,12 +316,11 @@ CREATE TABLE public.oauth2_apps (
 	CONSTRAINT unique_organization_oauth2_apps_combination UNIQUE (name, organization_id),
 	CONSTRAINT name_max_length CHECK (length(name) <= 50),
 	CONSTRAINT name_allowed_characters CHECK (name ~ '^[A-Za-z0-9._-]+(\s[A-Za-z0-9._-]+)*$'),
-	CONSTRAINT valid_homepage_url CHECK (utils.is_url_valid(homepage_url, TRUE)),
 	CONSTRAINT valid_redirect_url CHECK (utils.is_url_valid(redirect_url))
 );
 
-GRANT INSERT (name, organization_id, project_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
-GRANT UPDATE (name, project_id, description, homepage_url, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT INSERT (name, organization_id, project_id, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
+GRANT UPDATE (name, project_id, redirect_url) ON TABLE public.oauth2_apps TO authenticated;
 GRANT DELETE ON TABLE public.oauth2_apps TO authenticated;
 GRANT SELECT ON TABLE public.oauth2_apps TO authenticated;
 
@@ -381,10 +380,11 @@ EXECUTE FUNCTION public.generate_client_credentials();
 
 CREATE TABLE public.scopes (
 	id SERIAL PRIMARY KEY,
-	name VARCHAR(200) NOT NULL UNIQUE,
+	name VARCHAR(200) NOT NULL,
 	type VARCHAR(50) NOT NULL,
-	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
-	CONSTRAINT scope_type CHECK (type IN ('user', 'client'))
+	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	CONSTRAINT scope_type CHECK (type IN ('user', 'client')),
+	CONSTRAINT unique_scope_combination UNIQUE (name, type)
 );
 
 GRANT SELECT ON TABLE public.scopes TO authenticated;

@@ -313,15 +313,11 @@ export class StexsAuthClient {
 		path: string,
 		body: Record<string, any> | undefined = undefined,
 	): Promise<Response> {
-		const response = await this._request({
+		const response = this._request({
 			path,
 			method: 'POST',
 			body,
 		});
-
-		if (!response.ok) {
-			return response;
-		}
 
 		localStorage.clear();
 

@@ -104,7 +104,7 @@
 			type: 'component',
 			component: 'MFA',
 			meta: {
-				stexs,
+				stexsClient: stexs,
 				flash,
 				types: enabledMethods,
 				confirmMFA,

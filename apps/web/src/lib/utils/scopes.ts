@@ -1,6 +1,34 @@
 import Icon from '@iconify/svelte';
 import { type TreeViewNode } from '@skeletonlabs/skeleton';
 
+const scopes: { [key: number]: string } = {
+	//profile
+	9: 'profile.read',
+
+	//friends
+	28: 'friend.requests.write',
+	29: 'friend.requests.read',
+	30: 'friend.requests.delete',
+	31: 'friend.read',
+	32: 'friend.write',
+	33: 'friend.delete',
+
+	//inventory
+	5: 'inventory.read',
+	6: 'inventory.update',
+	7: 'inventory.delete',
+	8: 'inventory.write',
+
+	//blocking
+	34: 'blocked.read',
+	35: 'blocked.write',
+	36: 'blocked.delete',
+
+	//connections
+	45: 'connection.read',
+	46: 'connection.scopes.read'
+}
+
 export const scopesTreeViewNodes: TreeViewNode[] = [
 	//profile
 	{
@@ -132,3 +160,8 @@ export const scopesTreeViewNodes: TreeViewNode[] = [
 		],
 	},
 ];
+
+export function idsToScopeNames(ids: number[]) {
+	return ids.map(id => scopes[id])
+		.filter(id => id !== undefined);
+}

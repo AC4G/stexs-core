@@ -1,6 +1,5 @@
 REVOKE INSERT, UPDATE, DELETE, SELECT ON TABLE public.items FROM authenticated, anon;
 REVOKE INSERT, UPDATE, DELETE, SELECT ON TABLE public.inventories FROM authenticated, anon;
-REVOKE EXECUTE ON FUNCTION public.distinct_projects_from_inventory(UUID) FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.check_inventory_update() FROM public;
 REVOKE EXECUTE ON FUNCTION public.check_inventory_delete() FROM public;
 REVOKE EXECUTE ON FUNCTION public.check_inventory_insert() FROM public;

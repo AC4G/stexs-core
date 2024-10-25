@@ -10,6 +10,7 @@ export interface Profile {
 	refetchFriendsFn: () => Promise<any>;
 	refetchIsFriendFn: () => Promise<any>;
 	refetchOrganizationsFn?: () => Promise<any>;
+	refetchOrganizationAmountFn?: () => Promise<any>;
 }
 
 export function createProfileStore(): Writable<Profile | null> {

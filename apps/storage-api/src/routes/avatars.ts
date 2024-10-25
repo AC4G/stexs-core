@@ -66,7 +66,7 @@ router.post(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(logger)
 	],
 	async (req: Request, res: Response) => {
 		const userId = req.auth?.sub;
@@ -76,15 +76,15 @@ router.post(
 			Fields: {
 				key: 'avatars/' + userId,
 				'Content-Type': `image/webp`,
-				'Content-Encoding': 'gzip',
+				'Content-Disposition': `attachment; filename="${userId}-avatar.webp"`,
 			},
 			Conditions: [
-				['content-length-range', 0, 1024 * 1024],
+				['content-length-range', 0, 1024 * 1024], // 1MB
 				['eq', '$Content-Type', `image/webp`],
-				['eq', '$Content-Encoding', 'gzip'],
 				['eq', '$key', 'avatars/' + userId],
+				['eq', '$Content-Disposition', `attachment; filename="${userId}-avatar.webp"`]
 			],
-			Expires: 10, // 10 seconds
+			Expires: 10, // 10 seconds,
 		});
 
 		logger.info(`Created signed post url for avatar: ${userId}`);

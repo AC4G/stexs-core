@@ -14,6 +14,7 @@
 	import { page } from '$app/stores';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { stexs } from '../../../stexsClient';
+	import { openDeleteConnectionModal } from '$lib/utils/modals/connectionModals';
 
 	const userStore = getUserStore();
 	const modalStore = getModalStore();
@@ -85,7 +86,6 @@
 							name
 						),
 						projects!inner(
-							id,
 							name
 						)
 					)                
@@ -135,7 +135,7 @@
 		enabled: !!$userStore?.id,
 	});
 
-	async function removeConnection(id: number) {
+	async function deleteConnection(id: number) {
 		const { status } = await stexs
 			.from('oauth2_connections')
 			.delete()
@@ -143,7 +143,7 @@
 
 		if (status === 204) {
 			$flash = {
-				message: 'Connection removed successfully.',
+				message: 'Connection deleted successfully.',
 				classes: 'variant-glass-success',
 				autohide: true,
 			};
@@ -158,6 +158,8 @@
 			autohide: true,
 		};
 	}
+
+
 </script>
 
 <div class="px-[4%] md:px-[8%] grid place-items-center mb-[18px]">
@@ -175,8 +177,15 @@
 				class="placeholder animate-pulse xs:max-w-[300px] w-full h-[42px] rounded-lg"
 			/>
 			<div
-				class="placeholder animate-pulse xs:w-[90px] w-full h-[42px] rounded-lg"
-			/>
+				class="w-full xs:w-fit flex flex-col xs:flex-row items-center space-y-2 xs:space-y-0 xs:space-x-2"
+			>
+				<div
+					class="placeholder animate-pulse xs:w-[90.74px] w-full h-[41.75px] rounded-lg"
+				/>
+				<div
+					class="placeholder animate-pulse xs:w-[82.67px] w-full h-[41.75px] rounded-lg"
+				/>
+			</div>
 		{:else if $connectionAmountQuery.data > 0}
 			<div
 				class="flex flex-col xs:flex-row w-full justify-between space-y-2 xs:space-y-0"
@@ -281,7 +290,7 @@
 	<div class="gap-3 grid grid-cols-1 md:grid-cols-2 w-full">
 		{#if $connectionsQuery.isLoading || !$connectionsQuery.data}
 			{#each Array(20) as _}
-				<div class="placeholder animate-pulse h-[98px] w-full" />
+				<div class="placeholder animate-pulse h-[85.75px] w-full" />
 			{/each}
 		{:else if $connectionsQuery.data.length > 0}
 			{#each $connectionsQuery.data as connection (connection.id)}
@@ -305,7 +314,7 @@
 							</div>
 						</a>
 						<div class="items-center space-y-2">
-							<Button class="text-[18px] font-bold p-0 break-all">{connection.oauth2_apps.name}</Button>
+							<Button class="text-[18px] font-bold p-0 break-all whitespace-normal text-left">{connection.oauth2_apps.name}</Button>
 							<p class="flex flex-col sm:flex-row sm:space-x-2">
 								<a href="/organizations/{connection.oauth2_apps.organizations.name}" class="text-[14px] hover:text-secondary-400 text-gray-400 transition break-all">{connection.oauth2_apps.organizations.name}</a>
 								{#if connection.oauth2_apps.projects}
@@ -334,7 +343,7 @@
 						>
 							<DropdownItem
 								class="hover:!bg-surface-500 rounded text-red-600"
-								on:click={() => removeConnection(connection.id)}>Remove Connection</DropdownItem
+								on:click={() => openDeleteConnectionModal(connection.oauth2_apps.name, modalStore, async () => { await deleteConnection(connection.id) })}>Revoke Access</DropdownItem
 							>
 						</Dropdown>
 					</div>
