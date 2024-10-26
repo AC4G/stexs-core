@@ -26,9 +26,8 @@
 					headers = {
 						'If-None-Match': etag,
 					};
+					pathUrl.searchParams.set('timestamp', new Date().getTime().toString());
 				}
-
-				pathUrl.searchParams.set('timestamp', new Date().getTime().toString());
 
 				const response = await fetch(pathUrl, {
 					headers,
