@@ -1,6 +1,8 @@
-import { Session, SignedUrl } from './lib/types';
+import { AvatarCache, Session, SignedUrl } from './lib/types';
 
 export class StexsStorageClient {
+	private memoryCache = new Map<string, AvatarCache | any>();
+
 	private storageUrl: string;
 	protected fetch: typeof fetch;
 
@@ -62,6 +64,61 @@ export class StexsStorageClient {
 			path: 'avatars',
 			method: 'DELETE',
 		});
+	}
+
+	/**
+	 * Creates avatar cache key for a specific user
+	 */
+	private createAvatarsCacheKey(userId: string): string {
+		return `avatar:${userId}`;
+	}
+
+	/**
+	 * Sets avatar ETag in memory cache for a specific user to be used across all avatar component instances
+	 *
+	 * @param userId - user id of the user which the avatar is requested
+	 * @param avatarETag - avatar ETag
+	 * @param url - avatar url
+	 */
+	setAvatarETagAndUrlInCache(userId: string, avatarETag: string, objectUrl: string): void {
+		this.memoryCache.set(this.createAvatarsCacheKey(userId), { 
+			ETag: avatarETag, 
+			objectUrl
+		});
+	}
+	
+	/**
+	 * Gets avatar ETag from memory cache for a specific user
+	 *
+	 * @param userId - user id of the user which the avatar is requested
+	 * @returns {string | null} - avatar ETag
+	 */
+	getAvatarETagFromCache(userId: string): string | null {
+		const avatarCache = this.memoryCache.get(this.createAvatarsCacheKey(userId)) as AvatarCache;
+
+		return avatarCache?.ETag || null;
+	}
+
+	/**
+	 * Gets avatar object url from memory cache for a specific user
+	 *
+	 * @param userId - user id of the user which the avatar is requested
+	 * @returns {string | null} - avatar url
+	 */
+	getAvatarObjectUrlFromCache(userId: string): string | null {
+		const avatarCache = this.memoryCache.get(this.createAvatarsCacheKey(userId)) as AvatarCache;
+
+		return avatarCache?.objectUrl || null;
+	}
+
+	/**
+	 * Deletes avatar ETag from memory cache for a specific user
+	 *
+	 * @param userId - user id of the user which the avatar is requested
+	 * @returns {boolean} - true if avatar ETag was deleted
+	 */
+	deleteAvatarCache(userId: string): boolean {
+		return this.memoryCache.delete(this.createAvatarsCacheKey(userId));
 	}
 
 	/**

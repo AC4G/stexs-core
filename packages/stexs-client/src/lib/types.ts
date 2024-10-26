@@ -59,3 +59,8 @@ export interface SignedUrl {
 	url: string;
 	expires: number;
 }
+
+export type AvatarCache = {
+	ETag: string;
+	objectUrl: string;
+};

@@ -1,14 +1,11 @@
 <script lang="ts">
+	import StexsClient from 'stexs-client';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { Avatar } from '@skeletonlabs/skeleton';
 
-	export let stexs: any;
+	export let stexs: StexsClient;
 	export let userId: string;
 	export let username: string | undefined;
-
-	let etag: string | null = null;
-	let headers;
-	let previousObjectUrl;
 
 	$: urlQuery = createQuery({
 		queryKey: ['avatarUrl', userId],
@@ -22,6 +19,9 @@
 		queryKey: ['avatarImage', userId],
 		queryFn: async () => {
 			try {
+				let headers = {};
+				const etag = stexs.storage.getAvatarETagFromCache(userId);
+
 				if (etag) {
 					headers = {
 						'If-None-Match': etag,
@@ -35,18 +35,19 @@
 				});
 
 				if (response.status === 304) {
-					return previousObjectUrl;
+					return stexs.storage.getAvatarObjectUrlFromCache(userId);
 				}
 
 				if (response.status !== 200) return '';
-
-				etag = response.headers.get('ETag');
-
+				
 				const blob = await response.blob();
-
 				const url = URL.createObjectURL(blob);
 
-				previousObjectUrl = url;
+				const newETag = response.headers.get('ETag') || response.headers.get('Etag');
+
+				if (newETag) {
+					stexs.storage.setAvatarETagAndUrlInCache(userId, newETag, url);
+				}
 
 				return url;
 			} catch (error) {
