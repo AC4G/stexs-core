@@ -1,7 +1,7 @@
-import { AvatarCache, Session, SignedUrl } from './lib/types';
+import { Session, SignedUrl } from './lib/types';
 
 export class StexsStorageClient {
-	private memoryCache = new Map<string, AvatarCache | any>();
+	private memoryCache = new Map<string, string>();
 
 	private storageUrl: string;
 	protected fetch: typeof fetch;
@@ -78,13 +78,9 @@ export class StexsStorageClient {
 	 *
 	 * @param userId - user id of the user which the avatar is requested
 	 * @param avatarETag - avatar ETag
-	 * @param url - avatar url
 	 */
-	setAvatarETagAndUrlInCache(userId: string, avatarETag: string, objectUrl: string): void {
-		this.memoryCache.set(this.createAvatarsCacheKey(userId), { 
-			ETag: avatarETag, 
-			objectUrl
-		});
+	setAvatarETagInCache(userId: string, ETag: string): void {
+		this.memoryCache.set(this.createAvatarsCacheKey(userId), ETag);
 	}
 	
 	/**
@@ -94,21 +90,7 @@ export class StexsStorageClient {
 	 * @returns {string | null} - avatar ETag
 	 */
 	getAvatarETagFromCache(userId: string): string | null {
-		const avatarCache = this.memoryCache.get(this.createAvatarsCacheKey(userId)) as AvatarCache;
-
-		return avatarCache?.ETag || null;
-	}
-
-	/**
-	 * Gets avatar object url from memory cache for a specific user
-	 *
-	 * @param userId - user id of the user which the avatar is requested
-	 * @returns {string | null} - avatar url
-	 */
-	getAvatarObjectUrlFromCache(userId: string): string | null {
-		const avatarCache = this.memoryCache.get(this.createAvatarsCacheKey(userId)) as AvatarCache;
-
-		return avatarCache?.objectUrl || null;
+		return this.memoryCache.get(this.createAvatarsCacheKey(userId)) || null;
 	}
 
 	/**
@@ -237,7 +219,7 @@ export class StexsStorageClient {
 		});
 	}
 
-	private async _getSignedUrl(key: string, path: string) {
+	private async _getSignedUrl(key: string, path: string): Promise<string | undefined> {
 		const session = sessionStorage.getItem(key);
 		const threshhold = 10 * 1000; // 10s
 

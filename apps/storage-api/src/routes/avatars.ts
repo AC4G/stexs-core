@@ -76,11 +76,13 @@ router.post(
 			Fields: {
 				key: 'avatars/' + userId,
 				'Content-Type': `image/webp`,
+				'Cache-Control': 'public, max-age=3600',
 				'Content-Disposition': `attachment; filename="${userId}-avatar.webp"`,
 			},
 			Conditions: [
 				['content-length-range', 0, 1024 * 1024], // 1MB
 				['eq', '$Content-Type', `image/webp`],
+				['eq', '$Cache-Control', 'public, max-age=3600'],
 				['eq', '$key', 'avatars/' + userId],
 				['eq', '$Content-Disposition', `attachment; filename="${userId}-avatar.webp"`]
 			],
