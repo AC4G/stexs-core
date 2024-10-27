@@ -1,6 +1,8 @@
 import { Session, SignedUrl } from './lib/types';
 
 export class StexsStorageClient {
+	private memoryCache = new Map<string, string>();
+
 	private storageUrl: string;
 	protected fetch: typeof fetch;
 
@@ -62,6 +64,43 @@ export class StexsStorageClient {
 			path: 'avatars',
 			method: 'DELETE',
 		});
+	}
+
+	/**
+	 * Creates avatar cache key for a specific user
+	 */
+	private createAvatarsCacheKey(userId: string): string {
+		return `avatar:${userId}`;
+	}
+
+	/**
+	 * Sets avatar ETag in memory cache for a specific user to be used across all avatar component instances
+	 *
+	 * @param userId - user id of the user which the avatar is requested
+	 * @param avatarETag - avatar ETag
+	 */
+	setAvatarETagInCache(userId: string, ETag: string): void {
+		this.memoryCache.set(this.createAvatarsCacheKey(userId), ETag);
+	}
+	
+	/**
+	 * Gets avatar ETag from memory cache for a specific user
+	 *
+	 * @param userId - user id of the user which the avatar is requested
+	 * @returns {string | null} - avatar ETag
+	 */
+	getAvatarETagFromCache(userId: string): string | null {
+		return this.memoryCache.get(this.createAvatarsCacheKey(userId)) || null;
+	}
+
+	/**
+	 * Deletes avatar ETag from memory cache for a specific user
+	 *
+	 * @param userId - user id of the user which the avatar is requested
+	 * @returns {boolean} - true if avatar ETag was deleted
+	 */
+	deleteAvatarCache(userId: string): boolean {
+		return this.memoryCache.delete(this.createAvatarsCacheKey(userId));
 	}
 
 	/**
@@ -180,7 +219,7 @@ export class StexsStorageClient {
 		});
 	}
 
-	private async _getSignedUrl(key: string, path: string) {
+	private async _getSignedUrl(key: string, path: string): Promise<string | undefined> {
 		const session = sessionStorage.getItem(key);
 		const threshhold = 10 * 1000; // 10s
 
