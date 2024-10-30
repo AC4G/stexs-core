@@ -121,15 +121,22 @@ router.post(
 			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
 		}
 
+		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
+
 		const signedPost = await s3.createPresignedPost({
 			Bucket: BUCKET,
 			Fields: {
 				key: 'organizations/' + organizationId,
 				'Content-Type': `image/webp`,
+				'Cache-Control': `private, max-age=${cacheExpires}, must-revalidate`,
+				'Content-Disposition': `attachment; filename="organization-${organizationId}.webp"`,
 			},
 			Conditions: [
-				['content-length-range', 0, 1024 * 1024],
+				['content-length-range', 0, 1024 * 1024], // 1MB
+				['eq', '$Cache-Control', `private, max-age=${cacheExpires}, must-revalidate`],
 				['eq', '$Content-Type', `image/webp`],
+				['eq', '$key', 'organizations/' + organizationId],
+				['eq', '$Content-Disposition', `attachment; filename="organization-${organizationId}.webp"`]
 			],
 			Expires: 60 * 5, // 5 minutes
 		});
