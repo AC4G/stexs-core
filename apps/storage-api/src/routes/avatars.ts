@@ -71,24 +71,36 @@ router.post(
 	async (req: Request, res: Response) => {
 		const userId = req.auth?.sub;
 
+<<<<<<< Updated upstream
 		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
+=======
+		let maxAge = 60 * 60 * 24 * 30; // 30 days
+>>>>>>> Stashed changes
 
 		const signedPost = await s3.createPresignedPost({
 			Bucket: BUCKET,
 			Fields: {
 				key: 'avatars/' + userId,
 				'Content-Type': `image/webp`,
+<<<<<<< Updated upstream
 				'Cache-Control': `private, max-age=${cacheExpires}, must-revalidate`,
+=======
+				'Cache-Control': `public, max-age=${maxAge}`,
+>>>>>>> Stashed changes
 				'Content-Disposition': `attachment; filename="${userId}-avatar.webp"`,
 			},
 			Conditions: [
 				['content-length-range', 0, 1024 * 1024], // 1MB
 				['eq', '$Content-Type', `image/webp`],
+<<<<<<< Updated upstream
 				['eq', '$Cache-Control', `private, max-age=${cacheExpires}, must-revalidate`],
+=======
+				['eq', '$Cache-Control', `public, max-age=${maxAge}`],
+>>>>>>> Stashed changes
 				['eq', '$key', 'avatars/' + userId],
 				['eq', '$Content-Disposition', `attachment; filename="${userId}-avatar.webp"`]
 			],
-			Expires: 10, // 10 seconds,
+			Expires: 60, // 10 seconds,
 		});
 
 		logger.info(`Created signed post url for avatar: ${userId}`);

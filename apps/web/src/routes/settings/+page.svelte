@@ -24,7 +24,6 @@
 		cropFile,
 		isWebPAnimated,
 	} from '$lib/utils/fileConverter';
-	import compressFile from '$lib/utils/compressFile';
 
 	const modalStore = getModalStore();
 	const userStore = getUserStore();

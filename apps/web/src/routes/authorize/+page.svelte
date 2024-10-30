@@ -279,7 +279,7 @@
 							>{$authorizeSetupQuery.data.project_name}</a
 						>
 					{/if}
-					<br />wants to gain access to your account
+					<br />wants permission for your account to:
 				</p>
 				<div class="flex flex-row space-x-2 justify-center">
 					<p class="text-[14px] break-all text-surface-300">
