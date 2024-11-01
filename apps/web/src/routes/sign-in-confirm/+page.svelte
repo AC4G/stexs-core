@@ -40,10 +40,6 @@
 				return false;
 			}
 
-			if (signInInit.types.length === 1) {
-				type = signInInit.types[0];
-			}
-
 			return true;
 		},
 	});
