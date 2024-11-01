@@ -33,10 +33,14 @@
 			>
 			<Button
 				on:click={async () => {
-					submitted = true;
+					if (close) {
+						submitted = true;
+					}
+
 					await Promise.resolve(
 						$modalStore[0].meta.fn($modalStore[0].meta.fnParams),
 					);
+					
 					if (close) modalStore.close();
 				}}
 				class={confirmBtnClass}

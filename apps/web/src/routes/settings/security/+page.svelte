@@ -231,7 +231,7 @@
 					Active Sessions ({$sessionsAmountQuery.data.amount})
 				</p>
 				<Button
-					class="variant-filled-primary px-2 py-1"
+					class="variant-filled-error px-2 py-1"
 					on:click={() =>
 						openSignOutFromAllSessionsModal(modalStore, openMFAModal)}
 					>Sign Out from All Sessions</Button
