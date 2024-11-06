@@ -16,7 +16,7 @@
 	export let flash;
 	export let stexs;
 	export let types;
-	export let type: string = '_selection';
+	export let type: string = types.length == 1 ? types[0] : '_selection';
 	export let confirmErrors = [];
 
 	type MFAMethod = {
