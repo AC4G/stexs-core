@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { errorMessages, message } from 'utils-node/messageBuilder';
-import db from '../database';
+import db from '../db';
 import { body, query } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
 import sendEmail from '../services/emailService';

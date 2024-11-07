@@ -11,20 +11,22 @@ import avatarsRouter from './routes/avatars';
 import itemsRouter from './routes/items';
 import organizationRouter from './routes/organizations';
 import projectsRouter from './routes/projects';
+import db from './db';
+import { Server } from 'http';
 
 process.on('uncaughtException', (err) => {
 	logger.error(`Uncaught Exception: ${err.message}`);
 	process.exit(1);
 });
 
-const server = express();
+const app = express();
 
-server.use(bodyParser.urlencoded({ extended: true }));
-server.use(bodyParser.json());
-server.use(cors());
-server.use(responseTime());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(cors());
+app.use(responseTime());
 
-server.use((req, res, next) => {
+app.use((req, res, next) => {
 	logger.debug(`Request Headers: ${JSON.stringify(req.headers)}`);
 	logger.debug(`Request Body: ${JSON.stringify(req.body)}`);
 
@@ -39,7 +41,7 @@ server.use((req, res, next) => {
 	next();
 });
 
-server.use((req, res, next) => {
+app.use((req, res, next) => {
 	res.on('finish', () => {
 		logger.info(
 			`method=${req.method} url=${req.originalUrl} status=${res.statusCode} client_ip=${req.header('x-forwarded-for') || req.ip} server_ip=${ip.address()} duration=${res.get('X-Response-Time')}`,
@@ -48,12 +50,12 @@ server.use((req, res, next) => {
 	next();
 });
 
-server.use('/avatars', avatarsRouter);
-server.use('/items', itemsRouter);
-server.use('/organizations', organizationRouter);
-server.use('/projects', projectsRouter);
+app.use('/avatars', avatarsRouter);
+app.use('/items', itemsRouter);
+app.use('/organizations', organizationRouter);
+app.use('/projects', projectsRouter);
 
-server.use((req, res, next) => {
+app.use((req, res, next) => {
 	logger.warn(`Route not found: ${req.method} ${req.path}`);
 
 	res.status(404).json(
@@ -70,12 +72,46 @@ server.use((req, res, next) => {
 	next();
 });
 
+let server: Server;
+
 if (ENV !== 'test') {
-	server.listen(SERVER_PORT, () => {
+	server = app.listen(SERVER_PORT, () => {
 		logger.info(
 			`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`,
 		);
 	});
 }
 
-export default server;
+process.on('SIGINT', async () => {
+	server?.close(async () => {
+		logger.info('Received SIGINT. Shutting down gracefully...');
+
+		try {
+			await db.close();
+			logger.info('Database pool closed successfully.');
+		} catch (e) {
+			logger.error(`Error closing database pool: ${e instanceof Error ? e.message : e}`);
+		}
+
+		logger.info('Server shutted down.');
+		process.exit(0);
+	});
+});
+  
+process.on('SIGTERM', async () => {	
+	server?.close(async () => {
+		logger.info('Received SIGTERM. Shutting down gracefully...');
+
+		try {
+			await db.close();
+			logger.info('Database pool closed successfully.');
+		} catch (e) {
+			logger.error(`Error closing database pool: ${e instanceof Error ? e.message : e}`);
+		}
+
+		logger.info('Server shutted down.');
+		process.exit(0);
+	});
+});
+
+export default app;

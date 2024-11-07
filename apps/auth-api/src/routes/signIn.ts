@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Request as JWTRequest } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import { body } from 'express-validator';
 import generateAccessToken, {
 	generateSignInConfirmToken,

@@ -10,7 +10,7 @@ import {
 	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT,
 } from '../../env-config';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../database';
+import db from '../db';
 import logger from '../loggers/logger';
 
 export function generateSignInConfirmToken(sub: string, types: [string]) {

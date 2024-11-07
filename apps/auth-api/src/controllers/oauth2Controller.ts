@@ -8,7 +8,7 @@ import {
 	INVALID_REFRESH_TOKEN,
 	NO_CLIENT_SCOPES_SELECTED,
 } from 'utils-node/errors';
-import db from '../database';
+import db from '../db';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
 import logger from '../loggers/logger';

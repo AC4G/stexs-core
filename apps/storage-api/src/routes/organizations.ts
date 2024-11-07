@@ -20,7 +20,7 @@ import {
 	BUCKET,
 	ISSUER,
 } from '../../env-config';
-import db from '../database';
+import db from '../db';
 import { errorMessages } from 'utils-node/messageBuilder';
 import s3 from '../s3';
 import { checkScopes } from '../middlewares/scopes';

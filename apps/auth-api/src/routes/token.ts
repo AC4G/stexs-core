@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { errorMessages } from 'utils-node/messageBuilder';
-import db from '../database';
+import db from '../db';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
 import {

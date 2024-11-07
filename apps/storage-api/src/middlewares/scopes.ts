@@ -2,7 +2,7 @@ import { NextFunction, Response } from 'express';
 import { Request } from 'express-jwt';
 import { INSUFFICIENT_SCOPES, INTERNAL_ERROR } from 'utils-node/errors';
 import MiddlewareError from 'utils-node/jwtMiddleware';
-import db from '../database';
+import db from '../db';
 import logger from '../loggers/logger';
 
 export function checkScopes(

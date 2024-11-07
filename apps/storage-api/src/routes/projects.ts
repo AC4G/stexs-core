@@ -9,7 +9,7 @@ import {
 	PROJECT_ID_REQUIRED,
 	UNAUTHORIZED_ACCESS,
 } from 'utils-node/errors';
-import db from '../database';
+import db from '../db';
 import { errorMessages } from 'utils-node/messageBuilder';
 import {
 	ACCESS_TOKEN_SECRET,

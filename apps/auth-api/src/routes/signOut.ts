@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import {
 	CustomValidationError,
 	errorMessages,

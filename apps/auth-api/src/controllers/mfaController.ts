@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import logger from '../loggers/logger';
 import { errorMessages, message } from 'utils-node/messageBuilder';
 import {

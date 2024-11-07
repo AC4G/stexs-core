@@ -12,7 +12,7 @@ import {
 } from 'utils-node/jwtMiddleware';
 import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import { errorMessages } from 'utils-node/messageBuilder';
 import {
 	INTERNAL_ERROR,
