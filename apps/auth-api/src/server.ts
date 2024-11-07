@@ -92,36 +92,41 @@ if (ENV !== 'test') {
 	});
 }
 
+const closeServer = async () => {
+	try {
+		await db.close();
+		
+		logger.info('Database pool closed successfully.');
+	} catch (e) {
+		logger.error(`Error closing database pool: ${e instanceof Error ? e.message : e}`);
+	}
+
+	logger.info('Server shutted down.');
+	process.exit(0);
+}
+
 process.on('SIGINT', async () => {
-	server?.close(async () => {
-		logger.info('Received SIGINT. Shutting down gracefully...');
+	logger.info('Received SIGINT. Shutting down gracefully...');
 
-		try {
-			await db.close();
-			logger.info('Database pool closed successfully.');
-		} catch (e) {
-			logger.error(`Error closing database pool: ${e instanceof Error ? e.message : e}`);
-		}
-
-		logger.info('Server shutted down.');
-		process.exit(0);
-	});
+	if (server) {
+		server.close(async () => {
+			await closeServer();
+		});
+	} else {
+		await closeServer();
+	}
 });
   
-process.on('SIGTERM', async () => {	
-	server?.close(async () => {
-		logger.info('Received SIGTERM. Shutting down gracefully...');
+process.on('SIGTERM', async () => {
+	logger.info('Received SIGTERM. Shutting down gracefully...');
 
-		try {
-			await db.close();
-			logger.info('Database pool closed successfully.');
-		} catch (e) {
-			logger.error(`Error closing database pool: ${e instanceof Error ? e.message : e}`);
-		}
-
-		logger.info('Server shutted down.');
-		process.exit(0);
-	});
+	if (server) {
+		server.close(async () => {
+			await closeServer();
+		});
+	} else {
+		await closeServer();
+	}
 });
 
 export default app;
