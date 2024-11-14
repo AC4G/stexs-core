@@ -14,7 +14,6 @@ import {
 	UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
 import { body } from 'express-validator';
-import validate from 'utils-node/validatorMiddleware';
 import {
 	enableEmail,
 	enableTOTP,
@@ -24,11 +23,12 @@ import {
 	sendEmailCode,
 } from '../controllers/mfaController';
 import {
+	validate,
 	validateAccessToken,
 	validateSignInConfirmOrAccessToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,

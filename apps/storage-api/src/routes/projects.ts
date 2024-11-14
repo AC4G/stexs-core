@@ -1,7 +1,6 @@
 import { Router, Response } from 'express';
 import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
-import validate from 'utils-node/validatorMiddleware';
 import { param } from 'express-validator';
 import {
 	INTERNAL_ERROR,
@@ -19,13 +18,40 @@ import {
 } from '../../env-config';
 import s3 from '../s3';
 import {
+	validate,
+	checkScopes,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 	validateAccessToken,
-} from 'utils-node/jwtMiddleware';
-import { checkScopes } from '../middlewares/scopes';
+} from 'utils-node/middlewares';
+import { QueryConfig } from 'pg';
 
 const router = Router();
+
+const checkProjectOwnerUserQuery: QueryConfig = {
+	text: `
+		SELECT 1
+		FROM public.project_members AS pm
+		WHERE pm.member_id = $1::uuid 
+			AND pm.project_id = $2::integer 
+			AND pm.role IN ('Admin', 'Owner');
+	`,
+	name: 'storage-api-check-project-owner-user'
+};
+const checkProjectOwnerClientQuery: QueryConfig = {
+	text: `
+		SELECT 1
+		FROM public.projects AS p
+		JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+		WHERE pm.organization_id = $1::integer 
+			AND (
+				oa.project_id = $2::integer OR
+				oa.project_id IS NULL
+			)
+			AND p.id = $2::integer;
+	`,
+	name: 'storage-api-check-project-owner-client'
+}
 
 router.get(
 	'/:projectId',
@@ -62,7 +88,7 @@ router.post(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['project.logo.write']),
+		checkScopes(['project.logo.write'], db, logger),
 		transformJwtErrorMessages(logger),
 		param('projectId')
 			.notEmpty()
@@ -84,30 +110,14 @@ router.post(
 
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
-					`
-						SELECT 1
-						FROM public.project_members AS pm
-						WHERE pm.member_id = $1::uuid 
-							AND pm.project_id = $2::integer 
-							AND pm.role IN ('Admin', 'Owner');
-					`,
+					checkProjectOwnerUserQuery,
 					[sub, projectId],
 				);
 
 				if (rowCount) isAllowed = true;
 			} else {
 				const { rowCount } = await db.query(
-					`
-						SELECT 1
-						FROM public.projects AS p
-						JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
-						WHERE pm.organization_id = $1::integer 
-							AND (
-								oa.project_id = $2::integer OR
-								oa.project_id IS NULL
-							)
-							AND p.id = $2::integer;
-					`,
+					checkProjectOwnerClientQuery,
 					[organizationId, projectId, clientId],
 				);
 
@@ -166,7 +176,7 @@ router.delete(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['project.logo.delete']),
+		checkScopes(['project.logo.delete'], db, logger),
 		transformJwtErrorMessages(logger),
 		param('projectId')
 			.notEmpty()
@@ -188,30 +198,14 @@ router.delete(
 
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
-					`
-						SELECT 1
-						FROM public.project_members AS pm
-						WHERE pm.member_id = $1::uuid 
-							AND pm.project_id = $2::integer 
-							AND pm.role IN ('Admin', 'Owner');
-					`,
+					checkProjectOwnerUserQuery,
 					[sub, projectId],
 				);
 
 				if (rowCount) rowsFound = true;
 			} else {
 				const { rowCount } = await db.query(
-					`
-						SELECT 1
-						FROM public.projects AS p
-						JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
-						WHERE p.organization_id = $1::integer
-							AND (
-								oa.project_id = $2::integer OR
-								oa.project_id IS NULL
-							)
-							AND p.id = $2::integer;
-					`,
+					checkProjectOwnerClientQuery,
 					[organizationId, projectId, clientId],
 				);
 

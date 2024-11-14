@@ -14,12 +14,12 @@ import {
 import logger from '../loggers/logger';
 import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
 import {
+	validate,
 	validateAccessToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import { body } from 'express-validator';
-import validate from 'utils-node/validatorMiddleware';
 import { validateMFA } from '../services/mfaService';
 
 const router = Router();

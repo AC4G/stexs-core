@@ -19,11 +19,8 @@
       "errors": [
         "./dist/constants/errors.d.ts"
       ],
-      "jwtMiddleware": [
-        "./dist/middlewares/jwt.d.ts"
-      ],
-      "validatorMiddleware": [
-        "./dist/middlewares/validator.d.ts"
+      "middlewares": [
+        "./dist/middlewares/index.d.ts"
       ]
     }
   },
@@ -47,7 +44,6 @@
     ".": "./dist/index.js",
     "./messageBuilder": "./dist/messageBuilder.js",
     "./errors": "./dist/constants/errors.js",
-    "./jwtMiddleware": "./dist/middlewares/jwt.js",
-    "./validatorMiddleware": "./dist/middlewares/validator.js"
+    "./middlewares": "./dist/middlewares/index.js"
   }
 }

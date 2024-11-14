@@ -2,21 +2,21 @@ import { Router, Response } from 'express';
 import { param } from 'express-validator';
 import {
 	INTERNAL_ERROR,
-	INVALID_UUID,
+	INVALID_UUID, 
 	USER_ID_REQUIRED,
 } from 'utils-node/errors';
 import {
 	CustomValidationError,
 	errorMessages,
 } from 'utils-node/messageBuilder';
-import validate from 'utils-node/validatorMiddleware';
-import s3 from '../s3';
-import logger from '../loggers/logger';
-import {
+import { 
+	validate,
 	validateAccessToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
+import s3 from '../s3';
+import logger from '../loggers/logger';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,

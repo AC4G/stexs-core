@@ -2,7 +2,6 @@ import { Router, Response } from 'express';
 import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
 import { param } from 'express-validator';
-import validate from 'utils-node/validatorMiddleware';
 import {
 	INTERNAL_ERROR,
 	ORGANIZATION_ID_NOT_NUMERIC,
@@ -10,10 +9,12 @@ import {
 	UNAUTHORIZED_ACCESS,
 } from 'utils-node/errors';
 import {
+	validate,
+	checkScopes,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 	validateAccessToken,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
@@ -23,9 +24,20 @@ import {
 import db from '../db';
 import { errorMessages } from 'utils-node/messageBuilder';
 import s3 from '../s3';
-import { checkScopes } from '../middlewares/scopes';
+import { QueryConfig } from 'pg';
 
 const router = Router();
+
+const checkOrganizationOwnerUserQuery: QueryConfig = {
+	text: `
+		SELECT 1
+		FROM public.organization_members
+		WHERE member_id = $1::uuid 
+			AND organization_id = $2::integer 
+			AND role IN ('Admin', 'Owner');
+	`,
+	name: 'storage-api-check-organization-owner-user'
+};
 
 router.get(
 	'/:organizationId',
@@ -64,7 +76,7 @@ router.post(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['organization.logo.write']),
+		checkScopes(['organization.logo.write'], db, logger),
 		transformJwtErrorMessages(logger),
 		param('organizationId')
 			.notEmpty()
@@ -86,13 +98,7 @@ router.post(
 
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
-					`
-						SELECT 1
-						FROM public.organization_members
-						WHERE member_id = $1::uuid 
-							AND organization_id = $2::integer 
-							AND role IN ('Admin', 'Owner');
-					`,
+					checkOrganizationOwnerUserQuery,
 					[sub, organizationId],
 				);
 
@@ -154,7 +160,7 @@ router.delete(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['organization.logo.delete']),
+		checkScopes(['organization.logo.delete'], db, logger),
 		transformJwtErrorMessages(logger),
 		param('organizationId')
 			.notEmpty()
@@ -176,13 +182,7 @@ router.delete(
 
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
-					`
-						SELECT 1
-						FROM public.organization_members
-						WHERE member_id = $1::uuid 
-							AND organization_id = $2::integer 
-							AND role IN ('Admin', 'Owner');
-					`,
+					checkOrganizationOwnerUserQuery,
 					[sub, organizationId],
 				);
 

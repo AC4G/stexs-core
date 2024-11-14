@@ -22,13 +22,13 @@ import {
 	TYPE_REQUIRED,
 	UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
-import validate from 'utils-node/validatorMiddleware';
 import logger from '../loggers/logger';
 import {
+	validate,
 	validateSignInConfirmToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import {
 	AUDIENCE,
 	ISSUER,

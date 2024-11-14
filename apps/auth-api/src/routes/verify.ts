@@ -13,7 +13,7 @@ import {
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
-import validate from 'utils-node/validatorMiddleware';
+import { validate } from 'utils-node/middlewares';
 import logger from '../loggers/logger';
 import { isExpired } from 'utils-node';
 

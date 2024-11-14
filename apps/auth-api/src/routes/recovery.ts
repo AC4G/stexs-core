@@ -22,7 +22,7 @@ import db from '../db';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import sendEmail from '../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../env-config';
-import validate from 'utils-node/validatorMiddleware';
+import { validate } from 'utils-node/middlewares';
 import logger from '../loggers/logger';
 import { isExpired } from 'utils-node';
 

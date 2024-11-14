@@ -10,12 +10,12 @@ import {
 } from 'utils-node/errors';
 import logger from '../loggers/logger';
 import { body } from 'express-validator';
-import validate from 'utils-node/validatorMiddleware';
 import {
+	validate,
 	validateRefreshToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
 
 const router = Router();
