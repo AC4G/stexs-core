@@ -38,7 +38,9 @@
     "@types/express": "^4.17.17",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.8.7",
-    "@types/pg": "^8.10.2"
+    "@types/pg": "^8.10.2",
+    "madge": "^8.0.0",
+    "typescript": "^5.2.2"
   },
   "exports": {
     ".": "./dist/index.js",

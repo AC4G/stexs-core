@@ -23,7 +23,7 @@ import {
 } from 'utils-node/errors';
 import { message, testErrorMessages } from 'utils-node/messageBuilder';
 
-jest.mock('../../src/database', () => {
+jest.mock('../../src/db', () => {
 	return {
 		__esModule: true,
 		default: {

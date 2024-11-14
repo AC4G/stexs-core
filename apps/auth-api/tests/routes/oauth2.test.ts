@@ -8,34 +8,38 @@ import { NextFunction } from 'express';
 import {
 	CONNECTION_ALREADY_REVOKED,
 	CONNECTION_ID_NOT_NUMERIC,
-	CONNECTION_ID_REQUIRED,
 	CONNECTION_NOT_FOUND,
 	REFRESH_TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { message, testErrorMessages } from 'utils-node/messageBuilder';
 
-jest.mock('utils-node/jwtMiddleware', () => ({
-	validateAccessToken: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	validateRefreshToken: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	validateSignInConfirmOrAccessToken: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	checkTokenGrantType: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	validateSignInConfirmToken: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	transformJwtErrorMessages: jest.fn(
-		() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-	),
-}));
+jest.mock('utils-node/middlewares', () => {
+	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
 
-jest.mock('../../src/database', () => {
+	return {
+		validate: before.validate,
+		validateAccessToken: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		validateRefreshToken: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		validateSignInConfirmOrAccessToken: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		checkTokenGrantType: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		validateSignInConfirmToken: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		transformJwtErrorMessages: jest.fn(
+			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
+		),
+	}
+});
+
+jest.mock('../../src/db', () => {
 	return {
 		__esModule: true,
 		default: {

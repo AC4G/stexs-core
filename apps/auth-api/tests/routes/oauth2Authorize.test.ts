@@ -24,31 +24,36 @@ import {
 	INVALID_UUID,
 	REDIRECT_URL_REQUIRED,
 	SCOPES_REQUIRED,
-} from 'utils-node/errors';
+} from 'utils-node/errors'; 
 import { testErrorMessages } from 'utils-node/messageBuilder';
 
-jest.mock('utils-node/jwtMiddleware', () => ({
-	validateAccessToken: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	validateRefreshToken: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	validateSignInConfirmOrAccessToken: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	checkTokenGrantType: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	validateSignInConfirmToken: jest.fn(
-		() => (req: Request, res: Response, next: NextFunction) => next(),
-	),
-	transformJwtErrorMessages: jest.fn(
-		() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-	),
-}));
+jest.mock('utils-node/middlewares', () => {
+	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
 
-jest.mock('../../src/database', () => {
+	return {
+		validate: before.validate,
+		validateAccessToken: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		validateRefreshToken: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		validateSignInConfirmOrAccessToken: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		checkTokenGrantType: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		validateSignInConfirmToken: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+		transformJwtErrorMessages: jest.fn(
+			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
+		),
+	}
+});
+
+jest.mock('../../src/db', () => {
 	return {
 		__esModule: true,
 		default: {
@@ -243,7 +248,7 @@ describe('OAuth2 Authorize', () => {
 					info: CLIENT_NOT_FOUND,
 					data: {
 						location: 'body',
-						paths: ['client_id', 'redirect_url', 'scopes'],
+						paths: ['client_id'],
 					},
 				},
 			]),
@@ -252,7 +257,12 @@ describe('OAuth2 Authorize', () => {
 
 	it('should handle authorize with already connected client', async () => {
 		mockQuery.mockResolvedValueOnce({
-			rows: [],
+			rows: [
+				{
+					redirect_url: 'https://example.com',
+					scopes: ['inventory.read'],
+				}
+			],
 			rowCount: 1,
 		} as never);
 
@@ -269,15 +279,17 @@ describe('OAuth2 Authorize', () => {
 				scopes: ['inventory.read'],
 			});
 
-		expect(response.status).toBe(400);
-		expect(response.body).toEqual(
-			testErrorMessages([{ info: CLIENT_ALREADY_CONNECTED }]),
-		);
+		expect(response.status).toBe(204);
 	});
 
 	it('should handle authorize', async () => {
 		mockQuery.mockResolvedValueOnce({
-			rows: [],
+			rows: [
+				{
+					redirect_url: 'https://example.com',
+					scopes: ['inventory.read'],
+				}
+			],
 			rowCount: 1,
 		} as never);
 

@@ -3,7 +3,7 @@ import { ValidatorError, errorMessagesFromValidator } from '../messageBuilder';
 import { NextFunction, Request, Response } from 'express';
 import { Logger } from 'winston';
 
-export default function validate(logger: Logger) {
+export function validate(logger: Logger): (req: any, res: Response, next: NextFunction) => void {
 	return (req: Request, res: Response, next: NextFunction) => {
 		const errors = validationResult(req) as Result<ValidatorError>;
 

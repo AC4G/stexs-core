@@ -702,9 +702,7 @@
 													<div class="flex space-x-4 items-center">
 														<a href="/{profile.username}">
 															<Avatar
-																class="w-[48px] xs:w-[69px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.startsWith(
-																	`/${profile.username}`,
-																)
+																class="w-[48px] xs:w-[69px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.split('/')[1].toLowerCase() === profile.username.toLowerCase()
 																	? '!border-primary-500'
 																	: ''}"
 																{stexs}

@@ -19,6 +19,7 @@
     "@types/response-time": "^2.3.5",
     "@types/uuid": "^9.0.2",
     "concurrently": "^8.2.1",
+    "madge": "^8.0.0",
     "nodemon": "^3.0.1",
     "oxlint": "^0.2.8",
     "ts-node": "^10.9.1",
