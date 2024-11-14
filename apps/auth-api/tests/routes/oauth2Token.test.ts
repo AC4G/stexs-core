@@ -32,7 +32,7 @@ import { sign } from 'jsonwebtoken';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
 import { testErrorMessages } from 'utils-node/messageBuilder';
 
-jest.mock('../../src/database', () => {
+jest.mock('../../src/db', () => {
 	return {
 		__esModule: true,
 		default: {

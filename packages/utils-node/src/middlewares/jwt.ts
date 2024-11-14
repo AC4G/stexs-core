@@ -9,7 +9,7 @@ import {
 } from '../constants/errors';
 import { verify } from 'jsonwebtoken';
 import { Logger } from 'winston';
-
+ 
 export default class MiddlewareError extends Error {
 	code: string;
 	status: number;
@@ -164,7 +164,7 @@ export function validateSignInConfirmOrAccessToken(
 	};
 }
 
-export function checkTokenGrantType(grantTypes: string[]) {
+export function checkTokenGrantType(grantTypes: string[]): (req: any, res: Response, next: NextFunction) => void {
 	return (req: JWTRequest, res: Response, next: NextFunction) => {
 		const token = req.auth;
 
@@ -180,7 +180,7 @@ export function checkTokenGrantType(grantTypes: string[]) {
 	};
 }
 
-export function transformJwtErrorMessages(logger: Logger) {
+export function transformJwtErrorMessages(logger: Logger): (err: MiddlewareError, req: any, res: Response, next: NextFunction) => void {
 	return (
 		err: MiddlewareError,
 		req: Request,

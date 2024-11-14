@@ -74,6 +74,7 @@ router.post(
 			.notEmpty()
 			.withMessage(REDIRECT_URL_REQUIRED)
 			.bail()
+			.isURL()
 			.withMessage(INVALID_URL),
 		body('scopes')
 			.notEmpty()
@@ -146,10 +147,11 @@ router.post(
 				);
 			}
 
+			const setScopes = rows[0].scopes || [];
 			let invalidScopes: string[] = [];
 
 			scopes.forEach((scope) => {
-				if (!rows[0].scopes.includes(scope)) {
+				if (!setScopes.includes(scope)) {
 					invalidScopes.push(scope);
 				}
 			});
