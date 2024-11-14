@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import logger from '../loggers/logger';
 import {
 	CustomValidationError,
@@ -14,7 +14,6 @@ import {
 	UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
 import { body } from 'express-validator';
-import validate from 'utils-node/validatorMiddleware';
 import {
 	enableEmail,
 	enableTOTP,
@@ -24,11 +23,12 @@ import {
 	sendEmailCode,
 } from '../controllers/mfaController';
 import {
+	validate,
 	validateAccessToken,
 	validateSignInConfirmOrAccessToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,

@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { errorMessages } from 'utils-node/messageBuilder';
-import db from '../database';
+import db from '../db';
 import generateAccessToken from '../services/jwtService';
 import { Request } from 'express-jwt';
 import {
@@ -10,12 +10,12 @@ import {
 } from 'utils-node/errors';
 import logger from '../loggers/logger';
 import { body } from 'express-validator';
-import validate from 'utils-node/validatorMiddleware';
 import {
+	validate,
 	validateRefreshToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../env-config';
 
 const router = Router();

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { errorMessages, message } from 'utils-node/messageBuilder';
-import db from '../database';
+import db from '../db';
 import { body, query } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../env-config';
 import sendEmail from '../services/emailService';
@@ -13,7 +13,7 @@ import {
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
-import validate from 'utils-node/validatorMiddleware';
+import { validate } from 'utils-node/middlewares';
 import logger from '../loggers/logger';
 import { isExpired } from 'utils-node';
 

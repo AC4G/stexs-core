@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import { body } from 'express-validator';
 import {
 	CODE_EXPIRED,
@@ -24,14 +24,14 @@ import {
 	message,
 } from 'utils-node/messageBuilder';
 import sendEmail from '../services/emailService';
-import validate from 'utils-node/validatorMiddleware';
 import logger from '../loggers/logger';
 import { generateCode, isExpired } from 'utils-node';
 import {
+	validate,
 	validateAccessToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../env-config';
 import { validateMFA } from '../services/mfaService';
 

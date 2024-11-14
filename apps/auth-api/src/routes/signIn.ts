@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Request as JWTRequest } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import { body } from 'express-validator';
 import generateAccessToken, {
 	generateSignInConfirmToken,
@@ -22,13 +22,13 @@ import {
 	TYPE_REQUIRED,
 	UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
-import validate from 'utils-node/validatorMiddleware';
 import logger from '../loggers/logger';
 import {
+	validate,
 	validateSignInConfirmToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import {
 	AUDIENCE,
 	ISSUER,

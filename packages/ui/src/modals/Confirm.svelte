@@ -33,9 +33,7 @@
 			>
 			<Button
 				on:click={async () => {
-					if (close) {
-						submitted = true;
-					}
+					if (close) submitted = true;
 
 					await Promise.resolve(
 						$modalStore[0].meta.fn($modalStore[0].meta.fnParams),

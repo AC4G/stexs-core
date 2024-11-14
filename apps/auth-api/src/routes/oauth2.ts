@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import {
 	CustomValidationError,
 	errorMessages,
@@ -32,7 +32,6 @@ import {
 	SCOPES_REQUIRED,
 } from 'utils-node/errors';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
-import validate from 'utils-node/validatorMiddleware';
 import {
 	authorizationCodeController,
 	clientCredentialsController,
@@ -47,11 +46,12 @@ import {
 	REFRESH_TOKEN_SECRET,
 } from '../../env-config';
 import {
+	validate,
 	validateAccessToken,
 	validateRefreshToken,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 
 const router = Router();
 
@@ -110,6 +110,7 @@ router.post(
 					JOIN public.oauth2_app_scopes AS oas ON oa.id = oas.app_id
 					JOIN public.scopes AS s ON oas.scope_id = s.id
 					WHERE oa.client_id = $1::uuid
+						AND s.type = 'user'
 					GROUP BY oa.redirect_url;
 				`,
 				[client_id]

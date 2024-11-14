@@ -1,10 +1,8 @@
-import { Pool } from 'pg';
 import { PG_URL } from '../env-config';
+import { DbPool } from 'utils-node';
 
-const db = new Pool({
+const db: DbPool = new DbPool({
 	connectionString: PG_URL,
 });
-
-db.connect();
 
 export default db;

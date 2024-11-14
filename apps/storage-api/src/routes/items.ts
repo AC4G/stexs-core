@@ -6,13 +6,15 @@ import {
 } from '../../env-config';
 import { Router, Response } from 'express';
 import {
+	validate,
+	checkScopes,
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 	validateAccessToken,
-} from 'utils-node/jwtMiddleware';
+} from 'utils-node/middlewares';
 import logger from '../loggers/logger';
 import { Request } from 'express-jwt';
-import db from '../database';
+import db from '../db';
 import { errorMessages } from 'utils-node/messageBuilder';
 import {
 	INTERNAL_ERROR,
@@ -22,8 +24,6 @@ import {
 } from 'utils-node/errors';
 import s3 from '../s3';
 import { param } from 'express-validator';
-import validate from 'utils-node/validatorMiddleware';
-import { checkScopes } from '../middlewares/scopes';
 
 const router = Router();
 
@@ -62,7 +62,7 @@ router.post(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['item.thumbnail.write']),
+		checkScopes(['item.thumbnail.write'], db, logger),
 		transformJwtErrorMessages(logger),
 		param('itemId')
 			.notEmpty()
@@ -84,34 +84,40 @@ router.post(
 
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
-					`
-						SELECT 1
-						FROM public.project_members AS pm
-						JOIN public.profiles AS p ON pm.member_id = p.user_id
-						JOIN public.items AS i ON pm.project_id = i.project_id
-						WHERE i.id = $1::integer 
-							AND pm.member_id = $2::uuid 
-							AND pm.role IN ('Admin', 'Owner');
-					`,
+					{
+						text: `
+							SELECT 1
+							FROM public.project_members AS pm
+							JOIN public.profiles AS p ON pm.member_id = p.user_id
+							JOIN public.items AS i ON pm.project_id = i.project_id
+							WHERE i.id = $1::integer 
+								AND pm.member_id = $2::uuid 
+								AND pm.role IN ('Admin', 'Owner');
+						`,
+						name: 'storage-api-check-item-owner-user'
+					},
 					[itemId, sub],
 				);
 
 				if (rowCount) isAllowed = true;
 			} else {
 				const { rowCount } = await db.query(
-					`
-						SELECT 1
-						FROM public.items AS i
-						JOIN public.projects AS p ON p.id = i.project_id
-						JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
-						JOIN public.organizations AS o ON o.id = p.organization_id
-						WHERE i.id = $1::integer
-							AND (
-								oa.project_id = i.project_id OR
-								oa.project_id IS NULL
-							)
-							AND o.id = $2::integer;
-					`,
+					{
+						text: `
+							SELECT 1
+							FROM public.items AS i
+							JOIN public.projects AS p ON p.id = i.project_id
+							JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+							JOIN public.organizations AS o ON o.id = p.organization_id
+							WHERE i.id = $1::integer
+								AND (
+									oa.project_id = i.project_id OR
+									oa.project_id IS NULL
+								)
+								AND o.id = $2::integer;
+						`,
+						name: 'storage-api-check-item-owner-client'
+					},
 					[itemId, organizationId, clientId],
 				);
 

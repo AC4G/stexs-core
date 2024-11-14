@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import db from '../database';
+import db from '../db';
 import sendEmail from '../services/emailService';
 import {
 	message,
@@ -21,7 +21,7 @@ import {
 } from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../loggers/logger';
-import validate from 'utils-node/validatorMiddleware';
+import { validate } from 'utils-node/middlewares';
 
 const router = Router();
 
