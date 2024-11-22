@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { getUserStore } from '$lib/stores/userStore';
 	import Icon from '@iconify/svelte';
 	import {
@@ -20,23 +22,23 @@
 	const modalStore = getModalStore();
 	const flash = getFlash(page);
 
-	let search: string = '';
+	let search: string = $state('');
 	let previousSearch: string = '';
-	let filter: string = 'A-Z';
-	let typeFilter: string = 'All';
-	let paginationSettings: PaginationSettings = {
+	let filter: string = $state('A-Z');
+	let typeFilter: string = $state('All');
+	let paginationSettings: PaginationSettings = $state({
 		page: 0,
 		limit: 20,
 		size: 0,
 		amounts: [20, 50, 100],
-	};
-	let openDropDown: { [key: string]: boolean } = {};
+	});
+	let openDropDown: { [key: string]: boolean } = $state({});
 	let previousLimit: number | undefined;
 	const handleSearch = debounce((e: Event) => {
 		search = (e.target as HTMLInputElement)?.value || '';
 	}, 200);
 
-	$: connectionAmountQuery = createQuery({
+	let connectionAmountQuery = $derived(createQuery({
 		queryKey: ['connectionAmountAccount', $userStore?.id],
 		queryFn: async () => {
 			const { count } = await stexs
@@ -50,9 +52,11 @@
 			return count;
 		},
 		enabled: !!$userStore?.id,
-	});
+	}));
 
-	$: paginationSettings.size = $connectionAmountQuery.data;
+	run(() => {
+		paginationSettings.size = $connectionAmountQuery.data;
+	});
 
 	async function fetchConnections(
 		userId: string,
@@ -121,7 +125,7 @@
 		return data;
 	}
 
-	$: connectionsQuery = createQuery({
+	let connectionsQuery = $derived(createQuery({
 		queryKey: ['connectionsAccount', $userStore?.id],
 		queryFn: async () =>
 			await fetchConnections(
@@ -133,7 +137,7 @@
 				paginationSettings.limit,
 			),
 		enabled: !!$userStore?.id,
-	});
+	}));
 
 	async function deleteConnection(id: number) {
 		const { status } = await stexs
@@ -175,16 +179,16 @@
 		{#if $connectionsQuery.isLoading || !$connectionsQuery.data}
 			<div
 				class="placeholder animate-pulse xs:max-w-[300px] w-full h-[42px] rounded-lg"
-			/>
+			></div>
 			<div
 				class="w-full xs:w-fit flex flex-col xs:flex-row items-center space-y-2 xs:space-y-0 xs:space-x-2"
 			>
 				<div
 					class="placeholder animate-pulse xs:w-[90.74px] w-full h-[41.75px] rounded-lg"
-				/>
+				></div>
 				<div
 					class="placeholder animate-pulse xs:w-[82.67px] w-full h-[41.75px] rounded-lg"
-				/>
+				></div>
 			</div>
 		{:else if $connectionAmountQuery.data > 0}
 			<div
@@ -290,7 +294,7 @@
 	<div class="gap-3 grid grid-cols-1 md:grid-cols-2 w-full">
 		{#if $connectionsQuery.isLoading || !$connectionsQuery.data}
 			{#each Array(20) as _}
-				<div class="placeholder animate-pulse h-[85.75px] w-full" />
+				<div class="placeholder animate-pulse h-[85.75px] w-full"></div>
 			{/each}
 		{:else if $connectionsQuery.data.length > 0}
 			{#each $connectionsQuery.data as connection (connection.id)}
@@ -365,8 +369,8 @@
 		<div
 			class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px] w-full"
 		>
-			<div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-			<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
+			<div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]"></div>
+			<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]"></div>
 		</div>
 	{:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || ($connectionAmountQuery.data > 20 && search.length > 0 && $connectionsQuery.data.length > 0)}
 		<div class="mt-[18px] w-full">

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { getUserStore } from '$lib/stores/userStore';
@@ -21,8 +23,8 @@
 	const modalStore = getModalStore();
 	const flash = getFlash(page);
 
-	let showEmail: boolean = false;
-	let enabledMethods: string[];
+	let showEmail: boolean = $state(false);
+	let enabledMethods: string[] = $state();
 
 	function toggleShowEmail() {
 		showEmail = !showEmail;
@@ -77,11 +79,13 @@
 		enabled: !!$userStore
 	});
 
-	$: if ($authStatusQuery.data) {
-		enabledMethods = Object.entries($authStatusQuery.data)
-			.filter(([_, value]) => value === true)
-			.map(([key, _]) => key);
-	}
+	run(() => {
+		if ($authStatusQuery.data) {
+			enabledMethods = Object.entries($authStatusQuery.data)
+				.filter(([_, value]) => value === true)
+				.map(([key, _]) => key);
+		}
+	});
 
 	async function confirmMFA(code: string, type: 'email' | 'totp') {
 		const response = await stexs.auth.signOutFromAllSessions(code, type);
@@ -113,9 +117,9 @@
 		modalStore.set([modal]);
 	}
 
-	$: authQueryStore = $authStatusQuery;
-	$: emailHidden =
-		$userStore &&
+	let authQueryStore = $derived($authStatusQuery);
+	let emailHidden =
+		$derived($userStore &&
 		$userStore.email
 			.split('@')
 			.map((part) =>
@@ -123,7 +127,7 @@
 					? part[0] + '*'.repeat(part.length - 2) + part.slice(-1)
 					: part,
 			)
-			.join('@');
+			.join('@'));
 </script>
 
 <div class="px-[4%] md:px-[8%] grid place-items-center">
@@ -172,12 +176,12 @@
 			>
 			{#if $authStatusQuery.isLoading || !$authStatusQuery.data}
 				<div class="space-y-2">
-					<div class="placeholder animate-pulse h-[24px] max-w-[129.38px]" />
-					<div class="placeholder animate-pulse h-[32px] max-w-[206.64px]" />
+					<div class="placeholder animate-pulse h-[24px] max-w-[129.38px]"></div>
+					<div class="placeholder animate-pulse h-[32px] max-w-[206.64px]"></div>
 				</div>
 				<div class="space-y-2">
-					<div class="placeholder animate-pulse h-[24px] max-w-[148.16px]" />
-					<div class="placeholder animate-pulse h-[32px] max-w-[220.63px]" />
+					<div class="placeholder animate-pulse h-[24px] max-w-[148.16px]"></div>
+					<div class="placeholder animate-pulse h-[32px] max-w-[220.63px]"></div>
 				</div>
 			{:else}
 				<div class="space-y-2">
@@ -222,8 +226,8 @@
 		</div>
 		{#if $sessionsAmountQuery.isLoading || !$sessionsAmountQuery.data}
 			<div class="space-y-2">
-				<div class="placeholder animate-pulse h-[24px] max-w-[140px]" />
-				<div class="placeholder animate-pulse h-[32px] max-w-[203.21px]" />
+				<div class="placeholder animate-pulse h-[24px] max-w-[140px]"></div>
+				<div class="placeholder animate-pulse h-[32px] max-w-[203.21px]"></div>
 			</div>
 		{:else}
 			<div class="space-y-2">

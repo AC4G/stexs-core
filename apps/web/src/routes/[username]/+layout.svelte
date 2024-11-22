@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { page } from '$app/stores';
 	import { Avatar, Button } from 'ui';
 	import { getUserStore } from '$lib/stores/userStore';
@@ -21,20 +23,23 @@
 		openBlockUserModal,
 		openUnblockUserModal,
 	} from '$lib/utils/modals/userModals';
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
 
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();
 	const isSSR = import.meta.env.SSR;
 	const modalStore = getModalStore();
 	const flash = getFlash(page);
-	let friendRequestSubmitted: boolean = false;
-	let friendRequestRevocationSubmitted: boolean = false;
-	let removeFriendSubmitted: boolean = false;
-	let acceptFriendRequestSubmitted: boolean = false;
-	let deleteFriendRequestSubmitted: boolean = false;
-	let profileDropDownOpen: boolean = false;
-	$: username = $page.params.username;
-	$: path = $page.url.pathname;
+	let friendRequestSubmitted: boolean = $state(false);
+	let friendRequestRevocationSubmitted: boolean = $state(false);
+	let removeFriendSubmitted: boolean = $state(false);
+	let acceptFriendRequestSubmitted: boolean = $state(false);
+	let deleteFriendRequestSubmitted: boolean = $state(false);
+	let profileDropDownOpen: boolean = $state(false);
 
 	async function fetchProfile(username: string) {
 		const { data } = await stexs
@@ -107,25 +112,36 @@
 		return data.length > 0;
 	}
 
-	$: profileQuery = createQuery({
+
+
+
+
+
+
+
+
+
+
+
+	let username = $derived($page.params.username);
+	let path = $derived($page.url.pathname);
+	let profileQuery = $derived(createQuery({
 		queryKey: ['userProfile', username],
 		queryFn: async () => await fetchProfile(username),
 		enabled: !!username && !isSSR,
-	});
-
-	$: blockedQuery = createQuery({
+	}));
+	let userId = $derived($profileQuery.data?.user_id);
+	let blockedQuery = $derived(createQuery({
 		queryKey: ['blockedProfile', $userStore?.id, userId],
 		queryFn: async () => await fetchBlocked(userId, $userStore?.id!),
 		enabled: !!$userStore?.id && !!userId && userId !== $userStore.id,
-	});
-
-	$: isCurrentUserBlocker =
-		$blockedQuery.data?.filter(
+	}));
+	let isCurrentUserBlocker =
+		$derived($blockedQuery.data?.filter(
 			(blocked: { blocker_id: string }) =>
 				blocked.blocker_id === $userStore?.id,
-		).length > 0;
-
-	$: isFriendQuery = createQuery({
+		).length > 0);
+	let isFriendQuery = $derived(createQuery({
 		queryKey: ['isFriend', $userStore?.id, userId],
 		queryFn: async () => await fetchIsFriend($userStore?.id!, userId),
 		enabled:
@@ -134,13 +150,13 @@
 			userId !== $userStore.id &&
 			!!$blockedQuery.data &&
 			$blockedQuery.data.length === 0,
+	}));
+	let isFriend;
+	run(() => {
+		isFriend = $isFriendQuery.data as boolean;
 	});
-
-	$: isFriend = $isFriendQuery.data as boolean;
-	$: userId = $profileQuery.data?.user_id;
-	$: isPrivate = $profileQuery.data?.is_private as boolean;
-
-	$: friendsAmountQuery = createQuery({
+	let isPrivate = $derived($profileQuery.data?.is_private as boolean);
+	let friendsAmountQuery = $derived(createQuery({
 		queryKey: ['friendsAmount', userId],
 		queryFn: async () => await fetchFriendsAmount(userId),
 		enabled:
@@ -148,20 +164,19 @@
 			((!isPrivate && ($blockedQuery.data?.length === 0 || !$userStore)) ||
 				!!isFriend ||
 				userId === $userStore?.id),
-	});
-
-	$: totalFriends = $friendsAmountQuery.data ?? 0;
-
-	$: gotFriendRequestQuery = createQuery({
+	}));
+	let totalFriends = $derived($friendsAmountQuery.data ?? 0);
+	let gotFriendRequestQuery = $derived(createQuery({
 		queryKey: ['gotFriendRequest', userId, $userStore?.id],
 		queryFn: async () => await fetchFriendRequest(userId, $userStore?.id!),
 		enabled:
 			!!userId && !!$userStore?.id && !isFriend && userId !== $userStore.id,
+	}));
+	let gotFriendRequest;
+	run(() => {
+		gotFriendRequest = $gotFriendRequestQuery.data;
 	});
-
-	$: gotFriendRequest = $gotFriendRequestQuery.data;
-
-	$: friendRequestQuery = createQuery({
+	let friendRequestQuery = $derived(createQuery({
 		queryKey: ['profileFriendRequest', userId, $userStore?.id],
 		queryFn: async () => fetchFriendRequest($userStore?.id!, userId),
 		enabled:
@@ -170,32 +185,32 @@
 			userId !== $userStore.id &&
 			!isFriend &&
 			!gotFriendRequest,
+	}));
+	let friendRequestSend = $derived($friendRequestQuery.data);
+	run(() => {
+		if (
+			$profileQuery.isFetched &&
+			$friendsAmountQuery.isFetched &&
+			(($userStore && $userStore.id !== userId && $isFriendQuery.isFetched) ||
+				($userStore && $userStore.id === userId) ||
+				!$userStore)
+		) {
+			profileStore.set({
+				userId,
+				isPrivate,
+				isFriend,
+				totalFriends,
+				refetchProfileFn: async () => {
+					$profileQuery.refetch();
+					$blockedQuery.refetch();
+					$isFriendQuery.refetch();
+					$friendsAmountQuery.refetch();
+				},
+				refetchFriendsFn: $friendsAmountQuery.refetch,
+				refetchIsFriendFn: $isFriendQuery.refetch,
+			});
+		}
 	});
-
-	$: friendRequestSend = $friendRequestQuery.data;
-
-	$: if (
-		$profileQuery.isFetched &&
-		$friendsAmountQuery.isFetched &&
-		(($userStore && $userStore.id !== userId && $isFriendQuery.isFetched) ||
-			($userStore && $userStore.id === userId) ||
-			!$userStore)
-	) {
-		profileStore.set({
-			userId,
-			isPrivate,
-			isFriend,
-			totalFriends,
-			refetchProfileFn: async () => {
-				$profileQuery.refetch();
-				$blockedQuery.refetch();
-				$isFriendQuery.refetch();
-				$friendsAmountQuery.refetch();
-			},
-			refetchFriendsFn: $friendsAmountQuery.refetch,
-			refetchIsFriendFn: $isFriendQuery.refetch,
-		});
-	}
 </script>
 
 <div class="grid place-items-center">
@@ -206,14 +221,14 @@
 			class="grid grid-cols-1 sm:grid-cols-2 gap-x-2 md:grid-cols-3 lg:grid-cols-4 gap-y-8"
 		>
 			{#if $profileQuery.isLoading || !$profileQuery.data}
-				<div class="placeholder-circle animate-pulse mx-auto w-[168px]" />
+				<div class="placeholder-circle animate-pulse mx-auto w-[168px]"></div>
 				<div class="grid gap-y-4 md:col-span-2 items-center">
 					<div
 						class="placeholder animate-pulse w-[80%] sm:w-[120px] h-[24px]"
-					/>
-					<div class="placeholder animate-pulse w-[100px] h-[24px]" />
-					<div class="placeholder animate-pulse sm:w-full h-[40px]" />
-					<div class="placeholder animate-pulse w-[80%] sm:w-[50%] h-[24px]" />
+					></div>
+					<div class="placeholder animate-pulse w-[100px] h-[24px]"></div>
+					<div class="placeholder animate-pulse sm:w-full h-[40px]"></div>
+					<div class="placeholder animate-pulse w-[80%] sm:w-[50%] h-[24px]"></div>
 				</div>
 			{:else}
 				<Avatar
@@ -235,7 +250,7 @@
 					</p>
 					{#if (!isPrivate || $userStore?.id === userId || isFriend) && ($blockedQuery.data === undefined || $blockedQuery.data.length === 0)}
 						{#if $friendsAmountQuery.isLoading}
-							<div class="placeholder animate-pulse w-[100px] h-[20px]" />
+							<div class="placeholder animate-pulse w-[100px] h-[20px]"></div>
 						{:else}
 							<p class="text-[16px]">Friends {$friendsAmountQuery.data ?? 0}</p>
 						{/if}
@@ -430,7 +445,7 @@
 			{:else if $profileQuery.isLoading || !$profileQuery.data || ($userStore?.id !== $profileStore?.userId && $profileQuery.data.is_private && ($isFriendQuery.isLoading || (!$isFriendQuery.data && $userStore))) || $blockedQuery.isLoading || (!$blockedQuery.data && $userStore && $userStore.id !== $profileStore?.userId)}
 				<div
 					class="grid row-start-2 col-span-full place-items-center placeholder animate-pulse h-[1000px] rounded-md"
-				/>
+				></div>
 			{:else if ($profileQuery.data && !$profileQuery.data.is_private) || ($userStore && $userStore.id === userId) || isFriend}
 				<TabGroup
 					regionList="flex flex-col xs:flex-row justify-evenly rounded-md bg-surface-700 p-1 space-y-1 xs:space-y-0"
@@ -456,9 +471,11 @@
 					>
 						<span>Organizations</span>
 					</TabAnchor>
-					<svelte:fragment slot="panel">
-						<slot />
-					</svelte:fragment>
+					{#snippet panel()}
+													
+							{@render children?.()}
+						
+													{/snippet}
 				</TabGroup>
 			{:else}
 				<div

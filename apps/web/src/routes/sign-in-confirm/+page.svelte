@@ -12,10 +12,10 @@
 	const flash = getFlash(page);
 	const previousPageStore = getPreviousPageStore();
 
-	let signInInit: SignInInit;
-	let type: string;
+	let signInInit: SignInInit = $state();
+	let type: string = $state();
 	let requested: boolean = false;
-	let errors: string[];
+	let errors: string[] = $state();
 
 	const signInConfirmSetupQuery = createQuery({
 		queryKey: ['signInConfirmSetup'],

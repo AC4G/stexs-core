@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { SignIn } from 'validation-schemas';
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
 	import { Button, Input } from 'ui';
@@ -9,7 +11,7 @@
 	import { page } from '$app/stores';
 	import { getFlash } from 'sveltekit-flash-message/client';
 
-	let submitted: boolean = false;
+	let submitted: boolean = $state(false);
 	const flash = getFlash(page);
 
 	let code = $page.url.searchParams.get('code');
@@ -101,7 +103,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<form class="space-y-6" on:submit|preventDefault={signIn}>
+			<form class="space-y-6" onsubmit={preventDefault(signIn)}>
 				<Input
 					field="identifier"
 					type="text"

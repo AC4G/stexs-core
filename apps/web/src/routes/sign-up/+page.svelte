@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 	import { Button, Input } from 'ui';
 	import { SignUp } from 'validation-schemas';
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
@@ -10,7 +12,7 @@
 	import type { Session } from 'stexs-client/src/lib/types';
 	import { debounce } from 'lodash';
 
-	let submitted: boolean = false;
+	let submitted: boolean = $state(false);
 	const flash = getFlash(page);
 
 	const signUpSetupQuery = createQuery({
@@ -34,7 +36,7 @@
 		clearOnSubmit: 'none',
 	});
 
-	let usernameNotAvailable: boolean = false;
+	let usernameNotAvailable: boolean = $state(false);
 	let checkedUsernames: { username: string; available: boolean }[] = [];
 
 	const checkUsernameAvailability: any = debounce(async () => {
@@ -123,10 +125,10 @@
 		submitted = false;
 	}
 
-	$: {
+	run(() => {
 		if (usernameNotAvailable && $form.username.length === 0)
 			usernameNotAvailable = false;
-	}
+	});
 </script>
 
 {#if $signUpSetupQuery.data}
@@ -152,7 +154,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<form class="space-y-6" on:submit|preventDefault={signUp}>
+			<form class="space-y-6" onsubmit={preventDefault(signUp)}>
 				<div>
 					<Input
 						field="username"

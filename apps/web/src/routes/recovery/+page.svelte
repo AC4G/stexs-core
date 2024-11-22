@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { page } from '$app/stores';
 	import { validate as uuidValidate, version as uuidVersion } from 'uuid';
 	import { stexs } from '../../stexsClient';
@@ -9,8 +11,8 @@
 	import { goto } from '$app/navigation';
 	import { getFlash } from 'sveltekit-flash-message/client';
 
-	let confirm: boolean = false;
-	let submitted: boolean = false;
+	let confirm: boolean = $state(false);
+	let submitted: boolean = $state(false);
 	const flash = getFlash(page);
 
 	const email = $page.url.searchParams.get('email');
@@ -144,7 +146,7 @@
 		<form
 			class="space-y-6"
 			autocomplete="off"
-			on:submit|preventDefault={confirm ? confirmRecovery : requestRecovery}
+			onsubmit={preventDefault(confirm ? confirmRecovery : requestRecovery)}
 		>
 			{#if confirm}
 				<Input
