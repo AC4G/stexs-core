@@ -7,7 +7,7 @@ CONFIG_FILE="$HOME/.stexs-dev/stexs-dev.conf"
 
 SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-WORK_PATH="$(dirname "/../$SCRIPT_DIR")"
+WORK_PATH="$(dirname "/..$SCRIPT_DIR")"
 
 source "$SCRIPT_DIR/utils/package-manager.sh"
 source "$SCRIPT_DIR/utils/ide.sh"
@@ -166,7 +166,9 @@ if [ $? != 0 ]; then
   fi
 
   tmux new-session -d -s $SESSION_NAME -n $SERVER_WINDOW
+
   tmux set-option -g mouse on
+
   tmux send-keys -t $SESSION_NAME:$SERVER_WINDOW "pnpm dev" C-m
   tmux new-window -t $SESSION_NAME -n $DEV_WINDOW
 
