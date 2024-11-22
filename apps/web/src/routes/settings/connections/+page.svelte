@@ -11,12 +11,14 @@
 	} from '@skeletonlabs/skeleton';
 	import { Dropdown, DropdownItem, Search } from 'flowbite-svelte';
 	import { Button, OrganizationLogo } from 'ui';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
 	import { getFlash } from 'sveltekit-flash-message/client';
 	import { page } from '$app/stores';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { stexs } from '../../../stexsClient';
 	import { openDeleteConnectionModal } from '$lib/utils/modals/connectionModals';
+
+	const { debounce } = lodash;
 
 	const userStore = getUserStore();
 	const modalStore = getModalStore();

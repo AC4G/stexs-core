@@ -75,7 +75,7 @@
 	import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
 	import { openAddFriendModal } from '$lib/utils/modals/friendModals';
 	import { AuthEvents } from 'stexs-client';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
 	import { formatDistanceStrict } from '$lib/utils/formatDistance';
 	import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friend';
 	import {
@@ -89,6 +89,8 @@
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
+
+	const { debounce } = lodash;
 
 	let { children }: Props = $props();
 

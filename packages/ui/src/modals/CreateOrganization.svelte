@@ -9,7 +9,9 @@
 	import { CreateOrganization } from 'validation-schemas';
 	import Markdown from '../Markdown.svelte';
 	import { Input } from 'flowbite-svelte';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
+
+	const { debounce } = lodash;
 
 	interface Props {
 		parent: SvelteComponent;

@@ -10,7 +10,9 @@
 	import { getFlash } from 'sveltekit-flash-message/client';
 	import { createQuery } from '@tanstack/svelte-query';
 	import type { Session } from 'stexs-client/src/lib/types';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
+
+	const { debounce } = lodash;
 
 	let submitted: boolean = $state(false);
 	const flash = getFlash(page);

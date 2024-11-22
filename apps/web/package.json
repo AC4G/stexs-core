@@ -26,7 +26,7 @@
 		"@types/uuid": "^9.0.2",
 		"autoprefixer": "^10.4.16",
 		"flowbite": "^2.1.1",
-		"flowbite-svelte": "^0.47.3",
+		"flowbite-svelte": "^0.47.3", 
 		"postcss": "^8.4.31",
 		"svelte": "^5.2.7",
 		"svelte-check": "^4.0.0",

@@ -18,9 +18,11 @@
 	import { Button, OrganizationLogo } from 'ui';
 	import { getFlash } from 'sveltekit-flash-message/client';
 	import { page } from '$app/stores';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
 	import Icon from '@iconify/svelte';
 	import { openCreateOrganizationModal } from '$lib/utils/modals/organizationModals';
+
+	const { debounce } = lodash;
 
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();

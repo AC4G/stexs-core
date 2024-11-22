@@ -10,10 +10,12 @@
 	import Button from '../Button.svelte';
 	import { Dropdown, Search } from 'flowbite-svelte';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
 	import Avatar from '../Avatar.svelte';
 	import { page } from '$app/stores';
 	import StexsClient from 'stexs-client';
+
+	const { debounce } = lodash;
 
 	interface Props {
 		parent: SvelteComponent;

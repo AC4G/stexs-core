@@ -24,7 +24,7 @@ export function redirectToPreviousPage(previousPageStore: Writable<string>) {
 
 	previousPageStore.set('/');
 
-	if (typeof window === 'undefined') throw redirect(302, path);
+	if (typeof window === 'undefined') redirect(302, path);
 
 	return goto(path);
 }

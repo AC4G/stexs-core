@@ -21,7 +21,9 @@
 	import { page } from '$app/stores';
 	import { openBlockUserModal } from '$lib/utils/modals/userModals';
 	import { openAddFriendModal } from '$lib/utils/modals/friendModals';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
+
+	const { debounce } = lodash;
 
 	const flash = getFlash(page);
 	const profileStore = getProfileStore();

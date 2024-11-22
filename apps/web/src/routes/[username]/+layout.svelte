@@ -23,6 +23,7 @@
 		openBlockUserModal,
 		openUnblockUserModal,
 	} from '$lib/utils/modals/userModals';
+	
 	interface Props {
 		children?: import('svelte').Snippet;
 	}

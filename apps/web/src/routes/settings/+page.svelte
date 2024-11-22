@@ -17,7 +17,7 @@
 	import Icon from '@iconify/svelte';
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
 	import { UpdateProfile } from 'validation-schemas';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
 	import { openRemoveAvatarModal } from '$lib/utils/modals/avatarModals';
 	import { AuthEvents } from 'stexs-client';
 	import {
@@ -26,6 +26,8 @@
 		cropFile,
 		isWebPAnimated,
 	} from '$lib/utils/fileConverter';
+
+	const { debounce } = lodash;
 
 	const modalStore = getModalStore();
 	const userStore = getUserStore();

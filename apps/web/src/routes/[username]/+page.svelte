@@ -18,7 +18,9 @@
 	} from '@skeletonlabs/skeleton';
 	import { Button, ProjectLogo, ItemThumbnail } from 'ui';
 	import Icon from '@iconify/svelte';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
+
+	const { debounce } = lodash;
 
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();

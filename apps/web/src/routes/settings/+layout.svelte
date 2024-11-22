@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { getPreviousPageStore } from '$lib/stores/previousPageStore';
 	import { page } from '$app/stores';
+	
 	interface Props {
 		children?: import('svelte').Snippet;
 	}

@@ -2,7 +2,7 @@ import {
 	type FormatDistanceStrictOptions,
 	formatDistanceStrict as formatDistanceStrictfns,
 } from 'date-fns';
-import locale from 'date-fns/locale/en-US';
+import { enUS as locale } from 'date-fns/locale/en-US';
 
 const formatDistanceLocale: any = {
 	lessThanXSeconds: '{{count}}s',
