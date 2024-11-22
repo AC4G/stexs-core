@@ -12,6 +12,7 @@ WORK_PATH="$(dirname "/../$SCRIPT_DIR")"
 source "$SCRIPT_DIR/utils/package-manager.sh"
 source "$SCRIPT_DIR/utils/ide.sh"
 
+# Declare package managers. The format is: [<package manager>]="<OS name>:<command (cmd = IDE command) = ... {cmd} ...>:<tmux compatibility = tmux>"
 declare -A PACKAGE_MANAGERS=(
   ["apt"]="Debian/Ubuntu:sudo apt update && sudo apt install -y {cmd}:tmux"
   ["yum"]="RHEL/CentOS:sudo yum install -y {cmd}:tmux"
@@ -24,6 +25,7 @@ declare -A PACKAGE_MANAGERS=(
   ["flatpak"]="Universal:flatpak install flathub {flatpak_id}"
 )
 
+# Declare IDEs. The format is: [<ide code>]="<name>:<command>:<flatpak id>"
 declare -A IDES=(
   ["vsc"]="Visual Studio Code:code:com.visualstudio.code"
   ["vim"]="Vim:vim:org.vim.Vim"
