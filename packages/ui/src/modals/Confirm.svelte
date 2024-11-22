@@ -3,11 +3,15 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import Button from '../Button.svelte';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
-	let submitted: boolean = false;
+	let submitted: boolean = $state(false);
 	let question: string = $modalStore[0].meta.question;
 	let subText = $modalStore[0].meta.subText || '';
 	let confirmBtnClass: string =

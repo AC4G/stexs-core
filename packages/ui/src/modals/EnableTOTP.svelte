@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import Button from '../Button.svelte';
@@ -9,12 +11,16 @@
 	import { tick } from 'svelte';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
 	let submitted = false;
-	let codeInput: HTMLInputElement;
+	let codeInput: HTMLInputElement = $state();
 
 	let authQueryStore = $modalStore[0].meta.authQueryStore;
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
@@ -71,8 +77,8 @@
 
 	const cancel = () => modalStore.close();
 
-	let totp;
-	let showSecret: boolean = false;
+	let totp = $state();
+	let showSecret: boolean = $state(false);
 
 	onMount(async () => {
 		let response = await stexs.auth.mfa.enable('totp');
@@ -94,8 +100,8 @@
 		codeInput.focus();
 	});
 
-	$: secretHidden =
-		totp && totp.secret.slice(0, 4) + '***' + totp.secret.slice(-4);
+	let secretHidden =
+		$derived(totp && totp.secret.slice(0, 4) + '***' + totp.secret.slice(-4));
 </script>
 
 {#if $modalStore[0]}
@@ -150,7 +156,7 @@
 			<form
 				class="space-y-6"
 				autocomplete="off"
-				on:submit|preventDefault={submit}
+				onsubmit={preventDefault(submit)}
 			>
 				<Input
 					name="code"
@@ -178,19 +184,19 @@
 			</form>
 		{:else}
 			<div class="space-y-4 flex flex-col items-center">
-				<div class="w-full max-w-[260px] h-[260px] placeholder animate-pulse" />
-				<div class="w-full max-w-[340px] h-[60px] placeholder animate-pulse" />
-				<div class="w-full max-w-[200px] h-[40px] placeholder animate-pulse" />
-				<div class="w-full max-w-[200px] h-[40px] placeholder animate-pulse" />
-				<div class="w-full max-w-[100px] h-[40px] placeholder animate-pulse" />
+				<div class="w-full max-w-[260px] h-[260px] placeholder animate-pulse"></div>
+				<div class="w-full max-w-[340px] h-[60px] placeholder animate-pulse"></div>
+				<div class="w-full max-w-[200px] h-[40px] placeholder animate-pulse"></div>
+				<div class="w-full max-w-[200px] h-[40px] placeholder animate-pulse"></div>
+				<div class="w-full max-w-[100px] h-[40px] placeholder animate-pulse"></div>
 			</div>
-			<div class="w-full max-w-[340px] h-[70px] placeholder animate-pulse" />
+			<div class="w-full max-w-[340px] h-[70px] placeholder animate-pulse"></div>
 			<div class="flex justify-between w-full">
 				<Button
 					class="variant-ringed-surface hover:bg-surface-600"
 					on:click={cancel}>Cancel</Button
 				>
-				<div class="w-[88px] h-[42px] placeholder animate-pulse" />
+				<div class="w-[88px] h-[42px] placeholder animate-pulse"></div>
 			</div>
 		{/if}
 	</div>

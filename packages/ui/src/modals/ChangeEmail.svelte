@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 	import StexsClient from 'stexs-client';
 	import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
@@ -8,20 +10,24 @@
 	import Input from '../Input.svelte';
 	import Button from '../Button.svelte';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 	let types = $modalStore[0].meta.types;
-	let type = '_selection';
+	let type = $state('_selection');
 	let currentEmail: string = $modalStore[0].meta.email;
-	let newEmailEntered: boolean = false;
-	let mfaEntered: boolean = false;
+	let newEmailEntered: boolean = $state(false);
+	let mfaEntered: boolean = $state(false);
 	let confirmErrors: string[] = [];
 
-	let codeInput: HTMLInputElement;
+	let codeInput: HTMLInputElement = $state();
 
 	const { form, errors, validate } = superForm(superValidateSync(EmailChange), {
 		id: 'email-change',
@@ -119,10 +125,12 @@
 
 	const cancel = () => modalStore.close();
 
-	$: $verifyForm.code = $verifyForm.code.toUpperCase();
-	$: {
+	run(() => {
+		$verifyForm.code = $verifyForm.code.toUpperCase();
+	});
+	run(() => {
 		if (newEmailEntered && mfaEntered && codeInput) codeInput.focus();
-	}
+	});
 </script>
 
 {#if $modalStore[0]}
@@ -145,7 +153,7 @@
 				<form
 					class="space-y-6"
 					autocomplete="off"
-					on:submit|preventDefault={verify}
+					onsubmit={preventDefault(verify)}
 				>
 					<Input
 						name="code"
@@ -185,7 +193,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<form class="space-y-6" on:submit|preventDefault={submit}>
+			<form class="space-y-6" onsubmit={preventDefault(submit)}>
 				<Input
 					name="email"
 					type="email"

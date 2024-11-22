@@ -4,7 +4,11 @@
 	import MFA from '../MFA.svelte';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 

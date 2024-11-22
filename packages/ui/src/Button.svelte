@@ -1,31 +1,52 @@
 <script lang="ts">
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { clipboard, ProgressRadial } from '@skeletonlabs/skeleton';
 
-	export let submitted: boolean = $$restProps.submitted || false;
-	export let type: 'button' | 'submit' | 'reset' = 'button';
-	export let title: string | undefined = undefined;
-	export let loader: boolean = true;
-	export let loadingText: string = 'processing...';
-	export let progressClass: string = 'w-[24px]';
-	export let loaderMeter: string = 'stroke-surface-50';
-	export let loaderTrack: string = '';
 
-	export let clipboardData: string | undefined = undefined;
+	interface Props {
+		submitted?: boolean;
+		type?: 'button' | 'submit' | 'reset';
+		title?: string | undefined;
+		loader?: boolean;
+		loadingText?: string;
+		progressClass?: string;
+		loaderMeter?: string;
+		loaderTrack?: string;
+		clipboardData?: string | undefined;
+		children?: import('svelte').Snippet;
+		[key: string]: any
+	}
+
+	let {
+		submitted = rest.submitted || false,
+		type = 'button',
+		title = undefined,
+		loader = true,
+		loadingText = 'processing...',
+		progressClass = 'w-[24px]',
+		loaderMeter = 'stroke-surface-50',
+		loaderTrack = '',
+		clipboardData = undefined,
+		children,
+		...rest
+	}: Props = $props();
 </script>
 
 <button
 	use:clipboard={clipboardData}
-	on:click
-	on:mouseover
-	on:mouseenter
-	on:mouseleave
-	on:focus
+	onclick={bubble('click')}
+	onmouseover={bubble('mouseover')}
+	onmouseenter={bubble('mouseenter')}
+	onmouseleave={bubble('mouseleave')}
+	onfocus={bubble('focus')}
 	{type}
 	{title}
 	class={submitted
-		? $$restProps.class + ' opacity-50 cursor-not-allowed btn'
-		: $$restProps.class + ' btn'}
-	{...$$restProps.disabled ? { disabled: true } : {}}
+		? rest.class + ' opacity-50 cursor-not-allowed btn'
+		: rest.class + ' btn'}
+	{...rest.disabled ? { disabled: true } : {}}
 >
 	{#if submitted}
 		{#if loader}
@@ -40,6 +61,6 @@
 			{loadingText}
 		{/if}
 	{:else}
-		<slot />
+		{@render children?.()}
 	{/if}
 </button>

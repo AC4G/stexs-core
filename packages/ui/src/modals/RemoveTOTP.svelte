@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import Button from '../Button.svelte';
@@ -7,7 +9,11 @@
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
@@ -73,7 +79,7 @@
 		<form
 			class="space-y-6"
 			autocomplete="off"
-			on:submit|preventDefault={submit}
+			onsubmit={preventDefault(submit)}
 		>
 			<Input name="code" field="code" required bind:value={$form.code}
 				>Code</Input

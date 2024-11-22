@@ -3,23 +3,28 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { Avatar } from '@skeletonlabs/skeleton';
 
-	export let stexs: StexsClient;
-	export let userId: string;
-	export let username: string | undefined;
+	interface Props {
+		stexs: StexsClient;
+		userId: string;
+		username: string | undefined;
+		[key: string]: any
+	}
+
+	let { stexs, userId, username, ...rest }: Props = $props();
 
 	let state: boolean = false;
 
-	$: urlQuery = createQuery({
+	let urlQuery = $derived(createQuery({
 		queryKey: ['avatarUrl', userId],
 		queryFn: async () => await stexs.storage.getAvatarUrl(userId),
 		enabled: !!userId,
-	});
+	}));
 
 	function getETagFromResponseHeaders(headers: Headers): string | null {
 		return headers.get('ETag') || headers.get('Etag') || headers.get('etag');
 	}
 
-	$: imageQuery = createQuery({
+	let imageQuery = $derived(createQuery({
 		queryKey: ['avatarImage', userId],
 		queryFn: async () => {
 			let avatarUrl = $urlQuery.data ? new URL($urlQuery.data) : null;
@@ -56,7 +61,7 @@
 			}
 		},
 		enabled: !!$urlQuery.data
-	});
+	}));
 </script>
 
-<Avatar src={$imageQuery?.data} initials={username} {...$$restProps} />
+<Avatar src={$imageQuery?.data} initials={username} {...rest} />

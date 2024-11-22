@@ -15,22 +15,26 @@
 	import { page } from '$app/stores';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 	const stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	const userId = $modalStore[0].meta.userId;
 	const flash = $modalStore[0].meta.flash;
-	let search: string = '';
-	let filter: string = 'All';
-	let submitted: number;
-	let operationSubmitted: boolean = false;
-	let paginationSettings: PaginationSettings = {
+	let search: string = $state('');
+	let filter: string = $state('All');
+	let submitted: number = $state();
+	let operationSubmitted: boolean = $state(false);
+	let paginationSettings: PaginationSettings = $state({
 		page: 0,
 		limit: 20,
 		size: 0,
 		amounts: [20, 50],
-	};
+	});
 	const handleSearch = debounce((e: Event) => {
 		search = (e.target as HTMLInputElement)?.value || '';
 	}, 200);
@@ -89,7 +93,7 @@
 		return data;
 	}
 
-	$: searchForFriendsQuery = createQuery({
+	let searchForFriendsQuery = $derived(createQuery({
 		queryKey: [
 			'searchForFriends',
 			userId,
@@ -103,7 +107,7 @@
 				paginationSettings.page,
 				paginationSettings.limit,
 			),
-	});
+	}));
 </script>
 
 {#if $modalStore[0]}
@@ -168,7 +172,7 @@
 					>
 						<a
 							href="/{profile.username}"
-							on:click={parent.onClose}
+							onclick={parent.onClose}
 							class="flex justify-left items-center group gap-4"
 						>
 							<div class="w-fit h-fit">

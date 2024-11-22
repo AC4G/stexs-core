@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import Button from '../Button.svelte';
@@ -8,13 +10,17 @@
 	import Icon from '@iconify/svelte';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
 	let submitted: boolean = false;
-	let requested: boolean = false;
-	let codeInput: HTMLInputElement;
+	let requested: boolean = $state(false);
+	let codeInput: HTMLInputElement = $state();
 
 	let authQueryStore = $modalStore[0].meta.authQueryStore;
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
@@ -130,7 +136,7 @@
 		<form
 			class="space-y-6"
 			autocomplete="off"
-			on:submit|preventDefault={submit}
+			onsubmit={preventDefault(submit)}
 		>
 			<Input
 				name="code"

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 	import Button from './Button.svelte';
 	import Icon from '@iconify/svelte';
 	import Input from './Input.svelte';
@@ -8,25 +10,37 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 
-	export let cancel: () => void;
-	export let confirm: (
+	interface Props {
+		cancel: () => void;
+		confirm: (
 		code: string,
 		type: string,
 	) => Promise<Array<{ message: string }> | void>;
-	export let flash;
-	export let stexs;
-	export let types;
-	export let type: string = types.length == 1 ? types[0] : '_selection';
-	export let confirmErrors = [];
+		flash: any;
+		stexs: any;
+		types: any;
+		type?: string;
+		confirmErrors?: any;
+	}
+
+	let {
+		cancel,
+		confirm,
+		flash,
+		stexs,
+		types,
+		type = $bindable(types.length == 1 ? types[0] : '_selection'),
+		confirmErrors = []
+	}: Props = $props();
 
 	type MFAMethod = {
 		icon: string;
 		description: string;
 	};
 
-	let submitted: boolean = false;
-	let requested: boolean = false;
-	let codeInput: HTMLInputElement;
+	let submitted: boolean = $state(false);
+	let requested: boolean = $state(false);
+	let codeInput: HTMLInputElement = $state();
 
 	const descriptions: { [key: string]: string } = {
 		_selection: 'Select an authentication method.',
@@ -45,9 +59,9 @@
 	};
 	const requestCodeTypes = ['email'];
 
-	let codeRequested: { [key: string]: boolean } = {
+	let codeRequested: { [key: string]: boolean } = $state({
 		email: false,
-	};
+	});
 
 	const { form, errors, validate } = superForm(superValidateSync(VerifyCode), {
 		validators: VerifyCode,
@@ -123,11 +137,13 @@
 		submitted = false;
 	}
 
-	$: {
+	run(() => {
 		if (type !== '_selection' && codeInput) codeInput.focus();
-	}
+	});
 
-	$: $form.code = $form.code.toUpperCase();
+	run(() => {
+		$form.code = $form.code.toUpperCase();
+	});
 </script>
 
 <div class="card p-5 space-y-6">
@@ -228,7 +244,7 @@
 		<form
 			class="space-y-6"
 			autocomplete="off"
-			on:submit|preventDefault={confirmCode}
+			onsubmit={preventDefault(confirmCode)}
 		>
 			<Input field="code" required bind:value={$form.code} bind:ref={codeInput}
 				>Code</Input

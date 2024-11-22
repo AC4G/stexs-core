@@ -9,7 +9,11 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 	let data = $modalStore[0].meta.data;
@@ -19,10 +23,10 @@
 		$modalStore[0].meta.fnParams;
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 
-	$: inventoryItemQuery = createQuery({
+	let inventoryItemQuery = $derived(createQuery({
 		queryKey: ['inventoryItemView', data.id],
 		queryFn: async () => await fn(fnParams),
-	});
+	}));
 </script>
 
 {#if $modalStore[0]}
@@ -34,19 +38,19 @@
 		</div>
 		<div class="space-y-6">
 			{#if $inventoryItemQuery.isLoading || !$inventoryItemQuery.data}
-				<div class="placeholder animate-pulse aspect-square h-full w-full" />
-				<div class="placeholder animate-pulse h-[24px] max-w-[280px]" />
+				<div class="placeholder animate-pulse aspect-square h-full w-full"></div>
+				<div class="placeholder animate-pulse h-[24px] max-w-[280px]"></div>
 				<div class="flex flex-row space-x-2">
-					<div class="placeholder animate-pulse w-[48px] h-[48px]" />
+					<div class="placeholder animate-pulse w-[48px] h-[48px]"></div>
 					<div class="flex flex-col space-y-2 w-[180px]">
-						<div class="placeholder animate-pulse h-[20px]" />
-						<div class="placeholder animate-pulse h-[20px]" />
+						<div class="placeholder animate-pulse h-[20px]"></div>
+						<div class="placeholder animate-pulse h-[20px]"></div>
 					</div>
 				</div>
-				<div class="placeholder animate-pulse h-[24px] max-w-[200px]" />
-				<div class="placeholder animate-pulse h-[200px] w-full" />
-				<div class="placeholder animate-pulse h-[100px] w-full" />
-				<div class="placeholder animate-pulse h-[24px] max-w-[220px]" />
+				<div class="placeholder animate-pulse h-[24px] max-w-[200px]"></div>
+				<div class="placeholder animate-pulse h-[200px] w-full"></div>
+				<div class="placeholder animate-pulse h-[100px] w-full"></div>
+				<div class="placeholder animate-pulse h-[24px] max-w-[220px]"></div>
 			{:else}
 				<ItemThumbnail
 					{stexs}

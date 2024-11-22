@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import type { SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import MFA from '../MFA.svelte';
@@ -8,17 +10,21 @@
 	import Button from '../Button.svelte';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
-	let newPasswordEntered: boolean = false;
+	let newPasswordEntered: boolean = $state(false);
 	let confirmErrors: string[] = [];
 
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 	let types = $modalStore[0].meta.types;
-	let type = '_selection';
+	let type = $state('_selection');
 
 	const { form, errors, validate } = superForm(
 		superValidateSync(UpdatePassword),
@@ -89,7 +95,7 @@
 			<form
 				class="space-y-6"
 				autocomplete="off"
-				on:submit|preventDefault={submit}
+				onsubmit={preventDefault(submit)}
 			>
 				<div class="w-full">
 					<Input

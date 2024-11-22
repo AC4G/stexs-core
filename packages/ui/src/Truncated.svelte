@@ -1,10 +1,15 @@
 <script lang="ts">
-	export let text: string;
-	export let maxLength: number = 10;
+	interface Props {
+		text: string;
+		maxLength?: number;
+		[key: string]: any
+	}
+
+	let { text, maxLength = 10, ...rest }: Props = $props();
 
 	function truncateUsername(text, maxLength) {
 		return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 	}
 </script>
 
-<p {...$$restProps}>{truncateUsername(text, maxLength)}</p>
+<p {...rest}>{truncateUsername(text, maxLength)}</p>

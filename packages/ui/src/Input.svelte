@@ -1,15 +1,35 @@
 <script lang="ts">
-	export let ref: HTMLInputElement | undefined = undefined;
-	export let field: string = '';
-	export let value: string | boolean | undefined | null = '';
-	export let checked: boolean = false;
-	export let labelClass: string = 'label';
-	export let inputClass: string = 'input';
-	export let withLabel: boolean = true;
-	export let labelAfter: boolean = false;
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
+	interface Props {
+		ref?: HTMLInputElement | undefined;
+		field?: string;
+		value?: string | boolean | undefined | null;
+		checked?: boolean;
+		labelClass?: string;
+		inputClass?: string;
+		withLabel?: boolean;
+		labelAfter?: boolean;
+		children?: import('svelte').Snippet;
+		[key: string]: any
+	}
+
+	let {
+		ref = $bindable(undefined),
+		field = '',
+		value = $bindable(''),
+		checked = $bindable(false),
+		labelClass = 'label',
+		inputClass = 'input',
+		withLabel = true,
+		labelAfter = false,
+		children,
+		...rest
+	}: Props = $props();
 </script>
 
-{#if $$restProps.type === 'checkbox'}
+{#if rest.type === 'checkbox'}
 	{#if withLabel}
 		<label for={field} class={labelClass}>
 			{#if labelAfter}
@@ -19,20 +39,20 @@
 					class={inputClass}
 					type="checkbox"
 					bind:checked
-					on:input
-					{...$$restProps}
+					oninput={bubble('input')}
+					{...rest}
 				/>
-				<span><slot /></span>
+				<span>{@render children?.()}</span>
 			{:else}
-				<span><slot /></span>
+				<span>{@render children?.()}</span>
 				<input
 					bind:this={ref}
 					id={field}
 					class={inputClass}
 					type="checkbox"
 					bind:checked
-					on:input
-					{...$$restProps}
+					oninput={bubble('input')}
+					{...rest}
 				/>
 			{/if}
 		</label>
@@ -43,8 +63,8 @@
 			class={inputClass}
 			type="checkbox"
 			bind:checked
-			on:input
-			{...$$restProps}
+			oninput={bubble('input')}
+			{...rest}
 		/>
 	{/if}
 {:else if withLabel}
@@ -55,19 +75,19 @@
 				id={field}
 				class={inputClass}
 				bind:value
-				on:input
-				{...$$restProps}
+				oninput={bubble('input')}
+				{...rest}
 			/>
-			<span><slot /></span>
+			<span>{@render children?.()}</span>
 		{:else}
-			<span><slot /></span>
+			<span>{@render children?.()}</span>
 			<input
 				bind:this={ref}
 				id={field}
 				class={inputClass}
 				bind:value
-				on:input
-				{...$$restProps}
+				oninput={bubble('input')}
+				{...rest}
 			/>
 		{/if}
 	</label>
@@ -77,7 +97,7 @@
 		id={field}
 		class={inputClass}
 		bind:value
-		on:input
-		{...$$restProps}
+		oninput={bubble('input')}
+		{...rest}
 	/>
 {/if}

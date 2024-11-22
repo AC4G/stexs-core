@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { onMount, SvelteComponent } from 'svelte';
 	import Button from '../Button.svelte';
@@ -9,13 +11,17 @@
 	import { Input } from 'flowbite-svelte';
 	import { debounce } from 'lodash';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
 
-	let submitted: boolean = false;
-	let preview: boolean = false;
-	let hasChanges: boolean = false;
-	let hasErrors: boolean = false;
-	let nameNotAvailable: boolean = false;
+	let { parent }: Props = $props();
+
+	let submitted: boolean = $state(false);
+	let preview: boolean = $state(false);
+	let hasChanges: boolean = $state(false);
+	let hasErrors: boolean = $state(false);
+	let nameNotAvailable: boolean = $state(false);
 	let checkedNames: { name: string; available: boolean }[] = [];
 
 	const checkNameAvailability = debounce(async () => {
@@ -128,11 +134,13 @@
 		submitted = false;
 	}
 
-	$: if ($form.email?.length === 0 && $errors.email?.length > 0) {
-		$errors.email = [];
-	}
+	run(() => {
+		if ($form.email?.length === 0 && $errors.email?.length > 0) {
+			$errors.email = [];
+		}
+	});
 
-	$: {
+	run(() => {
 		let countChanges: number = 0;
 
 		for (let key of formKeys) {
@@ -147,12 +155,14 @@
 		} else {
 			hasChanges = false;
 		}
-	}
+	});
 
 	// $errors in if st. only for reactivity
-	$: if ($errors && hasChanges) {
-		(async () => (hasErrors = !(await validate()).valid))();
-	}
+	run(() => {
+		if ($errors && hasChanges) {
+			(async () => (hasErrors = !(await validate()).valid))();
+		}
+	});
 </script>
 
 {#if $modalStore[0]}
@@ -178,7 +188,7 @@
 				</ul>
 			</div>
 		{/if}
-		<form class="space-y-6" on:submit|preventDefault={createOrganization}>
+		<form class="space-y-6" onsubmit={preventDefault(createOrganization)}>
 			<div>
 				<label for="name" class="label">
 					<span class="flex flex-row gap-x-2"
@@ -238,7 +248,7 @@
 						class="input"
 						placeholder="Short description of your organization"
 						bind:value={$form.description}
-					/>
+					></textarea>
 				</label>
 				{#if $errors.description}
 					<div class="mt-2">
@@ -265,7 +275,7 @@
 						class="input"
 						placeholder="README for the main page of your organization"
 						bind:value={$form.readme}
-					/>
+					></textarea>
 					{#if preview && $form.readme && $form.readme.length > 0}
 						<Markdown text={$form.readme} />
 					{/if}
