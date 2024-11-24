@@ -4,7 +4,13 @@
 	import hljs from 'highlight.js';
 	import Convert from 'ansi-to-html';
 
-	let { text, ...rest } = $props();
+	let { 
+		text, 
+		...rest
+	}: { 
+		text: string, 
+		[key: string]: any
+	} = $props();
 
 	const convert = new Convert();
 

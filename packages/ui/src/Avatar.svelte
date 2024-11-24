@@ -10,9 +10,12 @@
 		[key: string]: any
 	}
 
-	let { stexs, userId, username, ...rest }: Props = $props();
-
-	let state: boolean = false;
+	let { 
+		stexs, 
+		userId, 
+		username, 
+		...rest 
+	}: Props = $props();
 
 	let urlQuery = $derived(createQuery({
 		queryKey: ['avatarUrl', userId],

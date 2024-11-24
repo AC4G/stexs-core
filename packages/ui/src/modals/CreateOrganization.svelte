@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
-
 	import { getModalStore } from '@skeletonlabs/skeleton';
-	import { onMount, SvelteComponent } from 'svelte';
+	import { onMount, type SvelteComponent } from 'svelte';
 	import Button from '../Button.svelte';
 	import Icon from '@iconify/svelte';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms/client';
+	import { zod } from 'sveltekit-superforms/adapters';
 	import { CreateOrganization } from 'validation-schemas';
 	import Markdown from '../Markdown.svelte';
 	import { Input } from 'flowbite-svelte';
@@ -70,10 +69,9 @@
 	const stexs = $modalStore[0].meta.stexsClient;
 	const flash = $modalStore[0].meta.flash;
 	const organizationsMemberStore = $modalStore[0].meta.organizationsMemberStore;
-	const { form, errors, validate } = superForm(
-		superValidateSync(CreateOrganization),
+	const { form, errors, validateForm } = superForm(zod(CreateOrganization),
 		{
-			validators: CreateOrganization,
+			dataType: 'json',
 			validationMethod: 'oninput',
 			clearOnSubmit: 'none',
 		},
@@ -103,7 +101,7 @@
 	}
 
 	async function createOrganization() {
-		const result = await validate();
+		const result = await validateForm();
 
 		if (!result.valid) return;
 
@@ -136,13 +134,13 @@
 		submitted = false;
 	}
 
-	run(() => {
+	$effect(() => {
 		if ($form.email?.length === 0 && $errors.email?.length > 0) {
 			$errors.email = [];
 		}
 	});
 
-	run(() => {
+	$effect(() => {
 		let countChanges: number = 0;
 
 		for (let key of formKeys) {
@@ -160,7 +158,7 @@
 	});
 
 	// $errors in if st. only for reactivity
-	run(() => {
+	$effect(() => {
 		if ($errors && hasChanges) {
 			(async () => (hasErrors = !(await validate()).valid))();
 		}
@@ -190,7 +188,7 @@
 				</ul>
 			</div>
 		{/if}
-		<form class="space-y-6" onsubmit={preventDefault(createOrganization)}>
+		<form class="space-y-6" onsubmit={createOrganization}>
 			<div>
 				<label for="name" class="label">
 					<span class="flex flex-row gap-x-2"

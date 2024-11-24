@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
-
 	import StexsClient from 'stexs-client';
 	import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import MFA from '../MFA.svelte';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms/client';
+	import { zod } from 'sveltekit-superforms/adapters';
 	import { EmailChange, VerifyCode } from 'validation-schemas';
 	import Input from '../Input.svelte';
 	import Button from '../Button.svelte';
@@ -29,9 +28,9 @@
 
 	let codeInput: HTMLInputElement = $state();
 
-	const { form, errors, validate } = superForm(superValidateSync(EmailChange), {
+	const { form, errors, validateForm } = superForm(zod(EmailChange), {
 		id: 'email-change',
-		validators: EmailChange,
+		dataType: 'json',
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
@@ -39,16 +38,18 @@
 	const {
 		form: verifyForm,
 		errors: verifyErrors,
-		validate: verifyValidate,
-	} = superForm(superValidateSync(VerifyCode), {
+		validate: verifyValidateForm,
+	} = superForm(zod(VerifyCode), {
 		id: 'verify-email-change',
-		validators: VerifyCode,
+		dataType: 'json',
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
 
-	async function submit() {
-		const result = await validate();
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+
+		const result = await validateForm();
 
 		if (!result.valid || $errors._errors) return;
 
@@ -60,8 +61,10 @@
 		newEmailEntered = true;
 	}
 
-	async function verify() {
-		const result = await verifyValidate();
+	async function verify(event: SubmitEvent) {
+		event.preventDefault();
+
+		const result = await verifyValidateForm();
 
 		if (!result.valid) return;
 
@@ -125,10 +128,10 @@
 
 	const cancel = () => modalStore.close();
 
-	run(() => {
+	$effect(() => {
 		$verifyForm.code = $verifyForm.code.toUpperCase();
 	});
-	run(() => {
+	$effect(() => {
 		if (newEmailEntered && mfaEntered && codeInput) codeInput.focus();
 	});
 </script>
@@ -153,7 +156,7 @@
 				<form
 					class="space-y-6"
 					autocomplete="off"
-					onsubmit={preventDefault(verify)}
+					onsubmit={verify}
 				>
 					<Input
 						name="code"
@@ -193,7 +196,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<form class="space-y-6" onsubmit={preventDefault(submit)}>
+			<form class="space-y-6" onsubmit={submit}>
 				<Input
 					name="email"
 					type="email"

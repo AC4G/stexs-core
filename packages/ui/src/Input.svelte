@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { createBubbler } from 'svelte/legacy';
-
-	const bubble = createBubbler();
+	import { type Snippet } from 'svelte';
+	
 	interface Props {
 		ref?: HTMLInputElement | undefined;
 		field?: string;
@@ -11,7 +10,7 @@
 		inputClass?: string;
 		withLabel?: boolean;
 		labelAfter?: boolean;
-		children?: import('svelte').Snippet;
+		children?: Snippet
 		[key: string]: any
 	}
 
@@ -39,7 +38,6 @@
 					class={inputClass}
 					type="checkbox"
 					bind:checked
-					oninput={bubble('input')}
 					{...rest}
 				/>
 				<span>{@render children?.()}</span>
@@ -51,7 +49,6 @@
 					class={inputClass}
 					type="checkbox"
 					bind:checked
-					oninput={bubble('input')}
 					{...rest}
 				/>
 			{/if}
@@ -63,7 +60,6 @@
 			class={inputClass}
 			type="checkbox"
 			bind:checked
-			oninput={bubble('input')}
 			{...rest}
 		/>
 	{/if}
@@ -75,7 +71,6 @@
 				id={field}
 				class={inputClass}
 				bind:value
-				oninput={bubble('input')}
 				{...rest}
 			/>
 			<span>{@render children?.()}</span>
@@ -86,7 +81,6 @@
 				id={field}
 				class={inputClass}
 				bind:value
-				oninput={bubble('input')}
 				{...rest}
 			/>
 		{/if}
@@ -97,7 +91,6 @@
 		id={field}
 		class={inputClass}
 		bind:value
-		oninput={bubble('input')}
 		{...rest}
 	/>
 {/if}

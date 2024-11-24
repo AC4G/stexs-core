@@ -1,52 +1,39 @@
 <script lang="ts">
-	import { createBubbler } from 'svelte/legacy';
-
-	const bubble = createBubbler();
 	import { clipboard, ProgressRadial } from '@skeletonlabs/skeleton';
-
+	import { type Snippet } from 'svelte';
 
 	interface Props {
+		children?: Snippet;
 		submitted?: boolean;
-		type?: 'button' | 'submit' | 'reset';
-		title?: string | undefined;
 		loader?: boolean;
 		loadingText?: string;
 		progressClass?: string;
 		loaderMeter?: string;
 		loaderTrack?: string;
 		clipboardData?: string | undefined;
-		children?: import('svelte').Snippet;
-		[key: string]: any
 	}
 
 	let {
-		submitted = rest.submitted || false,
+		submitted = false,
 		type = 'button',
-		title = undefined,
+		title,
 		loader = true,
 		loadingText = 'processing...',
 		progressClass = 'w-[24px]',
 		loaderMeter = 'stroke-surface-50',
 		loaderTrack = '',
-		clipboardData = undefined,
+		clipboardData,
 		children,
 		...rest
 	}: Props = $props();
+
+	let buttonClass = $derived(`${rest.class || ''} btn ${submitted ? 'opacity-50 cursor-not-allowed' : ''}`);
 </script>
 
 <button
 	use:clipboard={clipboardData}
-	onclick={bubble('click')}
-	onmouseover={bubble('mouseover')}
-	onmouseenter={bubble('mouseenter')}
-	onmouseleave={bubble('mouseleave')}
-	onfocus={bubble('focus')}
-	{type}
-	{title}
-	class={submitted
-		? rest.class + ' opacity-50 cursor-not-allowed btn'
-		: rest.class + ' btn'}
-	{...rest.disabled ? { disabled: true } : {}}
+	{...rest}
+	class={buttonClass}
 >
 	{#if submitted}
 		{#if loader}
@@ -61,6 +48,6 @@
 			{loadingText}
 		{/if}
 	{:else}
-		{@render children?.()}
+		{@render children()}
 	{/if}
 </button>

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { createQuery } from '@tanstack/svelte-query';
 
 	interface Props {
@@ -33,7 +31,7 @@
 
 	const img = $state(new Image());
 
-	run(() => {
+	$effect(() => {
 		if ($query.data && prevUrl !== $query.data) img.src = $query.data;
 
 		img.onload = () => {

@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { preventDefault } from 'svelte/legacy';
-
 	import { SignIn } from 'validation-schemas';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms';
+	import { zod } from 'sveltekit-superforms/adapters';
 	import { Button, Input } from 'ui';
 	import { stexs } from '../../stexsClient';
 	import { goto } from '$app/navigation';
@@ -50,14 +49,16 @@
 		},
 	});
 
-	const { form, errors, validate } = superForm(superValidateSync(SignIn), {
-		validators: SignIn,
+	const { form, errors, validateForm } = superForm(zod(SignIn), {
+		dataType: 'json',
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
 
-	async function signIn() {
-		const result = await validate();
+	async function signIn(event: SubmitEvent) {
+		event.preventDefault();
+
+		const result = await validateForm();
 
 		if (!result.valid) return;
 
@@ -103,7 +104,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<form class="space-y-6" onsubmit={preventDefault(signIn)}>
+			<form class="space-y-6" onsubmit={signIn}>
 				<Input
 					field="identifier"
 					type="text"

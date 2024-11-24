@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { preventDefault } from 'svelte/legacy';
-
 	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import Button from '../Button.svelte';
 	import Input from '../Input.svelte';
 	import { VerifyCode } from 'validation-schemas';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms/client';
+	import { zod } from 'sveltekit-superforms/adapters';
 	import Icon from '@iconify/svelte';
 	import StexsClient from 'stexs-client';
 
@@ -26,14 +25,16 @@
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 
-	const { form, errors, validate } = superForm(superValidateSync(VerifyCode), {
-		validators: VerifyCode,
+	const { form, errors, validateForm } = superForm(zod(VerifyCode), {
+		dataType: 'json',
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
 
-	async function submit() {
-		const result = await validate();
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+		
+		const result = await validateForm();
 
 		if (!result.valid) return;
 
@@ -136,7 +137,7 @@
 		<form
 			class="space-y-6"
 			autocomplete="off"
-			onsubmit={preventDefault(submit)}
+			onsubmit={submit}
 		>
 			<Input
 				name="code"

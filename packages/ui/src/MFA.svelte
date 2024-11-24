@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
-
 	import Button from './Button.svelte';
 	import Icon from '@iconify/svelte';
 	import Input from './Input.svelte';
 	import { VerifyCode } from 'validation-schemas';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms/client';
 	import { Dropdown, Radio } from 'flowbite-svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { zod } from 'sveltekit-superforms/adapters';
+	import StexsClient from 'stexs-client';
 
 	interface Props {
 		cancel: () => void;
 		confirm: (
-		code: string,
-		type: string,
-	) => Promise<Array<{ message: string }> | void>;
+			code: string,
+			type: string,
+		) => Promise<Array<{ message: string }> | void>;
 		flash: any;
-		stexs: any;
+		stexs: StexsClient;
 		types: any;
 		type?: string;
 		confirmErrors?: any;
@@ -63,8 +63,8 @@
 		email: false,
 	});
 
-	const { form, errors, validate } = superForm(superValidateSync(VerifyCode), {
-		validators: VerifyCode,
+	const { form, errors, validateForm } = superForm(zod(VerifyCode), {
+		dataType: 'json',
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
@@ -109,8 +109,10 @@
 		}
 	}
 
-	async function confirmCode() {
-		const result = await validate();
+	async function confirmCode(event) {
+		event.preventDefault();
+
+		const result = await validateForm();
 
 		if (!result.valid) return;
 
@@ -137,11 +139,11 @@
 		submitted = false;
 	}
 
-	run(() => {
+	$effect(() => {
 		if (type !== '_selection' && codeInput) codeInput.focus();
 	});
 
-	run(() => {
+	$effect(() => {
 		$form.code = $form.code.toUpperCase();
 	});
 </script>
@@ -244,7 +246,7 @@
 		<form
 			class="space-y-6"
 			autocomplete="off"
-			onsubmit={preventDefault(confirmCode)}
+			onsubmit={confirmCode}
 		>
 			<Input field="code" required bind:value={$form.code} bind:ref={codeInput}
 				>Code</Input

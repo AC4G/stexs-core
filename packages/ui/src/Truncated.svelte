@@ -5,7 +5,11 @@
 		[key: string]: any
 	}
 
-	let { text, maxLength = 10, ...rest }: Props = $props();
+	let { 
+		text, 
+		maxLength = 10, 
+		...rest 
+	}: Props = $props();
 
 	function truncateUsername(text, maxLength) {
 		return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;

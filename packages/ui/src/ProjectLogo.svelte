@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import Icon from '@iconify/svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 
@@ -34,7 +32,7 @@
 
 	const img = $state(new Image());
 
-	run(() => {
+	$effect(() => {
 		if ($query.data && prevUrl !== $query.data) img.src = $query.data;
 
 		img.onload = () => {

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { getUserStore } from '$lib/stores/userStore';
 	import { getProfileStore } from '$lib/stores/profileStore';
 	import { createQuery } from '@tanstack/svelte-query';
@@ -152,6 +150,8 @@
 				})
 				.eq('member_id', $profileStore?.userId);
 
+			paginationSettings.size = count;
+
 			return count;
 		},
 		enabled: !!$profileStore?.userId,
@@ -225,7 +225,7 @@
 		enabled: !!$profileStore?.userId,
 	}));
 
-	run(() => {
+	$effect(() => {
 		if (
 			$profileStore &&
 			$userStore &&
@@ -239,10 +239,6 @@
 				refetchOrganizationAmountFn: $organizationAmountQuery.refetch,
 			});
 		}
-	});
-
-	run(() => {
-		paginationSettings.size = $organizationAmountQuery.data;
 	});
 </script>
 

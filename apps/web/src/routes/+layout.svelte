@@ -1,11 +1,8 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import '../app.postcss';
 	import {
 		AppShell,
 		Toast,
-		setInitialClassState,
 		initializeStores,
 		getToastStore,
 		Modal,
@@ -149,7 +146,7 @@
 		placement: 'bottom',
 	};
 
-	let signedIn: boolean = $state();
+	let signedIn: boolean = $state(false);
 	let avatarDropDownOpen: boolean = $state(false);
 
 	flash.subscribe(($flash) => {
@@ -399,8 +396,8 @@
 		refetchInterval: 5000,
 	}));
 
-	let unseenNotificationsAmount;
-	run(() => {
+	let unseenNotificationsAmount = $state(0);
+	$effect(() => {
 		unseenNotificationsAmount = $unseenNotificationsQuery.data || 0;
 	});
 
@@ -421,7 +418,7 @@
 		enabled: !!$userStore?.id && dropDownOpen,
 	}));
 
-	run(() => {
+	$effect(() => {
 		notifications = $notificationsQuery.data || [];
 	});
 
@@ -460,10 +457,6 @@
 	const sidebarBtnClass =
 		'flex items-center p-2 w-full rounded-md transition duration-75 text-white group hover:!bg-surface-500';
 </script>
-
-<svelte:head>
-	{@html `<script>(${setInitialClassState.toString()})();</script>`}
-</svelte:head>
 
 <Toast
 	buttonDismiss="btn aspect-square px-2 py-1 variant-ghost-surface"
@@ -506,10 +499,8 @@
 					}}
 				>
 					{#snippet icon()}
-									
-							<Icon icon="octicon:person-add-16" />
-						
-									{/snippet}
+						<Icon icon="octicon:person-add-16" />
+					{/snippet}
 				</SidebarItem>
 			</SidebarGroup>
 		</SidebarWrapper>
