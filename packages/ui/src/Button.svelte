@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { clipboard, ProgressRadial } from '@skeletonlabs/skeleton';
-	import { type Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 
 	interface Props {
 		children?: Snippet;
@@ -26,7 +26,7 @@
 		children,
 		...rest
 	}: Props = $props();
-
+	
 	let buttonClass = $derived(`${rest.class || ''} btn ${submitted ? 'opacity-50 cursor-not-allowed' : ''}`);
 </script>
 

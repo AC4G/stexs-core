@@ -9,6 +9,8 @@
 	import { goto } from '$app/navigation';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import StexsClient from 'stexs-client';
+	import { type Writable } from 'svelte/store';
+	import { type ToastSettings } from '@skeletonlabs/skeleton';
 
 	interface Props {
 		cancel: () => void;
@@ -16,11 +18,11 @@
 			code: string,
 			type: string,
 		) => Promise<Array<{ message: string }> | void>;
-		flash: any;
+		flash: Writable<ToastSettings>;
 		stexs: StexsClient;
-		types: any;
+		types: string[];
 		type?: string;
-		confirmErrors?: any;
+		confirmErrors?: { message: string }[];
 	}
 
 	let {
@@ -29,9 +31,11 @@
 		flash,
 		stexs,
 		types,
-		type = $bindable(types.length == 1 ? types[0] : '_selection'),
+		type = $bindable(),
 		confirmErrors = []
 	}: Props = $props();
+
+	type = types.length == 1 ? types[0] : '_selection';
 
 	type MFAMethod = {
 		icon: string;
@@ -41,6 +45,12 @@
 	let submitted: boolean = $state(false);
 	let requested: boolean = $state(false);
 	let codeInput: HTMLInputElement = $state();
+	let formData = $state({
+		code: ''
+	});
+	let codeRequested: { [key: string]: boolean } = $state({
+		email: false,
+	});
 
 	const descriptions: { [key: string]: string } = {
 		_selection: 'Select an authentication method.',
@@ -59,12 +69,9 @@
 	};
 	const requestCodeTypes = ['email'];
 
-	let codeRequested: { [key: string]: boolean } = $state({
-		email: false,
-	});
-
-	const { form, errors, validateForm } = superForm(zod(VerifyCode), {
+	const { form, errors, validateForm } = superForm(formData, {
 		dataType: 'json',
+		validators: zod(VerifyCode),
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
@@ -144,7 +151,11 @@
 	});
 
 	$effect(() => {
-		$form.code = $form.code.toUpperCase();
+		const upperCasedCode = $form.code.toUpperCase();
+
+		if ($form.code !== upperCasedCode) {
+			$form.code = upperCasedCode;
+		}
 	});
 </script>
 
@@ -163,7 +174,7 @@
 		<div class="flex flex-col space-y-2">
 			{#each types as currentType}
 				<Button
-					on:click={async () => {
+					onclick={async () => {
 						type = currentType;
 						requestCodeTypes.includes(type) &&
 							(await requestNewCode(currentType));
@@ -180,7 +191,7 @@
 		<Button
 			class="variant-ringed-surface hover:bg-surface-600"
 			value="Cancel"
-			on:click={cancel}>Cancel</Button
+			onclick={cancel}>Cancel</Button
 		>
 	{:else if type}
 		<div class="flex flex-row space-x-2 justify-center">
@@ -198,7 +209,7 @@
 					{#each types as currentType}
 						<Radio
 							bind:group={type}
-							on:click={async () => {
+							onclick={async () => {
 								if (
 									!codeRequested[currentType] &&
 									requestCodeTypes.includes(currentType)
@@ -225,7 +236,7 @@
 					<Button
 						title="Resend code"
 						class="variant-ghost-secondary h-[48px] w-[48px] px-2"
-						on:click={async () => {
+						onclick={async () => {
 							requested = true;
 							await requestNewCode(type, true);
 						}}
@@ -262,7 +273,8 @@
 				<Button
 					class="variant-ringed-surface hover:bg-surface-600"
 					value="Cancel"
-					on:click={cancel}>Cancel</Button
+					type="button"
+					onclick={cancel}>Cancel</Button
 				>
 				<Button type="submit" class="variant-filled-primary" {submitted}
 					>Submit</Button

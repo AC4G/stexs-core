@@ -8,10 +8,15 @@
 	import type { Session, SignInInit } from 'stexs-client/src/lib/types';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { page } from '$app/stores';
-	import { getFlash } from 'sveltekit-flash-message/client';
+	import { setFlashMessage } from '$lib/utils/flash';
+
+	let formData = $state({
+		identifier: '',
+		password: '',
+		remember: false,
+	});
 
 	let submitted: boolean = $state(false);
-	const flash = getFlash(page);
 
 	let code = $page.url.searchParams.get('code');
 	let message = $page.url.searchParams.get('message');
@@ -20,11 +25,11 @@
 		queryKey: ['signInSetup'],
 		queryFn: async () => {
 			if ((code === 'success' || code === 'error') && message) {
-				$flash = {
+				setFlashMessage({
 					message,
 					classes: `variant-glass-${code}`,
 					timeout: 5000,
-				};
+				});
 			}
 
 			const session: Session = stexs.auth.getSession();
@@ -49,8 +54,9 @@
 		},
 	});
 
-	const { form, errors, validateForm } = superForm(zod(SignIn), {
+	const { form, errors, validateForm } = superForm(formData, {
 		dataType: 'json',
+		validators: zod(SignIn),
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});

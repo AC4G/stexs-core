@@ -14,7 +14,7 @@
 
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
-	let types = $modalStore[0].meta.types;
+	let types: string[] = $modalStore[0].meta.types;
 	let confirmMFA = $modalStore[0].meta.confirmMFA;
 
 	const cancel = () => modalStore.close();

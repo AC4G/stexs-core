@@ -83,6 +83,7 @@
 		acceptProjectRequest,
 		deleteProjectRequest,
 	} from '$lib/utils/projectRequests';
+	import type { ExcludeRoute } from '$lib/types';
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
@@ -126,12 +127,15 @@
 		MFA: { ref: MFAModal },
 		connectionScopes: { ref: ConnectionScopes }
 	};
-	const excludeRoutes = [
-		'/sign-in',
-		'/sign-up',
-		'/sign-in-confirm',
-		'/recovery',
-		'/authorize',
+	const excludeRoutes: ExcludeRoute[] = [
+		{ pathname: '/sign-in' },
+		{ pathname: '/sign-up' },
+		{
+			pathname: '/sign-in-confirm',
+			callback: () => stexs.auth.cancelSignInConfirm(),
+		},
+		{ pathname: '/recovery' },
+		{ pathname: '/authorize' },
 	];
 	const sidebarRoutes = ['/settings'];
 	const addFriendPopup: PopupSettings = {
@@ -388,11 +392,15 @@
 
 		return data;
 	}
+	let excludedRoute: ExcludeRoute | undefined = $state();
+	$effect(() => {
+		excludedRoute = excludeRoutes.find((r) => r.pathname === $page.url.pathname);
+	});
 
 	let unseenNotificationsQuery = $derived(createQuery({
 		queryKey: ['unseenNotifications'],
 		queryFn: async () => await fetchUnseenNotifications($userStore!.id),
-		enabled: !!$userStore?.id && !excludeRoutes.includes($page.url.pathname),
+		enabled: !!$userStore?.id && !excludedRoute,
 		refetchInterval: 5000,
 	}));
 
@@ -515,7 +523,7 @@
 		/>
 	{/if}
 </Drawer>
-{#if !excludeRoutes.includes($page.url.pathname)}
+{#if !excludedRoute}
 	<AppShell
 		slotSidebarLeft="bg-surface-700 border-surface-500 w-0 {sidebarRoutes.find(
 			(route) => $page.url.pathname.startsWith(route),
@@ -1078,6 +1086,8 @@
 	<div class="m-[20px] absolute">
 		<button
 			onclick={() => {
+				if (excludedRoute?.callback) excludedRoute?.callback();
+
 				if ($previousPageStore === '/') {
 					window.history.go(-1);
 				} else {

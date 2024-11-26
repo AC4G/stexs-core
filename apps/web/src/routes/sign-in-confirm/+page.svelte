@@ -12,10 +12,10 @@
 	const flash = getFlash(page);
 	const previousPageStore = getPreviousPageStore();
 
-	let signInInit: SignInInit = $state();
-	let type: string = $state();
+	let signInInit: SignInInit | undefined = $state();
+	let type: string = $state('_selection');
 	let requested: boolean = false;
-	let errors: string[] = $state();
+	let errors: string[] | undefined = $state();
 
 	const signInConfirmSetupQuery = createQuery({
 		queryKey: ['signInConfirmSetup'],
@@ -70,7 +70,7 @@
 
 	function cancelSignInConfirm() {
 		stexs.auth.cancelSignInConfirm();
-		goto('/');
+		goto('/sign-in');
 	}
 </script>
 
