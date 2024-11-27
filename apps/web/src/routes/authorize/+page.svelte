@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: can't migrate `let filteredNodes: TreeViewNode[] = [];` to `$state` because there's a variable named state.
+     Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { getPreviousPageStore } from '$lib/stores/previousPageStore';
@@ -218,25 +220,21 @@
 		</div>
 		{#if $authorizeSetupQuery.isLoading || !$authorizeSetupQuery.data}
 			<div class="flex flex-row items-center justify-evenly space-x-2">
-				<div
-					class="w-[60px] h-[60px] xs:w-[80px] xs:h-[80px] rounded-full placeholder animate-pulse"
-				/>
+				<div class="w-[60px] h-[60px] xs:w-[80px] xs:h-[80px] rounded-full placeholder animate-pulse"></div>
 				<Icon icon="tabler:dots" width="34" />
-				<div
-					class="w-[60px] h-[60px] xs:w-[80px] xs:h-[80px] rounded-full placeholder animate-pulse"
-				/>
+				<div class="w-[60px] h-[60px] xs:w-[80px] xs:h-[80px] rounded-full placeholder animate-pulse"></div>
 			</div>
-			<div class="h-[24px] placeholder animate-pulse w-full" />
-			<div class="h-[80px] placeholder animate-pulse w-full" />
-			<div class="h-[200px] placeholder animate-pulse w-full" />
+			<div class="h-[24px] placeholder animate-pulse w-full"></div>
+			<div class="h-[80px] placeholder animate-pulse w-full"></div>
+			<div class="h-[200px] placeholder animate-pulse w-full"></div>
 			<div class="flex flex-row justify-between">
 				<Button
 					class="variant-ringed-surface hover:bg-surface-600"
 					on:click={() => goto('/')}>Cancel</Button
 				>
-				<div class="w-[108.71px] h-[42px] placeholder animate-pulse" />
+				<div class="w-[108.71px] h-[42px] placeholder animate-pulse"></div>
 			</div>
-			<div class="h-[72px] placeholder animate-pulse w-full" />
+			<div class="h-[72px] placeholder animate-pulse w-full"></div>
 		{:else}
 			<div class="flex flex-row items-center justify-evenly space-x-2">
 				<div

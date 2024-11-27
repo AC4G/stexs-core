@@ -3,29 +3,34 @@
 	import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import MFA from '../MFA.svelte';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms/client';
+	import { zod } from 'sveltekit-superforms/adapters';
 	import { EmailChange, VerifyCode } from 'validation-schemas';
 	import Input from '../Input.svelte';
 	import Button from '../Button.svelte';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 	let types = $modalStore[0].meta.types;
-	let type = '_selection';
+	let type = $state('_selection');
 	let currentEmail: string = $modalStore[0].meta.email;
-	let newEmailEntered: boolean = false;
-	let mfaEntered: boolean = false;
+	let newEmailEntered: boolean = $state(false);
+	let mfaEntered: boolean = $state(false);
 	let confirmErrors: string[] = [];
 
-	let codeInput: HTMLInputElement;
+	let codeInput: HTMLInputElement = $state();
 
-	const { form, errors, validate } = superForm(superValidateSync(EmailChange), {
+	const { form, errors, validateForm } = superForm(zod(EmailChange), {
 		id: 'email-change',
-		validators: EmailChange,
+		dataType: 'json',
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
@@ -33,16 +38,18 @@
 	const {
 		form: verifyForm,
 		errors: verifyErrors,
-		validate: verifyValidate,
-	} = superForm(superValidateSync(VerifyCode), {
+		validate: verifyValidateForm,
+	} = superForm(zod(VerifyCode), {
 		id: 'verify-email-change',
-		validators: VerifyCode,
+		dataType: 'json',
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
 
-	async function submit() {
-		const result = await validate();
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+
+		const result = await validateForm();
 
 		if (!result.valid || $errors._errors) return;
 
@@ -54,8 +61,10 @@
 		newEmailEntered = true;
 	}
 
-	async function verify() {
-		const result = await verifyValidate();
+	async function verify(event: SubmitEvent) {
+		event.preventDefault();
+
+		const result = await verifyValidateForm();
 
 		if (!result.valid) return;
 
@@ -119,10 +128,12 @@
 
 	const cancel = () => modalStore.close();
 
-	$: $verifyForm.code = $verifyForm.code.toUpperCase();
-	$: {
+	$effect(() => {
+		$verifyForm.code = $verifyForm.code.toUpperCase();
+	});
+	$effect(() => {
 		if (newEmailEntered && mfaEntered && codeInput) codeInput.focus();
-	}
+	});
 </script>
 
 {#if $modalStore[0]}
@@ -145,7 +156,7 @@
 				<form
 					class="space-y-6"
 					autocomplete="off"
-					on:submit|preventDefault={verify}
+					onsubmit={verify}
 				>
 					<Input
 						name="code"
@@ -185,7 +196,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<form class="space-y-6" on:submit|preventDefault={submit}>
+			<form class="space-y-6" onsubmit={submit}>
 				<Input
 					name="email"
 					type="email"

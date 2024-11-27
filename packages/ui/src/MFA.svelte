@@ -3,30 +3,51 @@
 	import Icon from '@iconify/svelte';
 	import Input from './Input.svelte';
 	import { VerifyCode } from 'validation-schemas';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms/client';
 	import { Dropdown, Radio } from 'flowbite-svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { zod } from 'sveltekit-superforms/adapters';
+	import StexsClient from 'stexs-client';
+	import { setFlashMessage } from './utils/flash';
 
-	export let cancel: () => void;
-	export let confirm: (
-		code: string,
-		type: string,
-	) => Promise<Array<{ message: string }> | void>;
-	export let flash;
-	export let stexs;
-	export let types;
-	export let type: string = types.length == 1 ? types[0] : '_selection';
-	export let confirmErrors = [];
+	interface Props {
+		cancel: () => void;
+		confirm: (
+			code: string,
+			type: string,
+		) => Promise<Array<{ message: string }> | void>;
+		stexs: StexsClient;
+		types: string[];
+		type?: string;
+		confirmErrors?: { message: string }[];
+	}
+
+	let {
+		cancel,
+		confirm,
+		stexs,
+		types,
+		type = $bindable(),
+		confirmErrors = []
+	}: Props = $props();
+
+	type = types.length == 1 ? types[0] : '_selection';
 
 	type MFAMethod = {
 		icon: string;
 		description: string;
 	};
 
-	let submitted: boolean = false;
-	let requested: boolean = false;
-	let codeInput: HTMLInputElement;
+	let submitted: boolean = $state(false);
+	let requested: boolean = $state(false);
+	let codeInput: HTMLInputElement = $state();
+	let formData = $state({
+		code: ''
+	});
+	let codeRequested: { [key: string]: boolean } = $state({
+		email: false,
+	});
 
 	const descriptions: { [key: string]: string } = {
 		_selection: 'Select an authentication method.',
@@ -45,12 +66,9 @@
 	};
 	const requestCodeTypes = ['email'];
 
-	let codeRequested: { [key: string]: boolean } = {
-		email: false,
-	};
-
-	const { form, errors, validate } = superForm(superValidateSync(VerifyCode), {
-		validators: VerifyCode,
+	const { form, errors, validateForm } = superForm(formData, {
+		dataType: 'json',
+		validators: zod(VerifyCode),
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
@@ -63,11 +81,11 @@
 		requested = false;
 
 		if (response.success && showMessage) {
-			$flash = {
+			setFlashMessage({
 				message: 'New authentification code successfully requested.',
 				classes: 'variant-glass-success',
 				timeout: 5000,
-			};
+			});
 			return;
 		}
 		 
@@ -79,11 +97,11 @@
 				.includes('INVALID_TOKEN');
 
 			if ($page.url.pathname === '/sign-in-confirm' && invalidToken) {
-				$flash = {
+				setFlashMessage({
 					message: 'Your session has expired. Please sign in again.',
 					classes: 'variant-glass-error',
 					timeout: 5000,
-				};
+				});
 				goto('/sign-in');
 			}
 
@@ -95,8 +113,10 @@
 		}
 	}
 
-	async function confirmCode() {
-		const result = await validate();
+	async function confirmCode(event) {
+		event.preventDefault();
+
+		const result = await validateForm();
 
 		if (!result.valid) return;
 
@@ -123,11 +143,17 @@
 		submitted = false;
 	}
 
-	$: {
+	$effect(() => {
 		if (type !== '_selection' && codeInput) codeInput.focus();
-	}
+	});
 
-	$: $form.code = $form.code.toUpperCase();
+	$effect(() => {
+		const upperCasedCode = $form.code.toUpperCase();
+
+		if ($form.code !== upperCasedCode) {
+			$form.code = upperCasedCode;
+		}
+	});
 </script>
 
 <div class="card p-5 space-y-6">
@@ -145,7 +171,7 @@
 		<div class="flex flex-col space-y-2">
 			{#each types as currentType}
 				<Button
-					on:click={async () => {
+					onclick={async () => {
 						type = currentType;
 						requestCodeTypes.includes(type) &&
 							(await requestNewCode(currentType));
@@ -162,7 +188,7 @@
 		<Button
 			class="variant-ringed-surface hover:bg-surface-600"
 			value="Cancel"
-			on:click={cancel}>Cancel</Button
+			onclick={cancel}>Cancel</Button
 		>
 	{:else if type}
 		<div class="flex flex-row space-x-2 justify-center">
@@ -180,7 +206,7 @@
 					{#each types as currentType}
 						<Radio
 							bind:group={type}
-							on:click={async () => {
+							onclick={async () => {
 								if (
 									!codeRequested[currentType] &&
 									requestCodeTypes.includes(currentType)
@@ -207,7 +233,7 @@
 					<Button
 						title="Resend code"
 						class="variant-ghost-secondary h-[48px] w-[48px] px-2"
-						on:click={async () => {
+						onclick={async () => {
 							requested = true;
 							await requestNewCode(type, true);
 						}}
@@ -228,7 +254,7 @@
 		<form
 			class="space-y-6"
 			autocomplete="off"
-			on:submit|preventDefault={confirmCode}
+			onsubmit={confirmCode}
 		>
 			<Input field="code" required bind:value={$form.code} bind:ref={codeInput}
 				>Code</Input
@@ -244,7 +270,8 @@
 				<Button
 					class="variant-ringed-surface hover:bg-surface-600"
 					value="Cancel"
-					on:click={cancel}>Cancel</Button
+					type="button"
+					onclick={cancel}>Cancel</Button
 				>
 				<Button type="submit" class="variant-filled-primary" {submitted}
 					>Submit</Button

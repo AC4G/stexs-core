@@ -16,9 +16,11 @@
 	import { Button, OrganizationLogo } from 'ui';
 	import { getFlash } from 'sveltekit-flash-message/client';
 	import { page } from '$app/stores';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
 	import Icon from '@iconify/svelte';
 	import { openCreateOrganizationModal } from '$lib/utils/modals/organizationModals';
+
+	const { debounce } = lodash;
 
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();
@@ -29,16 +31,16 @@
 		target: 'newOrganizationProfilePopup',
 		placement: 'top',
 	};
-	let openDropDown: { [key: string]: boolean } = {};
-	let search: string = '';
+	let openDropDown: { [key: string]: boolean } = $state({});
+	let search: string = $state('');
 	let previousSearch: string = '';
-	let filter: string = 'A-Z';
-	let paginationSettings: PaginationSettings = {
+	let filter: string = $state('A-Z');
+	let paginationSettings: PaginationSettings = $state({
 		page: 0,
 		limit: 20,
 		size: 0,
 		amounts: [20, 50, 100],
-	};
+	});
 	let previousLimit: number | undefined;
 	const handleSearch = debounce((e: Event) => {
 		search = (e.target as HTMLInputElement)?.value || '';
@@ -137,7 +139,7 @@
 		modalStore.set([modal]);
 	}
 
-	$: organizationAmountQuery = createQuery({
+	let organizationAmountQuery = $derived(createQuery({
 		queryKey: ['organizationsAmountProfile', $profileStore?.userId],
 		queryFn: async () => {
 			const { count } = await stexs
@@ -148,10 +150,12 @@
 				})
 				.eq('member_id', $profileStore?.userId);
 
+			paginationSettings.size = count;
+
 			return count;
 		},
 		enabled: !!$profileStore?.userId,
-	});
+	}));
 
 	async function fetchOrganizations(
 		userId: string,
@@ -208,7 +212,7 @@
 		return data;
 	}
 
-	$: organizationsMemberQuery = createQuery({
+	let organizationsMemberQuery = $derived(createQuery({
 		queryKey: ['organizationsProfile', $profileStore?.userId],
 		queryFn: async () =>
 			await fetchOrganizations(
@@ -219,23 +223,23 @@
 				paginationSettings.limit,
 			),
 		enabled: !!$profileStore?.userId,
+	}));
+
+	$effect(() => {
+		if (
+			$profileStore &&
+			$userStore &&
+			$profileStore.userId === $userStore.id &&
+			$profileStore.refetchOrganizationsFn === undefined &&
+			$profileStore.refetchOrganizationAmountFn === undefined
+		) {
+			profileStore.set({
+				...$profileStore,
+				refetchOrganizationsFn: $organizationsMemberQuery.refetch,
+				refetchOrganizationAmountFn: $organizationAmountQuery.refetch,
+			});
+		}
 	});
-
-	$: if (
-		$profileStore &&
-		$userStore &&
-		$profileStore.userId === $userStore.id &&
-		$profileStore.refetchOrganizationsFn === undefined &&
-		$profileStore.refetchOrganizationAmountFn === undefined
-	) {
-		profileStore.set({
-			...$profileStore,
-			refetchOrganizationsFn: $organizationsMemberQuery.refetch,
-			refetchOrganizationAmountFn: $organizationAmountQuery.refetch,
-		});
-	}
-
-	$: paginationSettings.size = $organizationAmountQuery.data;
 </script>
 
 <div
@@ -244,10 +248,10 @@
 	{#if $organizationsMemberQuery.isLoading || !$organizationsMemberQuery.data}
 		<div
 			class="placeholder animate-pulse xs:max-w-[300px] w-full h-[41.75px] rounded-lg"
-		/>
+		></div>
 		<div
 			class="placeholder animate-pulse xs:w-[90px] w-full h-[41.75px] rounded-lg"
-		/>
+		></div>
 	{:else if $organizationAmountQuery.data > 0}
 		<div
 			class="flex flex-col xs:flex-row w-full justify-between space-y-2 xs:space-x-2 xs:space-y-0 items-center"
@@ -289,7 +293,7 @@
 		{#if $userStore?.id === $profileStore?.userId}
 			<button
 				use:popup={newOrganizationProfilePopup}
-				on:click={() =>
+				onclick={() =>
 					openCreateOrganizationModal(
 						flash,
 						modalStore,
@@ -314,7 +318,7 @@
 		{#each Array(20) as _}
 			<div
 				class="placeholder animate-pulse aspect-square w-full h-[77.75px] xs:h-[85.75px]"
-			/>
+			></div>
 		{/each}
 	{:else if $organizationsMemberQuery.data.length > 0}
 		{#each $organizationsMemberQuery.data as organizationMember (organizationMember.organizations.id)}
@@ -409,7 +413,7 @@
 			{#if $userStore?.id === $profileStore?.userId}
 				<button
 					use:popup={newOrganizationProfilePopup}
-					on:click={() =>
+					onclick={() =>
 						openCreateOrganizationModal(
 							flash,
 							modalStore,
@@ -428,8 +432,8 @@
 	<div
 		class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px]"
 	>
-		<div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]" />
-		<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
+		<div class="placeholder animate-pulse h-[42px] w-full md:w-[172px]"></div>
+		<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]"></div>
 	</div>
 {:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || ($organizationAmountQuery.data > 20 && search.length > 0 && $organizationsMemberQuery.data.length > 0)}
 	<div class="mt-[18px]">

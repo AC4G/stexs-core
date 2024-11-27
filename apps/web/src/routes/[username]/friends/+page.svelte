@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { Avatar, Button } from 'ui';
 	import { getUserStore } from '$lib/stores/userStore';
 	import {
@@ -19,7 +21,9 @@
 	import { page } from '$app/stores';
 	import { openBlockUserModal } from '$lib/utils/modals/userModals';
 	import { openAddFriendModal } from '$lib/utils/modals/friendModals';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
+
+	const { debounce } = lodash;
 
 	const flash = getFlash(page);
 	const profileStore = getProfileStore();
@@ -30,21 +34,23 @@
 		target: 'addFriendProfilePopup',
 		placement: 'top',
 	};
-	let openDropDown: { [key: string]: boolean } = {};
+	let openDropDown: { [key: string]: boolean } = $state({});
 
-	let search: string = '';
+	let search: string = $state('');
 	let previousSearch: string = '';
-	let filter: string = 'A-Z';
-	let paginationSettings: PaginationSettings = {
+	let filter: string = $state('A-Z');
+	let paginationSettings: PaginationSettings = $state({
 		page: 0,
 		limit: 20,
 		size: 0,
 		amounts: [20, 50, 100],
-	};
-	let removeFriendSubmitted: boolean = false;
+	});
+	let removeFriendSubmitted: boolean = $state(false);
 	let previousLimit: number | undefined;
 
-	$: paginationSettings.size = $profileStore?.totalFriends || 0;
+	run(() => {
+		paginationSettings.size = $profileStore?.totalFriends || 0;
+	});
 
 	const handleSearch = debounce((e: Event) => {
 		search = (e.target as HTMLInputElement)?.value || '';
@@ -118,7 +124,7 @@
 		return data;
 	}
 
-	$: friendsQuery = createQuery({
+	let friendsQuery = $derived(createQuery({
 		queryKey: [
 			'friends',
 			$profileStore?.userId,
@@ -134,7 +140,7 @@
 				paginationSettings.limit,
 			),
 		enabled: !!$profileStore?.userId,
-	});
+	}));
 </script>
 
 <div
@@ -143,10 +149,10 @@
 	{#if $friendsQuery.isLoading || !$friendsQuery.data}
 		<div
 			class="placeholder animate-pulse xs:max-w-[300px] w-full h-[41.75px] rounded-lg"
-		/>
+		></div>
 		<div
 			class="placeholder animate-pulse xs:w-[90px] w-full h-[41.75px] rounded-lg"
-		/>
+		></div>
 	{:else if $profileStore && $profileStore.totalFriends > 0}
 		<div
 			class="flex flex-col xs:flex-row w-full justify-between xs:space-x-2 space-y-2 xs:space-y-0 items-center"
@@ -188,7 +194,7 @@
 		{#if $userStore?.id === $profileStore?.userId}
 			<button
 				use:popup={addFriendProfilePopup}
-				on:click={() =>
+				onclick={() =>
 					openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
 						$profileStore?.refetchFriendsFn();
 					})}
@@ -211,8 +217,8 @@
 	{#if $friendsQuery.isLoading || !$friendsQuery.data}
 		{#each Array(20) as _}
 			<div class="flex h-full w-full items-center justify-left space-x-2 p-2">
-				<div class="placeholder-circle animate-pulse w-[40px] h-[40px]" />
-				<div class="placeholder animate-pulse w-[70%]" />
+				<div class="placeholder-circle animate-pulse w-[40px] h-[40px]"></div>
+				<div class="placeholder animate-pulse w-[70%]"></div>
 			</div>
 		{/each}
 	{:else if $friendsQuery.data?.length > 0}
@@ -308,7 +314,7 @@
 			{#if $userStore?.id === $profileStore?.userId}
 				<button
 					use:popup={addFriendProfilePopup}
-					on:click={() =>
+					onclick={() =>
 						openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
 							$profileStore?.refetchFriendsFn();
 						})}
@@ -324,8 +330,8 @@
 	<div
 		class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px]"
 	>
-		<div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-		<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
+		<div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]"></div>
+		<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]"></div>
 	</div>
 {:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || ($profileStore && $profileStore.totalFriends > 20 && search.length > 0 && $friendsQuery.data.length > 0)}
 	<div class="mt-[18px]">

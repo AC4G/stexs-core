@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: can't migrate `let submittedAvatar: boolean = false;` to `$state` because there's a variable named state.
+     Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
 	import { stexs } from '../../stexsClient';
 	import { getUserStore } from '$lib/stores/userStore';
@@ -15,7 +17,7 @@
 	import Icon from '@iconify/svelte';
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
 	import { UpdateProfile } from 'validation-schemas';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
 	import { openRemoveAvatarModal } from '$lib/utils/modals/avatarModals';
 	import { AuthEvents } from 'stexs-client';
 	import {
@@ -24,6 +26,8 @@
 		cropFile,
 		isWebPAnimated,
 	} from '$lib/utils/fileConverter';
+
+	const { debounce } = lodash;
 
 	const modalStore = getModalStore();
 	const userStore = getUserStore();

@@ -4,7 +4,13 @@
 	import hljs from 'highlight.js';
 	import Convert from 'ansi-to-html';
 
-	export let text;
+	let { 
+		text, 
+		...rest
+	}: { 
+		text: string, 
+		[key: string]: any
+	} = $props();
 
 	const convert = new Convert();
 
@@ -162,13 +168,13 @@
 	});
 
 	//@ts-ignore
-	$: parsed = DOMPurify.sanitize(marked.parse(text), purifyConfig);
+	let parsed = $derived(DOMPurify.sanitize(marked.parse(text), purifyConfig));
 </script>
 
 {#if parsed.length > 0}
 	<div
-		class="bg-surface-800 rounded-md border border-surface-500 p-2 cursor-auto {$$restProps.class}"
-		{...$$restProps}
+		class="bg-surface-800 rounded-md border border-surface-500 p-2 cursor-auto {rest.class}"
+		{...rest}
 	>
 		{@html parsed}
 	</div>

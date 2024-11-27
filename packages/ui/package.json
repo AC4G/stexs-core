@@ -19,11 +19,12 @@
     "@tanstack/svelte-query": "^5.18.0",
     "@types/lodash": "^4.14.202",
     "flowbite": "^2.1.1",
-    "flowbite-svelte": "^0.44.19",
-    "svelte": "^4.2.8",
-    "svelte-markdown": "^0.4.1",
-    "validation-schemas": "workspace:*",
-    "stexs-client": "workspace:*"
+    "flowbite-svelte": "^0.47.3",
+    "stexs-client": "workspace:*",
+    "svelte": "^5.0.0",
+    "sveltekit-flash-message": "^2.4.4",
+    "sveltekit-superforms": "^2.20.1",
+    "validation-schemas": "workspace:*"
   },
   "dependencies": {
     "@skeletonlabs/tw-plugin": "^0.2.4",
@@ -32,8 +33,6 @@
     "fast-xml-parser": "^4.3.2",
     "highlight.js": "^11.9.0",
     "lodash": "^4.17.21",
-    "marked": "^11.1.1",
-    "svelte-easy-crop": "^2.0.3",
-    "sveltekit-superforms": "^1.10.1"
+    "marked": "^11.1.1"
   }
 }

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { createQuery } from '@tanstack/svelte-query';
 	import { stexs } from '../../stexsClient';
 	import { getUserStore } from '$lib/stores/userStore';
@@ -16,33 +18,28 @@
 	} from '@skeletonlabs/skeleton';
 	import { Button, ProjectLogo, ItemThumbnail } from 'ui';
 	import Icon from '@iconify/svelte';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
+
+	const { debounce } = lodash;
 
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();
 	const modalStore = getModalStore();
 
-	let search: string = '';
+	let search: string = $state('');
 	let previousSearch: string = '';
-	let projectSearch: string = '';
-	let filterTime: string = 'Latest';
-	let filterAlphabet: string = '';
-	let filterAmount: string = '';
-	let projectWindow: any;
-	let selectedProject: number;
-	$: selectedProjectName =
-		selectedProject === undefined || typeof selectedProject === 'string'
-			? 'All'
-			: $projectsQuery?.data.filter(
-					(project: { id: number; name: string }) =>
-						project.id === selectedProject,
-				)[0].name;
-	let paginationSettings: PaginationSettings = {
+	let projectSearch: string = $state('');
+	let filterTime: string = $state('Latest');
+	let filterAlphabet: string = $state('');
+	let filterAmount: string = $state('');
+	let projectWindow: any = $state();
+	let selectedProject: number = $state();
+	let paginationSettings: PaginationSettings = $state({
 		page: 0,
 		limit: 20,
 		size: 0,
 		amounts: [20, 50, 100],
-	};
+	});
 	let previousLimit: number | undefined;
 	let previousProject: number | undefined;
 	const handleSearch = debounce((e: Event) => {
@@ -66,34 +63,8 @@
 		return data;
 	}
 
-	$: itemsAmountQuery = createQuery({
-		queryKey: ['itemsAmountInventory', $profileStore?.userId],
-		queryFn: async () => {
-			const { count } = await stexs
-				.from('inventories')
-				.select('', {
-					count: 'exact',
-					head: true,
-				})
-				.eq('user_id', $profileStore?.userId);
 
-			return count;
-		},
-		enabled: !!$profileStore?.userId,
-	});
 
-	$: paginationSettings.size = $itemsAmountQuery.data;
-
-	$: projectsQuery = createQuery({
-		queryKey: ['projectsInInventory', $profileStore?.userId],
-		queryFn: async () =>
-			await fetchProjectsInUsersInventory(
-				$profileStore?.userId!,
-				null,
-				projectSearch,
-			),
-		enabled: !!$profileStore?.userId,
-	});
 
 	async function fetchInventory(
 		userId: string,
@@ -236,26 +207,10 @@
 		modalStore.set([modal]);
 	}
 
-	$: inventoryQuery = createQuery({
-		queryKey: ['inventories', $profileStore?.userId],
-		queryFn: async () =>
-			await fetchInventory(
-				$profileStore?.userId!,
-				search,
-				{ filterTime, filterAlphabet, filterAmount },
-				selectedProject,
-				page,
-				limit,
-			),
-		enabled: !!$profileStore?.userId,
-	});
 
-	$: page = paginationSettings.page;
-	$: limit = paginationSettings.limit;
 
-	let projects: { id: number; name: string; organization_name: string }[] = [];
+	let projects: { id: number; name: string; organization_name: string }[] = $state([]);
 
-	$: projects = $projectsQuery.data || [];
 
 	async function handleScroll() {
 		if (
@@ -273,6 +228,59 @@
 			];
 		}
 	}
+	let selectedProjectName =
+		$derived(selectedProject === undefined || typeof selectedProject === 'string'
+			? 'All'
+			: $projectsQuery?.data.filter(
+					(project: { id: number; name: string }) =>
+						project.id === selectedProject,
+				)[0].name);
+	let itemsAmountQuery = $derived(createQuery({
+		queryKey: ['itemsAmountInventory', $profileStore?.userId],
+		queryFn: async () => {
+			const { count } = await stexs
+				.from('inventories')
+				.select('', {
+					count: 'exact',
+					head: true,
+				})
+				.eq('user_id', $profileStore?.userId);
+
+			return count;
+		},
+		enabled: !!$profileStore?.userId,
+	}));
+	run(() => {
+		paginationSettings.size = $itemsAmountQuery.data;
+	});
+	let projectsQuery = $derived(createQuery({
+		queryKey: ['projectsInInventory', $profileStore?.userId],
+		queryFn: async () =>
+			await fetchProjectsInUsersInventory(
+				$profileStore?.userId!,
+				null,
+				projectSearch,
+			),
+		enabled: !!$profileStore?.userId,
+	}));
+	let page = $derived(paginationSettings.page);
+	let limit = $derived(paginationSettings.limit);
+	let inventoryQuery = $derived(createQuery({
+		queryKey: ['inventories', $profileStore?.userId],
+		queryFn: async () =>
+			await fetchInventory(
+				$profileStore?.userId!,
+				search,
+				{ filterTime, filterAlphabet, filterAmount },
+				selectedProject,
+				page,
+				limit,
+			),
+		enabled: !!$profileStore?.userId,
+	}));
+	run(() => {
+		projects = $projectsQuery.data || [];
+	});
 </script>
 
 <div
@@ -281,12 +289,12 @@
 	{#if $inventoryQuery.isLoading || !$inventoryQuery.data}
 		<div
 			class="placeholder animate-pulse xs:max-w-[300px] w-full h-[41.75px] rounded-lg"
-		/>
+		></div>
 		<div
 			class="w-full xs:w-fit flex flex-col xs:flex-row items-center space-y-2 xs:space-y-0 xs:space-x-2"
 		>
-			<div class="placeholder animate-pulse w-full xs:w-[115px] h-[41.75px]" />
-			<div class="placeholder animate-pulse w-full xs:w-[85px] h-[41.75px]" />
+			<div class="placeholder animate-pulse w-full xs:w-[115px] h-[41.75px]"></div>
+			<div class="placeholder animate-pulse w-full xs:w-[85px] h-[41.75px]"></div>
 		</div>
 	{:else if $itemsAmountQuery.data > 0}
 		<div class="xs:max-w-[300px] w-full">
@@ -384,7 +392,7 @@
 						>
 							<div
 								bind:this={projectWindow}
-								on:scroll={handleScroll}
+								onscroll={handleScroll}
 								class="max-h-[200px] overflow-auto flex-col space-y-1"
 							>
 								{#if $projectsQuery.data && $projectsQuery.data.length > 0}
@@ -433,7 +441,7 @@
 >
 	{#if $inventoryQuery.isLoading || !$inventoryQuery.data}
 		{#each Array(50) as _}
-			<div class="placeholder animate-pulse aspect-square w-full h-full" />
+			<div class="placeholder animate-pulse aspect-square w-full h-full"></div>
 		{/each}
 	{:else if $inventoryQuery.data && $inventoryQuery.data.length > 0}
 		{#each $inventoryQuery.data as inventory (inventory.id)}
@@ -471,8 +479,8 @@
 	<div
 		class="flex justify-between flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 mt-[18px]"
 	>
-		<div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]" />
-		<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]" />
+		<div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]"></div>
+		<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]"></div>
 	</div>
 {:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || ($itemsAmountQuery.data > 20 && search.length > 0 && $inventoryQuery.data.length > 0)}
 	<div class="mt-[18px]">

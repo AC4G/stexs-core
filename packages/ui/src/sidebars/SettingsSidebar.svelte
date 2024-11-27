@@ -8,35 +8,52 @@
 	} from 'flowbite-svelte';
 	import Icon from '@iconify/svelte';
 
-	export let activeClass: string;
-	export let nonActiveClass: string;
-	export let btnClass: string;
 
-	export let activeUrl;
+	interface Props {
+		activeClass: string;
+		nonActiveClass: string;
+		btnClass: string;
+		activeUrl: any;
+	}
+
+	let {
+		activeClass,
+		nonActiveClass,
+		btnClass,
+		activeUrl
+	}: Props = $props();
 </script>
 
 <Sidebar class="w-full" {activeUrl} {activeClass} {nonActiveClass}>
 	<SidebarWrapper class="flex flex-col justify-between h-full !bg-transparent">
 		<SidebarGroup>
 			<SidebarItem label="Profile" href="/settings">
-				<svelte:fragment slot="icon">
-					<Icon icon="octicon:person-16" />
-				</svelte:fragment>
+				{#snippet icon()}
+							
+						<Icon icon="octicon:person-16" />
+					
+							{/snippet}
 			</SidebarItem>
 			<SidebarItem label="Security" href="/settings/security">
-				<svelte:fragment slot="icon">
-					<Icon icon="mdi:security-lock" />
-				</svelte:fragment>
+				{#snippet icon()}
+							
+						<Icon icon="mdi:security-lock" />
+					
+							{/snippet}
 			</SidebarItem>
 			<SidebarItem label="Connections" href="/settings/connections">
-				<svelte:fragment slot="icon">
-					<Icon icon="ep:connection" />
-				</svelte:fragment>
+				{#snippet icon()}
+							
+						<Icon icon="ep:connection" />
+					
+							{/snippet}
 			</SidebarItem>
 			<SidebarDropdownWrapper label="Billing" {btnClass}>
-				<svelte:fragment slot="icon">
-					<Icon icon="octicon:credit-card-16" />
-				</svelte:fragment>
+				{#snippet icon()}
+							
+						<Icon icon="octicon:credit-card-16" />
+					
+							{/snippet}
 				<SidebarItem label="Invoices" href="/settings/invoices" class="ps-11" />
 				<SidebarItem
 					label="Payment information"

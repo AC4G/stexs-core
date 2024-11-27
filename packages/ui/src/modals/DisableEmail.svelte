@@ -4,30 +4,37 @@
 	import Button from '../Button.svelte';
 	import Input from '../Input.svelte';
 	import { VerifyCode } from 'validation-schemas';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms/client';
+	import { zod } from 'sveltekit-superforms/adapters';
 	import Icon from '@iconify/svelte';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
 	let submitted: boolean = false;
-	let requested: boolean = false;
-	let codeInput: HTMLInputElement;
+	let requested: boolean = $state(false);
+	let codeInput: HTMLInputElement = $state();
 
 	let authQueryStore = $modalStore[0].meta.authQueryStore;
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 
-	const { form, errors, validate } = superForm(superValidateSync(VerifyCode), {
-		validators: VerifyCode,
+	const { form, errors, validateForm } = superForm(zod(VerifyCode), {
+		dataType: 'json',
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
 
-	async function submit() {
-		const result = await validate();
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+
+		const result = await validateForm();
 
 		if (!result.valid) return;
 
@@ -130,7 +137,7 @@
 		<form
 			class="space-y-6"
 			autocomplete="off"
-			on:submit|preventDefault={submit}
+			onsubmit={submit}
 		>
 			<Input
 				name="code"

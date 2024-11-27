@@ -3,17 +3,19 @@ import { redirect } from '@sveltejs/kit';
 import { goto } from '$app/navigation';
 import { getContext, setContext } from 'svelte';
 
-export function createPreviousPageStore(): Writable<string> {
+export type PreviousPageStore = Writable<string>;
+
+export function createPreviousPageStore(): PreviousPageStore {
 	const previousPage = writable<string>('/');
-	setContext<Writable<string>>('previousPage', previousPage);
+	setContext<PreviousPageStore>('previousPage', previousPage);
 	return previousPage;
 }
 
-export function getPreviousPageStore(): Writable<string> {
-	return getContext<Writable<string>>('previousPage');
+export function getPreviousPageStore(): PreviousPageStore {
+	return getContext<PreviousPageStore>('previousPage');
 }
 
-export function redirectToPreviousPage(previousPageStore: Writable<string>) {
+export function redirectToPreviousPage(previousPageStore: PreviousPageStore) {
 	let path: string = '/';
 
 	const unsubscribe = previousPageStore.subscribe((currentPath: string) => {
@@ -24,7 +26,7 @@ export function redirectToPreviousPage(previousPageStore: Writable<string>) {
 
 	previousPageStore.set('/');
 
-	if (typeof window === 'undefined') throw redirect(302, path);
+	if (typeof window === 'undefined') redirect(302, path);
 
 	return goto(path);
 }

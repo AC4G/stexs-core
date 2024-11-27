@@ -3,34 +3,40 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import MFA from '../MFA.svelte';
 	import Input from '../Input.svelte';
-	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
+	import { superForm } from 'sveltekit-superforms/client';
+	import { zod } from 'sveltekit-superforms/adapters';
 	import { UpdatePassword } from 'validation-schemas';
 	import Button from '../Button.svelte';
 	import StexsClient from 'stexs-client';
 
-	export let parent: SvelteComponent;
+	interface Props {
+		parent: SvelteComponent;
+	}
+
+	let { parent }: Props = $props();
 
 	const modalStore = getModalStore();
 
-	let newPasswordEntered: boolean = false;
+	let newPasswordEntered: boolean = $state(false);
 	let confirmErrors: string[] = [];
 
 	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
 	let flash = $modalStore[0].meta.flash;
 	let types = $modalStore[0].meta.types;
-	let type = '_selection';
+	let type = $state('_selection');
 
-	const { form, errors, validate } = superForm(
-		superValidateSync(UpdatePassword),
+	const { form, errors, validateForm } = superForm(zod(UpdatePassword),
 		{
-			validators: UpdatePassword,
+			dataType: 'json',
 			validationMethod: 'oninput',
 			clearOnSubmit: 'none',
 		},
 	);
 
-	async function submit() {
-		const result = await validate();
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+
+		const result = await validateForm();
 
 		if (!result.valid || $errors._errors) return;
 
@@ -89,7 +95,7 @@
 			<form
 				class="space-y-6"
 				autocomplete="off"
-				on:submit|preventDefault={submit}
+				onsubmit={submit}
 			>
 				<div class="w-full">
 					<Input

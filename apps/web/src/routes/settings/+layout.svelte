@@ -5,6 +5,12 @@
 	import { goto } from '$app/navigation';
 	import { getPreviousPageStore } from '$lib/stores/previousPageStore';
 	import { page } from '$app/stores';
+	
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
 
 	const previousPageStore = getPreviousPageStore();
 
@@ -25,5 +31,5 @@
 </script>
 
 {#if $settingsSetupQuery.data}
-	<slot />
+	{@render children?.()}
 {/if}

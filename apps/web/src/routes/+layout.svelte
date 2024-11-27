@@ -3,7 +3,6 @@
 	import {
 		AppShell,
 		Toast,
-		setInitialClassState,
 		initializeStores,
 		getToastStore,
 		Modal,
@@ -73,7 +72,7 @@
 	import { storePopup, getModalStore, popup } from '@skeletonlabs/skeleton';
 	import { openAddFriendModal } from '$lib/utils/modals/friendModals';
 	import { AuthEvents } from 'stexs-client';
-	import { debounce } from 'lodash';
+	import lodash from 'lodash';
 	import { formatDistanceStrict } from '$lib/utils/formatDistance';
 	import { acceptFriendRequest, deleteFriendRequest } from '$lib/utils/friend';
 	import {
@@ -84,6 +83,14 @@
 		acceptProjectRequest,
 		deleteProjectRequest,
 	} from '$lib/utils/projectRequests';
+	import type { ExcludeHeaderRoute } from '$lib/types';
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	const { debounce } = lodash;
+
+	let { children }: Props = $props();
 
 	initializeStores();
 	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
@@ -120,12 +127,15 @@
 		MFA: { ref: MFAModal },
 		connectionScopes: { ref: ConnectionScopes }
 	};
-	const excludeRoutes = [
-		'/sign-in',
-		'/sign-up',
-		'/sign-in-confirm',
-		'/recovery',
-		'/authorize',
+	const excludeHeaderRoutes: ExcludeHeaderRoute[] = [
+		{ pathname: '/sign-in' },
+		{ pathname: '/sign-up' },
+		{
+			pathname: '/sign-in-confirm',
+			callback: () => stexs.auth.cancelSignInConfirm(),
+		},
+		{ pathname: '/recovery' },
+		{ pathname: '/authorize' },
 	];
 	const sidebarRoutes = ['/settings'];
 	const addFriendPopup: PopupSettings = {
@@ -140,8 +150,8 @@
 		placement: 'bottom',
 	};
 
-	let signedIn: boolean;
-	let avatarDropDownOpen: boolean = false;
+	let signedIn: boolean = $state(false);
+	let avatarDropDownOpen: boolean = $state(false);
 
 	flash.subscribe(($flash) => {
 		if (!$flash) return;
@@ -198,12 +208,12 @@
 
 	// notifications part
 
-	let initialDataExists: boolean = false;
-	let search: string = '';
+	let initialDataExists: boolean = $state(false);
+	let search: string = $state('');
 	let previousSearch: string = '';
-	let filter: string = 'All';
+	let filter: string = $state('All');
 	let previousFilter: string = 'All';
-	let notificationsWindow: any;
+	let notificationsWindow: any = $state();
 	const notificationsPopup: PopupSettings = {
 		event: 'hover',
 		target: 'notificationsPopup',
@@ -229,8 +239,8 @@
 		},
 	};
 
-	let dropDownOpen: boolean = false;
-	let notifications: any[] = [];
+	let dropDownOpen: boolean = $state(false);
+	let notifications: any[] = $state([]);
 
 	const handleSearch = debounce((e: Event) => {
 		search = (e.target as HTMLInputElement)?.value || '';
@@ -383,16 +393,32 @@
 		return data;
 	}
 
-	$: unseenNotificationsQuery = createQuery({
-		queryKey: ['unseenNotifications'],
-		queryFn: async () => await fetchUnseenNotifications($userStore!.id),
-		enabled: !!$userStore?.id && !excludeRoutes.includes($page.url.pathname),
-		refetchInterval: 5000,
+	function getExcludedHeaderRoute() {
+		return excludeHeaderRoutes.find((r) => r.pathname === $page.url.pathname);
+	}
+
+	let excludedHeaderRoute: ExcludeHeaderRoute | undefined | null = $state(getExcludedHeaderRoute());
+	$effect(() => {
+		const newExcludedHeaderRoute = getExcludedHeaderRoute();
+
+		if (excludedHeaderRoute?.pathname !== newExcludedHeaderRoute?.pathname) {
+			excludedHeaderRoute = newExcludedHeaderRoute;
+		}
 	});
 
-	$: unseenNotificationsAmount = $unseenNotificationsQuery.data || 0;
+	let unseenNotificationsQuery = $derived(createQuery({
+		queryKey: ['unseenNotifications'],
+		queryFn: async () => await fetchUnseenNotifications($userStore!.id),
+		enabled: !!$userStore?.id && !excludedHeaderRoute,
+		refetchInterval: 5000,
+	}));
 
-	$: notificationsQuery = createQuery({
+	let unseenNotificationsAmount = $state(0);
+	$effect(() => {
+		unseenNotificationsAmount = $unseenNotificationsQuery.data || 0;
+	});
+
+	let notificationsQuery = $derived(createQuery({
 		queryKey: ['notifications'],
 		queryFn: async () => {
 			const data = await fetchNotifications(
@@ -407,9 +433,11 @@
 			return data;
 		},
 		enabled: !!$userStore?.id && dropDownOpen,
-	});
+	}));
 
-	$: notifications = $notificationsQuery.data || [];
+	$effect(() => {
+		notifications = $notificationsQuery.data || [];
+	});
 
 	async function handleScroll() {
 		if (
@@ -447,10 +475,6 @@
 		'flex items-center p-2 w-full rounded-md transition duration-75 text-white group hover:!bg-surface-500';
 </script>
 
-<svelte:head>
-	{@html `<script>(${setInitialClassState.toString()})();</script>`}
-</svelte:head>
-
 <Toast
 	buttonDismiss="btn aspect-square px-2 py-1 variant-ghost-surface"
 	zIndex="z-[1000]"
@@ -461,7 +485,7 @@
 		<div class="flex items-center justify-between h-[70px]">
 			<h3 class="h3">Navigation</h3>
 			<Button
-				on:click={() => drawerStore.close()}
+				onclick={() => drawerStore.close()}
 				class="p-2 variant-ghost-surface"
 			>
 				<Icon icon="ph:x-bold" />
@@ -491,9 +515,9 @@
 						});
 					}}
 				>
-					<svelte:fragment slot="icon">
+					{#snippet icon()}
 						<Icon icon="octicon:person-add-16" />
-					</svelte:fragment>
+					{/snippet}
 				</SidebarItem>
 			</SidebarGroup>
 		</SidebarWrapper>
@@ -508,7 +532,7 @@
 		/>
 	{/if}
 </Drawer>
-{#if !excludeRoutes.includes($page.url.pathname)}
+{#if !excludedHeaderRoute}
 	<AppShell
 		slotSidebarLeft="bg-surface-700 border-surface-500 w-0 {sidebarRoutes.find(
 			(route) => $page.url.pathname.startsWith(route),
@@ -516,27 +540,28 @@
 			? 'lg:w-64 lg:border-r'
 			: '!w-0'}"
 	>
-		<svelte:fragment slot="header">
-			<Header {sidebarRoutes} {drawerStore}>
-				{#if !signedIn}
-					<a
-						href="/sign-in"
-						class="btn py-[1px] px-[1px] bg-gradient-to-br variant-gradient-primary-secondary group"
-					>
-						<div
-							class="bg-surface-100-800-token text-white rounded-md px-2 py-1 w-full h-full group-hover:bg-gradient-to-br variant-gradient-primary-secondary"
+		{#snippet header()}
+			
+				<Header {sidebarRoutes} {drawerStore}>
+					{#if !signedIn}
+						<a
+							href="/sign-in"
+							class="btn py-[1px] px-[1px] bg-gradient-to-br variant-gradient-primary-secondary group"
 						>
-							Sign In
-						</div>
-					</a>
-					<a href="/sign-up" class="btn variant-ghost-primary py-[4px] px-3"
-						>Sign Up</a
-					>
-				{:else}
-					<div class="relative flex items-center space-x-2 w-full justify-end">
-						<button
-							use:popup={addFriendPopup}
-							on:click={() =>
+							<div
+								class="bg-surface-100-800-token text-white rounded-md px-2 py-1 w-full h-full group-hover:bg-gradient-to-br variant-gradient-primary-secondary"
+							>
+								Sign In
+							</div>
+						</a>
+						<a href="/sign-up" class="btn variant-ghost-primary py-[4px] px-3"
+							>Sign Up</a
+						>
+					{:else}
+						<div class="relative flex items-center space-x-2 w-full justify-end">
+							<button
+								use:popup={addFriendPopup}
+								onclick={() =>
 								openAddFriendModal(
 									$userStore.id,
 									flash,
@@ -548,219 +573,146 @@
 										}
 									},
 								)}
-							class="btn hidden xs:block relative hover:bg-surface-500 rounded-full transition p-3"
-						>
-							<Icon icon="octicon:person-add-16" width="18" />
-							<div
-								class="p-2 variant-filled-surface rounded-md !ml-0"
-								data-popup="addFriendPopup"
+								class="btn hidden xs:block relative hover:bg-surface-500 rounded-full transition p-3"
 							>
-								<p class="text-[14px] break-all">Add Friends</p>
-							</div>
-						</button>
-						<button
-							use:popup={notificationsWindowPopup}
-							use:popup={notificationsPopup}
-							class="btn relative notifications hover:bg-surface-500 rounded-full transition p-3 {dropDownOpen &&
-								'bg-surface-500'}"
-						>
-							<div>
-								<div class="relative">
-									{#if unseenNotificationsAmount > 0}
-										<span
-											class="badge-icon variant-filled-primary absolute -top-1 -right-[5px] z-10 w-[8px] h-[8px]"
-										></span>
-									{/if}
-								</div>
-								<Icon icon="mdi:bell-outline" width="18" />
+								<Icon icon="octicon:person-add-16" width="18" />
 								<div
-									class="p-2 variant-filled-surface rounded-md"
-									data-popup="notificationsPopup"
+									class="p-2 variant-filled-surface rounded-md !ml-0"
+									data-popup="addFriendPopup"
 								>
-									<p class="text-[14px] break-all">Notifications</p>
+									<p class="text-[14px] break-all">Add Friends</p>
 								</div>
-							</div>
-						</button>
-						<div data-popup="notificationsWindowPopup">
-							<div
-								class="absolute rounded-md right-[-79px] sm:right-[-74px] bg-surface-900 p-2 space-y-2 border border-surface-500 w-[100vw] px-2 xs:w-[400px]"
+							</button>
+							<button
+								use:popup={notificationsWindowPopup}
+								use:popup={notificationsPopup}
+								class="btn relative notifications hover:bg-surface-500 rounded-full transition p-3 {dropDownOpen &&
+									'bg-surface-500'}"
 							>
-								{#if $notificationsQuery.isSuccess || search.length > 0 || filter !== 'All'}
-									{#if filter !== 'All' && filter !== 'Messages'}
-										<Search
-											size="md"
-											placeholder={'Search by ' +
-												filter.split(' ')[0] +
-												' Name...'}
-											on:input={handleSearch}
-											class="!bg-surface-500"
-										/>
-									{/if}
-									<Button
-										class="bg-surface-500 border border-gray-600 w-full py-[8px]"
-									>
-										{filter}<Icon
-											icon="iconamoon:arrow-down-2-duotone"
-											class="text-[22px]"
-										/>
-									</Button>
-									<Dropdown
-										class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500"
-									>
-										<ListBoxItem
-											bind:group={filter}
-											name="filter"
-											value={'All'}
-											active="variant-glass-primary text-primary-500"
-											hover="hover:variant-filled-surface"
-											class="rounded-md px-4 py-2">All</ListBoxItem
-										>
-										<ListBoxItem
-											bind:group={filter}
-											name="filter"
-											value={'Messages'}
-											active="variant-glass-primary text-primary-500"
-											hover="hover:variant-filled-surface"
-											class="rounded-md px-4 py-2">Messages</ListBoxItem
-										>
-										<ListBoxItem
-											bind:group={filter}
-											name="filter"
-											value={'Friend Requests'}
-											active="variant-glass-primary text-primary-500"
-											hover="hover:variant-filled-surface"
-											class="rounded-md px-4 py-2">Friend Requests</ListBoxItem
-										>
-										<ListBoxItem
-											bind:group={filter}
-											name="filter"
-											value={'Organization Requests'}
-											active="variant-glass-primary text-primary-500"
-											hover="hover:variant-filled-surface"
-											class="rounded-md px-4 py-2"
-											>Organization Requests</ListBoxItem
-										>
-										<ListBoxItem
-											bind:group={filter}
-											name="filter"
-											value={'Project Requests'}
-											active="variant-glass-primary text-primary-500"
-											hover="hover:variant-filled-surface"
-											class="rounded-md px-4 py-2">Project Requests</ListBoxItem
-										>
-									</Dropdown>
-								{/if}
-								{#if $notificationsQuery.isLoading}
-									<div class="flex items-center justify-center py-2">
-										<ProgressRadial
-											stroke={40}
-											value={undefined}
-											width="w-[30px]"
-										/>
+								<div>
+									<div class="relative">
+										{#if unseenNotificationsAmount > 0}
+											<span
+												class="badge-icon variant-filled-primary absolute -top-1 -right-[5px] z-10 w-[8px] h-[8px]"
+											></span>
+										{/if}
 									</div>
-								{:else if notifications.length > 0}
+									<Icon icon="mdi:bell-outline" width="18" />
 									<div
-										bind:this={notificationsWindow}
-										on:scroll={handleScroll}
-										class="max-h-[400px] overflow-y-auto space-y-2"
+										class="p-2 variant-filled-surface rounded-md"
+										data-popup="notificationsPopup"
 									>
-										{#each notifications as notification, index (notification.id)}
-											<div
-												class="rounded p-2 w-full {notification.seen
-													? 'bg-surface-700 border border-surface-600'
-													: 'variant-ghost-primary'}"
+										<p class="text-[14px] break-all">Notifications</p>
+									</div>
+								</div>
+							</button>
+							<div data-popup="notificationsWindowPopup">
+								<div
+									class="absolute rounded-md right-[-79px] sm:right-[-74px] bg-surface-900 p-2 space-y-2 border border-surface-500 w-[100vw] px-2 xs:w-[400px]"
+								>
+									{#if $notificationsQuery.isSuccess || search.length > 0 || filter !== 'All'}
+										{#if filter !== 'All' && filter !== 'Messages'}
+											<Search
+												size="md"
+												placeholder={'Search by ' +
+													filter.split(' ')[0] +
+													' Name...'}
+												on:input={handleSearch}
+												class="!bg-surface-500"
+											/>
+										{/if}
+										<Button
+											class="bg-surface-500 border border-gray-600 w-full py-[8px]"
+										>
+											{filter}<Icon
+												icon="iconamoon:arrow-down-2-duotone"
+												class="text-[22px]"
+											/>
+										</Button>
+										<Dropdown
+											class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500"
+										>
+											<ListBoxItem
+												bind:group={filter}
+												name="filter"
+												value={'All'}
+												active="variant-glass-primary text-primary-500"
+												hover="hover:variant-filled-surface"
+												class="rounded-md px-4 py-2">All</ListBoxItem
 											>
-												{#if notification.type === 'message'}
-													<div class="flex flex-row space-x-2">
-														<Markdown class="" text={notification.message} />
-														<div class="space-y-2">
-															<Button
-																on:click={async () => {
-																	const result = await deleteMessage(
-																		notification.id,
-																	);
+											<ListBoxItem
+												bind:group={filter}
+												name="filter"
+												value={'Messages'}
+												active="variant-glass-primary text-primary-500"
+												hover="hover:variant-filled-surface"
+												class="rounded-md px-4 py-2">Messages</ListBoxItem
+											>
+											<ListBoxItem
+												bind:group={filter}
+												name="filter"
+												value={'Friend Requests'}
+												active="variant-glass-primary text-primary-500"
+												hover="hover:variant-filled-surface"
+												class="rounded-md px-4 py-2">Friend Requests</ListBoxItem
+											>
+											<ListBoxItem
+												bind:group={filter}
+												name="filter"
+												value={'Organization Requests'}
+												active="variant-glass-primary text-primary-500"
+												hover="hover:variant-filled-surface"
+												class="rounded-md px-4 py-2"
+												>Organization Requests</ListBoxItem
+											>
+											<ListBoxItem
+												bind:group={filter}
+												name="filter"
+												value={'Project Requests'}
+												active="variant-glass-primary text-primary-500"
+												hover="hover:variant-filled-surface"
+												class="rounded-md px-4 py-2">Project Requests</ListBoxItem
+											>
+										</Dropdown>
+									{/if}
+									{#if $notificationsQuery.isLoading}
+										<div class="flex items-center justify-center py-2">
+											<ProgressRadial
+												stroke={40}
+												value={undefined}
+												width="w-[30px]"
+											/>
+										</div>
+									{:else if notifications.length > 0}
+										<div
+											bind:this={notificationsWindow}
+											onscroll={handleScroll}
+											class="max-h-[400px] overflow-y-auto space-y-2"
+										>
+											{#each notifications as notification, index (notification.id)}
+												<div
+													class="rounded p-2 w-full {notification.seen
+														? 'bg-surface-700 border border-surface-600'
+														: 'variant-ghost-primary'}"
+												>
+													{#if notification.type === 'message'}
+														<div class="flex flex-row space-x-2">
+															<Markdown class="" text={notification.message} />
+															<div class="space-y-2">
+																<Button
+																	on:click={async () => {
+																		const result = await deleteMessage(
+																			notification.id,
+																		);
 
-																	if (result) removeNotificationByIndex(index);
-																}}
-																class="p-1 h-fit variant-ghost-surface"
-															>
-																<Icon icon="ph:x-bold" />
-															</Button>
-															<p
-																class="text-[14px] w-[26px] text-surface-300 text-right pr-1"
-															>
-																{formatDistanceStrict(
-																	new Date(notification.created_at),
-																	new Date(),
-																)}
-															</p>
-														</div>
-													</div>
-												{:else if notification.type === 'friend_request'}
-													{@const profile =
-														notification.friend_requests.profiles}
-													<div class="flex space-x-4 items-center">
-														<a href="/{profile.username}">
-															<Avatar
-																class="w-[48px] xs:w-[69px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.split('/')[1].toLowerCase() === profile.username.toLowerCase()
-																	? '!border-primary-500'
-																	: ''}"
-																{stexs}
-																userId={profile.user_id}
-																username={profile.username}
-															/>
-														</a>
-														<div class="w-full space-y-4">
-															<div
-																class="flex flex-row justify-between space-x-4"
-															>
-																<p class="text-[16px] break-all">
-																	{profile.username}
-																</p>
-																<div class="pt-1 pr-1" title="Friend Request">
-																	<Icon icon="octicon:person-add-16" />
-																</div>
-															</div>
-															<div
-																class="flex flex-row justify-between items-center"
-															>
-																<div
-																	class="flex flex-row justify-evenly w-full space-x-1"
+																		if (result) removeNotificationByIndex(index);
+																	}}
+																	class="p-1 h-fit variant-ghost-surface"
 																>
-																	<Button
-																		on:click={async () => {
-																			const result = await acceptFriendRequest(
-																				$userStore.id,
-																				profile.user_id,
-																				profile.username,
-																				flash,
-																				$profileStore,
-																			);
-
-																			if (result)
-																				removeNotificationByIndex(index);
-																		}}
-																		class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
-																		>Accept</Button
-																	>
-																	<Button
-																		on:click={async () => {
-																			const result = await deleteFriendRequest(
-																				profile.user_id,
-																				$userStore.id,
-																				flash,
-																				$profileStore,
-																			);
-
-																			if (!result)
-																				removeNotificationByIndex(index);
-																		}}
-																		class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
-																		>Delete</Button
-																	>
-																</div>
+																	<Icon icon="ph:x-bold" />
+																</Button>
 																<p
-																	class="text-[14px] w-[28px] text-surface-300 text-right pr-1"
+																	class="text-[14px] w-[26px] text-surface-300 text-right pr-1"
 																>
 																	{formatDistanceStrict(
 																		new Date(notification.created_at),
@@ -769,304 +721,382 @@
 																</p>
 															</div>
 														</div>
-													</div>
-												{:else if notification.type === 'organization_request'}
-													{@const organization =
-														notification.organization_requests.organizations}
-													<div class="flex space-x-4 items-center">
-														<a
-															href="/organizations/{organization.name}"
-															class="group"
-														>
-															<div
-																class="!w-[52px] h-[52px] xs:!w-[68px] xs:h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500"
-															>
-																<OrganizationLogo
+													{:else if notification.type === 'friend_request'}
+														{@const profile =
+															notification.friend_requests.profiles}
+														<div class="flex space-x-4 items-center">
+															<a href="/{profile.username}">
+																<Avatar
+																	class="w-[48px] xs:w-[69px] !bg-surface-800 border-2 border-surface-600 hover:border-primary-500 transition {$page.url.pathname.split('/')[1].toLowerCase() === profile.username.toLowerCase()
+																		? '!border-primary-500'
+																		: ''}"
 																	{stexs}
-																	organizationId={organization.id}
-																	alt={organization.name}
-																	iconClass="text-[46px]"
+																	userId={profile.user_id}
+																	username={profile.username}
 																/>
-															</div>
-														</a>
-														<div class="w-full space-y-4">
-															<div
-																class="flex flex-row justify-between space-x-4"
-															>
+															</a>
+															<div class="w-full space-y-4">
 																<div
-																	class="flex flex-row space-x-2 justify-between w-full"
+																	class="flex flex-row justify-between space-x-4"
 																>
 																	<p class="text-[16px] break-all">
-																		{organization.name}
+																		{profile.username}
 																	</p>
-																	<span
-																		title="Role"
-																		class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit"
-																		>{notification.organization_requests
-																			.role}</span
+																	<div class="pt-1 pr-1" title="Friend Request">
+																		<Icon icon="octicon:person-add-16" />
+																	</div>
+																</div>
+																<div
+																	class="flex flex-row justify-between items-center"
+																>
+																	<div
+																		class="flex flex-row justify-evenly w-full space-x-1"
 																	>
-																</div>
-																<div
-																	class="pt-1 pr-1"
-																	title="Organization Request"
-																>
-																	<Icon icon="octicon:organization-16" />
-																</div>
-															</div>
-															<div
-																class="flex flex-row justify-between items-center"
-															>
-																<div
-																	class="flex flex-row justify-evenly w-full space-x-1"
-																>
-																	<Button
-																		on:click={async () => {
-																			const result =
-																				await acceptOrganizationRequest(
+																		<Button
+																			on:click={async () => {
+																				const result = await acceptFriendRequest(
 																					$userStore.id,
-																					organization.id,
-																					organization.name,
-																					notification.organization_requests
-																						.role,
+																					profile.user_id,
+																					profile.username,
 																					flash,
 																					$profileStore,
 																				);
 
-																			if (result)
-																				removeNotificationByIndex(index);
-																		}}
-																		class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
-																		>Accept</Button
-																	>
-																	<Button
-																		on:click={async () => {
-																			const result =
-																				await deleteOrganizationRequest(
+																				if (result)
+																					removeNotificationByIndex(index);
+																			}}
+																			class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
+																			>Accept</Button
+																		>
+																		<Button
+																			on:click={async () => {
+																				const result = await deleteFriendRequest(
+																					profile.user_id,
 																					$userStore.id,
-																					organization.id,
+																					flash,
+																					$profileStore,
+																				);
+
+																				if (!result)
+																					removeNotificationByIndex(index);
+																			}}
+																			class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
+																			>Delete</Button
+																		>
+																	</div>
+																	<p
+																		class="text-[14px] w-[28px] text-surface-300 text-right pr-1"
+																	>
+																		{formatDistanceStrict(
+																			new Date(notification.created_at),
+																			new Date(),
+																		)}
+																	</p>
+																</div>
+															</div>
+														</div>
+													{:else if notification.type === 'organization_request'}
+														{@const organization =
+															notification.organization_requests.organizations}
+														<div class="flex space-x-4 items-center">
+															<a
+																href="/organizations/{organization.name}"
+																class="group"
+															>
+																<div
+																	class="!w-[52px] h-[52px] xs:!w-[68px] xs:h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500"
+																>
+																	<OrganizationLogo
+																		{stexs}
+																		organizationId={organization.id}
+																		alt={organization.name}
+																		iconClass="text-[46px]"
+																	/>
+																</div>
+															</a>
+															<div class="w-full space-y-4">
+																<div
+																	class="flex flex-row justify-between space-x-4"
+																>
+																	<div
+																		class="flex flex-row space-x-2 justify-between w-full"
+																	>
+																		<p class="text-[16px] break-all">
+																			{organization.name}
+																		</p>
+																		<span
+																			title="Role"
+																			class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit"
+																			>{notification.organization_requests
+																				.role}</span
+																		>
+																	</div>
+																	<div
+																		class="pt-1 pr-1"
+																		title="Organization Request"
+																	>
+																		<Icon icon="octicon:organization-16" />
+																	</div>
+																</div>
+																<div
+																	class="flex flex-row justify-between items-center"
+																>
+																	<div
+																		class="flex flex-row justify-evenly w-full space-x-1"
+																	>
+																		<Button
+																			on:click={async () => {
+																				const result =
+																					await acceptOrganizationRequest(
+																						$userStore.id,
+																						organization.id,
+																						organization.name,
+																						notification.organization_requests
+																							.role,
+																						flash,
+																						$profileStore,
+																					);
+
+																				if (result)
+																					removeNotificationByIndex(index);
+																			}}
+																			class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
+																			>Accept</Button
+																		>
+																		<Button
+																			on:click={async () => {
+																				const result =
+																					await deleteOrganizationRequest(
+																						$userStore.id,
+																						organization.id,
+																						flash,
+																					);
+
+																				if (result)
+																					removeNotificationByIndex(index);
+																			}}
+																			class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
+																			>Delete</Button
+																		>
+																	</div>
+																	<p
+																		class="text-[14px] w-[28px] text-surface-300 text-right pr-1"
+																	>
+																		{formatDistanceStrict(
+																			new Date(notification.created_at),
+																			new Date(),
+																		)}
+																	</p>
+																</div>
+															</div>
+														</div>
+													{:else}
+														{@const project =
+															notification.project_requests.projects}
+														<div class="flex space-x-4 items-center">
+															<a
+																href="/organizations/projects/{project.name}"
+																class="group"
+															>
+																<div
+																	class="!w-[52px] h-[52px] xs:!w-[68px] xs:h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500"
+																>
+																	<ProjectLogo
+																		{stexs}
+																		projectId={project.id}
+																		alt={project.name}
+																		iconClass="text-[46px]"
+																	/>
+																</div>
+															</a>
+															<div class="w-full space-y-4">
+																<div
+																	class="flex flex-row justify-between space-x-4"
+																>
+																	<div
+																		class="flex flex-row space-x-2 justify-between w-full"
+																	>
+																		<p class="text-[16px] break-words">
+																			<a
+																				href="/organizations/{project
+																					.organizations.name}"
+																				class="hover:text-secondary-400 transition"
+																				>{project.organizations.name}</a
+																			>
+																			/ {project.name}
+																		</p>
+																		<span
+																			title="Role"
+																			class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit"
+																			>{notification.project_requests.role}</span
+																		>
+																	</div>
+																	<div class="pt-1 pr-1" title="Project Request">
+																		<Icon icon="octicon:project-symlink-16" />
+																	</div>
+																</div>
+																<div
+																	class="flex flex-row justify-between items-center"
+																>
+																	<div
+																		class="flex flex-row justify-evenly w-full space-x-1"
+																	>
+																		<Button
+																			on:click={async () => {
+																				const result = await acceptProjectRequest(
+																					$userStore.id,
+																					project.id,
+																					project.name,
+																					project.organizations.name,
+																					notification.project_requests.role,
+																					flash,
+																					$profileStore,
+																				);
+
+																				if (result)
+																					removeNotificationByIndex(index);
+																			}}
+																			class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
+																			>Accept</Button
+																		>
+																		<Button
+																			on:click={async () => {
+																				const result = await deleteProjectRequest(
+																					$userStore.id,
+																					project.id,
 																					flash,
 																				);
 
-																			if (result)
-																				removeNotificationByIndex(index);
-																		}}
-																		class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
-																		>Delete</Button
-																	>
-																</div>
-																<p
-																	class="text-[14px] w-[28px] text-surface-300 text-right pr-1"
-																>
-																	{formatDistanceStrict(
-																		new Date(notification.created_at),
-																		new Date(),
-																	)}
-																</p>
-															</div>
-														</div>
-													</div>
-												{:else}
-													{@const project =
-														notification.project_requests.projects}
-													<div class="flex space-x-4 items-center">
-														<a
-															href="/organizations/projects/{project.name}"
-															class="group"
-														>
-															<div
-																class="!w-[52px] h-[52px] xs:!w-[68px] xs:h-[68px] rounded-md overflow-hidden bg-surface-800 border-2 border-surface-600 flex items-center justify-center transition group-hover:bg-surface-600 group-hover:border-primary-500"
-															>
-																<ProjectLogo
-																	{stexs}
-																	projectId={project.id}
-																	alt={project.name}
-																	iconClass="text-[46px]"
-																/>
-															</div>
-														</a>
-														<div class="w-full space-y-4">
-															<div
-																class="flex flex-row justify-between space-x-4"
-															>
-																<div
-																	class="flex flex-row space-x-2 justify-between w-full"
-																>
-																	<p class="text-[16px] break-words">
-																		<a
-																			href="/organizations/{project
-																				.organizations.name}"
-																			class="hover:text-secondary-400 transition"
-																			>{project.organizations.name}</a
+																				if (result)
+																					removeNotificationByIndex(index);
+																			}}
+																			class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
+																			>Delete</Button
 																		>
-																		/ {project.name}
+																	</div>
+																	<p
+																		class="text-[14px] w-[28px] text-surface-300 text-right pr-1"
+																	>
+																		{formatDistanceStrict(
+																			new Date(notification.created_at),
+																			new Date(),
+																		)}
 																	</p>
-																	<span
-																		title="Role"
-																		class="badge bg-gradient-to-br variant-gradient-tertiary-secondary h-fit w-fit"
-																		>{notification.project_requests.role}</span
-																	>
 																</div>
-																<div class="pt-1 pr-1" title="Project Request">
-																	<Icon icon="octicon:project-symlink-16" />
-																</div>
-															</div>
-															<div
-																class="flex flex-row justify-between items-center"
-															>
-																<div
-																	class="flex flex-row justify-evenly w-full space-x-1"
-																>
-																	<Button
-																		on:click={async () => {
-																			const result = await acceptProjectRequest(
-																				$userStore.id,
-																				project.id,
-																				project.name,
-																				project.organizations.name,
-																				notification.project_requests.role,
-																				flash,
-																				$profileStore,
-																			);
-
-																			if (result)
-																				removeNotificationByIndex(index);
-																		}}
-																		class="px-2 py-0 xs:px-4 xs:py-1 variant-filled-primary"
-																		>Accept</Button
-																	>
-																	<Button
-																		on:click={async () => {
-																			const result = await deleteProjectRequest(
-																				$userStore.id,
-																				project.id,
-																				flash,
-																			);
-
-																			if (result)
-																				removeNotificationByIndex(index);
-																		}}
-																		class="px-2 py-0 xs:px-4 xs:py-1 bg-surface-800 border border-surface-500"
-																		>Delete</Button
-																	>
-																</div>
-																<p
-																	class="text-[14px] w-[28px] text-surface-300 text-right pr-1"
-																>
-																	{formatDistanceStrict(
-																		new Date(notification.created_at),
-																		new Date(),
-																	)}
-																</p>
 															</div>
 														</div>
-													</div>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								{:else if filter !== 'All' || notifications.length > 0}
-									<div
-										class="p-5 w-full text-center whitespace-normal sm:whitespace-pre"
-									>
-										{#if filter === 'Friend Requests'}
-											No friend requests found
-										{:else if filter === 'Organization Requests'}
-											No organization requests found
-										{:else if filter === 'Project Requests'}
-											No project requests found
-										{:else}
-											No notifications found
-										{/if}
-									</div>
-								{:else}
-									<div
-										class="p-5 w-full text-center whitespace-normal sm:whitespace-pre"
-									>
-										You haven't received any notifications
-									</div>
-								{/if}
+													{/if}
+												</div>
+											{/each}
+										</div>
+									{:else if filter !== 'All' || notifications.length > 0}
+										<div
+											class="p-5 w-full text-center whitespace-normal sm:whitespace-pre"
+										>
+											{#if filter === 'Friend Requests'}
+												No friend requests found
+											{:else if filter === 'Organization Requests'}
+												No organization requests found
+											{:else if filter === 'Project Requests'}
+												No project requests found
+											{:else}
+												No notifications found
+											{/if}
+										</div>
+									{:else}
+										<div
+											class="p-5 w-full text-center whitespace-normal sm:whitespace-pre"
+										>
+											You haven't received any notifications
+										</div>
+									{/if}
+								</div>
 							</div>
-						</div>
-						<button use:popup={avatarPopup} class="btn relative p-0">
-							<Avatar
-								{stexs}
-								username={$userStore?.username}
-								userId={$userStore.id}
-								class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen &&
-									'!border-primary-500'} transition"
-							/>
-							<div
-								class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px] !ml-0"
-								data-popup="avatarPopup"
-							>
-								<p class="text-[14px] break-all">{$userStore?.username}</p>
-							</div>
-						</button>
-						<Dropdown
-							triggeredBy=".avatarDropDown"
-							activeUrl={$page.url.pathname.startsWith('/settings')
-								? '/settings'
-								: $page.url.pathname}
-							activeClass="variant-glass-primary text-primary-500"
-							bind:open={avatarDropDownOpen}
-							class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500"
-						>
-							<div class="px-4 py-2 rounded variant-ghost-surface">
-								<p
-									class="text-[16px] bg-gradient-to-br from-primary-500 to-secondary-500 bg-clip-text text-transparent box-decoration-clone break-all"
+							<button use:popup={avatarPopup} class="btn relative p-0">
+								<Avatar
+									{stexs}
+									username={$userStore?.username}
+									userId={$userStore.id}
+									class="avatarDropDown w-[42px] cursor-pointer border-2 border-surface-300-600-token hover:!border-primary-500 {avatarDropDownOpen &&
+										'!border-primary-500'} transition"
+								/>
+								<div
+									class="p-2 variant-filled-surface max-w-[80px] w-fit rounded-md right-[-16px] !ml-0"
+									data-popup="avatarPopup"
 								>
-									{$userStore?.username}
-								</p>
-							</div>
-							<DropdownDivider />
-							<DropdownItem
-								href="/{$userStore?.username}"
-								class="hover:!bg-surface-500 rounded text-[16px]"
-								>Profile</DropdownItem
+									<p class="text-[14px] break-all">{$userStore?.username}</p>
+								</div>
+							</button>
+							<Dropdown
+								triggeredBy=".avatarDropDown"
+								activeUrl={$page.url.pathname.startsWith('/settings')
+									? '/settings'
+									: $page.url.pathname}
+								activeClass="variant-glass-primary text-primary-500"
+								bind:open={avatarDropDownOpen}
+								class="absolute rounded-md right-[-24px] bg-surface-900 p-2 space-y-2 border border-solid border-surface-500"
 							>
-							<DropdownItem
-								href="/{$userStore?.username}/friends"
-								class="hover:!bg-surface-500 rounded text-[16px]"
-								>Friends</DropdownItem
-							>
-							<DropdownItem
-								href="/{$userStore?.username}/organizations"
-								class="hover:!bg-surface-500 rounded text-[16px]"
-								>Organizations</DropdownItem
-							>
-							<DropdownItem
-								href="/settings"
-								class="hover:!bg-surface-500 rounded text-[16px]"
-								>Settings</DropdownItem
-							>
-							<DropdownDivider />
-							<DropdownItem
-								class="hover:!bg-surface-500 rounded text-[16px]"
-								on:click={() => stexs.auth.signOut()}>Sign Out</DropdownItem
-							>
-						</Dropdown>
-					</div>
-				{/if}
-			</Header>
-		</svelte:fragment>
-		<svelte:fragment slot="sidebarLeft">
-			<div class="bg-surface-800 h-full">
-				{#if $page.url.pathname.startsWith('/settings') && $userStore}
-					<SettingsSidebar
-						activeUrl={$page.url.pathname}
-						activeClass={sidebarActiveClass}
-						nonActiveClass={sidebarNonActiveClass}
-						btnClass={sidebarBtnClass}
-					/>
-				{/if}
-			</div>
-		</svelte:fragment>
-		<slot />
+								<div class="px-4 py-2 rounded variant-ghost-surface">
+									<p
+										class="text-[16px] bg-gradient-to-br from-primary-500 to-secondary-500 bg-clip-text text-transparent box-decoration-clone break-all"
+									>
+										{$userStore?.username}
+									</p>
+								</div>
+								<DropdownDivider />
+								<DropdownItem
+									href="/{$userStore?.username}"
+									class="hover:!bg-surface-500 rounded text-[16px]"
+									>Profile</DropdownItem
+								>
+								<DropdownItem
+									href="/{$userStore?.username}/friends"
+									class="hover:!bg-surface-500 rounded text-[16px]"
+									>Friends</DropdownItem
+								>
+								<DropdownItem
+									href="/{$userStore?.username}/organizations"
+									class="hover:!bg-surface-500 rounded text-[16px]"
+									>Organizations</DropdownItem
+								>
+								<DropdownItem
+									href="/settings"
+									class="hover:!bg-surface-500 rounded text-[16px]"
+									>Settings</DropdownItem
+								>
+								<DropdownDivider />
+								<DropdownItem
+									class="hover:!bg-surface-500 rounded text-[16px]"
+									on:click={() => stexs.auth.signOut()}>Sign Out</DropdownItem
+								>
+							</Dropdown>
+						</div>
+					{/if}
+				</Header>
+			
+			{/snippet}
+		{#snippet sidebarLeft()}
+			
+				<div class="bg-surface-800 h-full">
+					{#if $page.url.pathname.startsWith('/settings') && $userStore}
+						<SettingsSidebar
+							activeUrl={$page.url.pathname}
+							activeClass={sidebarActiveClass}
+							nonActiveClass={sidebarNonActiveClass}
+							btnClass={sidebarBtnClass}
+						/>
+					{/if}
+				</div>
+			
+			{/snippet}
+		{@render children?.()}
 	</AppShell>
 {:else}
 	<div class="m-[20px] absolute">
 		<button
-			on:click={() => {
+			onclick={() => {
+				if (excludedHeaderRoute?.callback) excludedHeaderRoute?.callback();
+
 				if ($previousPageStore === '/') {
 					window.history.go(-1);
 				} else {
@@ -1082,7 +1112,7 @@
 	</div>
 	<AppShell>
 		<QueryClientProvider client={queryClient}>
-			<slot />
+			{@render children?.()}
 		</QueryClientProvider>
 	</AppShell>
 {/if}

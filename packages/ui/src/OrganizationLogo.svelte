@@ -2,15 +2,26 @@
 	import Icon from '@iconify/svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 
-	export let stexs: any;
-	export let alt: string;
-	export let organizationId: number;
-	export let iconClass: string = 'text-[46px] rounded-md';
+	interface Props {
+		stexs: any;
+		alt: string;
+		organizationId: number;
+		iconClass?: string;
+		[key: string]: any
+	}
 
-	let loading: boolean = true;
-	let loaded: boolean = false;
-	let failed: boolean = false;
-	let prevUrl: string = '';
+	let {
+		stexs,
+		alt,
+		organizationId,
+		iconClass = 'text-[46px] rounded-md',
+		...rest
+	}: Props = $props();
+
+	let loading: boolean = $state(true);
+	let loaded: boolean = $state(false);
+	let failed: boolean = $state(false);
+	let prevUrl: string = $state('');
 
 	const query = createQuery({
 		queryKey: ['organizationLogo', organizationId],
@@ -19,9 +30,9 @@
 		},
 	});
 
-	const img = new Image();
+	const img = $state(new Image());
 
-	$: {
+	$effect(() => {
 		if ($query.data && prevUrl !== $query.data) img.src = $query.data;
 
 		img.onload = () => {
@@ -35,16 +46,16 @@
 		};
 
 		prevUrl = $query.data;
-	}
+	});
 </script>
 
 {#if loading}
-	<div class="placeholder animate-pulse w-full h-full" />
+	<div class="placeholder animate-pulse w-full h-full"></div>
 {:else if failed}
 	<Icon icon="uil:image-question" class={iconClass} />
 {:else if loaded}
 	<img
-		class="h-full w-full object-cover aspect-square {$$restProps.class} rounded-none"
+		class="h-full w-full object-cover aspect-square {rest.class} rounded-none"
 		draggable="false"
 		src={prevUrl}
 		{alt}

@@ -1,31 +1,40 @@
 <script lang="ts">
 	import { clipboard, ProgressRadial } from '@skeletonlabs/skeleton';
+	import { onMount, type Snippet } from 'svelte';
 
-	export let submitted: boolean = $$restProps.submitted || false;
-	export let type: 'button' | 'submit' | 'reset' = 'button';
-	export let title: string | undefined = undefined;
-	export let loader: boolean = true;
-	export let loadingText: string = 'processing...';
-	export let progressClass: string = 'w-[24px]';
-	export let loaderMeter: string = 'stroke-surface-50';
-	export let loaderTrack: string = '';
+	interface Props {
+		children?: Snippet;
+		submitted?: boolean;
+		loader?: boolean;
+		loadingText?: string;
+		progressClass?: string;
+		loaderMeter?: string;
+		loaderTrack?: string;
+		clipboardData?: string | undefined;
+		rest: Record<string, any>;
+	}
 
-	export let clipboardData: string | undefined = undefined;
+	let {
+		submitted = false,
+		type = 'button',
+		title,
+		loader = true,
+		loadingText = 'processing...',
+		progressClass = 'w-[24px]',
+		loaderMeter = 'stroke-surface-50',
+		loaderTrack = '',
+		clipboardData,
+		children,
+		...rest
+	}: Props = $props();
+	
+	let buttonClass = $derived(`${rest.class || ''} btn ${submitted ? 'opacity-50 cursor-not-allowed' : ''}`);
 </script>
 
 <button
 	use:clipboard={clipboardData}
-	on:click
-	on:mouseover
-	on:mouseenter
-	on:mouseleave
-	on:focus
-	{type}
-	{title}
-	class={submitted
-		? $$restProps.class + ' opacity-50 cursor-not-allowed btn'
-		: $$restProps.class + ' btn'}
-	{...$$restProps.disabled ? { disabled: true } : {}}
+	{...rest}
+	class={buttonClass}
 >
 	{#if submitted}
 		{#if loader}
@@ -40,6 +49,6 @@
 			{loadingText}
 		{/if}
 	{:else}
-		<slot />
+		{@render children()}
 	{/if}
 </button>
