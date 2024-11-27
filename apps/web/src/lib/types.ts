@@ -10,7 +10,7 @@ export interface Friend {
 	};
 }
 
-export interface ExcludeRoute {
+export interface ExcludeHeaderRoute {
 	pathname: string;
 	callback?: () => void;
 }

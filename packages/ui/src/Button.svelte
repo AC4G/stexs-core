@@ -11,6 +11,7 @@
 		loaderMeter?: string;
 		loaderTrack?: string;
 		clipboardData?: string | undefined;
+		rest: Record<string, any>;
 	}
 
 	let {

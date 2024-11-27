@@ -10,8 +10,8 @@
 		inputClass?: string;
 		withLabel?: boolean;
 		labelAfter?: boolean;
-		children?: Snippet
-		[key: string]: any
+		children?: Snippet;
+		rest: Record<string, any>;
 	}
 
 	let {

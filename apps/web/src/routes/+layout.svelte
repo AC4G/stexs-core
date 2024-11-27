@@ -83,7 +83,7 @@
 		acceptProjectRequest,
 		deleteProjectRequest,
 	} from '$lib/utils/projectRequests';
-	import type { ExcludeRoute } from '$lib/types';
+	import type { ExcludeHeaderRoute } from '$lib/types';
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
@@ -127,7 +127,7 @@
 		MFA: { ref: MFAModal },
 		connectionScopes: { ref: ConnectionScopes }
 	};
-	const excludeRoutes: ExcludeRoute[] = [
+	const excludeHeaderRoutes: ExcludeHeaderRoute[] = [
 		{ pathname: '/sign-in' },
 		{ pathname: '/sign-up' },
 		{
@@ -392,15 +392,24 @@
 
 		return data;
 	}
-	let excludedRoute: ExcludeRoute | undefined = $state();
+
+	function getExcludedHeaderRoute() {
+		return excludeHeaderRoutes.find((r) => r.pathname === $page.url.pathname);
+	}
+
+	let excludedHeaderRoute: ExcludeHeaderRoute | undefined | null = $state(getExcludedHeaderRoute());
 	$effect(() => {
-		excludedRoute = excludeRoutes.find((r) => r.pathname === $page.url.pathname);
+		const newExcludedHeaderRoute = getExcludedHeaderRoute();
+
+		if (excludedHeaderRoute?.pathname !== newExcludedHeaderRoute?.pathname) {
+			excludedHeaderRoute = newExcludedHeaderRoute;
+		}
 	});
 
 	let unseenNotificationsQuery = $derived(createQuery({
 		queryKey: ['unseenNotifications'],
 		queryFn: async () => await fetchUnseenNotifications($userStore!.id),
-		enabled: !!$userStore?.id && !excludedRoute,
+		enabled: !!$userStore?.id && !excludedHeaderRoute,
 		refetchInterval: 5000,
 	}));
 
@@ -476,7 +485,7 @@
 		<div class="flex items-center justify-between h-[70px]">
 			<h3 class="h3">Navigation</h3>
 			<Button
-				on:click={() => drawerStore.close()}
+				onclick={() => drawerStore.close()}
 				class="p-2 variant-ghost-surface"
 			>
 				<Icon icon="ph:x-bold" />
@@ -523,7 +532,7 @@
 		/>
 	{/if}
 </Drawer>
-{#if !excludedRoute}
+{#if !excludedHeaderRoute}
 	<AppShell
 		slotSidebarLeft="bg-surface-700 border-surface-500 w-0 {sidebarRoutes.find(
 			(route) => $page.url.pathname.startsWith(route),
@@ -1086,7 +1095,7 @@
 	<div class="m-[20px] absolute">
 		<button
 			onclick={() => {
-				if (excludedRoute?.callback) excludedRoute?.callback();
+				if (excludedHeaderRoute?.callback) excludedHeaderRoute?.callback();
 
 				if ($previousPageStore === '/') {
 					window.history.go(-1);
