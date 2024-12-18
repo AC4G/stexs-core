@@ -1,30 +1,13 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
-	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { getUserStore } from '$lib/stores/userStore';
-	import { Button } from 'ui';
+	import { Button, setToast } from 'ui';
 	import { stexs } from '../../../stexsClient';
-	import {
-		openChangePasswordModal,
-		openChangeEmailModal,
-		openEnableTOTPModal,
-		openRemoveTOTPModal,
-		openDisableEmailModal,
-		openEnableEmailModal,
-		openSignOutFromAllSessionsModal,
-	} from '$lib/utils/modals/userModals';
-	import { getFlash } from 'sveltekit-flash-message/client';
-	import { page } from '$app/stores';
-	import type { ModalSettings } from '@skeletonlabs/skeleton';
 
 	const userStore = getUserStore();
-	const modalStore = getModalStore();
-	const flash = getFlash(page);
 
 	let showEmail: boolean = $state(false);
-	let enabledMethods: string[] = $state();
+	let enabledMethods: string[] = $state([]);
 
 	function toggleShowEmail() {
 		showEmail = !showEmail;
@@ -35,12 +18,12 @@
 	}
 
 	function showCantDisableAllFactorsMessage() {
-		$flash = {
-			message:
-				"You can't disable all authentication methods. At least one method will stay enabled.",
-			classes: 'variant-glass-error',
-			timeout: 5000,
-		};
+		setToast({
+			title: 'Error',
+			type: 'error',
+			description: 'You can\'t disable all authentication methods. At least one method will stay enabled.',
+			duration: 5000
+		});
 	}
 
 	function disableEmailFactor() {
@@ -50,7 +33,7 @@
 			return;
 		}
 
-		openDisableEmailModal(authQueryStore, stexs, flash, modalStore);
+		// open DisableEmail modal
 	}
 
 	function disableTOTPFactor() {
@@ -60,7 +43,7 @@
 			return;
 		}
 
-		openRemoveTOTPModal(authQueryStore, stexs, flash, modalStore);
+		// open DisableTOTP modal
 	}
 
 	const sessionsAmountQuery = createQuery({
@@ -79,7 +62,7 @@
 		enabled: !!$userStore
 	});
 
-	run(() => {
+	$effect(() => {
 		if ($authStatusQuery.data) {
 			enabledMethods = Object.entries($authStatusQuery.data)
 				.filter(([_, value]) => value === true)
@@ -91,30 +74,19 @@
 		const response = await stexs.auth.signOutFromAllSessions(code, type);
 
 		if (response.ok) {
-			$flash = {
-				message: 'Successfully signed out from all sessions.',
-				classes: 'variant-glass-success',
-				timeout: 5000,
-			};
-			modalStore.close();
+			setToast({
+				title: 'Success',
+				type: 'success',
+				description: 'Successfully signed out from all sessions.',
+				duration: 5000
+			});
+
+			// close all modals
+
 			return;
 		}
 
 		return (await response.json()).errors;
-	}
-
-	function openMFAModal() {
-		const modal: ModalSettings = {
-			type: 'component',
-			component: 'MFA',
-			meta: {
-				stexsClient: stexs,
-				flash,
-				types: enabledMethods,
-				confirmMFA,
-			},
-		};
-		modalStore.set([modal]);
 	}
 
 	let authQueryStore = $derived($authStatusQuery);
@@ -151,14 +123,9 @@
 						>
 					</div>
 					<Button
-						on:click={() =>
-							openChangeEmailModal(
-								$userStore.email,
-								enabledMethods,
-								stexs,
-								flash,
-								modalStore,
-							)}
+						on:click={() => {
+							// open ChangeEmail modal
+						}}
 						class="variant-filled-primary px-2 py-1">Edit</Button
 					>
 				</div>
@@ -170,8 +137,9 @@
 		</div>
 		<div class="space-y-8">
 			<Button
-				on:click={() =>
-					openChangePasswordModal(enabledMethods, stexs, flash, modalStore)}
+				on:click={() => {
+					// open ChangePassword modal
+				}}
 				class="variant-filled-primary px-2 py-1">Change Password</Button
 			>
 			{#if $authStatusQuery.isLoading || !$authStatusQuery.data}
@@ -194,8 +162,9 @@
 						>
 					{:else}
 						<Button
-							on:click={() =>
-								openEnableTOTPModal(authQueryStore, stexs, flash, modalStore)}
+							on:click={() => {
+								// open EnableTOTP modal
+							}}
 							class="variant-filled-primary px-2 py-1"
 							>Enable Authenticator App</Button
 						>
@@ -211,8 +180,9 @@
 						>
 					{:else}
 						<Button
-							on:click={() =>
-								openEnableEmailModal(authQueryStore, stexs, flash, modalStore)}
+							on:click={() => {
+								// open EnableEmail modal
+							}}
 							class="variant-filled-primary px-2 py-1"
 							>Enable Email Authentication</Button
 						>
@@ -236,8 +206,9 @@
 				</p>
 				<Button
 					class="variant-filled-error px-2 py-1"
-					on:click={() =>
-						openSignOutFromAllSessionsModal(modalStore, openMFAModal)}
+					on:click={() => {
+						// open SignOutFromAllSessions modal
+					}}
 					>Sign Out from All Sessions</Button
 				>
 			</div>

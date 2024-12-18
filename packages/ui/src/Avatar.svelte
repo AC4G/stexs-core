@@ -1,7 +1,7 @@
 <script lang="ts">
 	import StexsClient from 'stexs-client';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { Avatar } from '@skeletonlabs/skeleton';
+	import { Avatar } from '@skeletonlabs/skeleton-svelte';
 
 	interface Props {
 		stexs: StexsClient;
@@ -67,4 +67,4 @@
 	}));
 </script>
 
-<Avatar src={$imageQuery?.data} initials={username} {...rest} />
+<Avatar src={$imageQuery?.data} name={username} {...rest} />

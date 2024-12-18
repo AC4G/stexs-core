@@ -4,31 +4,20 @@
 	import { Avatar, Button } from 'ui';
 	import { getUserStore } from '$lib/stores/userStore';
 	import {
-		Paginator,
-		type PaginationSettings,
-		getModalStore,
-		ListBoxItem,
-		popup,
-		type PopupSettings,
-	} from '@skeletonlabs/skeleton';
+		Pagination
+	} from '@skeletonlabs/skeleton-svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { stexs } from '../../../stexsClient';
 	import { getProfileStore } from '$lib/stores/profileStore';
 	import { Dropdown, DropdownItem, Search } from 'flowbite-svelte';
 	import Icon from '@iconify/svelte';
 	import { removeFriend } from '$lib/utils/friend';
-	import { getFlash } from 'sveltekit-flash-message';
-	import { page } from '$app/stores';
-	import { openBlockUserModal } from '$lib/utils/modals/userModals';
-	import { openAddFriendModal } from '$lib/utils/modals/friendModals';
 	import lodash from 'lodash';
 
 	const { debounce } = lodash;
 
-	const flash = getFlash(page);
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();
-	const modalStore = getModalStore();
 	const addFriendProfilePopup: PopupSettings = {
 		event: 'hover',
 		target: 'addFriendProfilePopup',
@@ -194,10 +183,9 @@
 		{#if $userStore?.id === $profileStore?.userId}
 			<button
 				use:popup={addFriendProfilePopup}
-				onclick={() =>
-					openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
-						$profileStore?.refetchFriendsFn();
-					})}
+				onclick={() => {
+					// open AddFriend modal
+				}}
 				class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full xs:w-fit"
 			>
 				<Icon icon="pepicons-pop:plus" />
@@ -242,7 +230,7 @@
 						{friend.profiles.username}
 					</p>
 				</a>
-				{#if $userStore?.id === $profileStore?.userId}
+				{#if $userStore && $profileStore && $userStore?.id === $profileStore?.userId}
 					<Button class="w-fit h-fit p-1 group">
 						<Icon
 							icon="pepicons-pop:dots-y"
@@ -261,14 +249,15 @@
 						<DropdownItem
 							on:click={async () => {
 								removeFriendSubmitted = true;
-								await removeFriend(
+								let result = await removeFriend(
 									$userStore.id,
-									friend.profiles.user_id,
-									flash,
+									friend.profiles.user_id
 								);
-								removeFriendSubmitted = false;
 
-								$profileStore?.refetchFriendsFn();
+								if (result.success) {
+									$profileStore?.refetchFriendsFn();
+								}
+								removeFriendSubmitted = false;
 							}}
 							submitted={removeFriendSubmitted}
 							class="hover:!bg-surface-500 rounded text-red-600 whitespace-nowrap"
@@ -278,17 +267,9 @@
 							>Report</DropdownItem
 						>
 						<DropdownItem
-							on:click={() =>
-								openBlockUserModal(
-									friend.profiles.user_id,
-									$userStore.id,
-									friend.profiles.username,
-									flash,
-									modalStore,
-									() => {
-										$profileStore?.refetchFriendsFn();
-									},
-								)}
+							on:click={() => {
+								// open block user modal
+							}}
 							class="hover:!bg-surface-500 rounded text-red-600"
 							>Block</DropdownItem
 						>
@@ -314,10 +295,9 @@
 			{#if $userStore?.id === $profileStore?.userId}
 				<button
 					use:popup={addFriendProfilePopup}
-					onclick={() =>
-						openAddFriendModal($userStore.id, flash, modalStore, stexs, () => {
-							$profileStore?.refetchFriendsFn();
-						})}
+					onclick={() => {
+						// open AddFriend modal
+					}}
 					class="relative btn variant-filled-primary h-fit w-full sm:w-fit"
 				>
 					Add Friends
@@ -335,7 +315,7 @@
 	</div>
 {:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || ($profileStore && $profileStore.totalFriends > 20 && search.length > 0 && $friendsQuery.data.length > 0)}
 	<div class="mt-[18px]">
-		<Paginator
+		<Pagination
 			bind:settings={paginationSettings}
 			showFirstLastButtons={true}
 			showPreviousNextButtons={true}

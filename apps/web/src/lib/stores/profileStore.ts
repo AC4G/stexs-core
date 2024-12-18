@@ -4,7 +4,7 @@ import { writable, type Writable } from 'svelte/store';
 export interface Profile {
 	userId: string;
 	isPrivate: boolean;
-	isFriend: boolean;
+	isFriend: boolean | undefined;
 	totalFriends: number;
 	refetchProfileFn: () => Promise<void>;
 	refetchFriendsFn: () => Promise<any>;

@@ -9,7 +9,7 @@
 	import { goto } from '$app/navigation';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import StexsClient from 'stexs-client';
-	import { setFlashMessage } from './utils/flash';
+	import { setToast } from './utils/toast';
 
 	interface Props {
 		cancel: () => void;
@@ -81,11 +81,13 @@
 		requested = false;
 
 		if (response.success && showMessage) {
-			setFlashMessage({
-				message: 'New authentification code successfully requested.',
-				classes: 'variant-glass-success',
-				timeout: 5000,
+			setToast({
+				title: 'Success',
+				type: 'success',
+				description: 'New authentification code successfully requested.',
+				duration: 5000
 			});
+
 			return;
 		}
 		 
@@ -97,11 +99,13 @@
 				.includes('INVALID_TOKEN');
 
 			if ($page.url.pathname === '/sign-in-confirm' && invalidToken) {
-				setFlashMessage({
-					message: 'Your session has expired. Please sign in again.',
-					classes: 'variant-glass-error',
-					timeout: 5000,
+				setToast({
+					title: 'Error',
+					type: 'error',
+					description: 'Your session has expired. Please sign in again.',
+					duration: 5000
 				});
+				
 				goto('/sign-in');
 			}
 

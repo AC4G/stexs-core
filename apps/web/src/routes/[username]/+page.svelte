@@ -1,21 +1,14 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { createQuery } from '@tanstack/svelte-query';
 	import { stexs } from '../../stexsClient';
 	import { getUserStore } from '$lib/stores/userStore';
 	import { getProfileStore } from '$lib/stores/profileStore';
 	import { Dropdown, DropdownDivider, Search } from 'flowbite-svelte';
 	import {
-		Paginator,
-		type PaginationSettings,
-		RadioGroup,
-		RadioItem,
-		getModalStore,
-		type ModalSettings,
-		ListBoxItem,
-		ProgressRadial,
-	} from '@skeletonlabs/skeleton';
+		Pagination,
+		Segment,
+		ProgressRing
+	} from '@skeletonlabs/skeleton-svelte';
 	import { Button, ProjectLogo, ItemThumbnail } from 'ui';
 	import Icon from '@iconify/svelte';
 	import lodash from 'lodash';
@@ -24,7 +17,6 @@
 
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();
-	const modalStore = getModalStore();
 
 	let search: string = $state('');
 	let previousSearch: string = '';
@@ -33,15 +25,14 @@
 	let filterAlphabet: string = $state('');
 	let filterAmount: string = $state('');
 	let projectWindow: any = $state();
-	let selectedProject: number = $state();
-	let paginationSettings: PaginationSettings = $state({
-		page: 0,
-		limit: 20,
-		size: 0,
-		amounts: [20, 50, 100],
-	});
-	let previousLimit: number | undefined;
-	let previousProject: number | undefined;
+	let selectedProject: string = $state('All');
+
+	let totalSize: number = $state(0);
+	let page: number = $state(0);
+	let limit: 20 | 50 | 100 = $state(20);
+
+	let previousLimit: number | undefined = $state();
+	let previousProject: string = $state('');
 	const handleSearch = debounce((e: Event) => {
 		search = (e.target as HTMLInputElement)?.value || '';
 	}, 300);
@@ -63,9 +54,6 @@
 		return data;
 	}
 
-
-
-
 	async function fetchInventory(
 		userId: string,
 		search: string,
@@ -74,7 +62,7 @@
 			filterAlphabet: string;
 			filterAmount: string;
 		},
-		selectedProject: number | undefined,
+		selectedProject: string,
 		page: number,
 		limit: number,
 	) {
@@ -88,7 +76,6 @@
 			previousLimit !== limit
 		) {
 			previousLimit = limit;
-			paginationSettings.page = 0;
 			page = 0;
 			previousSearch = search;
 			previousProject = selectedProject;
@@ -134,10 +121,10 @@
 				nullsFirst: true,
 			});
 
-		if (filterAmount === 'Amount: Low to high')
+		if (filterAmount === 'LtH')
 			query.order('amount', { ascending: true });
 
-		if (filterAmount === 'Amount: High to low')
+		if (filterAmount === 'HtL')
 			query.order('amount', {
 				ascending: false,
 				nullsFirst: false,
@@ -149,12 +136,12 @@
 		if (filterAlphabet === 'Z-A')
 			query.order('items(name)', { ascending: false });
 
-		if (selectedProject !== undefined && typeof selectedProject == 'number')
+		if (selectedProject.length > 0)
 			query.eq('items.projects.id', selectedProject);
 
 		const { data, count } = await query;
 
-		paginationSettings.size = count;
+		totalSize = count;
 
 		return data;
 	}
@@ -190,27 +177,7 @@
 		return data;
 	}
 
-	function openItemModal(params: { [key: string]: any }) {
-		const modal: ModalSettings = {
-			type: 'component',
-			component: 'inventoryItem',
-			meta: {
-				data: params,
-				fn: fetchItemFromInventory,
-				fnParams: {
-					userId: $profileStore?.userId!,
-					itemId: params.items.id,
-				},
-				stexsClient: stexs,
-			},
-		};
-		modalStore.set([modal]);
-	}
-
-
-
 	let projects: { id: number; name: string; organization_name: string }[] = $state([]);
-
 
 	async function handleScroll() {
 		if (
@@ -228,13 +195,6 @@
 			];
 		}
 	}
-	let selectedProjectName =
-		$derived(selectedProject === undefined || typeof selectedProject === 'string'
-			? 'All'
-			: $projectsQuery?.data.filter(
-					(project: { id: number; name: string }) =>
-						project.id === selectedProject,
-				)[0].name);
 	let itemsAmountQuery = $derived(createQuery({
 		queryKey: ['itemsAmountInventory', $profileStore?.userId],
 		queryFn: async () => {
@@ -250,9 +210,11 @@
 		},
 		enabled: !!$profileStore?.userId,
 	}));
-	run(() => {
-		paginationSettings.size = $itemsAmountQuery.data;
+
+	$effect(() => {
+		totalSize = $itemsAmountQuery.data;
 	});
+
 	let projectsQuery = $derived(createQuery({
 		queryKey: ['projectsInInventory', $profileStore?.userId],
 		queryFn: async () =>
@@ -263,8 +225,6 @@
 			),
 		enabled: !!$profileStore?.userId,
 	}));
-	let page = $derived(paginationSettings.page);
-	let limit = $derived(paginationSettings.limit);
 	let inventoryQuery = $derived(createQuery({
 		queryKey: ['inventories', $profileStore?.userId],
 		queryFn: async () =>
@@ -278,7 +238,15 @@
 			),
 		enabled: !!$profileStore?.userId,
 	}));
-	run(() => {
+	let selectedProjectName =
+		$derived(selectedProject === undefined || typeof selectedProject === 'string'
+			? 'All'
+			: $projectsQuery?.data.filter(
+					(project: { id: number; name: string }) =>
+						project.id === Number(selectedProject),
+				)[0].name);
+
+	$effect(() => {
 		projects = $projectsQuery.data || [];
 	});
 </script>
@@ -319,42 +287,50 @@
 				<Dropdown
 					class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500 max-h-[400px] overflow-y-auto"
 				>
-					<ListBoxItem bind:group={filterTime} name="filter" value="Latest"
-						>Latest</ListBoxItem
+					<Segment
+						bind:value={filterTime}
 					>
-					<ListBoxItem bind:group={filterTime} name="filter" value="Oldest"
-						>Oldest</ListBoxItem
-					>
-					<ListBoxItem bind:group={filterTime} name="filter" value=""
-						>No Filter</ListBoxItem
-					>
+						<Segment.Item 
+							value="Latest"
+						>Latest</Segment.Item>
+						<Segment.Item 
+							value="Oldest"
+						>Oldest</Segment.Item>
+						<Segment.Item 
+							value=""
+						>No Filter</Segment.Item>
+					</Segment>
 					<DropdownDivider />
-					<ListBoxItem bind:group={filterAmount} name="filter" value="Unique"
-						>Unique</ListBoxItem
+					<Segment
+						bind:value={filterAmount}
 					>
-					<ListBoxItem
-						bind:group={filterAmount}
-						name="filter"
-						value="Amount: Low to high">Amount: Low to high</ListBoxItem
-					>
-					<ListBoxItem
-						bind:group={filterAmount}
-						name="filter"
-						value="Amount: High to low">Amount: High to low</ListBoxItem
-					>
-					<ListBoxItem bind:group={filterAmount} name="filter" value=""
-						>No Filter</ListBoxItem
-					>
+						<Segment.Item 
+							value="Unique"
+						>Unique</Segment.Item>
+						<Segment.Item
+							value="LtH"
+						>Amount: Low to high</Segment.Item>
+						<Segment.Item
+							value="HtL"
+						>Amount: High to low</Segment.Item>
+						<Segment.Item 
+							value=""
+						>No Filter</Segment.Item>
+					</Segment>
 					<DropdownDivider />
-					<ListBoxItem bind:group={filterAlphabet} name="filter" value="A-Z"
-						>A-Z</ListBoxItem
+					<Segment
+						bind:value={filterAlphabet}
 					>
-					<ListBoxItem bind:group={filterAlphabet} name="filter" value="Z-A"
-						>Z-A</ListBoxItem
-					>
-					<ListBoxItem bind:group={filterAlphabet} name="filter" value=""
-						>No Filter</ListBoxItem
-					>
+						<Segment.Item
+							value="A-Z"
+						>A-Z</Segment.Item>
+						<Segment.Item
+							value="Z-A"
+						>Z-A</Segment.Item>
+						<Segment.Item
+							value=""
+						>No Filter</Segment.Item>
+					</Segment>
 				</Dropdown>
 			</div>
 			<div class="w-full md:w-fit">
@@ -374,63 +350,50 @@
 						on:input={handleProjectSearch}
 						class="!bg-surface-500"
 					/>
-					<RadioItem
-						bind:group={selectedProject}
-						name="project"
-						value={undefined}>All</RadioItem
+					<Segment
+						bind:value={selectedProject}
+						classes="!bg-surface-800 !border-0"
 					>
-					{#if $projectsQuery.isLoading || !$projectsQuery.data}
-						<div class="flex justify-center p-4">
-							<ProgressRadial stroke={40} value={undefined} width="w-[30px]" />
-						</div>
-					{:else}
-						<RadioGroup
-							class="!bg-surface-800 !border-0"
-							active="variant-glass-primary text-primary-500"
-							hover="hover:bg-surface-500"
-							display="flex-col space-y-1"
+						<Segment.Item
+							value='All'>All</Segment.Item
 						>
-							<div
-								bind:this={projectWindow}
-								onscroll={handleScroll}
-								class="max-h-[200px] overflow-auto flex-col space-y-1"
-							>
-								{#if $projectsQuery.data && $projectsQuery.data.length > 0}
-									{#each $projectsQuery.data as project (project.id)}
-										<RadioItem
-											bind:group={selectedProject}
-											name="project"
-											value={project.id}
-											class="group !px-2 bg-surface-700 border border-surface-600"
-										>
-											<div class="flex flex-row space-x-2">
-												<div
-													class="w-[48px] h-[48px] bg-surface-600 border border-gray-600 rounded-md inline-flex items-center justify-center text-center"
-												>
-													<ProjectLogo
-														{stexs}
-														projectId={project.id}
-														alt={project.name}
-														class="rounded-md"
-													/>
-												</div>
-												<div class="flex flex-col">
-													<p class="text-[14px]">{project.name}</p>
-													<p class="text-[14px]">{project.organization_name}</p>
-												</div>
-											</div>
-										</RadioItem>
-									{/each}
-								{:else if $projectsQuery.data?.length === 0}
-									<div
-										class="h-[56px] px-4 p-1 flex justify-center items-center"
-									>
-										<p class="text-[18px]">No projects found</p>
-									</div>
-								{/if}
+						{#if $projectsQuery.isLoading || !$projectsQuery.data}
+							<div class="flex justify-center p-4">
+								<ProgressRing value={null} size="w-[30px]" />
 							</div>
-						</RadioGroup>
-					{/if}
+						{:else}
+							{#if $projectsQuery.data && $projectsQuery.data.length > 0}
+								{#each $projectsQuery.data as project (project.id)}
+									<Segment.Item
+										value={project.id}
+									>
+										<div class="flex flex-row space-x-2">
+											<div
+												class="w-[48px] h-[48px] bg-surface-600 border border-gray-600 rounded-md inline-flex items-center justify-center text-center"
+											>
+												<ProjectLogo
+													{stexs}
+													projectId={project.id}
+													alt={project.name}
+													class="rounded-md"
+												/>
+											</div>
+											<div class="flex flex-col">
+												<p class="text-[14px]">{project.name}</p>
+												<p class="text-[14px]">{project.organization_name}</p>
+											</div>
+										</div>
+									</Segment.Item>
+								{/each}
+							{:else if $projectsQuery.data?.length === 0}
+								<div
+									class="h-[56px] px-4 p-1 flex justify-center items-center"
+								>
+									<p class="text-[18px]">No projects found</p>
+								</div>
+							{/if}
+						{/if}
+					</Segment>
 				</Dropdown>
 			</div>
 		</div>
@@ -448,7 +411,9 @@
 			<Button
 				title={inventory.items.name}
 				class="p-0 card-hover aspect-square h-full w-full rounded-md bg-surface-700 border-2 border-surface-600 hover:border-primary-500"
-				on:click={() => openItemModal(inventory)}
+				on:click={() => {
+					// open item modal
+				}}
 			>
 				<ItemThumbnail
 					{stexs}
@@ -482,15 +447,13 @@
 		<div class="placeholder animate-pulse h-[42px] w-full md:w-[150px]"></div>
 		<div class="placeholder animate-pulse h-[34px] w-full max-w-[230px]"></div>
 	</div>
-{:else if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20 || ($itemsAmountQuery.data > 20 && search.length > 0 && $inventoryQuery.data.length > 0)}
+{:else if totalSize / limit > 1 || limit > 20 || ($itemsAmountQuery.data > 20 && search.length > 0 && $inventoryQuery.data.length > 0)}
 	<div class="mt-[18px]">
-		<Paginator
-			bind:settings={paginationSettings}
-			showFirstLastButtons={true}
-			showPreviousNextButtons={true}
-			amountText="Items"
-			select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-			controlVariant="bg-surface-500 border border-gray-600 flex-wrap"
+		<Pagination
+			bind:data={$inventoryQuery.data}
+			bind:page
+			bind:pageSize={$inventoryQuery.data.length}		
+			alternative
 		/>
 	</div>
 {/if}

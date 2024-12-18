@@ -1,6 +1,6 @@
 import { join } from 'path';
-import { skeleton } from '@skeletonlabs/tw-plugin';
-import { stexsTheme } from '../../packages/ui/stexsTheme';
+import { skeleton, contentPath } from '@skeletonlabs/skeleton/plugin';
+import stexsTheme from '../../packages/ui/stexsTheme';
 import forms from '@tailwindcss/forms';
 
 /** @type {import('tailwindcss').Config} */
@@ -15,7 +15,8 @@ export default {
     join(require.resolve(
 			'@skeletonlabs/skeleton'),
 			'../**/*.{html,js,svelte,ts}'
-		)
+		),
+    contentPath(import.meta.url, 'svelte')
   ],
   theme: {
     extend: {
@@ -29,11 +30,9 @@ export default {
   },
   plugins: [
     skeleton({
-      themes: {
-        custom: [
-          stexsTheme
-        ]
-      }
+      themes: [
+        stexsTheme
+      ]
     }),
     forms
   ],

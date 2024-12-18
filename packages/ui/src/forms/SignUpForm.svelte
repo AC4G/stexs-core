@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { setFlashMessage } from '../utils/flash';
+	import { setToast } from '../utils/toast';
     import { zod } from 'sveltekit-superforms/adapters';
     import { SignUp } from 'validation-schemas';
 	import { superForm } from 'sveltekit-superforms/client';
@@ -90,11 +90,12 @@
 		).json();
 
 		if (response.success) {
-			setFlashMessage({
-				message: response.message,
-				classes: 'variant-glass-success',
-				timeout: 10000,
-			});
+			setToast({
+				title: 'Success',
+				description: response.message,
+				type: 'success',
+				duration: 10000
+			})
 			goto('/sign-in');
 
 			return;

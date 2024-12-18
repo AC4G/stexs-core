@@ -37,8 +37,16 @@
 		</p>
 	</CardHeader>
 	{#if confirm}
-		<RecoveryConfirmForm {stexs} {cancel} {email} {token} />
+		<RecoveryConfirmForm 
+			{stexs} 
+			{cancel} 
+			{email} 
+			{token} 
+		/>
 	{:else}
-		<RecoveryForm {stexs} {cancel} />
+		<RecoveryForm 
+			{stexs} 
+			{cancel} 
+		/>
 	{/if}
 </Card>

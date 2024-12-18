@@ -1,9 +1,7 @@
-import type { ToastSettings } from '@skeletonlabs/skeleton';
-import type { Writable } from 'svelte/store';
+import { getContext } from 'svelte';
+import { type ToastContext } from '@skeletonlabs/skeleton-svelte';
 
-export async function initializeCopyButtonListener(
-	flash: Writable<ToastSettings>,
-) {
+export async function initializeCopyButtonListener() {
 	document.addEventListener('click', async (event: MouseEvent) => {
 		const targetElement = event.target as Element;
 
@@ -17,19 +15,22 @@ export async function initializeCopyButtonListener(
 
 		if (codeElement) {
 			const codeText = codeElement.textContent as string;
-			await copyToClipboard(codeText, flash);
+			await copyToClipboard(codeText);
 		}
 	});
 }
 
 export async function copyToClipboard(
-	text: string,
-	flash: Writable<ToastSettings>,
+	text: string
 ) {
+	const toast: ToastContext = getContext('toast');
+
 	await navigator.clipboard.writeText(text);
-	flash.set({
-		message: `Copied to clipboard`,
-		classes: 'variant-glass-secondary',
-		timeout: 3000,
+
+	toast.create({
+		title: 'Notice',
+		description: 'Copied to clipboard',
+		type: 'info',
+		duration: 3000
 	});
 }

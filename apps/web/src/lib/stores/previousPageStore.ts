@@ -1,5 +1,5 @@
 import { writable, type Writable } from 'svelte/store';
-import { redirect } from '@sveltejs/kit';
+import { redirect, type Page } from '@sveltejs/kit';
 import { goto } from '$app/navigation';
 import { getContext, setContext } from 'svelte';
 
@@ -29,4 +29,20 @@ export function redirectToPreviousPage(previousPageStore: PreviousPageStore) {
 	if (typeof window === 'undefined') redirect(302, path);
 
 	return goto(path);
+}
+
+export function setPreviousPage(
+	page: Page<Record<string, string>, string | null>,
+	path: string | null = null
+) {
+	const previousPageStore = getPreviousPageStore();
+
+	if (!path) {
+		previousPageStore.set(
+			page.url.pathname + '?' + page.url.searchParams,
+		);
+		return;
+	}
+
+	previousPageStore.set(path);
 }

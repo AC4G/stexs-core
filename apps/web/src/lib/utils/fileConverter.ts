@@ -86,14 +86,12 @@ export async function convertAnimatedToWebP(file: File): Promise<File> {
 	});
 }
 
-// util functions for isWebPAnimated function above
-
 function indexOfStringKMP(array: Uint8Array, searchString: string): number {
 	const searchArray = new TextEncoder().encode(searchString);
 	const lps = computeLPS(searchArray);
 
-	let i = 0; // index for array[]
-	let j = 0; // index for searchArray[]
+	let i: number = 0; // index for array[]
+	let j: number = 0; // index for searchArray[]
 
 	while (i < array.length) {
 		if (searchArray[j] === array[i]) {
@@ -103,12 +101,16 @@ function indexOfStringKMP(array: Uint8Array, searchString: string): number {
 
 		if (j === searchArray.length) {
 			return i - j;
-		} else if (i < array.length && searchArray[j] !== array[i]) {
+		} 
+		
+		if (i < array.length && searchArray[j] !== array[i]) {
 			if (j !== 0) {
 				j = lps[j - 1];
-			} else {
-				i++;
+
+				continue;
 			}
+			
+			i++;
 		}
 	}
 
@@ -116,23 +118,27 @@ function indexOfStringKMP(array: Uint8Array, searchString: string): number {
 }
 
 function computeLPS(pattern: Uint8Array): number[] {
-	const lps = new Array(pattern.length).fill(0);
-	let len = 0;
-	let i = 1;
+	const lps: number[] = new Array(pattern.length).fill(0);
+	let len: number = 0;
+	let i: number = 1; // index for pattern[]
 
 	while (i < pattern.length) {
 		if (pattern[i] === pattern[len]) {
 			len++;
 			lps[i] = len;
 			i++;
-		} else {
-			if (len !== 0) {
-				len = lps[len - 1];
-			} else {
-				lps[i] = 0;
-				i++;
-			}
+
+			continue;
+		} 
+
+		if (len !== 0) {
+			len = lps[len - 1];
+
+			continue;
 		}
+		
+		lps[i] = 0;
+		i++;
 	}
 
 	return lps;

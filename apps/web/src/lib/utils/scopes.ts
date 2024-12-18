@@ -1,5 +1,5 @@
 import Icon from '@iconify/svelte';
-import { type TreeViewNode } from '@skeletonlabs/skeleton';
+import type { TreeViewNode } from 'ui';
 
 const scopes: { [key: number]: string } = {
 	//profile
@@ -39,7 +39,7 @@ export const scopesTreeViewNodes: TreeViewNode[] = [
 			icon: 'octicon:person-16',
 			width: '18',
 		},
-		children: [
+		nodes: [
 			{
 				id: 'profile.read',
 				content: 'View Your Profile',
@@ -56,7 +56,7 @@ export const scopesTreeViewNodes: TreeViewNode[] = [
 			icon: 'octicon:people-16',
 			width: '18',
 		},
-		children: [
+		nodes: [
 			{
 				id: 'friend.read',
 				content: 'View Your Friend List',
@@ -93,7 +93,7 @@ export const scopesTreeViewNodes: TreeViewNode[] = [
 			icon: 'ph:backpack',
 			width: '18',
 		},
-		children: [
+		nodes: [
 			{
 				id: 'inventory.read',
 				content: 'View Your Inventory',
@@ -122,7 +122,7 @@ export const scopesTreeViewNodes: TreeViewNode[] = [
 			icon: 'fluent-mdl2:block-contact',
 			width: '18',
 		},
-		children: [
+		nodes: [
 			{
 				id: 'blocked.read',
 				content: 'View Your Blocked Users List',
@@ -147,7 +147,7 @@ export const scopesTreeViewNodes: TreeViewNode[] = [
 			icon: 'hugeicons:connect',
 			width: '18',
 		},
-		children: [
+		nodes: [
 			{
 				id: 'connection.read',
 				content: 'View All Your Connections from the Same Organization',

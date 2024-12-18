@@ -1,47 +1,54 @@
-import type { Writable } from 'svelte/store';
 import { stexs } from '../../stexsClient';
-import type { ToastSettings } from '@skeletonlabs/skeleton';
 import type { Profile } from '$lib/stores/profileStore';
+import { setToast, type GenericResult } from 'ui';
 
 export async function acceptFriendRequest(
 	user_id: string,
 	friend_id: string,
 	username: string,
-	flash: Writable<ToastSettings>,
 	$profileStore: Profile,
-): Promise<boolean> {
-	let isFriend: boolean = false;
+): Promise<GenericResult> {
 	const { error } = await stexs
 		.from('friends')
-		.insert([{ user_id, friend_id }]);
+		.insert([
+			{ 
+				user_id, 
+				friend_id 
+			}
+		]);
 
 	if (error) {
-		flash.set({
-			message: `Could not add ${username} as a friend. Try out again.`,
-			classes: 'variant-glass-error',
-			timeout: 5000,
+		setToast({
+			title: 'Error',
+			type: 'error',
+			description: `Could not add ${username} as a friend. Try out again.`,
+			duration: 5000,
 		});
-	} else {
-		isFriend = true;
-		$profileStore.refetchIsFriendFn();
 
-		flash.set({
-			message: `${username} is now your friend.`,
-			classes: 'variant-glass-success',
-			timeout: 5000,
-		});
+		return {
+			success: false
+		};
 	}
 
-	return isFriend;
+	$profileStore.refetchIsFriendFn();
+
+	setToast({
+		title: 'Success',
+		type: 'success',
+		description: `${username} is now your friend.`,
+		duration: 5000,
+	});
+
+	return {
+		success: true
+	};
 }
 
 export async function deleteFriendRequest(
 	requesterId: string,
 	addresseeId: string,
-	flash: Writable<ToastSettings>,
 	$profileStore: Profile,
 ) {
-	let gotFriendRequest: boolean = true;
 	const { error } = await stexs
 		.from('friend_requests')
 		.delete()
@@ -49,29 +56,36 @@ export async function deleteFriendRequest(
 		.eq('addressee_id', addresseeId);
 
 	if (error) {
-		flash.set({
-			message: 'Could not delete friend request. Try out again.',
-			classes: 'variant-glass-error',
-			timeout: 5000,
+		setToast({
+			title: 'Error',
+			type: 'error',
+			description: 'Could not delete friend request. Try out again.',
+			duration: 5000,
 		});
-	} else {
-		gotFriendRequest = false;
-		$profileStore.refetchIsFriendFn();
-		flash.set({
-			message: 'Friend request successfully deleted.',
-			classes: 'variant-glass-success',
-			timeout: 5000,
-		});
+
+		return {
+			success: false
+		};
 	}
 
-	return gotFriendRequest;
+	$profileStore.refetchIsFriendFn();
+
+	setToast({
+		title: 'Success',
+		type: 'success',
+		description: 'Friend request successfully deleted.',
+		duration: 5000,
+	});
+
+	return {
+		success: true
+	};
 }
 
 export async function removeFriend(
 	userId: string,
 	friendId: string,
-	flash: Writable<ToastSettings>,
-) {
+): Promise<GenericResult> {
 	const { error } = await stexs
 		.from('friends')
 		.delete()
@@ -79,25 +93,34 @@ export async function removeFriend(
 		.eq('friend_id', friendId);
 
 	if (error) {
-		flash.set({
-			message: 'Could not remove friend. Try out again.',
-			classes: 'variant-glass-error',
-			timeout: 5000,
+		setToast({
+			title: 'Error',
+			type: 'error',
+			description: 'Could not remove friend. Try out again.',
+			duration: 5000,
 		});
-	} else {
-		flash.set({
-			message: 'Friend successfully removed.',
-			classes: 'variant-glass-success',
-			timeout: 5000,
-		});
+
+		return {
+			success: false
+		};
 	}
+
+	setToast({
+		title: 'Success',
+		type: 'success',
+		description: 'Friend successfully removed.',
+		duration: 5000,
+	});
+
+	return {
+		success: true
+	};
 }
 
 export async function revokeFriendRequest(
 	requesterId: string,
 	addresseeId: string,
-	flash: Writable<ToastSettings>,
-) {
+): Promise<GenericResult> {
 	const { error } = await stexs
 		.from('friend_requests')
 		.delete()
@@ -105,26 +128,35 @@ export async function revokeFriendRequest(
 		.eq('addressee_id', addresseeId);
 
 	if (error) {
-		flash.set({
-			message: 'Could not revoke friend request. Try out again.',
-			classes: 'variant-glass-error',
-			timeout: 5000,
+		setToast({
+			title: 'Error',
+			type: 'error',
+			description: 'Could not revoke friend request. Try out again.',
+			duration: 5000,
 		});
-	} else {
-		flash.set({
-			message: 'Friend request successfully revoked.',
-			classes: 'variant-glass-success',
-			timeout: 5000,
-		});
+
+		return {
+			success: false
+		};
 	}
+
+	setToast({
+		title: 'Success',
+		type: 'success',
+		description: 'Friend request successfully revoked.',
+		duration: 5000,
+	});
+
+	return {
+		success: true
+	};
 }
 
 export async function sendFriendRequest(
 	username: string,
 	requester_id: string,
 	addressee_id: string,
-	flash: Writable<ToastSettings>,
-) {
+): Promise<GenericResult> {
 	const { error } = await stexs
 		.from('friend_requests')
 		.insert([{ requester_id, addressee_id }]);
@@ -138,29 +170,51 @@ export async function sendFriendRequest(
 		]);
 
 		if (error) {
-			flash.set({
-				message: `Could not add ${username} as a friend. Try out again.`,
-				classes: 'variant-glass-error',
-				timeout: 5000,
+			setToast({
+				title: 'Error',
+				type: 'error',
+				description: `Could not add ${username} as a friend. Try out again.`,
+				duration: 5000,
 			});
-		} else {
-			flash.set({
-				message: `${username} is now your friend.`,
-				classes: 'variant-glass-success',
-				timeout: 5000,
-			});
+
+			return {
+				success: false
+			};
 		}
-	} else if (error) {
-		flash.set({
-			message: 'Could not send friend request. Try out again.',
-			classes: 'variant-glass-error',
-			timeout: 5000,
+
+		setToast({
+			title: 'Success',
+			type: 'success',
+			description: `${username} is now your friend.`,
+			duration: 5000,
 		});
-	} else {
-		flash.set({
-			message: 'Friend request successfully send.',
-			classes: 'variant-glass-success',
-			timeout: 5000,
-		});
+
+		return {
+			success: true
+		};
 	}
+
+	if (error) {
+		setToast({
+			title: 'Error',
+			type: 'error',
+			description: `Could not send friend request. Try out again.`,
+			duration: 5000,
+		});
+
+		return {
+			success: false
+		};
+	}
+
+	setToast({
+		title: 'Success',
+		type: 'success',
+		description: `Friend request successfully send to ${username}.`,
+		duration: 5000,
+	});
+
+	return {
+		success: true
+	};
 }
