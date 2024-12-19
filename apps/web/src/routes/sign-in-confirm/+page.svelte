@@ -5,7 +5,7 @@
 	import type { SignInInit } from 'stexs-client/src/lib/types';
 	import { redirectToPreviousPage } from '$lib/stores/previousPageStore';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { MFA, setFlashMessage } from 'ui';
+	import { MFA, setToast } from 'ui';
 	import { signInInitSetup } from '$lib/services/auth';
 
 	const previousPageStore = getPreviousPageStore();
@@ -31,11 +31,14 @@
 
 		if (!signInInit || new Date(signInInit.expires * 1000) < new Date()) {
 			requested = false;
-			setFlashMessage({
-				message: 'Your session has expired. Please sign in again.',
-				classes: 'variant-glass-error',
-				timeout: 5000,
+
+			setToast({
+				title: 'Error',
+				type: 'error',
+				description: 'Your session has expired. Please sign in again.',
+				duration: 5000
 			});
+			
 			goto('/sign-in');
 		}
 	}

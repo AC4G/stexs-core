@@ -36,8 +36,6 @@
 	{/snippet}
 
 	{#snippet trail()}
-	
-			{@render children?.()}
-		
+		{@render children?.()}
 	{/snippet}
 </AppBar>

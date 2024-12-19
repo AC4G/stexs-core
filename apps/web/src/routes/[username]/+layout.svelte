@@ -2,15 +2,14 @@
 	import { run } from 'svelte/legacy';
 
 	import { page } from '$app/stores';
-	import { Avatar, Button } from 'ui';
+	import { Avatar, Button, setToast } from 'ui';
 	import { getUserStore } from '$lib/stores/userStore';
 	import { stexs } from '../../stexsClient';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { TabAnchor, TabGroup, getModalStore } from '@skeletonlabs/skeleton';
+	import { Tabs } from '@skeletonlabs/skeleton-svelte';
 	import { goto } from '$app/navigation';
-	import { getFlash } from 'sveltekit-flash-message/client';
 	import Icon from '@iconify/svelte';
-	import { Dropdown, DropdownItem } from 'flowbite-svelte';
+	import { Dropdown, DropdownItem, P } from 'flowbite-svelte';
 	import {
 		acceptFriendRequest,
 		deleteFriendRequest,
@@ -19,13 +18,10 @@
 		sendFriendRequest,
 	} from '$lib/utils/friend';
 	import { getProfileStore } from '$lib/stores/profileStore';
-	import {
-		openBlockUserModal,
-		openUnblockUserModal,
-	} from '$lib/utils/modals/userModals';
+	import type { Snippet } from 'svelte';
 	
 	interface Props {
-		children?: import('svelte').Snippet;
+		children?: Snippet;
 	}
 
 	let { children }: Props = $props();
@@ -33,8 +29,6 @@
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();
 	const isSSR = import.meta.env.SSR;
-	const modalStore = getModalStore();
-	const flash = getFlash(page);
 	let friendRequestSubmitted: boolean = $state(false);
 	let friendRequestRevocationSubmitted: boolean = $state(false);
 	let removeFriendSubmitted: boolean = $state(false);
@@ -58,11 +52,12 @@
 			.ilike('username', username);
 
 		if (data?.length === 0 && username !== undefined) {
-			$flash = {
-				message: 'User not found.',
-				classes: 'variant-ghost-error',
-				timeout: 5000,
-			};
+			setToast({
+				title: 'Error',
+				type: 'error',
+				description: 'User not found.',
+				duration: 5000,
+			});
 
 			return goto('/');
 		}
@@ -113,17 +108,6 @@
 		return data.length > 0;
 	}
 
-
-
-
-
-
-
-
-
-
-
-
 	let username = $derived($page.params.username);
 	let path = $derived($page.url.pathname);
 	let profileQuery = $derived(createQuery({
@@ -152,10 +136,9 @@
 			!!$blockedQuery.data &&
 			$blockedQuery.data.length === 0,
 	}));
-	let isFriend;
-	run(() => {
-		isFriend = $isFriendQuery.data as boolean;
-	});
+
+	let isFriend = $derived($isFriendQuery.data);
+
 	let isPrivate = $derived($profileQuery.data?.is_private as boolean);
 	let friendsAmountQuery = $derived(createQuery({
 		queryKey: ['friendsAmount', userId],
@@ -173,10 +156,7 @@
 		enabled:
 			!!userId && !!$userStore?.id && !isFriend && userId !== $userStore.id,
 	}));
-	let gotFriendRequest;
-	run(() => {
-		gotFriendRequest = $gotFriendRequestQuery.data;
-	});
+	let gotFriendRequest = $derived($gotFriendRequestQuery.data);
 	let friendRequestQuery = $derived(createQuery({
 		queryKey: ['profileFriendRequest', userId, $userStore?.id],
 		queryFn: async () => fetchFriendRequest($userStore?.id!, userId),
@@ -282,7 +262,7 @@
 					</div>
 				</div>
 			{/if}
-			{#if $userStore && $profileQuery.data && $userStore.id !== $profileQuery.data.user_id}
+			{#if $userStore && $profileQuery.data && $userStore.id !== $profileQuery.data.user_id && $profileStore}
 				<div class="grid pt-[12px] md:col-start-4 md:row-start-1 col-span-full">
 					<div class="flex justify-between items-center h-fit md:justify-end">
 						<div>
@@ -293,30 +273,14 @@
 										<div class="flex flex-row mt-[4px] space-x-2">
 											<Button
 												on:click={async () => {
-													acceptFriendRequestSubmitted = true;
-													isFriend = await acceptFriendRequest(
-														$userStore.id,
-														userId,
-														username,
-														flash,
-														$profileStore,
-													);
-													if (isFriend) gotFriendRequest = false;
-													acceptFriendRequestSubmitted = false;
+													// accept friend request
 												}}
 												submitted={acceptFriendRequestSubmitted}
 												class="variant-filled-primary py-1 px-2">Accept</Button
 											>
 											<Button
 												on:click={async () => {
-													deleteFriendRequestSubmitted = true;
-													gotFriendRequest = await deleteFriendRequest(
-														userId,
-														$userStore.id,
-														flash,
-														$profileStore,
-													);
-													deleteFriendRequestSubmitted = false;
+													// delete friend request
 												}}
 												submitted={deleteFriendRequestSubmitted}
 												loaderMeter="stroke-red-500"
@@ -329,10 +293,7 @@
 								{:else if friendRequestSend}
 									<Button
 										on:click={async () => {
-											friendRequestRevocationSubmitted = true;
-											await revokeFriendRequest($userStore.id, userId, flash);
-											friendRequestRevocationSubmitted = false;
-											$friendRequestQuery.refetch();
+											// revoke friend request
 										}}
 										submitted={friendRequestRevocationSubmitted}
 										class="h-fit text-[14px] bg-surface-800 py-1 px-2 border border-surface-500 text-red-600"
@@ -341,16 +302,7 @@
 								{:else if $isFriendQuery.isFetched && $profileQuery.data.accept_friend_requests && !isFriend}
 									<Button
 										on:click={async () => {
-											friendRequestSubmitted = true;
-											await sendFriendRequest(
-												username,
-												$userStore.id,
-												userId,
-												flash,
-											);
-											friendRequestSubmitted = false;
-											$friendRequestQuery.refetch();
-											$isFriendQuery.refetch();
+											// send friend request
 										}}
 										submitted={friendRequestSubmitted}
 										class="h-fit text-[14px] variant-filled-primary py-1 px-2"
@@ -375,10 +327,7 @@
 							{#if isFriend}
 								<DropdownItem
 									on:click={async () => {
-										removeFriendSubmitted = true;
-										await removeFriend($userStore.id, userId, flash);
-										removeFriendSubmitted = false;
-										$isFriendQuery.refetch();
+										// remove friend
 									}}
 									submitted={removeFriendSubmitted}
 									class="hover:!bg-surface-500 rounded text-red-600 whitespace-nowrap"
@@ -390,37 +339,17 @@
 							>
 							{#if isCurrentUserBlocker}
 								<DropdownItem
-									on:click={() =>
-										openUnblockUserModal(
-											userId,
-											$userStore.id,
-											username,
-											flash,
-											modalStore,
-											() => {
-												if ($profileStore) {
-													$profileStore.refetchProfileFn();
-												}
-											},
-										)}
+									on:click={() => {
+										// open unblock user modal
+									}}
 									class="hover:!bg-surface-500 rounded text-primary-500"
 									>Unblock</DropdownItem
 								>
 							{:else}
 								<DropdownItem
-									on:click={() =>
-										openBlockUserModal(
-											userId,
-											$userStore.id,
-											username,
-											flash,
-											modalStore,
-											() => {
-												if ($profileStore) {
-													$profileStore.refetchProfileFn();
-												}
-											},
-										)}
+									on:click={() => {
+										// open block user modal
+									}}
 									class="hover:!bg-surface-500 rounded text-red-600"
 									>Block</DropdownItem
 								>

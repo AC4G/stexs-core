@@ -4,28 +4,17 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { stexs } from '../../../stexsClient';
 	import {
-		Paginator,
-		type PaginationSettings,
-		type ModalSettings,
-		getModalStore,
-		ListBoxItem,
-		type PopupSettings,
-		popup,
-	} from '@skeletonlabs/skeleton';
+
+	} from '@skeletonlabs/skeleton-svelte';
 	import { Dropdown, DropdownItem, Search } from 'flowbite-svelte';
-	import { Button, OrganizationLogo } from 'ui';
-	import { getFlash } from 'sveltekit-flash-message/client';
-	import { page } from '$app/stores';
+	import { Button, OrganizationLogo, setToast } from 'ui';
 	import lodash from 'lodash';
 	import Icon from '@iconify/svelte';
-	import { openCreateOrganizationModal } from '$lib/utils/modals/organizationModals';
 
 	const { debounce } = lodash;
 
 	const profileStore = getProfileStore();
 	const userStore = getUserStore();
-	const modalStore = getModalStore();
-	const flash = getFlash(page);
 	const newOrganizationProfilePopup: PopupSettings = {
 		event: 'hover',
 		target: 'newOrganizationProfilePopup',
@@ -73,11 +62,13 @@
 				.not('organizations', 'is', null);
 
 			if (count === 1) {
-				$flash = {
-					message: `Could not leave ${organizationName} organization as the only owner. Give someone the Owner role or delete the organization completely.`,
-					classes: 'variant-glass-error',
-					autohide: false,
-				};
+				setToast({
+					title: 'Error',
+					type: 'error',
+					description: `Could not leave ${organizationName} organization as the only owner. Give someone the Owner role or delete the organization completely.`,
+					duration: 5000,
+				});
+				
 				return;
 			}
 		}
@@ -108,35 +99,6 @@
 			$profileStore.refetchOrganizationAmountFn();
 			$profileStore.refetchOrganizationsFn();
 		}
-	}
-
-	function openLeaveOrganizationModal(
-		userId: string,
-		organizationId: string,
-		organizationName: string,
-		role: string,
-	) {
-		const modal: ModalSettings = {
-			type: 'component',
-			component: 'confirm',
-			meta: {
-				text: `Do you really want to leave ${organizationName} organization?`,
-				function: leaveOrganization,
-				fnParams: {
-					userId,
-					organizationId,
-					organizationName,
-					role,
-				},
-				fnAsync: true,
-				confirmBtnText: 'Leave',
-				confirmBtnClass:
-					'bg-surface-700 border border-surface-500 text-red-600',
-				confirmBtnLoaderMeter: 'stroke-red-500',
-				confirmBtnLoaderTrack: 'stroke-red-500/20',
-			},
-		};
-		modalStore.set([modal]);
 	}
 
 	let organizationAmountQuery = $derived(createQuery({
@@ -293,13 +255,9 @@
 		{#if $userStore?.id === $profileStore?.userId}
 			<button
 				use:popup={newOrganizationProfilePopup}
-				onclick={() =>
-					openCreateOrganizationModal(
-						flash,
-						modalStore,
-						stexs,
-						$organizationsMemberQuery,
-					)}
+				onclick={() => {
+					// open CreateOrganization modal
+				}}
 				class="relative btn variant-ghost-primary p-[12.89px] h-fit w-full xs:w-fit"
 			>
 				<Icon icon="pepicons-pop:plus" />
@@ -382,13 +340,9 @@
 							{/if}
 							<DropdownItem
 								class="hover:!bg-surface-500 rounded text-red-600"
-								on:click={() =>
-									openLeaveOrganizationModal(
-										$profileStore.userId,
-										organizationMember.organizations.id,
-										organizationMember.organizations.name,
-										organizationMember.role,
-									)}>Leave</DropdownItem
+								on:click={() => {
+									// open LeaveOrganization modal
+								}}>Leave</DropdownItem
 							>
 						</Dropdown>
 					{/if}
@@ -413,13 +367,9 @@
 			{#if $userStore?.id === $profileStore?.userId}
 				<button
 					use:popup={newOrganizationProfilePopup}
-					onclick={() =>
-						openCreateOrganizationModal(
-							flash,
-							modalStore,
-							stexs,
-							$organizationsMemberQuery,
-						)}
+					onclick={() => {
+						// open CreateOrganization modal
+					}}
 					class="relative btn variant-filled-primary h-fit w-full sm:w-fit"
 				>
 					Create Organization

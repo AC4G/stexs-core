@@ -4,15 +4,11 @@
 	import { getUserStore } from '$lib/stores/userStore';
 	import Icon from '@iconify/svelte';
 	import {
-		getModalStore,
-		ListBoxItem,
-		Paginator,
-		type PaginationSettings,
-	} from '@skeletonlabs/skeleton';
+
+	} from '@skeletonlabs/skeleton-svelte';
 	import { Dropdown, DropdownItem, Search } from 'flowbite-svelte';
 	import { Button, OrganizationLogo } from 'ui';
 	import lodash from 'lodash';
-	import { getFlash } from 'sveltekit-flash-message/client';
 	import { page } from '$app/stores';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { stexs } from '../../../stexsClient';

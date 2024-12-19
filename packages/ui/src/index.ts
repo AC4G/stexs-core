@@ -1,3 +1,6 @@
+export type { TreeViewNode } from './components/TreeView/types.js';
+export type * from './types.js';
+
 export { default as Button } from './Button.svelte';
 export { default as Header } from './Header.svelte';
 export { default as Avatar } from './Avatar.svelte';
@@ -13,7 +16,7 @@ export { default as formatJSON } from './utils/jsonFormater';
 export { hideImg } from './utils/image';
 export { default as Markdown } from './Markdown.svelte';
 export * from './utils/copyToClipboard';
-export * from './utils/flash';
+export * from './utils/toast';
 export { default as SettingsSidebar } from './sidebars/SettingsSidebar.svelte';
 export { default as Input } from './Input.svelte';
 export { default as MFA } from './MFA.svelte';
@@ -33,3 +36,8 @@ export { default as SignUpForm } from './forms/SignUpForm.svelte';
 export { default as RecoveryForm } from './forms/RecoveryForm.svelte';
 export { default as RecoveryConfirmForm } from './forms/RecoveryConfirmForm.svelte';
 export { default as FormSubmit } from './FormSubmit.svelte';
+
+export { default as TreeView } from './components/TreeView/TreeView.svelte';
+export { default as TreeViewItem } from './components/TreeView/TreeViewItem.svelte';
+export { default as RecursiveTreeView } from './components/TreeView/RecursiveTreeView.svelte';
+export { default as RecursiveTreeViewItem } from './components/TreeView/RecursiveTreeViewItem.svelte';

@@ -39,5 +39,6 @@ export function formatDistanceStrict<T>(
 			...locale,
 			formatDistance,
 		},
+		...options
 	});
 }

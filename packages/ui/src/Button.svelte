@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { clipboard, ProgressRadial } from '@skeletonlabs/skeleton';
+	import { clipboard, ProgressRadial } from '@skeletonlabs/skeleton-svelte';
 	import { onMount, type Snippet } from 'svelte';
 
 	interface Props {
@@ -11,7 +11,8 @@
 		loaderMeter?: string;
 		loaderTrack?: string;
 		clipboardData?: string | undefined;
-		rest: Record<string, any>;
+		type?: string;
+		title?: string;
 	}
 
 	let {

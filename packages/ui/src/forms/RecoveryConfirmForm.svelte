@@ -3,7 +3,7 @@
     import { zod } from 'sveltekit-superforms/adapters';
     import { RecoveryConfirm } from 'validation-schemas';
     import { goto } from '$app/navigation';
-    import { setFlashMessage } from '../utils/flash';
+    import { setToast } from '../utils/toast';
     import FormErrors from '../FormErrors.svelte';
     import Input from '../Input.svelte';
     import type StexsClient from 'stexs-client';
@@ -50,11 +50,12 @@
 		).json();
 
 		if (response.success) {
-			setFlashMessage({
-				message: response.message,
-				classes: 'variant-glass-success',
-				timeout: 10000,
-			});
+            setToast({
+                title: 'Success',
+                description: response.message,
+                type: 'success',
+                duration: 10000
+            })
 			return goto('/sign-in');
 		}
 

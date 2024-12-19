@@ -2,7 +2,7 @@
     import { superForm } from 'sveltekit-superforms/client';
     import { zod } from 'sveltekit-superforms/adapters';
     import { Recovery } from 'validation-schemas';
-	import { setFlashMessage } from '../utils/flash';
+	import { setToast } from '../utils/toast';
 	import type StexsClient from 'stexs-client';
     import FormErrors from '../FormErrors.svelte';
     import Input from '../Input.svelte';
@@ -45,11 +45,12 @@
 		).json();
 
 		if (response.success) {
-			setFlashMessage({
-				message: response.message,
-				classes: 'variant-glass-primary',
-				timeout: 10000,
-			});
+			setToast({
+				title: 'Success',
+				description: response.message,
+				type: 'success',
+				duration: 10000
+			})
 			submitted = false;
 			return;
 		}
