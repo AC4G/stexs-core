@@ -2,11 +2,11 @@
     import { SignIn } from 'validation-schemas';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
-    import Input from '../Input.svelte';
-    import FormErrors from '../FormErrors.svelte';
+    import Input from '../components/Input/Input.svelte';
+    import FormErrors from '../components/Form/FormErrors.svelte';
 	import type StexsClient from 'stexs-client';
 	import { goto } from '$app/navigation';
-	import FormSubmit from '../FormSubmit.svelte';
+	import FormSubmit from '../components/Form/FormSubmit.svelte';
 
     interface Props {
         stexs: StexsClient;

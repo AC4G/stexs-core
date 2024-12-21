@@ -11,28 +11,17 @@
 	import {
 		Header,
 		Avatar,
-		Confirm,
 		Button,
-		InventoryItem,
-		AddFriends,
-		CreateOrganization,
 		initializeCopyButtonListener,
 		SettingsSidebar,
-		ChangePassword,
-		ChangeEmail,
-		EnableTOTP,
-		RemoveTOTP,
-		DisableEmail,
-		EnableEmail,
 		Markdown,
 		OrganizationLogo,
 		ProjectLogo,
-		MFAModal,
-		ConnectionScopes
+		setToast,
 	} from 'ui';
 	import { stexs } from '../stexsClient';
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { createUserStore } from '$lib/stores/userStore';
 	import { browser } from '$app/environment';
@@ -55,8 +44,6 @@
 	import { goto } from '$app/navigation';
 	import { createProfileStore } from '$lib/stores/profileStore';
 	import { createPreviousPageStore } from '$lib/stores/previousPageStore';
-	import { popup } from '@skeletonlabs/skeleton-svelte';
-	import { openAddFriendModal } from '$lib/utils/modals/friendModals';
 	import { AuthEvents } from 'stexs-client';
 	import lodash from 'lodash';
 	import { formatDistanceStrict } from '$lib/utils/formatDistance';
@@ -70,8 +57,9 @@
 		deleteProjectRequest,
 	} from '$lib/utils/projectRequests';
 	import type { ExcludeHeaderRoute } from '$lib/types';
+	
 	interface Props {
-		children?: import('svelte').Snippet;
+		children?: Snippet;
 	}
 
 	const { debounce } = lodash;
@@ -93,20 +81,6 @@
 
 	setQueryClientContext(queryClient);
 
-	const modalRegistry: Record<string, ModalComponent> = {
-		confirm: { ref: Confirm },
-		inventoryItem: { ref: InventoryItem },
-		addFriends: { ref: AddFriends },
-		createOrganization: { ref: CreateOrganization },
-		changePassword: { ref: ChangePassword },
-		changeEmail: { ref: ChangeEmail },
-		enableTOTP: { ref: EnableTOTP },
-		removeTOTP: { ref: RemoveTOTP },
-		disableEmail: { ref: DisableEmail },
-		enableEmail: { ref: EnableEmail },
-		MFA: { ref: MFAModal },
-		connectionScopes: { ref: ConnectionScopes }
-	};
 	const excludeHeaderRoutes: ExcludeHeaderRoute[] = [
 		{ pathname: '/sign-in' },
 		{ pathname: '/sign-up' },
@@ -118,17 +92,6 @@
 		{ pathname: '/authorize' },
 	];
 	const sidebarRoutes = ['/settings'];
-	const addFriendPopup: PopupSettings = {
-		event: 'hover',
-		target: 'addFriendPopup',
-		placement: 'bottom',
-	};
-
-	const avatarPopup: PopupSettings = {
-		event: 'hover',
-		target: 'avatarPopup',
-		placement: 'bottom',
-	};
 
 	let signedIn: boolean = $state(false);
 	let avatarDropDownOpen: boolean = $state(false);
@@ -188,30 +151,6 @@
 	let filter: string = $state('All');
 	let previousFilter: string = 'All';
 	let notificationsWindow: any = $state();
-	const notificationsPopup: PopupSettings = {
-		event: 'hover',
-		target: 'notificationsPopup',
-		placement: 'bottom',
-	};
-	const notificationsWindowPopup: PopupSettings = {
-		event: 'click',
-		target: 'notificationsWindowPopup',
-		placement: 'bottom',
-		closeQuery: 'a[href]',
-		state: (event) => {
-			if (!event.state) {
-				markAllNotificationsAsSeen();
-
-				notifications = [];
-				search = '';
-				previousSearch = '';
-				filter = 'All';
-				previousFilter = 'All';
-			}
-
-			dropDownOpen = event.state;
-		},
-	};
 
 	let dropDownOpen: boolean = $state(false);
 	let notifications: any[] = $state([]);
@@ -224,11 +163,12 @@
 		const { error } = await stexs.from('notifications').delete().eq('id', id);
 
 		if (error) {
-			flash.set({
-				message: 'Could not delete notification. Try out again.',
-				classes: 'variant-glass-error',
-				timeout: 5000,
-			});
+			setToast({
+				title: 'Error',
+				type: 'error',
+				description: 'Could not delete notification. Try out again.',
+				duration: 5000,
+			})
 		}
 
 		return error === null;

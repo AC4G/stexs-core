@@ -13,6 +13,7 @@
 		clipboardData?: string | undefined;
 		type?: string;
 		title?: string;
+		class?: string;
 	}
 
 	let {

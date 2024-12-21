@@ -2,12 +2,12 @@
 	import StexsClient from 'stexs-client';
 	import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
-	import MFA from '../MFA.svelte';
+	import MFA from '../components/MFA/MFA.svelte';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { EmailChange, VerifyCode } from 'validation-schemas';
-	import Input from '../Input.svelte';
-	import Button from '../Button.svelte';
+	import Input from '../components/Input/Input.svelte';
+	import Button from '../components/Button/Button.svelte';
 
 	interface Props {
 		parent: SvelteComponent;

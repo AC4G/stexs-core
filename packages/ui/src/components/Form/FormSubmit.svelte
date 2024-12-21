@@ -1,12 +1,12 @@
 <script lang="ts">
-    import Button from './Button.svelte';
+    import Button from '../Button/Button.svelte';
 
     interface Props {
         containerClass?: string;
         submitOnly?: boolean;
         submitted: boolean;
-        cancelText: string;
-        submitText: string;
+        cancelText?: string;
+        submitText?: string;
         cancelBtnClass?: string;
         submitBtnClass?: string;
         cancel: () => void;

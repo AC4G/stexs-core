@@ -4,9 +4,9 @@
     import { Recovery } from 'validation-schemas';
 	import { setToast } from '../utils/toast';
 	import type StexsClient from 'stexs-client';
-    import FormErrors from '../FormErrors.svelte';
-    import Input from '../Input.svelte';
-	import FormSubmit from '../FormSubmit.svelte';
+    import FormErrors from '../components/Form/FormErrors.svelte';
+    import Input from '../components/Input/Input.svelte';
+	import FormSubmit from '../components/Form/FormSubmit.svelte';
 
     interface Props {
         stexs: StexsClient;
@@ -78,5 +78,9 @@
         required
         bind:value={$form.email}>Email</Input
     >
-    <FormSubmit submitText="Request Recovery" {submitted} {cancel} />
+    <FormSubmit 
+		submitText="Request Recovery" 
+		{submitted} 
+		{cancel} 
+	/>
 </form>

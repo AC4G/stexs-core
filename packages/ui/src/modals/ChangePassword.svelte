@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
-	import MFA from '../MFA.svelte';
-	import Input from '../Input.svelte';
+	import MFA from '../components/MFA/MFA.svelte';
+	import Input from '../components/Input/Input.svelte';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { UpdatePassword } from 'validation-schemas';
-	import Button from '../Button.svelte';
+	import Button from '../components/Button/Button.svelte';
 	import StexsClient from 'stexs-client';
 
 	interface Props {

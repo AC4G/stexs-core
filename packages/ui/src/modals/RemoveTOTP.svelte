@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
-	import Button from '../Button.svelte';
-	import Input from '../Input.svelte';
+	import Button from '../components/Button/Button.svelte';
+	import Input from '../components/Input/Input.svelte';
 	import { VerifyCode } from 'validation-schemas';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { zod } from 'sveltekit-superforms/adapters';

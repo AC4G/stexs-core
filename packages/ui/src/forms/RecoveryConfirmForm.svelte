@@ -4,10 +4,10 @@
     import { RecoveryConfirm } from 'validation-schemas';
     import { goto } from '$app/navigation';
     import { setToast } from '../utils/toast';
-    import FormErrors from '../FormErrors.svelte';
-    import Input from '../Input.svelte';
+    import FormErrors from '../components/Form/FormErrors.svelte';
+    import Input from '../components/Input/Input.svelte';
     import type StexsClient from 'stexs-client';
-	import FormSubmit from '../FormSubmit.svelte';
+	import FormSubmit from '../components/Form/FormSubmit.svelte';
 
     interface Props {
         email: string;
@@ -90,5 +90,9 @@
         bind:value={$form.confirm}>Confirm Password</Input
     >
     <FormErrors errors={$errors.confirm} />
-    <FormSubmit submitText="Update Password" {submitted} {cancel} />
+    <FormSubmit 
+        submitText="Update Password" 
+        {submitted} 
+        {cancel} 
+    />
 </form>

@@ -3,7 +3,7 @@
 
     interface Props {
         children?: Snippet,
-        errors: string | string[] | undefined,
+        errors?: string | string[],
     }
 
     let { 

@@ -5,16 +5,16 @@
 	interface Props {
 		stexs: any;
 		alt: string;
-		organizationId: number;
-		iconClass?: string;
-		[key: string]: any
+		projectId: number;
+		iconSize?: string;
+		class?: string;
 	}
 
 	let {
 		stexs,
 		alt,
-		organizationId,
-		iconClass = 'text-[46px] rounded-md',
+		projectId,
+		iconSize = '46px',
 		...rest
 	}: Props = $props();
 
@@ -24,9 +24,9 @@
 	let prevUrl: string = $state('');
 
 	const query = createQuery({
-		queryKey: ['organizationLogo', organizationId],
+		queryKey: ['projectLogo', projectId],
 		queryFn: async () => {
-			return await stexs.storage.getOrganizationLogoUrl(organizationId);
+			return await stexs.storage.getProjectLogoUrl(projectId);
 		},
 	});
 
@@ -52,10 +52,13 @@
 {#if loading}
 	<div class="placeholder animate-pulse w-full h-full"></div>
 {:else if failed}
-	<Icon icon="uil:image-question" class={iconClass} />
+	<Icon
+		icon="uil:image-question"
+		class="text-[{iconSize}] variant-filled-surface rounded-md"
+	/>
 {:else if loaded}
 	<img
-		class="h-full w-full object-cover aspect-square {rest.class} rounded-none"
+		class="h-full w-full object-cover aspect-square {rest.class}"
 		draggable="false"
 		src={prevUrl}
 		{alt}

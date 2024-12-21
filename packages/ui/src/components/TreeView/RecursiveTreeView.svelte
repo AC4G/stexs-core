@@ -52,9 +52,9 @@
 		regionSymbol = '',
 		regionChildren = '',
 		labelledby = '',
-		class: cssClass,
 		onClick = () => {},
-		onToggle = () => {}
+		onToggle = () => {},
+		...rest
 	}: Props = $props();
 
 	// Context API
@@ -72,7 +72,7 @@
 	setContext('regionSymbol', regionSymbol);
 	setContext('regionChildren', regionChildren);
 
-	let classesBase = $derived(`${width} ${spacing} ${cssClass ?? ''}`);
+	let classesBase = $derived(`${width} ${spacing} ${rest.class ?? ''}`);
 </script>
 
 <div 

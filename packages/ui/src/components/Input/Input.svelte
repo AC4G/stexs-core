@@ -11,7 +11,6 @@
 		withLabel?: boolean;
 		labelAfter?: boolean;
 		children?: Snippet;
-		rest: Record<string, any>;
 	}
 
 	let {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { type SvelteComponent } from 'svelte';
 	import { getModalStore } from '@skeletonlabs/skeleton';
-	import MFA from '../MFA.svelte';
+	import MFA from '../components/MFA/MFA.svelte';
 	import StexsClient from 'stexs-client';
 
 	interface Props {

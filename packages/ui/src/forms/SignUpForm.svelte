@@ -3,11 +3,11 @@
     import { zod } from 'sveltekit-superforms/adapters';
     import { SignUp } from 'validation-schemas';
 	import { superForm } from 'sveltekit-superforms/client';
-    import FormErrors from '../FormErrors.svelte';
-    import Input from '../Input.svelte';
+    import FormErrors from '../components/Form/FormErrors.svelte';
+    import Input from '../components/Input/Input.svelte';
     import lodash from 'lodash';
     import type StexsClient from 'stexs-client';
-	import FormSubmit from '../FormSubmit.svelte';
+	import FormSubmit from '../components/Form/FormSubmit.svelte';
 
 	const { debounce } = lodash;
 
@@ -192,5 +192,9 @@
             >Terms and Conditions</a
         >
     </Input>
-	<FormSubmit submitText="Sign Up" {submitted} submitOnly />
+	<FormSubmit 
+		submitText="Sign Up" 
+		{submitted} 
+		submitOnly 
+	/>
 </form>

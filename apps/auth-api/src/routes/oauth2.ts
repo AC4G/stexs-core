@@ -9,7 +9,6 @@ import {
 import { body, param } from 'express-validator';
 import {
 	ARRAY_REQUIRED,
-	CLIENT_ALREADY_CONNECTED,
 	CLIENT_ID_REQUIRED,
 	CLIENT_NOT_FOUND,
 	CLIENT_SECRET_REQUIRED,

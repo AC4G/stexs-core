@@ -3,9 +3,9 @@
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import formatJSON from '../utils/jsonFormater';
 	import Icon from '@iconify/svelte';
-	import Button from '../Button.svelte';
-	import ItemThumbnail from '../ItemThumbnail.svelte';
-	import ProjectLogo from '../ProjectLogo.svelte';
+	import Button from '../components/Button/Button.svelte';
+	import ItemThumbnail from '../components/ItemThumbnail/ItemThumbnail.svelte';
+	import ProjectLogo from '../components/ProjectLogo/ProjectLogo.svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import StexsClient from 'stexs-client';
 

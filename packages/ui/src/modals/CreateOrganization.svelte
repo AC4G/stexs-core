@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { getModalStore } from '@skeletonlabs/skeleton';
 	import { onMount, type SvelteComponent } from 'svelte';
-	import Button from '../Button.svelte';
+	import Button from '../components/Button/Button.svelte';
 	import Icon from '@iconify/svelte';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { CreateOrganization } from 'validation-schemas';
-	import Markdown from '../Markdown.svelte';
+	import Markdown from '../components/Markdown/Markdown.svelte';
 	import { Input } from 'flowbite-svelte';
 	import lodash from 'lodash';
 

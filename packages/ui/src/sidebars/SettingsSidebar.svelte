@@ -10,10 +10,10 @@
 
 
 	interface Props {
-		activeClass: string;
-		nonActiveClass: string;
-		btnClass: string;
-		activeUrl: any;
+		activeClass?: string;
+		nonActiveClass?: string;
+		btnClass?: string;
+		activeUrl?: any;
 	}
 
 	let {
@@ -29,31 +29,23 @@
 		<SidebarGroup>
 			<SidebarItem label="Profile" href="/settings">
 				{#snippet icon()}
-							
-						<Icon icon="octicon:person-16" />
-					
-							{/snippet}
+					<Icon icon="octicon:person-16" />	
+				{/snippet}
 			</SidebarItem>
 			<SidebarItem label="Security" href="/settings/security">
 				{#snippet icon()}
-							
-						<Icon icon="mdi:security-lock" />
-					
-							{/snippet}
+					<Icon icon="mdi:security-lock" />
+				{/snippet}
 			</SidebarItem>
 			<SidebarItem label="Connections" href="/settings/connections">
 				{#snippet icon()}
-							
-						<Icon icon="ep:connection" />
-					
-							{/snippet}
+					<Icon icon="ep:connection" />
+				{/snippet}
 			</SidebarItem>
 			<SidebarDropdownWrapper label="Billing" {btnClass}>
 				{#snippet icon()}
-							
-						<Icon icon="octicon:credit-card-16" />
-					
-							{/snippet}
+					<Icon icon="octicon:credit-card-16" />
+				{/snippet}
 				<SidebarItem label="Invoices" href="/settings/invoices" class="ps-11" />
 				<SidebarItem
 					label="Payment information"

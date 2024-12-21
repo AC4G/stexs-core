@@ -6,8 +6,7 @@
 	interface Props {
 		stexs: StexsClient;
 		userId: string;
-		username: string | undefined;
-		[key: string]: any
+		username?: string;
 	}
 
 	let { 
@@ -67,4 +66,8 @@
 	}));
 </script>
 
-<Avatar src={$imageQuery?.data} name={username} {...rest} />
+<Avatar 
+	src={$imageQuery?.data} 
+	name={username} 
+	{...rest} 
+/>

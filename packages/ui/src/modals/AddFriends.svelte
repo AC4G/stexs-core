@@ -5,11 +5,11 @@
 		ListBoxItem,
 	} from '@skeletonlabs/skeleton-svelte';
 	import Icon from '@iconify/svelte';
-	import Button from '../Button.svelte';
+	import Button from '../components/Button/Button.svelte';
 	import { Dropdown, Search } from 'flowbite-svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import lodash from 'lodash';
-	import Avatar from '../Avatar.svelte';
+	import Avatar from '../components/Avatar/Avatar.svelte';
 	import { page } from '$app/stores';
 	import StexsClient from 'stexs-client';
 	import { Modal } from '@skeletonlabs/skeleton-svelte';

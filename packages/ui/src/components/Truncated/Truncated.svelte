@@ -2,7 +2,6 @@
 	interface Props {
 		text: string;
 		maxLength?: number;
-		[key: string]: any
 	}
 
 	let { 

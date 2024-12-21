@@ -1,10 +1,19 @@
-<script>
+<script lang="ts">
 	import { AppBar } from '@skeletonlabs/skeleton';
 	import { page } from '$app/stores';
-	import Button from './Button.svelte';
-	import Icon from '@iconify/svelte';
+	import Button from '../Button/Button.svelte';
 
-	let { sidebarRoutes, drawerStore, children } = $props();
+	interface Props {
+		sidebarRoutes: string[];
+		drawerStore: any;
+		children: any;
+	}
+
+	let { 
+		sidebarRoutes, 
+		drawerStore, 
+		children 
+	}: Props = $props();
 </script>
 
 <AppBar
