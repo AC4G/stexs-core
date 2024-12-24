@@ -9,11 +9,11 @@
 		username?: string;
 	}
 
-	let { 
-		stexs, 
-		userId, 
-		username, 
-		...rest 
+	let {
+		stexs,
+		userId,
+		username,
+		...rest
 	}: Props = $props();
 
 	let urlQuery = $derived(createQuery({
@@ -66,8 +66,8 @@
 	}));
 </script>
 
-<Avatar 
-	src={$imageQuery?.data} 
-	name={username} 
-	{...rest} 
+<Avatar
+	src={$imageQuery?.data}
+	name={username}
+	{...rest}
 />

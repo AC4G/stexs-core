@@ -9,22 +9,22 @@
         submitText?: string;
         cancelBtnClass?: string;
         submitBtnClass?: string;
-        cancel: () => void;
+        cancel?: () => void;
     }
 
     let {
         containerClass,
         submitOnly = false,
-        submitted, 
-        cancelText = 'Cancel', 
-        submitText = 'Submit', 
+        submitted,
+        cancelText = 'Cancel',
+        submitText = 'Submit',
         cancelBtnClass,
         submitBtnClass,
-        cancel 
+        cancel
     }: Props = $props();
 
-    const containerInitialClass = !submitOnly ? 
-        'flex flex-col-reverse space-y-reverse space-y-2 xs:flex-row xs:justify-between xs:space-y-0' 
+    const containerInitialClass = !submitOnly ?
+        'flex flex-col-reverse space-y-reverse space-y-2 xs:flex-row xs:justify-between xs:space-y-0'
         : 'justify-center';
 </script>
 
@@ -36,7 +36,7 @@
         >
     {/if}
     <Button
-        type="submit" 
+        type="submit"
         class='variant-filled-primary {submitBtnClass}'
         {submitted}>{submitText}</Button
     >

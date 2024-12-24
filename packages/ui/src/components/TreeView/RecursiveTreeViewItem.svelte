@@ -129,7 +129,7 @@
 			on:toggle={(e) => toggleNode(node, e.detail.open)}
 			on:groupChange={(e) => checkNode(node, e.detail.checked, e.detail.indeterminate)}
 			on:click={() => {
-				// 
+				//
 			}}
 			on:toggle={() => {
 				//

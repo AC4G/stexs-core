@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { type Snippet } from 'svelte';
-	
+
 	interface Props {
 		ref?: HTMLInputElement | undefined;
 		field?: string;
@@ -11,6 +11,9 @@
 		withLabel?: boolean;
 		labelAfter?: boolean;
 		children?: Snippet;
+		type?: string;
+		required?: boolean;
+		oninput?: (event: Event) => void;
 	}
 
 	let {

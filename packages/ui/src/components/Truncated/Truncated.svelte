@@ -4,13 +4,13 @@
 		maxLength?: number;
 	}
 
-	let { 
-		text, 
-		maxLength = 10, 
-		...rest 
+	let {
+		text,
+		maxLength = 10,
+		...rest
 	}: Props = $props();
 
-	function truncateUsername(text, maxLength) {
+	function truncateUsername(text: string, maxLength: number) {
 		return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 	}
 </script>

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
-	import { getModalStore } from '@skeletonlabs/skeleton';
 	import Button from '../components/Button/Button.svelte';
 
 	interface Props {
@@ -8,8 +7,6 @@
 	}
 
 	let { parent }: Props = $props();
-
-	const modalStore = getModalStore();
 
 	let submitted: boolean = $state(false);
 	let question: string = $modalStore[0].meta.question;

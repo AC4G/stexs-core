@@ -1,32 +1,32 @@
 <script lang="ts">
-	import { AppBar } from '@skeletonlabs/skeleton';
+	import { AppBar } from '@skeletonlabs/skeleton-svelte';
 	import { page } from '$app/stores';
 	import Button from '../Button/Button.svelte';
+	import Icon from '@iconify/svelte';
 
 	interface Props {
 		sidebarRoutes: string[];
-		drawerStore: any;
+		drawerOpen: boolean;
 		children: any;
 	}
 
-	let { 
-		sidebarRoutes, 
-		drawerStore, 
-		children 
+	let {
+		sidebarRoutes,
+		drawerOpen = $bindable(false),
+		children
 	}: Props = $props();
+
+	const toggleDrawer = () => {
+		drawerOpen = !drawerOpen;
+	}
 </script>
 
-<AppBar
-	gridColumns="grid-cols-3"
-	slotDefault="place-self-center"
-	slotTrail="place-content-end"
-	class="h-[70px] flex justify-center border-b border-surface-500"
->
+<AppBar>
 	{#snippet lead()}
-	
+
 			<div class="flex items-center space-x-2">
 				<Button
-					on:click={() => drawerStore.open({})}
+					onclick={toggleDrawer}
 					class="{sidebarRoutes.find((route) =>
 						$page.url.pathname.startsWith(route),
 					)
@@ -41,7 +41,7 @@
 					<a href="/" class="h4 tracking-wider mt-[2px] md:mt-0">STEXS</a>
 				{/if}
 			</div>
-		
+
 	{/snippet}
 
 	{#snippet trail()}

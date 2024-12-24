@@ -9,7 +9,7 @@
 		class?: string;
 	}
 
-	let { 
+	let {
 		text,
 		...rest
 	}: Props = $props();

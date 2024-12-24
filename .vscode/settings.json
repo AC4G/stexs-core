@@ -1,3 +1,6 @@
 {
-  "typescript.validate.enable": true
+  "typescript.validate.enable": true,
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode"
+  }
 }

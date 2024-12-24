@@ -75,11 +75,11 @@
 	let classesBase = $derived(`${width} ${spacing} ${rest.class ?? ''}`);
 </script>
 
-<div 
-	class="tree {classesBase}" 
-	data-testid="tree" 
-	role="tree" 
-	aria-multiselectable={multiple} 
+<div
+	class="tree {classesBase}"
+	data-testid="tree"
+	role="tree"
+	aria-multiselectable={multiple}
 	aria-label={labelledby}
 >
 	{#if nodes && nodes.length > 0}

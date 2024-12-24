@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { clipboard, ProgressRadial } from '@skeletonlabs/skeleton-svelte';
-	import { onMount, type Snippet } from 'svelte';
+	import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
+	import { type Snippet } from 'svelte';
+	import { copyToClipboard } from '../../utils/clipboard';
 
 	interface Props {
 		children?: Snippet;
@@ -14,6 +15,8 @@
 		type?: string;
 		title?: string;
 		class?: string;
+		value?: string | null | number;
+		onclick?: () => void | Promise<void>;
 	}
 
 	let {
@@ -29,28 +32,39 @@
 		children,
 		...rest
 	}: Props = $props();
-	
+
 	let buttonClass = $derived(`${rest.class || ''} btn ${submitted ? 'opacity-50 cursor-not-allowed' : ''}`);
+
+	function clipboard() {
+		if (clipboardData) {
+			submitted = true;
+
+			copyToClipboard(clipboardData);
+
+			submitted = false;
+		}
+	}
+
 </script>
 
 <button
-	use:clipboard={clipboardData}
 	{...rest}
+	onclick={() => {
+		clipboard();
+		rest.onclick?.();
+	}}
 	class={buttonClass}
 >
 	{#if submitted}
 		{#if loader}
-			<ProgressRadial
-				stroke={40}
-				strokeLinecap="round"
-				meter={loaderMeter}
-				track={loaderTrack}
-				class={progressClass}
+			<ProgressRing
+				value={null}
+				size={'size-14'}
 			/>
 		{:else}
 			{loadingText}
 		{/if}
 	{:else}
-		{@render children()}
+		{@render children?.()}
 	{/if}
 </button>

@@ -90,12 +90,10 @@
 
 			return;
 		}
-		 
-		page
 
 		if (response.errors) {
 			const invalidToken = response.errors
-				.map((error) => error.code)
+				.map((error: { code: string }) => error.code)
 				.includes('INVALID_TOKEN');
 
 			if ($page.url.pathname === '/sign-in-confirm' && invalidToken) {
@@ -105,7 +103,7 @@
 					description: 'Your session has expired. Please sign in again.',
 					duration: 5000
 				});
-				
+
 				goto('/sign-in');
 			}
 
@@ -117,7 +115,7 @@
 		}
 	}
 
-	async function confirmCode(event) {
+	async function confirmCode(event: SubmitEvent) {
 		event.preventDefault();
 
 		const result = await validateForm();
@@ -210,12 +208,13 @@
 					{#each types as currentType}
 						<Radio
 							bind:group={type}
-							onclick={async () => {
+							onclick={() => {
 								if (
 									!codeRequested[currentType] &&
 									requestCodeTypes.includes(currentType)
-								)
+								) {
 									requestNewCode(currentType);
+								}
 							}}
 							value={currentType}
 							custom
