@@ -1,55 +1,96 @@
 <script lang="ts">
-	import type { SvelteComponent } from 'svelte';
-	import { getModalStore } from '@skeletonlabs/skeleton';
-	import Button from '../Button.svelte';
+	import Button from '../components/Button/Button.svelte';
+	import { Modal } from '@skeletonlabs/skeleton-svelte';
 
 	interface Props {
-		parent: SvelteComponent;
+		question?: string;
+		subText?: string;
+		confirmBtnClass?: string;
+		confirmBtnMeterStroke?: string;
+		confirmBtnTrackStroke?: string;
+		confirmBtnText?: string;
+		onconfirm?: () => void | Promise<void>;
+		oncancel?: () => void | Promise<void>;
+		cancelBtnClass?: string;
+		cancelBtnMeterStroke?: string;
+		cancelBtnTrackStroke?: string;
+		cancelBtnText?: string;
+		open: boolean;
 	}
 
-	let { parent }: Props = $props();
+	let {
+		question,
+		subText = '',
+		confirmBtnClass = 'variant-filled-primary',
+		confirmBtnMeterStroke = 'stroke-surface-50',
+		confirmBtnTrackStroke = '',
+		confirmBtnText = 'Confirm',
+		onconfirm,
+		oncancel,
+		cancelBtnClass = 'variant-ringed-surface hover:bg-surface-600',
+		cancelBtnText = 'Cancel',
+		cancelBtnMeterStroke = 'stroke-surface-50',
+		cancelBtnTrackStroke = '',
+		open = $bindable(false)
+	}: Props = $props();
 
-	const modalStore = getModalStore();
+	let confirmSubmitted: boolean = $state(false);
+	let cancelSubmitted: boolean = $state(false);
 
-	let submitted: boolean = $state(false);
-	let question: string = $modalStore[0].meta.question;
-	let subText = $modalStore[0].meta.subText || '';
-	let confirmBtnClass: string =
-		$modalStore[0].meta.confirmBtnClass || 'variant-filled-primary';
-	let confirmBtnLoaderMeter: string =
-		$modalStore[0].meta.confirmBtnLoaderMeter || 'stroke-surface-50';
-	let confirmBtnLoaderTrack: string =
-		$modalStore[0].meta.confirmBtnLoaderTrack || '';
-	let confirmBtnText: string = $modalStore[0].meta.confirmBtnText || 'Confirm';
-	let close: boolean = $modalStore[0].meta.close ?? true;
+	const closeModal = () => {
+		open = false;
+	}
 </script>
 
-{#if $modalStore[0]}
-	<div class="card p-5 space-y-6 flex items-center flex-col">
-		<p class="text-[18px] max-w-[320px] font-bold">{question}</p>
-		{#if subText.length > 0}
-			<p class="text-surface-300 max-w-[320px]">{subText}</p>
-		{/if}
-		<div class="flex justify-between w-full">
-			<Button
-				class="variant-ringed-surface hover:bg-surface-600"
-				on:click={parent.onClose}>{parent.buttonTextCancel}</Button
-			>
-			<Button
-				on:click={async () => {
-					if (close) submitted = true;
+<Modal
+	bind:open
+>
+	{#snippet content()}
+		<div class="card p-5 space-y-6 flex items-center flex-col">
+			<p class="text-[18px] max-w-[320px] font-bold">{question}</p>
+			{#if subText.length > 0}
+				<p class="text-surface-300 max-w-[320px]">{subText}</p>
+			{/if}
+			<div class="flex justify-between w-full">
+				<Button
+					class={cancelBtnClass}
+					onclick={async () => {
+						if (!oncancel) {
+							closeModal();
+						}
 
-					await Promise.resolve(
-						$modalStore[0].meta.fn($modalStore[0].meta.fnParams),
-					);
-					
-					if (close) modalStore.close();
-				}}
-				class={confirmBtnClass}
-				loaderMeter={confirmBtnLoaderMeter}
-				loaderTrack={confirmBtnLoaderTrack}
-				{submitted}>{confirmBtnText}</Button
-			>
+						cancelSubmitted = true;
+
+						if (oncancel instanceof Promise) {
+							await oncancel();
+						} else {
+							oncancel();
+						}
+					}}
+					meterStroke={cancelBtnMeterStroke}
+					trackStroke={cancelBtnTrackStroke}
+					submitted={cancelSubmitted}>{cancelBtnText}</Button
+				>
+				<Button
+					onclick={async () => {
+						if (!onconfirm) return;
+
+						confirmSubmitted = true;
+
+						if (onconfirm instanceof Promise) {
+							await onconfirm();
+						} else {
+							onconfirm();
+						}
+
+						closeModal();
+					}}
+					class={confirmBtnClass}
+					meterStroke={confirmBtnMeterStroke}
+					trackStroke={confirmBtnTrackStroke}
+					submitted={confirmSubmitted}>{confirmBtnText}</Button
+				>
+			</div>
 		</div>
-	</div>
-{/if}
+	{/snippet}
+</Modal>

@@ -2,7 +2,8 @@
   "include": [
     "./src/**/*.ts",
     "**/*.json",
-    "jest.config.ts"  
+    "jest.config.ts",
+    "../packages/**/*"
   ],
   "compilerOptions": {
       "module": "CommonJS",
@@ -24,7 +25,7 @@
       "baseUrl": ".",
       "outDir": "./dist",
       "paths": {
-      "~/*": ["./src/*"]
+        "~/*": ["./src/*"]
       }
   },
   "exclude": ["node_modules", "dist"]

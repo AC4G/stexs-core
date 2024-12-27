@@ -1,25 +1,39 @@
 <script lang="ts">
-	import { type SvelteComponent } from 'svelte';
-	import { getModalStore } from '@skeletonlabs/skeleton';
-	import MFA from '../MFA.svelte';
+	import MFA from '../components/MFA/MFA.svelte';
 	import StexsClient from 'stexs-client';
+	import { Modal } from '@skeletonlabs/skeleton-svelte';
 
 	interface Props {
-		parent: SvelteComponent;
+		stexs: StexsClient;
+		types: string[];
+		confirm: (
+			code: string,
+			type: string
+		) => Promise<Array<{ message: string }> | void>;
+		open: boolean;
 	}
 
-	let { parent }: Props = $props();
+	let {
+		stexs,
+		types,
+		confirm,
+		open = $bindable(false)
+	}: Props = $props();
 
-	const modalStore = getModalStore();
-
-	let stexs: StexsClient = $modalStore[0].meta.stexsClient;
-	let flash = $modalStore[0].meta.flash;
-	let types: string[] = $modalStore[0].meta.types;
-	let confirmMFA = $modalStore[0].meta.confirmMFA;
-
-	const cancel = () => modalStore.close();
+	const cancel = () => {
+		open = false;
+	};
 </script>
 
-{#if $modalStore[0]}
-	<MFA {stexs} {flash} {types} {cancel} confirm={confirmMFA} />
-{/if}
+<Modal
+	bind:open
+>
+	{#snippet content()}
+		<MFA
+			{stexs}
+			{types}
+			{cancel}
+			{confirm}
+		/>
+	{/snippet}
+</Modal>

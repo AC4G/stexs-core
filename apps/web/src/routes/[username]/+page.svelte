@@ -146,40 +146,9 @@
 		return data;
 	}
 
-	async function fetchItemFromInventory(params: {
-		userId: string;
-		itemId: number;
-	}) {
-		const { userId, itemId } = params;
-
-		const { data } = await stexs
-			.from('inventories')
-			.select(
-				`
-					amount,
-					parameter,
-					updated_at,
-					items(
-						description,
-						projects(
-							name,
-							organizations(
-								name
-							)
-						)
-        			)
-				`,
-			)
-			.eq('user_id', userId)
-			.eq('item_id', itemId)
-			.single();
-
-		return data;
-	}
-
 	let projects: { id: number; name: string; organization_name: string }[] = $state([]);
 
-	async function handleScroll() {
+	async function handleProjectScroll() {
 		if (
 			projectWindow &&
 			projectWindow.scrollHeight - projectWindow.scrollTop <=
@@ -195,6 +164,7 @@
 			];
 		}
 	}
+
 	let itemsAmountQuery = $derived(createQuery({
 		queryKey: ['itemsAmountInventory', $profileStore?.userId],
 		queryFn: async () => {
@@ -225,6 +195,7 @@
 			),
 		enabled: !!$profileStore?.userId,
 	}));
+
 	let inventoryQuery = $derived(createQuery({
 		queryKey: ['inventories', $profileStore?.userId],
 		queryFn: async () =>
@@ -238,6 +209,7 @@
 			),
 		enabled: !!$profileStore?.userId,
 	}));
+
 	let selectedProjectName =
 		$derived(selectedProject === undefined || typeof selectedProject === 'string'
 			? 'All'
@@ -290,13 +262,13 @@
 					<Segment
 						bind:value={filterTime}
 					>
-						<Segment.Item 
+						<Segment.Item
 							value="Latest"
 						>Latest</Segment.Item>
-						<Segment.Item 
+						<Segment.Item
 							value="Oldest"
 						>Oldest</Segment.Item>
-						<Segment.Item 
+						<Segment.Item
 							value=""
 						>No Filter</Segment.Item>
 					</Segment>
@@ -304,7 +276,7 @@
 					<Segment
 						bind:value={filterAmount}
 					>
-						<Segment.Item 
+						<Segment.Item
 							value="Unique"
 						>Unique</Segment.Item>
 						<Segment.Item
@@ -313,7 +285,7 @@
 						<Segment.Item
 							value="HtL"
 						>Amount: High to low</Segment.Item>
-						<Segment.Item 
+						<Segment.Item
 							value=""
 						>No Filter</Segment.Item>
 					</Segment>
@@ -452,7 +424,7 @@
 		<Pagination
 			bind:data={$inventoryQuery.data}
 			bind:page
-			bind:pageSize={$inventoryQuery.data.length}		
+			bind:pageSize={$inventoryQuery.data.length}
 			alternative
 		/>
 	</div>

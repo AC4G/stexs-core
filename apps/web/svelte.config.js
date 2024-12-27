@@ -23,6 +23,10 @@ const config = {
 		},
 		csrf: {
 			checkOrigin: true
+		},
+		alias: {
+			'$lib': 'src/lib',
+			'$lib/*': 'src/lib/*'
 		}
 	}
 };

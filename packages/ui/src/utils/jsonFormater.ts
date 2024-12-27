@@ -7,7 +7,7 @@ type Value =
 	| Value[]
 	| { [key: string]: Value };
 
-export default function format(
+export default function formatJSON(
 	obj: { [key: string]: Value },
 	indent = 0,
 ): string {
@@ -20,7 +20,7 @@ export default function format(
 					.map((item) => `${indentation}  • ${item}`)
 					.join('\n')}`;
 			} else if (typeof value === 'object' && value !== null) {
-				return `${indentation}${key}:\n${format(value, indent + 1)}`;
+				return `${indentation}${key}:\n${formatJSON(value, indent + 1)}`;
 			} else {
 				return `${indentation}${key}: ${value}`;
 			}

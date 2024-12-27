@@ -19,8 +19,18 @@ export class StexsAuthClient {
 	// @ts-ignore
 	private eventEmitter = new EventEmitter();
 
-	mfa;
-	oauth;
+	mfa = {
+		factorStatus: this._factorStatus.bind(this),
+		enable: this._enable.bind(this),
+		disable: this._disable.bind(this),
+		verify: this._verify.bind(this),
+		requestCode: this._requestCode.bind(this),
+	};
+
+	oauth = {
+		authorize: this._authorize.bind(this),
+		deleteConnection: this._deleteConnection.bind(this),
+	};
 
 	private refreshTimeoutId: number | null = null;
 	private refreshThreshhold = 2 * 60 * 1000; // 120s
@@ -35,18 +45,6 @@ export class StexsAuthClient {
 		this.authUrl = authUrl;
 		// @ts-ignore
 		this.fetch = fetch;
-
-		this.mfa = {
-			factorStatus: this._factorStatus.bind(this),
-			enable: this._enable.bind(this),
-			disable: this._disable.bind(this),
-			verify: this._verify.bind(this),
-			requestCode: this._requestCode.bind(this),
-		};
-		this.oauth = {
-			authorize: this._authorize.bind(this),
-			deleteConnection: this._deleteConnection.bind(this),
-		};
 
 		this._initialize();
 	}
@@ -98,9 +96,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates the user sign-in process with the provided identifier and password.
-	 *
-	 * If Multi-Factor Authentication (MFA) is disabled for the user, they will be signed in directly.
-	 * If MFA is enabled, the user will need to go through sign in confirmation.
 	 *
 	 * @param {string} identifier - The user's identifier (e.g., username or email).
 	 * @param {string} password - The user's password.
@@ -198,46 +193,28 @@ export class StexsAuthClient {
 			method: 'POST',
 		});
 
-		if (response.ok) {
-			const clonedResponse = response.clone();
-			const body = await clonedResponse.json();
+		if (!response.ok) {
+			return response;
+		}
 
-			if (body.token) {
-				localStorage.setItem(
-					'sign_in_init',
-					JSON.stringify({
-						...body,
-						continuousAutoRefresh,
-					}),
-				);
+		const clonedResponse = response.clone();
+		const body = await clonedResponse.json();
 
-				//subject to change in the future
-				if (body.types.length === 1 && body.types[0] === 'email') {
-					await this._requestCode();
-				}
+		if (body.token) {
+			localStorage.setItem(
+				'sign_in_init',
+				JSON.stringify({
+					...body,
+					continuousAutoRefresh,
+				}),
+			);
 
-				this.triggerEvent(AuthEvents.SIGN_IN_INIT);
+			// subject to change in the future
+			if (body.types.length === 1 && body.types[0] === 'email') {
+				await this._requestCode();
 			}
 
-			if (body.access_token && body.refresh_token) {
-				this._setAccessTokenToAuthHeaders(body.access_token);
-
-				const user = await (await this.getUser()).json();
-
-				localStorage.setItem(
-					'session',
-					JSON.stringify({
-						...body,
-						refresh: {
-							enabled: continuousAutoRefresh,
-							count: 0, // Counts up to 24 if auto refresh is disabled
-						},
-						user,
-					}),
-				);
-
-				this.triggerEvent(AuthEvents.SIGNED_IN);
-			}
+			this.triggerEvent(AuthEvents.SIGN_IN_INIT);
 		}
 
 		return response;
@@ -477,7 +454,7 @@ export class StexsAuthClient {
 	 * @param {string | null} code - The MFA verification code (only required for 'email' MFA).
 	 * @returns {Promise<Response>} A Promise that resolves with the enablement response.
 	 */
-	private async _enable(type: 'totp' | 'email', code: string | null = null) {
+	private async _enable(type: 'totp' | 'email', code: string | null = null): Promise<Response> {
 		return await this._request({
 			path: `mfa/enable`,
 			method: 'POST',
@@ -546,7 +523,7 @@ export class StexsAuthClient {
 		};
 
 		if (signInInitData && signInInitData.token) {
-			body['token'] = signInInitData.token; 
+			body['token'] = signInInitData.token;
 		}
 
 		return await this._request({

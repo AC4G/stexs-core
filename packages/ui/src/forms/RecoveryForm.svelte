@@ -1,30 +1,34 @@
 <script lang="ts">
-    import { superForm } from 'sveltekit-superforms/client';
-    import { zod } from 'sveltekit-superforms/adapters';
-    import { Recovery } from 'validation-schemas';
+	import { superForm } from 'sveltekit-superforms/client';
+	import { zod } from 'sveltekit-superforms/adapters';
+	import { Recovery } from 'validation-schemas';
 	import { setToast } from '../utils/toast';
 	import type StexsClient from 'stexs-client';
-    import FormErrors from '../FormErrors.svelte';
-    import Input from '../Input.svelte';
-	import FormSubmit from '../FormSubmit.svelte';
+	import FormErrors from '../components/Form/FormErrors.svelte';
+	import Input from '../components/Input/Input.svelte';
+	import FormSubmit from '../components/Form/FormSubmit.svelte';
 
-    interface Props {
-        stexs: StexsClient;
-        cancel: () => void;
-    }
+	interface Props {
+		stexs: StexsClient;
+		cancel: () => void;
+	}
 
-    let { 
-        stexs,
-        cancel
-    }: Props = $props();
+	let {
+		stexs,
+		cancel
+	}: Props = $props();
 
 
-    let formData = $state({
+	let formData = $state({
 		email: '',
 	});
-    let submitted: boolean = $state(false);
+  let submitted: boolean = $state(false);
 
-    const { form, errors, validateForm } = superForm(formData, {
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(formData, {
 		dataType: 'json',
 		validators: zod(Recovery),
 		validationMethod: 'oninput',
@@ -50,7 +54,7 @@
 				description: response.message,
 				type: 'success',
 				duration: 10000
-			})
+			});
 			submitted = false;
 			return;
 		}
@@ -68,15 +72,19 @@
 
 <FormErrors errors={$errors._errors} />
 <form
-    class="space-y-6"
-    autocomplete="off"
-    onsubmit={requestRecovery}
+	class="space-y-6"
+	autocomplete="off"
+	onsubmit={requestRecovery}
 >
-    <Input
-        field="email"
-        type="email"
-        required
-        bind:value={$form.email}>Email</Input
-    >
-    <FormSubmit submitText="Request Recovery" {submitted} {cancel} />
+	<Input
+		field="email"
+		type="email"
+		required
+		bind:value={$form.email}>Email</Input
+	>
+	<FormSubmit
+		submitText="Request Recovery"
+		{submitted}
+		{cancel}
+	/>
 </form>

@@ -8,11 +8,9 @@
 		SlideToggle,
 		type PopupSettings,
 		popup,
-		getModalStore,
 		ProgressRadial,
 	} from '@skeletonlabs/skeleton';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { getFlash } from 'sveltekit-flash-message/client';
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 	import { superForm, superValidateSync } from 'sveltekit-superforms/client';
@@ -29,9 +27,7 @@
 
 	const { debounce } = lodash;
 
-	const modalStore = getModalStore();
 	const userStore = getUserStore();
-	const flash = getFlash(page);
 
 	let submitted: boolean = false;
 	let submittedAvatar: boolean = false;

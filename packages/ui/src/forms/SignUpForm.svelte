@@ -1,23 +1,24 @@
 <script lang="ts">
 	import { setToast } from '../utils/toast';
-    import { zod } from 'sveltekit-superforms/adapters';
-    import { SignUp } from 'validation-schemas';
+	import { zod } from 'sveltekit-superforms/adapters';
+	import { SignUp } from 'validation-schemas';
 	import { superForm } from 'sveltekit-superforms/client';
-    import FormErrors from '../FormErrors.svelte';
-    import Input from '../Input.svelte';
-    import lodash from 'lodash';
-    import type StexsClient from 'stexs-client';
-	import FormSubmit from '../FormSubmit.svelte';
+	import FormErrors from '../components/Form/FormErrors.svelte';
+	import Input from '../components/Input/Input.svelte';
+	import lodash from 'lodash';
+	import type StexsClient from 'stexs-client';
+	import FormSubmit from '../components/Form/FormSubmit.svelte';
+	import { goto } from '$app/navigation';
 
 	const { debounce } = lodash;
 
-    interface Props {
-        stexs: StexsClient;
-    }
+	interface Props {
+		stexs: StexsClient;
+	}
 
-    let { stexs }: Props = $props();
+	let { stexs }: Props = $props();
 
-    let formData = $state({
+	let formData = $state({
 		username: '',
 		email: '',
 		password: '',
@@ -26,7 +27,11 @@
 	});
 	let submitted: boolean = $state(false);
 
-    const { form, errors, validateForm } = superForm(formData, {
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(formData, {
 		dataType: 'json',
 		validators: zod(SignUp),
 		validationMethod: 'oninput',
@@ -44,11 +49,7 @@
 		);
 
 		if (checkExists) {
-			if (checkExists.available) {
-				usernameNotAvailable = false;
-			} else {
-				usernameNotAvailable = true;
-			}
+			usernameNotAvailable = !checkExists.available;
 
 			return;
 		}
@@ -126,71 +127,71 @@
 	}
 
 	$effect(() => {
-		if (usernameNotAvailable && $form.username.length === 0)
+		if (usernameNotAvailable && $form.username.length === 0) {
 			usernameNotAvailable = false;
+		}
 	});
-
-
-	function goto(arg0: string) {
-		throw new Error('Function not implemented.');
-	}
 </script>
 
 <FormErrors errors={$errors._errors} />
 <form class="space-y-6" onsubmit={signUp}>
-    <div>
-        <Input
-            field="username"
-            required
-            oninput={checkUsernameAvailability}
-            bind:value={$form.username}>Username</Input
-        >
-        <FormErrors errors={$errors.username}>
-            {#if usernameNotAvailable}
-                <p class="text-[14px] text-error-400 whitespace-normal">
-                    Username is already being used
-                </p>
-            {/if}
-        </FormErrors>
-    </div>
-    <div>
-        <Input field="email" type="email" required bind:value={$form.email}
-            >Email</Input
-        >
-        <FormErrors errors={$errors.email} />
-    </div>
-    <div>
-        <Input
-            field="password"
-            type="password"
-            required
-            bind:value={$form.password}>Password</Input
-        >
-        <FormErrors errors={$errors.password} />
-    </div>
-    <div>
-        <Input
-            field="confirm"
-            type="password"
-            required
-            bind:value={$form.confirm}>Confirm Password</Input
-        >
-        <FormErrors errors={$errors.confirm} />
-    </div>
-    <Input
-        field="terms"
-        labelClass="flex items-center space-x-2"
-        labelAfter={true}
-        inputClass="checkbox"
-        type="checkbox"
-        required
-        bind:checked={$form.terms}
-    >
-        I agree to <a
-            href="/terms-and-conditions"
-            class="text-secondary-500 hover:text-secondary-400 transition"
-            >Terms and Conditions</a
-        >
-    </Input>
-	<FormSubmit submitText="Sign Up" {submitted} submitOnly />
+	<div>
+		<Input
+			field="username"
+			required
+			oninput={checkUsernameAvailability}
+			bind:value={$form.username}>Username</Input
+		>
+		<FormErrors errors={$errors.username}>
+			{#if usernameNotAvailable}
+				<p class="text-[14px] text-error-400 whitespace-normal">
+					Username is already being used
+				</p>
+			{/if}
+		</FormErrors>
+	</div>
+	<div>
+		<Input field="email" type="email" required bind:value={$form.email}
+			>Email</Input
+		>
+		<FormErrors errors={$errors.email} />
+	</div>
+	<div>
+		<Input
+			field="password"
+			type="password"
+			required
+			bind:value={$form.password}>Password</Input
+		>
+		<FormErrors errors={$errors.password} />
+	</div>
+	<div>
+		<Input
+			field="confirm"
+			type="password"
+			required
+			bind:value={$form.confirm}>Confirm Password</Input
+		>
+		<FormErrors errors={$errors.confirm} />
+	</div>
+	<Input
+		field="terms"
+		labelClass="flex items-center space-x-2"
+		labelAfter={true}
+		inputClass="checkbox"
+		type="checkbox"
+		required
+		bind:checked={$form.terms}
+	>
+		I agree to <a
+			href="/terms-and-conditions"
+			class="text-secondary-500 hover:text-secondary-400 transition"
+			>Terms and Conditions</a
+		>
+	</Input>
+	<FormSubmit
+		submitText="Sign Up"
+		{submitted}
+		submitOnly
+	/>
 </form>
