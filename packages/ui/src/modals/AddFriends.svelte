@@ -1,18 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import {
-		Pagination,
-		ListBoxItem,
-	} from '@skeletonlabs/skeleton-svelte';
+	import { Pagination } from '@skeletonlabs/skeleton-svelte';
 	import Icon from '@iconify/svelte';
 	import Button from '../components/Button/Button.svelte';
-	import { Dropdown, Search } from 'flowbite-svelte';
+	import { Search, type SearchProps } from 'svelte-5-ui-lib';
+	import { Dropdown } from 'flowbite-svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import lodash from 'lodash';
 	import Avatar from '../components/Avatar/Avatar.svelte';
-	import { page } from '$app/stores';
+	//@ts-ignore
+	import { page as pageStore } from '$app/stores';
 	import StexsClient from 'stexs-client';
-	import { Modal } from '@skeletonlabs/skeleton-svelte';
+	import { Modal, Segment } from '@skeletonlabs/skeleton-svelte';
+	import type { SvelteComponent } from 'svelte';
 
 	const { debounce } = lodash;
 
@@ -26,12 +25,12 @@
 			addressee_id: string
 		) => Promise<void>;
 		revokeFriendRequest: (
-			requester_id: string,
+		requester_id: string,
 			addressee_id: string
 		) => Promise<void>;
 	}
 
-	let { 
+	let {
 		stexs,
 		userId,
 		open = $bindable(false),
@@ -39,39 +38,21 @@
 		revokeFriendRequest
 	}: Props = $props();
 
-	const close = () => {
-		open = false;
-	};
-
 	let search: string = $state('');
 	let filter: string = $state('All');
 	let submitted: number = $state();
 	let operationSubmitted: boolean = $state(false);
 
-	let paginationSettings: {
-		page: number;
-		limit: number;
-		size: number;
-		amounts: number[];
-	} = $state({
-		page: 0,
-		limit: 20,
-		size: 0,
-		amounts: [20, 50],
-	});
+	let page: number = $state(0);
+	let pageSize: number = $state(20);
+	let count: number = $state(0);
+	let pageSizes: number[] = $state([20, 50]);
 
 	const handleSearch = debounce((e: Event) => {
 		search = (e.target as HTMLInputElement)?.value || '';
 	}, 200);
 
-	onMount(() => {
-		// focus the search input
-		const input = document.getElementById('add-friends-search');
-
-		if (input) {
-			input.focus();
-		}
-	});
+	let searchInput: SvelteComponent<SearchProps<unknown>, {}, {}> = $state();
 
 	async function fetchUserProfiles(
 		search: string,
@@ -79,11 +60,6 @@
 		page: number,
 		limit: number,
 	) {
-		if (search.length === 0 && filter === 'All') {
-			paginationSettings.size = 0;
-			return null;
-		}
-
 		const start = page * limit;
 		const end = start + limit - 1;
 
@@ -115,38 +91,60 @@
 			.eq('friend_requests.requester_id', userId)
 			.range(start, end);
 
-		paginationSettings.size = count;
-
-		return data;
+		return {
+			data,
+			count
+		};
 	}
 
 	let searchForFriendsQuery = $derived(createQuery({
 		queryKey: [
 			'searchForFriends',
 			userId,
-			paginationSettings.page,
-			paginationSettings.limit,
+			page,
+			pageSize,
 		],
-		queryFn: async () =>
-			fetchUserProfiles(
+		queryFn: async () => {
+			if (search.length === 0 && filter === 'All') {
+				count = 0;
+				return null;
+			}
+
+			let dataObject = await fetchUserProfiles(
 				search,
 				filter,
-				paginationSettings.page,
-				paginationSettings.limit,
-			),
+				page,
+				pageSize,
+			);
+
+			count = dataObject.count;
+
+			return dataObject.data;
+		},
 	}));
+
+	function onOpenChange(details: { open: boolean }) {
+		if (!details.open) return;
+
+		searchInput.focus();
+	}
+
+	const closeModal = () => {
+		open = false;
+	};
 </script>
 
 <Modal
 	bind:open
->	
+	{onOpenChange}
+>
 	{#snippet content()}
 		<div
 			class="card p-3 sm:p-5 flex flex-col max-w-[600px] max-h-[90vh] min-h-[90vh] w-full relative"
 		>
 		<div>
 			<div class="absolute right-[8px] top-[8px]">
-				<Button on:click={close} class="p-3 variant-ghost-surface">
+				<Button onclick={closeModal} class="p-3 variant-ghost-surface">
 					<Icon icon="ph:x-bold" />
 				</Button>
 			</div>
@@ -161,7 +159,8 @@
 				id="add-friends-search"
 				size="md"
 				placeholder="Search by Username..."
-				on:input={handleSearch}
+				oninput={handleSearch}
+				bind:this={searchInput}
 				class="!bg-surface-500 !outline-none sm:max-w-[300px]"
 			/>
 			<div class="w-full xs:w-fit">
@@ -175,22 +174,16 @@
 				<Dropdown
 					class="rounded-md bg-surface-800 p-2 space-y-2 border border-surface-500"
 				>
-					<ListBoxItem
-						bind:group={filter}
-						name="filter"
-						value={'All'}
-						active="variant-glass-primary text-primary-500"
-						hover="hover:variant-filled-surface"
-						class="rounded-md px-4 py-2">All</ListBoxItem
-					>
-					<ListBoxItem
-						bind:group={filter}
-						name="filter"
-						value={'Pending'}
-						active="variant-glass-primary text-primary-500"
-						hover="hover:variant-filled-surface"
-						class="rounded-md px-4 py-2">Pending</ListBoxItem
-					>
+					<Segment>
+						<Segment.Item
+							value="all"
+							classes="rounded-md px-4 py-2">All</Segment.Item
+						>
+						<Segment.Item
+							value="pending"
+							classes="rounded-md px-4 py-2">Pending</Segment.Item
+						>
+					</Segment>
 				</Dropdown>
 			</div>
 		</div>
@@ -207,7 +200,7 @@
 						>
 							<div class="w-fit h-fit">
 								<Avatar
-									class="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px] border-2 border-surface-600 group-hover:border-primary-500 !bg-surface-800 transition {$page.url.pathname.startsWith(
+									classes="w-[44px] h-[44px] sm:w-[54px] sm:h-[54px] border-2 border-surface-600 group-hover:border-primary-500 !bg-surface-800 transition {$pageStore.url.pathname.startsWith(
 										`/${profile.username}`,
 									)
 										? '!border-primary-500'
@@ -219,7 +212,7 @@
 							</div>
 							<div class="w-fit h-full">
 								<p
-									class="text-[14px] sm:text-[16px] text-left break-all group-hover:text-secondary-400 transition {$page.url.pathname.startsWith(
+									class="text-[14px] sm:text-[16px] text-left break-all group-hover:text-secondary-400 transition {$pageStore.url.pathname.startsWith(
 										`/${profile.username}`,
 									)
 										? '!text-secondary-400'
@@ -257,7 +250,7 @@
 							{:else if profile.friend_requests.length > 0}
 								<Button
 									submitted={submitted === i}
-									on:click={async () => {
+									onclick={async () => {
 										if (operationSubmitted) return;
 
 										operationSubmitted = true;
@@ -281,7 +274,7 @@
 							{:else if profile.accept_friend_requests}
 								<Button
 									submitted={submitted === i}
-									on:click={async () => {
+									onclick={async () => {
 										if (operationSubmitted) return;
 
 										operationSubmitted = true;
@@ -316,15 +309,20 @@
 				<p class="text-[18px]">Start typing to search for friends</p>
 			{/if}
 		</div>
-			{#if paginationSettings.size / paginationSettings.limit > 1 || paginationSettings.limit > 20}
-				<div class="pt-6">
+			{#if count / pageSize > 1 || pageSize > 20}
+				<div class="pt-6 flex flex-col space-y-2 md:space-y-0 md:flex-row md:justify-between">
+					<select name="page-size" id="page-size" bind:value={pageSize} class="select max-w-[150px]">
+						{#each pageSizes as size}
+							<option value={size}>Users {size}</option>
+						{/each}
+					</select>
+
 					<Pagination
-						count={paginationSettings.size}
-						showFirstLastButtons={true}
-						showPreviousNextButtons={true}
-						amountText="Users"
-						select="!bg-surface-500 !border-gray-600 select min-w-[150px]"
-						controlVariant="bg-surface-500 border border-gray-600"
+						data={$searchForFriendsQuery.data}
+						{page}
+						{pageSize}
+						{count}
+						alternative
 					/>
 				</div>
 			{/if}

@@ -9,8 +9,8 @@
 		loader?: boolean;
 		loadingText?: string;
 		progressClass?: string;
-		loaderMeter?: string;
-		loaderTrack?: string;
+		meterStroke?: string;
+		trackStroke?: string;
 		clipboardData?: string | undefined;
 		type?: string;
 		title?: string;
@@ -26,8 +26,8 @@
 		loader = true,
 		loadingText = 'processing...',
 		progressClass = 'w-[24px]',
-		loaderMeter = 'stroke-surface-50',
-		loaderTrack = '',
+		meterStroke = 'stroke-surface-50',
+		trackStroke = '',
 		clipboardData,
 		children,
 		...rest
@@ -60,6 +60,8 @@
 			<ProgressRing
 				value={null}
 				size={'size-14'}
+				{meterStroke}
+				{trackStroke}
 			/>
 		{:else}
 			{loadingText}

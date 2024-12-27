@@ -3,7 +3,7 @@
 
 	interface Props {
 		stexs: any;
-		itemId: string;
+		itemId: number;
 		itemName: string;
 		showOnFail?: boolean;
 		imageClass?: string;

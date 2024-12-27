@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createQuery } from '@tanstack/svelte-query';
+	import { createQuery, type QueryObserverResult } from '@tanstack/svelte-query';
 	import { getUserStore } from '$lib/stores/userStore';
 	import { Button, setToast } from 'ui';
 	import { stexs } from '../../../stexsClient';
@@ -87,9 +87,9 @@
 		}
 
 		return (await response.json()).errors;
-	}
+	}Queri
 
-	let authQueryStore = $derived($authStatusQuery);
+	let authQueryStore: QueryObserverResult = $derived($authStatusQuery);
 	let emailHidden =
 		$derived($userStore &&
 		$userStore.email

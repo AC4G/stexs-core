@@ -28,9 +28,9 @@ export async function copyToClipboard(
 	await navigator.clipboard.writeText(text);
 
 	toast.create({
-		title: 'Notice',
-		description: 'Copied to clipboard',
+		title: 'Copied',
 		type: 'info',
+		description: 'Copied to clipboard',
 		duration: 3000
 	});
 }

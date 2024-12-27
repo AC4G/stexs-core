@@ -7,6 +7,7 @@
 		stexs: StexsClient;
 		userId: string;
 		username?: string;
+		classes?: string;
 	}
 
 	let {

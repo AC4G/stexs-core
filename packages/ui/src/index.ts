@@ -15,7 +15,7 @@ export { default as CreateOrganization } from './modals/CreateOrganization.svelt
 export { default as formatJSON } from './utils/jsonFormater';
 export { hideImg } from './utils/image';
 export { default as Markdown } from './components/Markdown/Markdown.svelte';
-export * from './utils/copyToClipboard';
+export * from './utils/clipboard';
 export * from './utils/toast';
 export { default as SettingsSidebar } from './sidebars/SettingsSidebar.svelte';
 export { default as Input } from './components/Input/Input.svelte';

@@ -23,10 +23,6 @@
 		open = $bindable(false),
 	}: Props = $props();
 
-	const close = () => {
-		open = false;
-	};
-
 	let type = $state('_selection');
 	let newEmailEntered: boolean = $state(false);
 	let mfaEntered: boolean = $state(false);
@@ -84,8 +80,7 @@
 				description: 'Email successfully changed.',
 				duration: 5000
 			});
-			cancel();
-
+			close();
 			return;
 		}
 
@@ -109,7 +104,7 @@
 	}
 
 	async function confirmMFA(code: string) {
-		const response = await stexs.auth.changeEmail($form.email, code, type);
+		const response = await stexs.auth.changeEmail($form.email, code, type as 'totp' | 'email');
 
 		if (response.ok) {
 			mfaEntered = true;
@@ -141,6 +136,10 @@
 	$effect(() => {
 		if (newEmailEntered && mfaEntered && codeInput) codeInput.focus();
 	});
+
+	const closeModal = () => {
+		open = false;
+	};
 </script>
 
 <Modal
@@ -185,7 +184,7 @@
 						<div class="flex justify-between w-full">
 							<Button
 								class="variant-ringed-surface hover:bg-surface-600"
-								on:click={close}>Cancel</Button
+								onclick={close}>Cancel</Button
 							>
 							<Button type="submit" class="variant-filled-primary">Verify</Button>
 						</div>
@@ -194,7 +193,6 @@
 			{:else}
 				<MFA
 					{stexs}
-					{flash}
 					{types}
 					cancel={close}
 					confirm={confirmMFA}
@@ -222,14 +220,14 @@
 						bind:value={$form.email}>New Email</Input
 					>
 					<Button
-						on:click={jumpToVerification}
+						onclick={jumpToVerification}
 						class="p-0 text-secondary-500 hover:text-secondary-400 w-fit"
 						>Already issued email change?</Button
 					>
 					<div class="flex justify-between w-full">
 						<Button
 							class="variant-ringed-surface hover:bg-surface-600"
-							on:click={close}>Cancel</Button
+							onclick={closeModal}>Cancel</Button
 						>
 						<Button type="submit" class="variant-filled-primary">Continue</Button>
 					</div>

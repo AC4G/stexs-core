@@ -13,6 +13,10 @@
 		children?: Snippet;
 		type?: string;
 		required?: boolean;
+		name?: string;
+		id?: string;
+		class?: string;
+		placeholder?: string;
 		oninput?: (event: Event) => void;
 	}
 
