@@ -22,16 +22,24 @@
 	}: Props = $props();
 
 	let newPasswordEntered: boolean = $state(false);
-	let confirmErrors: string[] = [];
+	let confirmErrors: { message: string }[] = $state([]);
 	let type: string = $state('_selection');
 
-	const { form, errors, validateForm } = superForm(zod(UpdatePassword),
-		{
-			dataType: 'json',
-			validationMethod: 'oninput',
-			clearOnSubmit: 'none',
-		},
-	);
+	let formData = $state({
+			password: '',
+			confirm: '',
+	});
+
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(formData, {
+		dataType: 'json',
+		validators: zod(UpdatePassword),
+		validationMethod: 'oninput',
+		clearOnSubmit: 'none',
+	});
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
@@ -90,6 +98,7 @@
 				{types}
 				{cancel}
 				{confirm}
+				{confirmErrors}
 				bind:type
 			/>
 		{:else}

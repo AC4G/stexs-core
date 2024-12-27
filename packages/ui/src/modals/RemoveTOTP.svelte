@@ -22,9 +22,17 @@
 	}: Props = $props();
 
 	let submitted = $state(false);
+	let formData = $state({
+		code: '',
+	});
 
-	const { form, errors, validateForm } = superForm(zod(VerifyCode), {
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(formData, {
 		dataType: 'json',
+		validators: zod(VerifyCode),
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});

@@ -26,8 +26,17 @@
 	let requested: boolean = $state(false);
 	let codeInput: HTMLInputElement = $state();
 
-	const { form, errors, validateForm } = superForm(zod(VerifyCode), {
+	let formData = $state({
+		code: '',
+	});
+
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(formData, {
 		dataType: 'json',
+		validators: zod(VerifyCode),
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
@@ -70,7 +79,7 @@
 
 	async function requestNewCode(showMessage: boolean = false) {
 		const response = await (await stexs.auth.mfa.requestCode('email')).json();
-		
+
 		if (response.success && showMessage) {
 			setToast({
 				title: 'Success',
@@ -164,8 +173,8 @@
 						class="variant-ringed-surface hover:bg-surface-600"
 						onclick={closeModal}>Cancel</Button
 					>
-					<Button 
-						type="submit" 
+					<Button
+						type="submit"
 						class="variant-filled-primary"
 						{submitted}>Enable</Button>
 				</div>

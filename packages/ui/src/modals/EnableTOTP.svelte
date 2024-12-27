@@ -26,8 +26,17 @@
 	let submitted = $state(false);
 	let codeInput: HTMLInputElement = $state();
 
-	const { form, errors, validateForm } = superForm(zod(VerifyCode), {
+	let formData = $state({
+		code: '',
+	});
+
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(formData, {
 		dataType: 'json',
+		validators: zod(VerifyCode),
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});

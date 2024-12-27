@@ -21,7 +21,11 @@
 	});
 	let submitted: boolean = $state(false);
 
-	const { form, errors, validateForm } = superForm(formData, {
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(formData, {
 		dataType: 'json',
 		validators: zod(SignIn),
 		validationMethod: 'oninput',

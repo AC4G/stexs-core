@@ -26,24 +26,38 @@
 	let type = $state('_selection');
 	let newEmailEntered: boolean = $state(false);
 	let mfaEntered: boolean = $state(false);
-	let confirmErrors: string[] = [];
+	let confirmErrors: { message: string }[] = $state([]);
 
 	let codeInput: HTMLInputElement = $state();
 
-	const { form, errors, validateForm } = superForm(zod(EmailChange), {
+	let emailChangeFormData = $state({
+		email: '',
+	});
+
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(emailChangeFormData, {
 		id: 'email-change',
 		dataType: 'json',
+		validators: zod(EmailChange),
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
+	});
+
+	let verifyFormData = $state({
+		code: '',
 	});
 
 	const {
 		form: verifyForm,
 		errors: verifyErrors,
-		validate: verifyValidateForm,
-	} = superForm(zod(VerifyCode), {
+		validateForm: verifyValidateForm,
+	} = superForm(verifyFormData, {
 		id: 'verify-email-change',
 		dataType: 'json',
+		validators: zod(VerifyCode),
 		validationMethod: 'oninput',
 		clearOnSubmit: 'none',
 	});
@@ -174,9 +188,9 @@
 							bind:value={$verifyForm.code}
 							bind:ref={codeInput}>Code</Input
 						>
-						{#if $errors.code && Array.isArray($errors.code)}
+						{#if $verifyErrors.code && Array.isArray($verifyErrors.code)}
 							<ul class="whitespace-normal text-[14px] mt-2 text-error-400">
-								{#each $errors.code as error (error)}
+								{#each $verifyErrors.code as error (error)}
 									<li>{error}</li>
 								{/each}
 							</ul>
@@ -196,6 +210,7 @@
 					{types}
 					cancel={close}
 					confirm={confirmMFA}
+					{confirmErrors}
 					bind:type
 				/>
 			{/if}

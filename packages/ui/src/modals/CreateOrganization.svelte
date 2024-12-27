@@ -6,7 +6,7 @@
 	import { CreateOrganization } from 'validation-schemas';
 	import Markdown from '../components/Markdown/Markdown.svelte';
 	import Input from '../components/Input/Input.svelte';
-	import lodash from 'lodash';
+	import lodash, { isArray } from 'lodash';
 	import { Modal } from '@skeletonlabs/skeleton-svelte';
 	import StexsClient from 'stexs-client';
 	import type { QueryObserverResult } from '@tanstack/svelte-query';
@@ -77,9 +77,23 @@
 		});
 	}, 300);
 
-	const { form, errors, validateForm } = superForm(zod(CreateOrganization),
+	let formData = $state({
+		name: null,
+		display_name: null,
+		description: null,
+		email: null,
+		url: null,
+		readme: null,
+	});
+
+	const {
+		form,
+		errors,
+		validateForm
+	} = superForm(formData,
 		{
 			dataType: 'json',
+			validators: zod(CreateOrganization),
 			validationMethod: 'oninput',
 			clearOnSubmit: 'none',
 		},
@@ -138,7 +152,7 @@
 	}
 
 	$effect(() => {
-		if ($form.email?.length === 0 && $errors.email?.length > 0) {
+		if ($form.email?.length === 0 && isArray($errors.email) && $errors.email.length > 0) {
 			$errors.email = [];
 		}
 	});
@@ -163,7 +177,7 @@
 	// $errors in if st. only for reactivity
 	$effect(() => {
 		if ($errors && hasChanges) {
-			(async () => (hasErrors = !(await validate()).valid))();
+			(async () => (hasErrors = !(await validateForm()).valid))();
 		}
 	});
 
