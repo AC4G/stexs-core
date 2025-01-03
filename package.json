@@ -18,7 +18,10 @@
     "test:coverage": "turbo run test:coverage",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write '{apps,packages}/**/*.{ts,svelte}'",
-    "preview": "turbo run preview"
+    "preview": "turbo run preview",
+    "seed": "dotenv -- turbo run seed --filter=db",
+    "migrate:up": "dotenv -- turbo run migrate:up --filter=db",
+    "migrate:down": "dotenv -- turbo run migrate:down --filter=db"
   },
   "workspaces": [
     "packages/*",
@@ -28,7 +31,7 @@
     "@swc/cli": "^0.3.14",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.3.3",
+    "prettier": "^3.4.2",
     "prettier-plugin-svelte": "^3.3.2",
     "turbo": "^1.13.4"
   },

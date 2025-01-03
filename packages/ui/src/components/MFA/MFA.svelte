@@ -91,9 +91,11 @@
 			return;
 		}
 
+		page
+
 		if (response.errors) {
 			const invalidToken = response.errors
-				.map((error: { code: string }) => error.code)
+				.map((error) => error.code)
 				.includes('INVALID_TOKEN');
 
 			if ($page.url.pathname === '/sign-in-confirm' && invalidToken) {
@@ -115,7 +117,7 @@
 		}
 	}
 
-	async function confirmCode(event: SubmitEvent) {
+	async function confirmCode(event) {
 		event.preventDefault();
 
 		const result = await validateForm();
@@ -283,3 +285,4 @@
 		</form>
 	{/if}
 </div>
+

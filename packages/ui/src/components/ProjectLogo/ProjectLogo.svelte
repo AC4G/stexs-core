@@ -7,7 +7,7 @@
 		alt: string;
 		projectId: number;
 		iconSize?: string;
-		class?: string;
+		classes?: string;
 	}
 
 	let {
@@ -58,7 +58,7 @@
 	/>
 {:else if loaded}
 	<img
-		class="h-full w-full object-cover aspect-square {rest.class}"
+		class="h-full w-full object-cover aspect-square {rest.classes}"
 		draggable="false"
 		src={prevUrl}
 		{alt}

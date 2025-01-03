@@ -8,7 +8,7 @@
         cardMaxWidth?: string
     }
 
-    let { 
+    let {
         children,
         containerClass,
         cardColor = 'variant-ghost-surface',
@@ -20,4 +20,4 @@
     <div class="card p-5 space-y-6 w-full {cardColor} {cardMaxWidth}">
         {@render children()}
     </div>
-</div> 
+</div>

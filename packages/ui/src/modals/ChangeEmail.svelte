@@ -8,6 +8,7 @@
 	import Button from '../components/Button/Button.svelte';
 	import { Modal } from '@skeletonlabs/skeleton-svelte';
 	import { setToast } from '../utils/toast';
+	import Card from '../components/Card/Card.svelte';
 
 	interface Props {
 		stexs: StexsClient;

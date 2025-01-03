@@ -1,6 +1,7 @@
 export type { TreeViewNode } from './components/TreeView/types.js';
 export type * from './types.js';
 
+export { default as StexsTheme } from './stexsTheme';
 export { default as Button } from './components/Button/Button.svelte';
 export { default as Header } from './components/Header/Header.svelte';
 export { default as Avatar } from './components/Avatar/Avatar.svelte';

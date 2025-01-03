@@ -6,13 +6,16 @@
 	import { CreateOrganization } from 'validation-schemas';
 	import Markdown from '../components/Markdown/Markdown.svelte';
 	import Input from '../components/Input/Input.svelte';
-	import lodash, { isArray } from 'lodash';
+	import lodash from 'lodash';
 	import { Modal } from '@skeletonlabs/skeleton-svelte';
 	import StexsClient from 'stexs-client';
 	import type { QueryObserverResult } from '@tanstack/svelte-query';
 	import { setToast } from '../utils/toast';
 
-	const { debounce } = lodash;
+	const {
+		debounce,
+		isArray
+	} = lodash;
 
 	interface Props {
 		stexs: StexsClient;

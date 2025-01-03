@@ -12,8 +12,7 @@
 
 	let signInInit: SignInInit | null = $state(null);
 	let type: string = $state('_selection');
-	let requested: boolean = false;
-	let errors: string[] | undefined = $state();
+	let confirmErrors: { message: string }[] = $state([]);
 
 	const signInConfirmSetupQuery = createQuery({
 		queryKey: ['signInConfirmSetup'],
@@ -30,15 +29,13 @@
 		signInInit = stexs.auth.getSignInInit();
 
 		if (!signInInit || new Date(signInInit.expires * 1000) < new Date()) {
-			requested = false;
-
 			setToast({
 				title: 'Error',
 				type: 'error',
 				description: 'Your session has expired. Please sign in again.',
 				duration: 5000
 			});
-			
+
 			goto('/sign-in');
 		}
 	}
@@ -50,7 +47,7 @@
 
 		if (response.access_token) return redirectToPreviousPage(previousPageStore);
 
-		errors = response.errors;
+		confirmErrors = response.errors;
 	}
 
 	function cancelSignInConfirm() {
@@ -66,7 +63,7 @@
 			cancel={cancelSignInConfirm}
 			confirm={signInConfirm}
 			types={signInInit.types}
-			confirmErrors={errors}
+			{confirmErrors}
 			bind:type
 		/>
 	</div>

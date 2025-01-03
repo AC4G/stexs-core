@@ -3,11 +3,12 @@
 	import { page } from '$app/stores';
 	import Button from '../Button/Button.svelte';
 	import Icon from '@iconify/svelte';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		sidebarRoutes: string[];
 		drawerOpen: boolean;
-		children: any;
+		children?: Snippet;
 	}
 
 	let {

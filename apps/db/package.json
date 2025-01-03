@@ -1,0 +1,27 @@
+{
+  "name": "db",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsx",
+    "start": "tsx src/index.ts",
+    "migrate:up": "tsx src/index.ts migrate:up",
+    "migrate:down": "tsx src/index.ts migrate:down",
+    "seed": "tsx src/index.ts seed"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.33",
+    "tsx": "^4.19.2",
+    "typescript": "^5.2.2",
+    "yargs": "^17.7.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "node-pg-migrate": "^7.8.0",
+    "pg": "^8.13.1",
+    "utils-node": "workspace:*",
+    "winston": "^3.11.0",
+    "winston-loki": "^6.0.7"
+  }
+}
