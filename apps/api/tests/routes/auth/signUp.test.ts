@@ -50,7 +50,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with missing username', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			email: 'test@example.com',
 			password: 'Test12345.',
 		});
@@ -70,7 +70,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with username longer then 20 characters', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'ZaZlZeBu1mFOqDuultl1P',
 			email: 'test@example.com',
 			password: 'Test12345.',
@@ -94,7 +94,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with username as email', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'test@example.com',
 			email: 'test@example.com',
 			password: 'Test12345.',
@@ -128,7 +128,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sing up with username using non QWERTY characters', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'тт123',
 			email: 'test@example.com',
 			password: 'Test12345.',
@@ -152,7 +152,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with missing email', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'Test123',
 			password: 'Test12345.',
 		});
@@ -172,7 +172,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with invalid email', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'Test123',
 			email: 'test@example',
 			password: 'Test12345.',
@@ -196,7 +196,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with missing password', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'Test123',
 			email: 'test@example.com',
 		});
@@ -216,7 +216,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with invalid password according to regex specification', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'Test123',
 			email: 'test@example.com',
 			password: 'test123456',
@@ -237,7 +237,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with less then 10 characters', async () => {
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'Test123',
 			email: 'test@example.com',
 			password: 'Test123.',
@@ -262,7 +262,7 @@ describe('Sign Up', () => {
 			hint: 'Please choose a different username',
 		} as never);
 
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'Test123',
 			email: 'test@example.com',
 			password: 'Test12345.',
@@ -290,7 +290,7 @@ describe('Sign Up', () => {
 			hint: 'Please choose a different email',
 		} as never);
 
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'Test123',
 			email: 'test@example.com',
 			password: 'Test12345.',
@@ -323,7 +323,7 @@ describe('Sign Up', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/sign-up').send({
+		const response = await request(server).post('/auth/sign-up').send({
 			username: 'Test123',
 			email: 'test@example.com',
 			password: 'Test12345.',

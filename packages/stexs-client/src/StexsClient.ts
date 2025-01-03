@@ -19,19 +19,18 @@ export default class StexsClient {
 		// @ts-ignore
 		fetch: typeof fetch,
 		config: {
-			authUrl: string;
+			apiUrl: string;
 			restUrl: string;
-			storageURL: string;
 		},
 	) {
-		this.auth = new StexsAuthClient(fetch, config.authUrl);
+		this.auth = new StexsAuthClient(fetch, config.apiUrl);
 		this.rest = new PostgrestClient(config.restUrl, {
 			// @ts-ignore
 			fetch: this._fetchWithAuth.bind(this, fetch),
 		});
 		this.storage = new StexsStorageClient(
 			this._fetchWithAuth.bind(this, fetch),
-			config.storageURL,
+			config.apiUrl,
 		);
 	}
 

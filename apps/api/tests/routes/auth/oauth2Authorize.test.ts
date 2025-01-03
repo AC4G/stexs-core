@@ -77,7 +77,7 @@ describe('OAuth2 Authorize', () => {
 
 	it('should handle authorize without client id', async () => {
 		const response = await request(server)
-			.post('/oauth2/authorize')
+			.post('/auth/oauth2/authorize')
 			.send({
 				redirect_url: 'https://example.com',
 				scopes: ['inventory.read'],
@@ -99,7 +99,7 @@ describe('OAuth2 Authorize', () => {
 
 	it('should handle authorize with invalid uuid', async () => {
 		const response = await request(server)
-			.post('/oauth2/authorize')
+			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: 'invalid-uuid',
 				redirect_url: 'https://example.com',
@@ -122,7 +122,7 @@ describe('OAuth2 Authorize', () => {
 
 	it('should handle authorize without redirect url', async () => {
 		const response = await request(server)
-			.post('/oauth2/authorize')
+			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 				scopes: ['inventory.read'],
@@ -144,7 +144,7 @@ describe('OAuth2 Authorize', () => {
 
 	it('should handle authorize with redirect url as not url', async () => {
 		const response = await request(server)
-			.post('/oauth2/authorize')
+			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 				redirect_url: 'not-url',
@@ -166,7 +166,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize without scopes', async () => {
-		const response = await request(server).post('/oauth2/authorize').send({
+		const response = await request(server).post('/auth/oauth2/authorize').send({
 			client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 			redirect_url: 'https://example.com',
 		});
@@ -186,7 +186,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize with scopes as string', async () => {
-		const response = await request(server).post('/oauth2/authorize').send({
+		const response = await request(server).post('/auth/oauth2/authorize').send({
 			client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 			redirect_url: 'https://example.com',
 			scopes: 'scopes',
@@ -207,7 +207,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize with empty scopes array', async () => {
-		const response = await request(server).post('/oauth2/authorize').send({
+		const response = await request(server).post('/auth/oauth2/authorize').send({
 			client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 			redirect_url: 'https://example.com',
 			scopes: [],
@@ -234,7 +234,7 @@ describe('OAuth2 Authorize', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/oauth2/authorize')
+			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 				redirect_url: 'https://example.com',
@@ -272,7 +272,7 @@ describe('OAuth2 Authorize', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/oauth2/authorize')
+			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 				redirect_url: 'https://example.com',
@@ -317,7 +317,7 @@ describe('OAuth2 Authorize', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/oauth2/authorize')
+			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 				redirect_url: 'https://example.com',

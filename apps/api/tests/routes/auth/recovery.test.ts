@@ -63,7 +63,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle recovery with missing email', async () => {
-		const response = await request(server).post('/recovery');
+		const response = await request(server).post('/auth/recovery');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -81,7 +81,7 @@ describe('Recovery Routes', () => {
 
 	it('should handle recovery with invalid email', async () => {
 		const response = await request(server)
-			.post('/recovery')
+			.post('/auth/recovery')
 			.send({ email: 'test' });
 
 		expect(response.status).toBe(400);
@@ -108,7 +108,7 @@ describe('Recovery Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/recovery')
+			.post('/auth/recovery')
 			.send({ email: 'test@example.com' });
 
 		expect(response.status).toBe(400);
@@ -144,7 +144,7 @@ describe('Recovery Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/recovery')
+			.post('/auth/recovery')
 			.send({ email: 'test@example.com' });
 
 		expect(response.status).toBe(200);
@@ -154,7 +154,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with missing email', async () => {
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'Test12345.',
 		});
@@ -174,7 +174,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with invalid email', async () => {
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test',
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'Test12345.',
@@ -198,7 +198,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with missing token', async () => {
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			password: 'Test12345.',
 		});
@@ -218,7 +218,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with token not in uuid format', async () => {
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			token: 'token',
 			password: 'Test12345.',
@@ -239,7 +239,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with missing password', async () => {
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 		});
@@ -259,7 +259,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with invalid password according to regex specification', async () => {
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'test123',
@@ -280,7 +280,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with password having less then 10 characters', async () => {
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'Test123.',
@@ -306,7 +306,7 @@ describe('Recovery Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'Test12345.',
@@ -336,7 +336,7 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'Test12345.',
@@ -375,7 +375,7 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'Test12345.',
@@ -419,7 +419,7 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/recovery/confirm').send({
+		const response = await request(server).post('/auth/recovery/confirm').send({
 			email: 'test@example.com',
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'Test12345.',

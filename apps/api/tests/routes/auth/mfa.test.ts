@@ -107,7 +107,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).get('/mfa');
+		const response = await request(server).get('/auth/mfa');
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual({
@@ -127,7 +127,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/enable').send({
+		const response = await request(server).post('/auth/mfa/enable').send({
 			type: 'totp',
 		});
 
@@ -153,7 +153,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/enable').send({
+		const response = await request(server).post('/auth/mfa/enable').send({
 			type: 'totp',
 		});
 
@@ -167,7 +167,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA TOTP disable without code', async () => {
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			type: 'totp',
 		});
 
@@ -196,7 +196,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			code: 'code',
 			type: 'totp',
 		});
@@ -219,7 +219,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			code: '34456T',
 			type: 'totp',
 		});
@@ -259,7 +259,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			code,
 			type: 'totp',
 		});
@@ -271,7 +271,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA email enable without code', async () => {
-		const response = await request(server).post('/mfa/enable').send({
+		const response = await request(server).post('/auth/mfa/enable').send({
 			type: 'email',
 		});
 
@@ -301,7 +301,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/enable').send({
+		const response = await request(server).post('/auth/mfa/enable').send({
 			code: 'code',
 			type: 'email',
 		});
@@ -324,7 +324,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/enable').send({
+		const response = await request(server).post('/auth/mfa/enable').send({
 			code: 'invalid-code',
 			type: 'email',
 		});
@@ -355,7 +355,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/enable').send({
+		const response = await request(server).post('/auth/mfa/enable').send({
 			code: 'code',
 			type: 'email',
 		});
@@ -391,7 +391,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/enable').send({
+		const response = await request(server).post('/auth/mfa/enable').send({
 			code: 'code',
 			type: 'email',
 		});
@@ -403,7 +403,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA email disable without code', async () => {
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			type: 'email',
 		});
 
@@ -433,7 +433,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			code: 'code',
 			type: 'email',
 		});
@@ -457,7 +457,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			code: 'invalid-code',
 			type: 'email',
 		});
@@ -489,7 +489,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			code: 'code',
 			type: 'email',
 		});
@@ -526,7 +526,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/disable').send({
+		const response = await request(server).post('/auth/mfa/disable').send({
 			code: 'code',
 			type: 'email',
 		});
@@ -539,7 +539,7 @@ describe('MFA Routes', () => {
 
 	it('should handle MFA verify without type', async () => {
 		const response = await request(server)
-			.post('/mfa/verify')
+			.post('/auth/mfa/verify')
 			.send({ code: 'code' });
 
 		expect(response.status).toBe(400);
@@ -557,7 +557,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA verify with unsupported type', async () => {
-		const response = await request(server).post('/mfa/verify').send({
+		const response = await request(server).post('/auth/mfa/verify').send({
 			code: 'code',
 			type: 'sms',
 		});
@@ -578,7 +578,7 @@ describe('MFA Routes', () => {
 
 	it('should handle MFA verify without code', async () => {
 		const response = await request(server)
-			.post('/mfa/verify')
+			.post('/auth/mfa/verify')
 			.send({ type: 'totp' });
 
 		expect(response.status).toBe(400);
@@ -606,7 +606,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/verify').send({
+		const response = await request(server).post('/auth/mfa/verify').send({
 			code: '45928T',
 			type: 'totp',
 		});
@@ -628,7 +628,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/verify').send({
+		const response = await request(server).post('/auth/mfa/verify').send({
 			code: '45928T',
 			type: 'totp',
 		});
@@ -667,7 +667,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/mfa/verify').send({
+		const response = await request(server).post('/auth/mfa/verify').send({
 			code,
 			type: 'totp',
 		});

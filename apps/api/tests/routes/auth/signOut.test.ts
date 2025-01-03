@@ -49,7 +49,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/sign-out');
+		const response = await request(server).post('/auth/sign-out');
 
 		expect(response.status).toBe(404);
 	});
@@ -64,7 +64,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/sign-out');
+		const response = await request(server).post('/auth/sign-out');
 
 		expect(response.status).toBe(204);
 	});
@@ -75,7 +75,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/sign-out');
+		const response = await request(server).post('/auth/sign-out');
 
 		expect(response.status).toBe(404);
 	});
@@ -107,7 +107,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 2,
 		} as never);
 
-		const response = await request(server).post('/sign-out/all-sessions').send({
+		const response = await request(server).post('/auth/sign-out/all-sessions').send({
 			code,
 			type: 'totp',
 		});

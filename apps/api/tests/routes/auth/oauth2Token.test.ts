@@ -70,7 +70,7 @@ describe('OAuth2 Token', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'refresh_token',
 			refresh_token: refreshToken,
 		});
@@ -90,7 +90,7 @@ describe('OAuth2 Token', () => {
 	});
 
 	it('should handle token route without grant type', async () => {
-		const response = await request(server).post('/oauth2/token');
+		const response = await request(server).post('/auth/oauth2/token');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -108,7 +108,7 @@ describe('OAuth2 Token', () => {
 
 	it('should handle token route with invalid grant type', async () => {
 		const response = await request(server)
-			.post('/oauth2/token')
+			.post('/auth/oauth2/token')
 			.send({ grant_type: 'password' });
 
 		expect(response.status).toBe(400);
@@ -130,7 +130,7 @@ describe('OAuth2 Token', () => {
 
 	it('should handle token route with authorization code without client id, client secret and code', async () => {
 		const response = await request(server)
-			.post('/oauth2/token')
+			.post('/auth/oauth2/token')
 			.send({ grant_type: 'authorization_code' });
 
 		expect(response.status).toBe(400);
@@ -162,7 +162,7 @@ describe('OAuth2 Token', () => {
 	});
 
 	it('should handle token route with authorization code with invalid client id format', async () => {
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'authorization_code',
 			code: 'code',
 			client_id: 'id',
@@ -189,7 +189,7 @@ describe('OAuth2 Token', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'authorization_code',
 			code: 'code',
 			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
@@ -223,7 +223,7 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'authorization_code',
 			code: 'code',
 			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
@@ -276,7 +276,7 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'authorization_code',
 			code: 'code',
 			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
@@ -298,7 +298,7 @@ describe('OAuth2 Token', () => {
 
 	it('should handle token route with grant type client credentials without client secret and client id', async () => {
 		const response = await request(server)
-			.post('/oauth2/token')
+			.post('/auth/oauth2/token')
 			.send({ grant_type: 'client_credentials' });
 
 		expect(response.status).toBe(400);
@@ -328,7 +328,7 @@ describe('OAuth2 Token', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'client_credentials',
 			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
 			client_secret: 'secret',
@@ -361,7 +361,7 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'client_credentials',
 			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
 			client_secret: 'secret',
@@ -391,7 +391,7 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'client_credentials',
 			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
 			client_secret: 'secret',
@@ -409,7 +409,7 @@ describe('OAuth2 Token', () => {
 
 	it('should handle token route with grant type refresh token without refresh token', async () => {
 		const response = await request(server)
-			.post('/oauth2/token')
+			.post('/auth/oauth2/token')
 			.send({ grant_type: 'refresh_token' });
 
 		expect(response.status).toBe(400);
@@ -437,7 +437,7 @@ describe('OAuth2 Token', () => {
 			},
 		);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'refresh_token',
 			refresh_token: refreshToken,
 		});
@@ -463,7 +463,7 @@ describe('OAuth2 Token', () => {
 			algorithm: 'HS256',
 		});
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'refresh_token',
 			refresh_token: refreshToken,
 		});
@@ -506,7 +506,7 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/oauth2/token').send({
+		const response = await request(server).post('/auth/oauth2/token').send({
 			grant_type: 'refresh_token',
 			refresh_token: refreshToken,
 		});

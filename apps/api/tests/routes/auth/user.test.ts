@@ -101,7 +101,7 @@ describe('User Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/user/email/verify')
+			.post('/auth/user/email/verify')
 			.send({ code: 'code' });
 
 		expect(response.status).toBe(403);
@@ -115,7 +115,7 @@ describe('User Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/user/email/verify')
+			.post('/auth/user/email/verify')
 			.send({ code: 'code' });
 
 		expect(response.status).toBe(400);
@@ -133,7 +133,7 @@ describe('User Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/user/email/verify')
+			.post('/auth/user/email/verify')
 			.send({ code: 'expired-code' });
 
 		expect(response.status).toBe(403);
@@ -156,7 +156,7 @@ describe('User Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/user/email/verify')
+			.post('/auth/user/email/verify')
 			.send({ code: 'code' });
 
 		expect(response.status).toBe(200);
@@ -179,7 +179,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).get('/user');
+		const response = await request(server).get('/auth/user');
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual({
@@ -192,7 +192,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle password change with missing password', async () => {
-		const response = await request(server).post('/user/password');
+		const response = await request(server).post('/auth/user/password');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -223,7 +223,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle password change with invalid password according to regex specification', async () => {
-		const response = await request(server).post('/user/password').send({
+		const response = await request(server).post('/auth/user/password').send({
 			password: 'test123456',
 			code: 'mfa_code',
 			type: 'totp',
@@ -267,7 +267,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/user/password').send({
+		const response = await request(server).post('/auth/user/password').send({
 			password: 'Test12345.',
 			code,
 			type: 'totp',
@@ -316,7 +316,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/user/password').send({
+		const response = await request(server).post('/auth/user/password').send({
 			password: 'Test12345.',
 			code,
 			type: 'totp',
@@ -329,7 +329,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle password change with password having less then 10 characters', async () => {
-		const response = await request(server).post('/user/password').send({
+		const response = await request(server).post('/auth/user/password').send({
 			password: 'Test123.',
 			code: 'mfa_code',
 			type: 'totp',
@@ -350,7 +350,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle email change with missing email', async () => {
-		const response = await request(server).post('/user/email').send({
+		const response = await request(server).post('/auth/user/email').send({
 			code: 'mfa_code',
 			type: 'totp',
 		});
@@ -370,7 +370,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle email change with invalid email', async () => {
-		const response = await request(server).post('/user/email').send({
+		const response = await request(server).post('/auth/user/email').send({
 			email: 'test',
 			code: 'mfa_code',
 			type: 'totp',
@@ -418,7 +418,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/user/email').send({
+		const response = await request(server).post('/auth/user/email').send({
 			email: 'test@example.com',
 			code,
 			type: 'totp',
@@ -433,7 +433,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle email change verification with missing code', async () => {
-		const response = await request(server).post('/user/email/verify');
+		const response = await request(server).post('/auth/user/email/verify');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(

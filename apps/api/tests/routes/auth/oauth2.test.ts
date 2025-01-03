@@ -55,7 +55,7 @@ describe('OAuth2 Routes', () => {
 
 	it('should handle delete connection with connection id not as numeric', async () => {
 		const response = await request(server).delete(
-			`/oauth2/connections/${'not_a_number'}`,
+			`/auth/oauth2/connections/${'not_a_number'}`,
 		);
 
 		expect(response.status).toBe(400);
@@ -78,7 +78,7 @@ describe('OAuth2 Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).delete(`/oauth2/connections/${1}`);
+		const response = await request(server).delete(`/auth/oauth2/connections/${1}`);
 
 		expect(response.status).toBe(404);
 		expect(response.body).toEqual(
@@ -92,7 +92,7 @@ describe('OAuth2 Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).delete(`/oauth2/connections/${1}`);
+		const response = await request(server).delete(`/auth/oauth2/connections/${1}`);
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -101,7 +101,7 @@ describe('OAuth2 Routes', () => {
 	});
 
 	it('should handle connection revoking without refresh token', async () => {
-		const response = await request(server).delete('/oauth2/revoke');
+		const response = await request(server).delete('/auth/oauth2/revoke');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -124,7 +124,7 @@ describe('OAuth2 Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.delete('/oauth2/revoke')
+			.delete('/auth/oauth2/revoke')
 			.send({ refresh_token: 'valid-token' });
 
 		expect(response.status).toBe(404);
@@ -140,7 +140,7 @@ describe('OAuth2 Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.delete('/oauth2/revoke')
+			.delete('/auth/oauth2/revoke')
 			.send({ refresh_token: 'valid-token' });
 
 		expect(response.status).toBe(200);

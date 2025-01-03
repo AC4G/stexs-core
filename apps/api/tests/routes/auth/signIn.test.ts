@@ -59,7 +59,7 @@ describe('Sign In Route', () => {
 
 	it('should handle sign in without identifier', async () => {
 		const response = await request(server)
-			.post('/sign-in')
+			.post('/auth/sign-in')
 			.send({ password: 'Test123.' });
 
 		expect(response.status).toBe(400);
@@ -78,7 +78,7 @@ describe('Sign In Route', () => {
 
 	it('should handle sign in without password', async () => {
 		const response = await request(server)
-			.post('/sign-in')
+			.post('/auth/sign-in')
 			.send({ identifier: 'test' });
 
 		expect(response.status).toBe(400);
@@ -101,7 +101,7 @@ describe('Sign In Route', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/sign-in').send({
+		const response = await request(server).post('/auth/sign-in').send({
 			identifier: 'test',
 			password: 'Test123.',
 		});
@@ -133,7 +133,7 @@ describe('Sign In Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/sign-in').send({
+		const response = await request(server).post('/auth/sign-in').send({
 			identifier: 'test',
 			password: 'Test123.',
 		});
@@ -156,7 +156,7 @@ describe('Sign In Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/sign-in').send({
+		const response = await request(server).post('/auth/sign-in').send({
 			identifier: 'test',
 			password: 'Test123.',
 		});
@@ -183,7 +183,7 @@ describe('Sign In Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/sign-in').send({
+		const response = await request(server).post('/auth/sign-in').send({
 			identifier: 'test',
 			password: 'Test123.',
 		});
@@ -199,7 +199,7 @@ describe('Sign In Route', () => {
 	});
 
 	it('should handle sign in confirm without code', async () => {
-		const response = await request(server).post('/sign-in/confirm').send({
+		const response = await request(server).post('/auth/sign-in/confirm').send({
 			type: 'totp',
 			token: 'token',
 		});
@@ -219,7 +219,7 @@ describe('Sign In Route', () => {
 	});
 
 	it('should handle sign in confirm without type', async () => {
-		const response = await request(server).post('/sign-in/confirm').send({
+		const response = await request(server).post('/auth/sign-in/confirm').send({
 			code: 'code',
 			token: 'token',
 		});
@@ -239,7 +239,7 @@ describe('Sign In Route', () => {
 	});
 
 	it('should handle sign in confirm without token', async () => {
-		const response = await request(server).post('/sign-in/confirm').send({
+		const response = await request(server).post('/auth/sign-in/confirm').send({
 			code: 'code',
 			type: 'totp',
 		});
@@ -259,7 +259,7 @@ describe('Sign In Route', () => {
 	});
 
 	it('should handle sign in confirm with unsupported type', async () => {
-		const response = await request(server).post('/sign-in/confirm').send({
+		const response = await request(server).post('/auth/sign-in/confirm').send({
 			code: 'code',
 			type: 'sms',
 			token: 'token',

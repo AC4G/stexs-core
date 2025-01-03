@@ -60,7 +60,7 @@ describe('Email Verification Routes', () => {
 
 	it('should handle email verification with missing email', async () => {
 		const response = await request(server)
-			.get('/verify')
+			.get('/auth/verify')
 			.query({ token: 'valid-token' });
 
 		expect(response.status).toBe(400);
@@ -79,7 +79,7 @@ describe('Email Verification Routes', () => {
 
 	it('should handle email verification with invalid email', async () => {
 		const response = await request(server)
-			.get('/verify')
+			.get('/auth/verify')
 			.query({ token: 'valid-token', email: 'test' });
 
 		expect(response.status).toBe(400);
@@ -101,7 +101,7 @@ describe('Email Verification Routes', () => {
 
 	it('should handle email verification with missing token', async () => {
 		const response = await request(server)
-			.get('/verify')
+			.get('/auth/verify')
 			.query({ email: 'test@example.com' });
 
 		expect(response.status).toBe(400);
@@ -125,7 +125,7 @@ describe('Email Verification Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.get('/verify')
+			.get('/auth/verify')
 			.query({ email: 'test@example.com', token: 'invalid-token' });
 
 		expect(response.status).toBe(302);
@@ -141,7 +141,7 @@ describe('Email Verification Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.get('/verify')
+			.get('/auth/verify')
 			.query({ email: 'test@example.com', token: 'token' });
 
 		expect(response.status).toBe(302);
@@ -162,7 +162,7 @@ describe('Email Verification Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.get('/verify')
+			.get('/auth/verify')
 			.query({ email: 'test@example.com', token: 'valid-token' });
 
 		expect(response.status).toBe(302);
@@ -184,7 +184,7 @@ describe('Email Verification Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.get('/verify')
+			.get('/auth/verify')
 			.query({ email: 'test@example.com', token: 'valid-token' });
 
 		expect(response.status).toBe(302);
@@ -211,7 +211,7 @@ describe('Email Verification Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.get('/verify')
+			.get('/auth/verify')
 			.query({ email: 'test@example.com', token: 'valid-token' });
 
 		expect(response.status).toBe(302);
@@ -221,7 +221,7 @@ describe('Email Verification Routes', () => {
 	});
 
 	it('should handle email resend with empty email', async () => {
-		const response = await request(server).post('/verify/resend');
+		const response = await request(server).post('/auth/verify/resend');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -239,7 +239,7 @@ describe('Email Verification Routes', () => {
 
 	it('should handle email resend with invalid email', async () => {
 		const response = await request(server)
-			.post('/verify/resend')
+			.post('/auth/verify/resend')
 			.send({ email: 'test' });
 
 		expect(response.status).toBe(400);
@@ -266,7 +266,7 @@ describe('Email Verification Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/verify/resend')
+			.post('/auth/verify/resend')
 			.send({ email: 'test@example.com' });
 
 		expect(response.status).toBe(404);
@@ -287,7 +287,7 @@ describe('Email Verification Routes', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/verify/resend')
+			.post('/auth/verify/resend')
 			.send({ email: 'test@example.com' });
 
 		expect(response.status).toBe(400);
@@ -315,7 +315,7 @@ describe('Email Verification Routes', () => {
 		const email = 'test@example.com';
 
 		const response = await request(server)
-			.post('/verify/resend')
+			.post('/auth/verify/resend')
 			.send({ email });
 
 		expect(response.status).toBe(200);

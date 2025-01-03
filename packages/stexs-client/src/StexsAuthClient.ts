@@ -96,11 +96,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates the user sign-in process with the provided identifier and password.
-	 *
-	 * @param {string} identifier - The user's identifier (e.g., username or email).
-	 * @param {string} password - The user's password.
-	 * @param {boolean} continuousAutoRefresh - Set to true for continuous access token refresh.
-	 * @returns {Promise<Response>} A Promise that resolves with the sign-in response data.
 	 */
 	async signIn(
 		identifier: string,
@@ -109,7 +104,7 @@ export class StexsAuthClient {
 	): Promise<Response> {
 		return await this._baseSignIn(
 			{
-				path: 'sign-in',
+				path: '/auth/sign-in',
 				body: {
 					identifier,
 					password,
@@ -121,13 +116,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Confirms the user's Multi-Factor Authentication (MFA) sign-in with the provided type and MFA code.
-	 *
-	 * This function confirms the user's MFA sign-in by providing the MFA code and type.
-	 *
-	 * @param {string} type - The type of MFA confirmation (e.g., email).
-	 * @param {string} code - The Multi-Factor Authentication (MFA) code.
-	 * @returns {Promise<Response>} A Promise that resolves with the confirmation response data.
-	 * @throws {Error} Throws an error if the sign-in token is not found or has expired.
 	 */
 	async signInConfirm(type: string, code: string): Promise<Response> {
 		const signInInitData: SignInInit = JSON.parse(
@@ -150,7 +138,7 @@ export class StexsAuthClient {
 
 		const response = await this._baseSignIn(
 			{
-				path: 'sign-in/confirm',
+				path: '/auth/sign-in/confirm',
 				body: {
 					code,
 					type,
@@ -176,10 +164,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Performs the base logic for the sign-in process.
-	 *
-	 * @param {Object} requestParameter - The request parameters, including path, method, and request body.
-	 * @param {boolean} continuousAutoRefresh - Set to true for continuous access token refresh.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	private async _baseSignIn(
 		requestParameter: {
@@ -222,11 +206,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates the user signup process with the provided username, email, and password.
-	 *
-	 * @param {string} username - The username for the new account.
-	 * @param {string} email - The email address for the new account.
-	 * @param {string} password - The password for the new account.
-	 * @returns {Promise<Response>} A Promise that resolves with the signup response data.
 	 */
 	async signUp(
 		username: string,
@@ -234,7 +213,7 @@ export class StexsAuthClient {
 		password: string,
 	): Promise<Response> {
 		return await this._request({
-			path: 'sign-up',
+			path: '/auth/sign-up',
 			method: 'POST',
 			body: {
 				username,
@@ -246,35 +225,29 @@ export class StexsAuthClient {
 
 	/**
 	 * Gets the number of active sessions for the current user.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with the active sessions response data.
 	 */
 	async getActiveSessionsAmount(): Promise<Response> {
 		return await this._request({
-			path: 'user/sessions',
+			path: '/auth/user/sessions',
 			method: 'GET',
 		});
 	}
 
 	/**
 	 * Signs the user out from the current session.
-	 *
-	 * @returns {Promise<void>} A Promise that resolves with void.
 	 */
 	async signOut(): Promise<void> {
-		await this._baseSignOut('sign-out');
+		await this._baseSignOut('/auth/sign-out');
 	}
 
 	/**
 	 * Signs the user out from all active sessions.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with void.
 	 */
 	async signOutFromAllSessions(
 		code: string,
 		type: 'totp' | 'email',
 	): Promise<Response> {
-		return await this._baseSignOut('sign-out/all-sessions', {
+		return await this._baseSignOut('/auth/sign-out/all-sessions', {
 			code,
 			type,
 		});
@@ -282,9 +255,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Signs the user out based on the provided path, with optional session check and data clearing.
-	 *
-	 * @param {string} path - The path specifying the sign-out action.
-	 * @returns {Promise<void>} A Promise that resolves with void.
 	 */
 	private async _baseSignOut(
 		path: string,
@@ -309,13 +279,10 @@ export class StexsAuthClient {
 
 	/**
 	 * Resends the email verification link to the provided email address.
-	 *
-	 * @param {string} email - The email address for which the verification link is to be resent.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async verifyResend(email: string): Promise<Response> {
 		return await this._request({
-			path: 'verify/resend',
+			path: '/auth/verify/resend',
 			method: 'POST',
 			body: { email },
 		});
@@ -323,13 +290,10 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates the password recovery process.
-	 *
-	 * @param {string} email - The user's email address for account recovery.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async recovery(email: string): Promise<Response> {
 		const response = await this._request({
-			path: 'recovery',
+			path: '/auth/recovery',
 			method: 'POST',
 			body: { email },
 		});
@@ -343,11 +307,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Confirms the password recovery process by providing the necessary information.
-	 *
-	 * @param {string} email - The email address associated with the account.
-	 * @param {string} token - The recovery token received via email.
-	 * @param {string} password - The new password to set for the account.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async recoveryConfirm(
 		email: string,
@@ -355,7 +314,7 @@ export class StexsAuthClient {
 		password: string,
 	): Promise<Response> {
 		return await this._request({
-			path: 'recovery/confirm',
+			path: '/auth/recovery/confirm',
 			method: 'POST',
 			body: {
 				email,
@@ -367,8 +326,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Retrieves data from the authenticated user.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async getUser(): Promise<Response> {
 		return await this._request({ path: 'user' });
@@ -376,11 +333,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Updates the password of the authenticated user.
-	 *
-	 * @param {string} password - The new password to set.
-	 * @param {string} code - The authentication code from the selected MFA method (either email code or TOTP secret).
-	 * @param {string} type - The MFA method to be used for authentication.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async updatePassword(
 		password: string,
@@ -388,7 +340,7 @@ export class StexsAuthClient {
 		type: 'totp' | 'email',
 	): Promise<Response> {
 		return await this._request({
-			path: 'user/password',
+			path: '/auth/user/password',
 			method: 'POST',
 			body: {
 				password,
@@ -400,11 +352,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates the process of changing the email for the authenticated user.
-	 *
-	 * @param {string} email - The new email address to be set.
-	 * @param {string} code - The authentication code from the selected MFA method (either email code or TOTP secret).
-	 * @param {string} type - The MFA method to be used for authentication.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async changeEmail(
 		email: string,
@@ -412,7 +359,7 @@ export class StexsAuthClient {
 		type: 'totp' | 'email',
 	): Promise<Response> {
 		return await this._request({
-			path: 'user/email',
+			path: '/auth/user/email',
 			method: 'POST',
 			body: {
 				email,
@@ -424,13 +371,10 @@ export class StexsAuthClient {
 
 	/**
 	 * Verifies the requested email change for the authenticated user.
-	 *
-	 * @param {string} code - The verification code sent to the new email address.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async verifyEmailChange(code: string): Promise<Response> {
 		return await this._request({
-			path: 'user/email/verify',
+			path: '/auth/user/email/verify',
 			method: 'POST',
 			body: { code },
 		});
@@ -438,25 +382,19 @@ export class StexsAuthClient {
 
 	/**
 	 * Retrieves the Multi-Factor Authentication (MFA) status for the authenticated user.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with the MFA status data.
 	 */
 	private async _factorStatus(): Promise<Response> {
 		return await this._request({
-			path: 'mfa',
+			path: '/auth/mfa',
 		});
 	}
 
 	/**
 	 * Enables Multi-Factor Authentication (MFA) for the authenticated user.
-	 *
-	 * @param {('totp' | 'email')} type - The MFA type to enable ('totp' for Time-based One-Time Password, 'email' for email-based MFA).
-	 * @param {string | null} code - The MFA verification code (only required for 'email' MFA).
-	 * @returns {Promise<Response>} A Promise that resolves with the enablement response.
 	 */
 	private async _enable(type: 'totp' | 'email', code: string | null = null): Promise<Response> {
 		return await this._request({
-			path: `mfa/enable`,
+			path: `/auth/mfa/enable`,
 			method: 'POST',
 			body: {
 				type,
@@ -467,17 +405,13 @@ export class StexsAuthClient {
 
 	/**
 	 * Disables Multi-Factor Authentication (MFA) for the authenticated user.
-	 *
-	 * @param {('totp' | 'email')} type - The MFA type to disable ('totp' for Time-based One-Time Password, 'email' for email-based MFA).
-	 * @param {string} code - The MFA verification code required to disable MFA.
-	 * @returns {Promise<Response>} A Promise that resolves with the disabling response.
 	 */
 	private async _disable(
 		type: 'totp' | 'email',
 		code: string,
 	): Promise<Response> {
 		return await this._request({
-			path: `mfa/disable`,
+			path: `/auth/mfa/disable`,
 			method: 'POST',
 			body: {
 				code,
@@ -492,14 +426,10 @@ export class StexsAuthClient {
 	 * Currently, only Time-based One-Time Password (TOTP) is supported.
 	 *
 	 * Note: As new MFA methods may be implemented in the future, the required parameters for this function may change.
-	 *
-	 * @param {string} type - The MFA type to verify ('totp' supported for now. 'email' will be moved to this api endpoint).
-	 * @param {string} code - The MFA verification code.
-	 * @returns {Promise<Response>} A Promise that resolves with the verification response.
 	 */
 	private async _verify(type: 'totp', code: string): Promise<Response> {
 		return await this._request({
-			path: 'mfa/verify',
+			path: '/auth/mfa/verify',
 			method: 'POST',
 			body: {
 				type,
@@ -510,8 +440,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Requests a new Multi-Factor Authentication (MFA) email verification code for authenticated and users in sign confirm process.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	private async _requestCode(type: string = 'email'): Promise<Response> {
 		const signInInitData: SignInInit = JSON.parse(
@@ -527,7 +455,7 @@ export class StexsAuthClient {
 		}
 
 		return await this._request({
-			path: 'mfa/send-code',
+			path: '/auth/mfa/send-code',
 			method: 'POST',
 			body,
 		});
@@ -535,11 +463,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates an OAuth2 authorization request to obtain consent from the authenticated user.
-	 *
-	 * @param {string} client_id - The client identifier.
-	 * @param {string} redirect_url - The URL to redirect after approval.
-	 * @param {Array} scopes - An array of requested scopes.
-	 * @returns {Promise<Response>} A Promise that resolves with the authorization response.
 	 */
 	private async _authorize(
 		client_id: string,
@@ -547,7 +470,7 @@ export class StexsAuthClient {
 		scopes: string[],
 	): Promise<Response> {
 		return await this._request({
-			path: 'oauth2/authorize',
+			path: '/auth/oauth2/authorize',
 			method: 'POST',
 			body: {
 				client_id,
@@ -559,13 +482,10 @@ export class StexsAuthClient {
 
 	/**
 	 * Deletes an OAuth2 connection associated with the authenticated user and linked to a client.
-	 *
-	 * @param {string} client_id - The client identifier of the connection to be deleted.
-	 * @returns {Promise<Response>} A Promise that resolves with the deletion response.
 	 */
 	private async _deleteConnection(client_id: string): Promise<Response> {
 		return await this._request({
-			path: 'oauth2/connection',
+			path: '/auth/oauth2/connection',
 			method: 'DELETE',
 			body: {
 				client_id,
@@ -575,8 +495,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Retrieves an user session from local storage.
-	 *
-	 * @returns {Session} The user session obtained from local storage.
 	 */
 	getSession(): Session {
 		return this._getSession();
@@ -584,8 +502,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Updates and retrieves user session from local storage.
-	 *
-	 * @returns {Session} The user session obtained from local storage.
 	 */
 	async updateUserInSession(): Promise<Session> {
 		const session = this._getSession();
@@ -608,8 +524,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Retrieves the sign in init session from local storage.
-	 *
-	 * @returns {SignInInit} The user sign in init session obtained from local storage.
 	 */
 	getSignInInit(): SignInInit {
 		return this._getSignInInit();
@@ -789,7 +703,7 @@ export class StexsAuthClient {
 			options.body = JSON.stringify(body);
 		}
 
-		return await this.fetch(`${this.authUrl}/${path}`, options);
+		return await this.fetch(`${this.authUrl}${path}`, options);
 	}
 
 	private _setAccessTokenToAuthHeaders(accessToken: string) {

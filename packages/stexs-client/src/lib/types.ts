@@ -1,22 +1,22 @@
 export type Session =
 	| {
-			access_token: string;
-			refresh_token: string;
-			expires: number;
-			refresh: {
-				enabled: boolean;
-				count: number;
+		access_token: string;
+		refresh_token: string;
+		expires: number;
+		refresh: {
+			enabled: boolean;
+			count: number;
+		};
+		user: {
+			id: string;
+			email: string;
+			username: string;
+			raw_user_meta_data: {
+				[key: string]: any;
 			};
-			user: {
-				id: string;
-				email: string;
-				username: string;
-				raw_user_meta_data: {
-					[key: string]: any;
-				};
-				created_at: string;
-				updated_at: string;
-			};
+			created_at: string;
+			updated_at: string;
+		};
 	  }
 	| undefined;
 

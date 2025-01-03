@@ -63,7 +63,7 @@ describe('Token Route', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/token')
+			.post('/auth/token')
 			.send({ refresh_token: 'token' });
 
 		expect(response.status).toBe(401);
@@ -91,7 +91,7 @@ describe('Token Route', () => {
 		} as never);
 
 		const response = await request(server)
-			.post('/token')
+			.post('/auth/token')
 			.send({ refresh_token: 'token' });
 
 		expect(response.status).toBe(200);
