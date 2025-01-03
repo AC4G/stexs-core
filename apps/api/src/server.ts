@@ -1,7 +1,8 @@
 import ip from 'ip';
-import express, { Router } from 'express';
+import express from 'express';
 import bodyParser from 'body-parser';
 import authRouter from './routes/auth';
+import storageRouter from './routes/storage';
 import { ENV, SERVER_PORT } from '../env-config';
 import logger from './loggers/logger';
 import responseTime from 'response-time';
@@ -48,6 +49,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/storage', storageRouter);
 
 app.use((req, res, next) => {
 	logger.debug(`Route not found: ${req.method} ${req.path}`);

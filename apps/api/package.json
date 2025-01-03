@@ -33,7 +33,8 @@
         "utils-node": "workspace:*",
         "uuid": "^9.0.0",
         "winston": "^3.11.0",
-        "winston-loki": "^6.0.7"
+        "winston-loki": "^6.0.7",
+        "aws-sdk": "^2.1502.0"
     },
     "devDependencies": {
         "@swc/core": "^1.4.0",

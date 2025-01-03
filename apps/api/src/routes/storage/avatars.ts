@@ -15,14 +15,14 @@ import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 } from 'utils-node/middlewares';
-import s3 from '../s3';
-import logger from '../loggers/logger';
+import s3 from '../../s3';
+import logger from '../../loggers/logger';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
 	ISSUER,
 	BUCKET,
-} from '../../env-config';
+} from '../../../env-config';
 import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
 
@@ -62,7 +62,7 @@ router.get(
 );
 
 router.post(
-	'',
+	'/',
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -98,7 +98,7 @@ router.post(
 );
 
 router.delete(
-	'',
+	'/',
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),

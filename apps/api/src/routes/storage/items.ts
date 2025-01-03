@@ -3,7 +3,7 @@ import {
 	AUDIENCE,
 	BUCKET,
 	ISSUER,
-} from '../../env-config';
+} from '../../../env-config';
 import { Router, Response } from 'express';
 import {
 	validate,
@@ -12,9 +12,9 @@ import {
 	transformJwtErrorMessages,
 	validateAccessToken,
 } from 'utils-node/middlewares';
-import logger from '../loggers/logger';
+import logger from '../../loggers/logger';
 import { Request } from 'express-jwt';
-import db from '../db';
+import db from '../../db';
 import { errorMessages } from 'utils-node/messageBuilder';
 import {
 	INTERNAL_ERROR,
@@ -22,7 +22,7 @@ import {
 	ITEM_ID_REQUIRED,
 	UNAUTHORIZED_ACCESS,
 } from 'utils-node/errors';
-import s3 from '../s3';
+import s3 from '../../s3';
 import { param } from 'express-validator';
 
 const router = Router();

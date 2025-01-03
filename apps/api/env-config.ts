@@ -30,3 +30,9 @@ export const SERVICE_NAME: string = process.env.SERVICE_NAME!;
 export const TOTP_ALGORITHM: string = process.env.TOTP_ALGORITHM!;
 export const TOTP_DIGITS: number = parseInt(process.env.TOTP_DIGITS!);
 export const TOTP_PERIOD: number = parseInt(process.env.TOTP_PERIOD!);
+
+export const STORAGE_ENDPOINT: string = process.env.STORAGE_ENDPOINT!;
+export const STORAGE_ACCESS_KEY: string = process.env.STORAGE_ACCESS_KEY!;
+export const STORAGE_SECRET_KEY: string = process.env.STORAGE_SECRET_KEY!;
+export const BUCKET: string = process.env.STORAGE_BUCKET!;
+export const REDIS_URL: string = process.env.REDIS_URL!;

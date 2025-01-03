@@ -1,13 +1,22 @@
 import { Router, Response } from 'express';
-import logger from '../loggers/logger';
+import logger from '../../loggers/logger';
 import { Request } from 'express-jwt';
 import { param } from 'express-validator';
 import {
 	INTERNAL_ERROR,
-	ORGANIZATION_ID_NOT_NUMERIC,
-	ORGANIZATION_ID_REQUIRED,
+	PROJECT_ID_NOT_NUMERIC,
+	PROJECT_ID_REQUIRED,
 	UNAUTHORIZED_ACCESS,
 } from 'utils-node/errors';
+import db from '../../db';
+import { errorMessages } from 'utils-node/messageBuilder';
+import {
+	ACCESS_TOKEN_SECRET,
+	AUDIENCE,
+	BUCKET,
+	ISSUER,
+} from '../../../env-config';
+import s3 from '../../s3';
 import {
 	validate,
 	checkScopes,
@@ -15,55 +24,58 @@ import {
 	transformJwtErrorMessages,
 	validateAccessToken,
 } from 'utils-node/middlewares';
-import {
-	ACCESS_TOKEN_SECRET,
-	AUDIENCE,
-	BUCKET,
-	ISSUER,
-} from '../../env-config';
-import db from '../db';
-import { errorMessages } from 'utils-node/messageBuilder';
-import s3 from '../s3';
 import { QueryConfig } from 'pg';
 
 const router = Router();
 
-const checkOrganizationOwnerUserQuery: QueryConfig = {
+const checkProjectOwnerUserQuery: QueryConfig = {
 	text: `
 		SELECT 1
-		FROM public.organization_members
-		WHERE member_id = $1::uuid 
-			AND organization_id = $2::integer 
-			AND role IN ('Admin', 'Owner');
+		FROM public.project_members AS pm
+		WHERE pm.member_id = $1::uuid 
+			AND pm.project_id = $2::integer 
+			AND pm.role IN ('Admin', 'Owner');
 	`,
-	name: 'storage-api-check-organization-owner-user'
+	name: 'storage-api-check-project-owner-user'
 };
+const checkProjectOwnerClientQuery: QueryConfig = {
+	text: `
+		SELECT 1
+		FROM public.projects AS p
+		JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+		WHERE pm.organization_id = $1::integer 
+			AND (
+				oa.project_id = $2::integer OR
+				oa.project_id IS NULL
+			)
+			AND p.id = $2::integer;
+	`,
+	name: 'storage-api-check-project-owner-client'
+}
 
 router.get(
-	'/:organizationId',
+	'/:projectId',
 	[
-		param('organizationId')
+		param('projectId')
 			.notEmpty()
-			.withMessage(ORGANIZATION_ID_REQUIRED)
+			.withMessage(PROJECT_ID_REQUIRED)
 			.bail()
 			.isNumeric()
-			.withMessage(ORGANIZATION_ID_NOT_NUMERIC),
+			.withMessage(PROJECT_ID_NOT_NUMERIC),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { organizationId } = req.params;
+		const { projectId } = req.params;
 
 		const time = 60 * 60 * 24; // 1 day
 
 		const signedUrl = await s3.getSignedUrl('getObject', {
 			Bucket: BUCKET,
-			Key: `organizations/${organizationId}`,
+			Key: `projects/${projectId}`,
 			Expires: time,
 		});
 
-		logger.info(
-			`Generated new presigned url for organization logo: ${organizationId}`,
-		);
+		logger.info(`Generated new presigned url for project logo: ${projectId}`);
 
 		return res.json({
 			url: signedUrl,
@@ -72,39 +84,44 @@ router.get(
 );
 
 router.post(
-	'/:organizationId',
+	'/:projectId',
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['organization.logo.write'], db, logger),
+		checkScopes(['project.logo.write'], db, logger),
 		transformJwtErrorMessages(logger),
-		param('organizationId')
+		param('projectId')
 			.notEmpty()
-			.withMessage(ORGANIZATION_ID_REQUIRED)
+			.withMessage(PROJECT_ID_REQUIRED)
 			.bail()
 			.isNumeric()
-			.withMessage(ORGANIZATION_ID_NOT_NUMERIC),
+			.withMessage(PROJECT_ID_NOT_NUMERIC),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
 		const sub = req.auth?.sub;
-		const { organizationId } = req.params;
+		const { projectId } = req.params;
 		const grantType = req.auth?.grant_type;
 		const clientId = req.auth?.client_id;
-		const organizationIdFromToken = req.auth?.organization_id;
+		const organizationId = req.auth?.organization_id;
 
 		try {
 			let isAllowed = false;
 
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
-					checkOrganizationOwnerUserQuery,
-					[sub, organizationId],
+					checkProjectOwnerUserQuery,
+					[sub, projectId],
 				);
 
 				if (rowCount) isAllowed = true;
 			} else {
-				if (organizationId === organizationIdFromToken) isAllowed = true;
+				const { rowCount } = await db.query(
+					checkProjectOwnerClientQuery,
+					[organizationId, projectId, clientId],
+				);
+
+				if (rowCount) isAllowed = true;
 			}
 
 			if (!isAllowed) {
@@ -112,15 +129,16 @@ router.post(
 				const consumerId = grantType === 'password' ? sub : clientId;
 
 				logger.warn(
-					`${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
+					`${consumer} is not authorized to upload/update the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`,
 				);
+
 				return res
 					.status(401)
 					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(
-				`Error while checking the current user if authorized for uploading/updating organization logo. Error: ${
+				`Error while checking the current user if authorized for uploading/updating project logo. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
@@ -132,79 +150,83 @@ router.post(
 		const signedPost = await s3.createPresignedPost({
 			Bucket: BUCKET,
 			Fields: {
-				key: 'organizations/' + organizationId,
+				key: 'projects/' + projectId,
 				'Content-Type': `image/webp`,
 				'Cache-Control': `private, max-age=${cacheExpires}, must-revalidate`,
-				'Content-Disposition': `attachment; filename="organization-${organizationId}.webp"`,
+				'Content-Disposition': `attachment; filename="project-${projectId}.webp"`,
 			},
 			Conditions: [
 				['content-length-range', 0, 1024 * 1024], // 1MB
 				['eq', '$Cache-Control', `private, max-age=${cacheExpires}, must-revalidate`],
 				['eq', '$Content-Type', `image/webp`],
-				['eq', '$key', 'organizations/' + organizationId],
-				['eq', '$Content-Disposition', `attachment; filename="organization-${organizationId}.webp"`]
+				['eq', '$key', 'projects/' + projectId],
+				['eq', '$Content-Disposition', `attachment; filename="project-${projectId}.webp"`]
 			],
 			Expires: 60 * 5, // 5 minutes
 		});
 
-		logger.info(
-			`Created signed post url for organization logo: ${organizationId}`,
-		);
+		logger.info(`Created signed post url for project logo: ${projectId}`);
 
 		return res.json(signedPost);
 	},
 );
 
 router.delete(
-	'/:organizationId',
+	'/:projectId',
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['organization.logo.delete'], db, logger),
+		checkScopes(['project.logo.delete'], db, logger),
 		transformJwtErrorMessages(logger),
-		param('organizationId')
+		param('projectId')
 			.notEmpty()
-			.withMessage(ORGANIZATION_ID_REQUIRED)
+			.withMessage(PROJECT_ID_REQUIRED)
 			.bail()
 			.isNumeric()
-			.withMessage(ORGANIZATION_ID_NOT_NUMERIC),
+			.withMessage(PROJECT_ID_NOT_NUMERIC),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
 		const sub = req.auth?.sub;
-		const organizationId = parseInt(req.params.organizationId);
+		const { projectId } = req.params;
 		const grantType = req.auth?.grant_type;
 		const clientId = req.auth?.client_id;
-		const organizationIdFromToken = req.auth?.organization_id;
+		const organizationId = req.auth?.organization_id;
 
 		try {
-			let isAllowed = false;
+			let rowsFound = false;
 
 			if (grantType === 'password') {
 				const { rowCount } = await db.query(
-					checkOrganizationOwnerUserQuery,
-					[sub, organizationId],
+					checkProjectOwnerUserQuery,
+					[sub, projectId],
 				);
 
-				if (rowCount) isAllowed = true;
+				if (rowCount) rowsFound = true;
 			} else {
-				if (organizationId === organizationIdFromToken) isAllowed = true;
+				const { rowCount } = await db.query(
+					checkProjectOwnerClientQuery,
+					[organizationId, projectId, clientId],
+				);
+
+				if (rowCount) rowsFound = true;
 			}
 
-			if (!isAllowed) {
+			if (!rowsFound) {
 				const consumer = grantType === 'password' ? 'User' : 'Client';
 				const consumerId = grantType === 'password' ? sub : clientId;
 
 				logger.warn(
-					`${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
+					`${consumer} is not authorized to delete the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`,
 				);
+
 				return res
 					.status(401)
 					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
 			}
 		} catch (e) {
 			logger.error(
-				`Error while checking the current user if authorized for deleting organization logo. Error: ${
+				`Error while checking the current user if authorized for deleting project logo. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
@@ -216,15 +238,15 @@ router.delete(
 				.deleteObjects({
 					Bucket: BUCKET,
 					Delete: {
-						Objects: [{ Key: 'organizations/' + organizationId }],
+						Objects: [{ Key: 'projects/' + projectId }],
 					},
 				})
 				.promise();
 
-			logger.info(`Deleted logo from organization: ${organizationId}`);
+			logger.info(`Deleted logo from project: ${projectId}`);
 		} catch (e) {
 			logger.error(
-				`Error while deleting organization logo. Error: ${
+				`Error while deleting project logo. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
