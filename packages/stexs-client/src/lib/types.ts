@@ -1,3 +1,14 @@
+export interface User {
+	id: string;
+	email: string;
+	username: string;
+	raw_user_meta_data: {
+		[key: string]: any;
+	};
+	created_at: string;
+	updated_at: string;
+}
+
 export type Session =
 	| {
 		access_token: string;
@@ -7,16 +18,7 @@ export type Session =
 			enabled: boolean;
 			count: number;
 		};
-		user: {
-			id: string;
-			email: string;
-			username: string;
-			raw_user_meta_data: {
-				[key: string]: any;
-			};
-			created_at: string;
-			updated_at: string;
-		};
+		user: User;
 	  }
 	| undefined;
 
@@ -59,3 +61,29 @@ export interface SignedUrl {
 	url: string;
 	expires: number;
 }
+
+export interface ErrorResponse {
+	errors: {
+		code: string;
+		message: string;
+		data?: {
+			[key: string]: any;
+		};
+		timestamp: string;
+	}[];
+}
+
+export interface SignInInitResponse {
+	token: string;
+	types: string[];
+	expires: number;
+}
+
+export interface TokenResponse {
+	access_token: string;
+	refresh_token: string;
+	token_type: string;
+	expires: number;
+}
+
+export interface UserResponse extends User {}

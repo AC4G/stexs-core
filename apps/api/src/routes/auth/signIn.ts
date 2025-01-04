@@ -13,6 +13,7 @@ import {
 	ACCOUNT_BANNED,
 	CODE_REQUIRED,
 	EMAIL_NOT_VERIFIED,
+	FIELD_MUST_BE_A_STRING,
 	IDENTIFIER_REQUIRED,
 	INTERNAL_ERROR,
 	INVALID_CREDENTIALS,
@@ -41,15 +42,31 @@ const router = Router();
 router.post(
 	'/',
 	[
-		body('identifier').notEmpty().withMessage(IDENTIFIER_REQUIRED),
-		body('password').notEmpty().withMessage(PASSWORD_REQUIRED),
+		body('identifier')
+			.notEmpty()
+			.withMessage(IDENTIFIER_REQUIRED)
+			.isString()
+			.withMessage(FIELD_MUST_BE_A_STRING),
+		body('password')
+			.notEmpty()
+			.withMessage(PASSWORD_REQUIRED)
+			.isString()
+			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { identifier, password } = req.body;
+		const { 
+			identifier,
+			password
+		}: {
+			identifier: string;
+			password: string
+		} = req.body;
 
-		let uuid;
-		let types;
+		logger.log('debug', `Sign in for user: ${identifier} and identifier type: ${typeof identifier}`);
+
+		let uuid: string;
+		let types: string[] = [];
 
 		try {
 			const { rowCount, rows } = await db.query(
@@ -131,7 +148,9 @@ router.post(
 router.post(
 	'/confirm',
 	[
-		body('code').notEmpty().withMessage(CODE_REQUIRED),
+		body('code')
+			.notEmpty()
+			.withMessage(CODE_REQUIRED),
 		body('type')
 			.notEmpty()
 			.withMessage(TYPE_REQUIRED)
@@ -144,7 +163,9 @@ router.post(
 
 				return true;
 			}),
-		body('token').notEmpty().withMessage(TOKEN_REQUIRED),
+		body('token')
+			.notEmpty()
+			.withMessage(TOKEN_REQUIRED),
 		validate(logger),
 		validateSignInConfirmToken(SIGN_IN_CONFIRM_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['sign_in_confirm']),

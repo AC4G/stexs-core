@@ -1,5 +1,13 @@
 import EventEmitter from 'events';
-import type { Session, SignInInit } from './lib/types';
+import type { 
+	ErrorResponse,
+	TokenResponse,
+	Session,
+	SignInInit,
+	SignInInitResponse,
+	UserResponse,
+} from './lib/types';
+import { ApiResponse } from './lib/Response';
 
 export enum AuthEvents {
 	SIGNED_IN = 'SIGNED_IN',
@@ -96,28 +104,50 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates the user sign-in process with the provided identifier and password.
+	 * 
+	 * Requests a MFA code on sign-in initialization success and if email MFA is enabled and is the only option.
 	 */
 	async signIn(
 		identifier: string,
 		password: string,
 		continuousAutoRefresh: boolean = false,
-	): Promise<Response> {
-		return await this._baseSignIn(
-			{
-				path: '/auth/sign-in',
-				body: {
-					identifier,
-					password,
-				},
+	): Promise<ApiResponse<SignInInitResponse, ErrorResponse>> {
+		const response = await this._request<SignInInitResponse, ErrorResponse>({
+			path: '/auth/sign-in',
+			body: {
+				identifier,
+				password,
 			},
-			continuousAutoRefresh,
+		});
+
+		if (!response.ok) {
+			return response;
+		}
+
+		const body = await response.clone().getSuccessBody();
+
+		localStorage.setItem(
+			'sign_in_init',
+			JSON.stringify({
+				...body,
+				continuousAutoRefresh,
+			}),
 		);
+
+		// subject to change in the future
+		if (body.types.length === 1 && body.types[0] === 'email') {
+			await this._requestCode();
+		}
+
+		this.triggerEvent(AuthEvents.SIGN_IN_INIT);
+
+		return response;
 	}
 
 	/**
 	 * Confirms the user's Multi-Factor Authentication (MFA) sign-in with the provided type and MFA code.
 	 */
-	async signInConfirm(type: string, code: string): Promise<Response> {
+	async signInConfirm(type: string, code: string): Promise<ApiResponse<TokenResponse, ErrorResponse>> {
 		const signInInitData: SignInInit = JSON.parse(
 			localStorage.getItem('sign_in_init') as string,
 		) as SignInInit;
@@ -136,23 +166,46 @@ export class StexsAuthClient {
 			throw new Error('Sign in token has expired.');
 		}
 
-		const response = await this._baseSignIn(
-			{
-				path: '/auth/sign-in/confirm',
-				body: {
-					code,
-					type,
-					token,
-				},
+		const response = await this._request<TokenResponse, ErrorResponse>({
+			path: '/auth/sign-in/confirm',
+			body: {
+				code,
+				type,
+				token,
 			},
-			continuousAutoRefresh,
-		);
+		});
 
-		if (response.ok) {
-			localStorage.removeItem('sign_in_init');
+		if (!response.ok) {
+			return response as ApiResponse<TokenResponse, ErrorResponse>;
 		}
 
-		return response;
+		localStorage.removeItem('sign_in_init');
+
+		const tokenBody = await response.clone().getSuccessBody();
+		
+		const userResponse = await this.getUser();
+
+		if (!userResponse.ok) {
+			return Promise.reject(new Error('Failed to fetch user data'));
+		}
+
+		const user = await userResponse.getSuccessBody();
+
+		localStorage.setItem(
+			'session',
+			JSON.stringify({
+				...tokenBody,
+				user,
+				refresh: {
+					enabled: continuousAutoRefresh,
+					count: 0
+				}
+			} as Session)
+		);
+		
+		this.triggerEvent(AuthEvents.SIGNED_IN);
+
+		return response as ApiResponse<TokenResponse, ErrorResponse>;
 	}
 
 	/**
@@ -160,48 +213,6 @@ export class StexsAuthClient {
 	 */
 	cancelSignInConfirm() {
 		localStorage.removeItem('sign_in_init');
-	}
-
-	/**
-	 * Performs the base logic for the sign-in process.
-	 */
-	private async _baseSignIn(
-		requestParameter: {
-			path: string;
-			body: Record<string, any>;
-		},
-		continuousAutoRefresh: boolean,
-	): Promise<Response> {
-		const response = await this._request({
-			...requestParameter,
-			method: 'POST',
-		});
-
-		if (!response.ok) {
-			return response;
-		}
-
-		const clonedResponse = response.clone();
-		const body = await clonedResponse.json();
-
-		if (body.token) {
-			localStorage.setItem(
-				'sign_in_init',
-				JSON.stringify({
-					...body,
-					continuousAutoRefresh,
-				}),
-			);
-
-			// subject to change in the future
-			if (body.types.length === 1 && body.types[0] === 'email') {
-				await this._requestCode();
-			}
-
-			this.triggerEvent(AuthEvents.SIGN_IN_INIT);
-		}
-
-		return response;
 	}
 
 	/**
@@ -327,8 +338,8 @@ export class StexsAuthClient {
 	/**
 	 * Retrieves data from the authenticated user.
 	 */
-	async getUser(): Promise<Response> {
-		return await this._request({ path: 'user' });
+	async getUser(): Promise<ApiResponse<UserResponse, ErrorResponse>> {
+		return await this._request<UserResponse, ErrorResponse>({ path: '/auth/user' });
 	}
 
 	/**
@@ -510,7 +521,13 @@ export class StexsAuthClient {
 			return Promise.reject(new Error('Session is undefined'));
 		}
 
-		const user = await (await this.getUser()).json();
+		const response = await this.getUser();
+
+		if (!response.ok) {
+			return Promise.reject(new Error('Failed to fetch user data'));
+		}
+
+		const user = await response.getSuccessBody();
 
 		const newSession: Session = {
 			...session,
@@ -627,8 +644,8 @@ export class StexsAuthClient {
 				return false;
 			}
 
-			const response = await this._request({
-				path: 'token',
+			const response = await this._request<TokenResponse, ErrorResponse>({
+				path: '/auth/token',
 				method: 'POST',
 				body: {
 					refresh_token: session.refresh_token,
@@ -640,7 +657,7 @@ export class StexsAuthClient {
 				return false;
 			}
 
-			const body = await response.json();
+			const body = await response.getSuccessBody();
 			const refresh = { ...session.refresh };
 
 			this._setAccessTokenToAuthHeaders(body.access_token);
@@ -679,7 +696,7 @@ export class StexsAuthClient {
 		) as SignInInit;
 	}
 
-	private async _request({
+	private async _request<TSuccess, TError>({
 		path,
 		method = 'GET',
 		body = undefined,
@@ -689,7 +706,7 @@ export class StexsAuthClient {
 		method?: 'GET' | 'POST' | 'DELETE' | 'PUT';
 		body?: Record<string, any>;
 		headers?: Record<string, string>;
-	}): Promise<Response> {
+	}): Promise<ApiResponse<TSuccess, TError>> {
 		const options: RequestInit = {
 			method,
 			headers: {
@@ -703,7 +720,9 @@ export class StexsAuthClient {
 			options.body = JSON.stringify(body);
 		}
 
-		return await this.fetch(`${this.authUrl}${path}`, options);
+		const response = await this.fetch(`${this.authUrl}${path}`, options);
+
+  		return new ApiResponse<TSuccess, TError>(response);
 	}
 
 	private _setAccessTokenToAuthHeaders(accessToken: string) {

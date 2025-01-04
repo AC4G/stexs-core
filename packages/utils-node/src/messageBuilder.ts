@@ -37,17 +37,18 @@ interface Error {
 		[key: string]: any;
 	};
 }
-
 interface ErrorResponse {
-	code: string;
-	message: string;
-	data?: {
-		[key: string]: any;
-	};
-	timestamp: string;
+	errors: {
+		code: string;
+		message: string;
+		data?: {
+			[key: string]: any;
+		};
+		timestamp: string;
+	}[];
 }
 
-export function errorMessages(errors: Error[]): { errors: ErrorResponse[] } {
+export function errorMessages(errors: Error[]): ErrorResponse {
 	return {
 		errors: errors.map((error) => ({
 			code: error.info.code,
@@ -60,9 +61,7 @@ export function errorMessages(errors: Error[]): { errors: ErrorResponse[] } {
 	};
 }
 
-export function testErrorMessages(errors: Error[]): {
-	errors: ErrorResponse[];
-} {
+export function testErrorMessages(errors: Error[]): ErrorResponse {
 	return {
 		errors: errors.map((error) => ({
 			code: error.info.code,
@@ -89,9 +88,7 @@ export interface ValidatorError {
 	location: string;
 }
 
-export function errorMessagesFromValidator(errors: Result<ValidatorError>): {
-	errors: ErrorResponse[];
-} {
+export function errorMessagesFromValidator(errors: Result<ValidatorError>): ErrorResponse {
 	return {
 		errors: errors.array().map((error: ValidatorError) => {
 			const msg =

@@ -310,3 +310,7 @@ export const INVALID_SCOPES = {
 	code: 'INVALID_SCOPES',
 	message: 'Please provide only the scopes that are specified in client settings.',
 };
+export const FIELD_MUST_BE_A_STRING = {
+	code: 'FIELD_MUST_BE_A_STRING',
+	message: 'Please provide a valid string value for this field.',
+};

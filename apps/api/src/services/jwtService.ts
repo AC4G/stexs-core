@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '../db';
 import logger from '../loggers/logger';
 
-export function generateSignInConfirmToken(sub: string, types: [string]) {
+export function generateSignInConfirmToken(sub: string, types: string[]) {
 	const iat = Math.floor(Date.now() / 1000);
 	const exp = iat + JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT;
 
