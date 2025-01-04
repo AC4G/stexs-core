@@ -45,11 +45,13 @@ router.post(
 		body('identifier')
 			.notEmpty()
 			.withMessage(IDENTIFIER_REQUIRED)
+			.bail()
 			.isString()
 			.withMessage(FIELD_MUST_BE_A_STRING),
 		body('password')
 			.notEmpty()
 			.withMessage(PASSWORD_REQUIRED)
+			.bail()
 			.isString()
 			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),

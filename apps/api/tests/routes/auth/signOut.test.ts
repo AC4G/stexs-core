@@ -30,6 +30,9 @@ jest.mock('utils-node/middlewares', () => {
 		transformJwtErrorMessages: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
+		checkScopes: jest.fn(
+			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
+		),
 	}
 });
 
