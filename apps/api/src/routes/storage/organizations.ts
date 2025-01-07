@@ -22,7 +22,7 @@ import {
 	ISSUER,
 } from '../../../env-config';
 import db from '../../db';
-import { errorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import s3 from '../../s3';
 import { QueryConfig } from 'pg';
 
@@ -61,23 +61,17 @@ router.get(
 			Expires: time,
 		});
 
-		logger.info(
-			`Generated new presigned url for organization logo: ${organizationId}`,
-		);
+		logger.debug(`Generated new presigned url for organization logo: ${organizationId}`);
 
-		return res.json({
+		return res.json(message('Presigned url generated successfully.', {
 			url: signedUrl,
-		});
+		}));
 	},
 );
 
 router.post(
 	'/:organizationId',
 	[
-		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['organization.logo.write'], db, logger),
-		transformJwtErrorMessages(logger),
 		param('organizationId')
 			.notEmpty()
 			.withMessage(ORGANIZATION_ID_REQUIRED)
@@ -85,13 +79,23 @@ router.post(
 			.isNumeric()
 			.withMessage(ORGANIZATION_ID_NOT_NUMERIC),
 		validate(logger),
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password', 'client_credentials']),
+		checkScopes(['organization.logo.write'], db, logger),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const sub = req.auth?.sub;
-		const { organizationId } = req.params;
-		const grantType = req.auth?.grant_type;
-		const clientId = req.auth?.client_id;
-		const organizationIdFromToken = req.auth?.organization_id;
+		const sub = req.auth?.sub!;
+		const organizationId = parseInt(req.params.organizationId);
+		const {
+			grant_type: grantType,
+			client_id: clientId,
+			organization_id: organizationIdFromToken,
+		} = req.auth as {
+			grant_type: string;
+			client_id: string;
+			organization_id: number;
+		};
 
 		try {
 			let isAllowed = false;
@@ -102,21 +106,28 @@ router.post(
 					[sub, organizationId],
 				);
 
-				if (rowCount) isAllowed = true;
-			} else {
-				if (organizationId === organizationIdFromToken) isAllowed = true;
+				if (rowCount === 1) isAllowed = true;
+			} 
+			
+			if (organizationId === organizationIdFromToken) {
+				isAllowed = true;
 			}
 
 			if (!isAllowed) {
 				const consumer = grantType === 'password' ? 'User' : 'Client';
 				const consumerId = grantType === 'password' ? sub : clientId;
 
-				logger.warn(
-					`${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
-				);
+				logger.debug(`${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`);
+
 				return res
 					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+					.json(
+						message(
+							'Unauthorized access to upload/update the logo of the given organization.',
+							{},
+							[{ info: UNAUTHORIZED_ACCESS }]
+						)
+					);
 			}
 		} catch (e) {
 			logger.error(
@@ -124,7 +135,15 @@ router.post(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while checking authorization.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
@@ -147,21 +166,15 @@ router.post(
 			Expires: 60 * 5, // 5 minutes
 		});
 
-		logger.info(
-			`Created signed post url for organization logo: ${organizationId}`,
-		);
+		logger.debug(`Created presigned post url for organization logo: ${organizationId}`);
 
-		return res.json(signedPost);
+		return res.json(message('Presigned post url generated successfully.', { ...signedPost }));
 	},
 );
 
 router.delete(
 	'/:organizationId',
 	[
-		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['organization.logo.delete'], db, logger),
-		transformJwtErrorMessages(logger),
 		param('organizationId')
 			.notEmpty()
 			.withMessage(ORGANIZATION_ID_REQUIRED)
@@ -169,13 +182,23 @@ router.delete(
 			.isNumeric()
 			.withMessage(ORGANIZATION_ID_NOT_NUMERIC),
 		validate(logger),
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password', 'client_credentials']),
+		checkScopes(['organization.logo.delete'], db, logger),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const sub = req.auth?.sub;
+		const sub = req.auth?.sub!;
 		const organizationId = parseInt(req.params.organizationId);
-		const grantType = req.auth?.grant_type;
-		const clientId = req.auth?.client_id;
-		const organizationIdFromToken = req.auth?.organization_id;
+		const {
+			grant_type: grantType,
+			client_id: clientId,
+			organization_id: organizationIdFromToken,
+		} = req.auth as {
+			grant_type: string;
+			client_id: string;
+			organization_id: number;
+		};
 
 		try {
 			let isAllowed = false;
@@ -187,20 +210,24 @@ router.delete(
 				);
 
 				if (rowCount) isAllowed = true;
-			} else {
-				if (organizationId === organizationIdFromToken) isAllowed = true;
 			}
+			
+			if (organizationId === organizationIdFromToken) isAllowed = true;
 
 			if (!isAllowed) {
 				const consumer = grantType === 'password' ? 'User' : 'Client';
 				const consumerId = grantType === 'password' ? sub : clientId;
 
-				logger.warn(
-					`${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`,
-				);
+				logger.debug(`${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`);
 				return res
 					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+					.json(
+						message(
+							'Unauthorized access to delete the logo of the given organization.',
+							{},
+							[{ info: UNAUTHORIZED_ACCESS }]
+						)
+					);
 			}
 		} catch (e) {
 			logger.error(
@@ -208,7 +235,15 @@ router.delete(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while checking authorization.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		try {
@@ -221,17 +256,25 @@ router.delete(
 				})
 				.promise();
 
-			logger.info(`Deleted logo from organization: ${organizationId}`);
+			logger.debug(`Deleted logo from organization: ${organizationId}`);
+
+			res.sendStatus(204);
 		} catch (e) {
 			logger.error(
 				`Error while deleting organization logo. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while deleting organization logo.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
-
-		return res.sendStatus(204);
 	},
 );
 

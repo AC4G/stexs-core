@@ -26,7 +26,10 @@ export async function validateMFA(
 ): Promise<MFAError | null> {
 	try {
 		if (type === 'totp') {
-			const { rows, rowCount } = await db.query(
+			const { rows, rowCount } = await db.query<{
+				totp: boolean;
+				totp_secret: string | null;
+			}>(
 				`
 					SELECT 
 						totp, 
@@ -37,20 +40,18 @@ export async function validateMFA(
 				[userId],
 			);
 
-			if (rowCount === 0) {
+			if (!rowCount || rowCount === 0) {
 				logger.error(
 					`Failed to fetch MFA totp code and totp_secret for user: ${userId}`,
 				);
-
 				return {
 					status: 500,
 					info: INTERNAL_ERROR,
 				};
 			}
 
-			if (!rows[0].totp) {
+			if (!rows[0].totp || !rows[0].totp_secret) {
 				logger.debug(`MFA TOTP is disabled for user: ${userId}`);
-
 				return {
 					status: 400,
 					info: TOTP_DISABLED,
@@ -60,10 +61,7 @@ export async function validateMFA(
 			const totp = getTOTPForVerification(rows[0].totp_secret);
 
 			if (totp.validate({ token: code, window: 1 })) {
-				logger.debug(
-					`Invalid code provided for MFA TOTP password change for user: ${userId}`,
-				);
-
+				logger.debug(`Invalid code provided for MFA TOTP password change for user: ${userId}`);
 				return {
 					status: 403,
 					info: INVALID_CODE,
@@ -76,7 +74,11 @@ export async function validateMFA(
 		}
 
 		if (type === 'email') {
-			const { rows, rowCount } = await db.query(
+			const { rowCount, rows } = await db.query<{
+				email: boolean;
+				email_code: string | null;
+				email_code_sent_at: string | null;
+			}>(
 				`
 					SELECT 
 						email, 
@@ -88,11 +90,10 @@ export async function validateMFA(
 				[userId],
 			);
 
-			if (rowCount === 0) {
+			if (!rowCount || rowCount === 0) {
 				logger.error(
 					`Failed to fetch MFA email status, code and timestamp for user: ${userId}`,
 				);
-
 				return {
 					status: 500,
 					info: INTERNAL_ERROR,
@@ -101,7 +102,6 @@ export async function validateMFA(
 
 			if (!rows[0].email) {
 				logger.debug(`MFA email is disabled for user: ${userId}`);
-
 				return {
 					status: 400,
 					info: MFA_EMAIL_DISABLED,
@@ -110,7 +110,6 @@ export async function validateMFA(
 
 			if (code !== rows[0].email_code) {
 				logger.debug(`Invalid MFA code provided for user: ${userId}`);
-
 				return {
 					status: 403,
 					info: INVALID_CODE,
@@ -121,9 +120,10 @@ export async function validateMFA(
 				};
 			}
 
-			if (isExpired(rows[0].email_code_sent_at, 5)) {
-				logger.debug(`MFA code expired for user: ${userId}`);
+			const emailCodeSentAt = rows[0].email_code_sent_at;
 
+			if (!emailCodeSentAt || isExpired(emailCodeSentAt, 5)) {
+				logger.debug(`MFA code expired for user: ${userId}`);
 				return {
 					status: 403,
 					info: CODE_EXPIRED,
@@ -140,7 +140,6 @@ export async function validateMFA(
 				e instanceof Error ? e.message : e
 			}`,
 		);
-
 		return {
 			status: 500,
 			info: INTERNAL_ERROR,

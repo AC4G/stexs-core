@@ -15,7 +15,7 @@ import {
 import logger from '../../loggers/logger';
 import { Request } from 'express-jwt';
 import db from '../../db';
-import { errorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import {
 	INTERNAL_ERROR,
 	ITEM_ID_NOT_NUMERIC,
@@ -49,21 +49,17 @@ router.get(
 			Expires: time,
 		});
 
-		logger.info(`Generated new presigned url for item thumbnail: ${itemId}`);
+		logger.debug(`Generated new presigned url for item thumbnail: ${itemId}`);
 
-		return res.json({
+		return res.json(message('Presigned get url generated successfully.', {
 			url: signedUrl,
-		});
+		}));
 	},
 );
 
 router.post(
 	'/thumbnail/:itemId',
 	[
-		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['item.thumbnail.write'], db, logger),
-		transformJwtErrorMessages(logger),
 		param('itemId')
 			.notEmpty()
 			.withMessage(ITEM_ID_REQUIRED)
@@ -71,13 +67,23 @@ router.post(
 			.isNumeric()
 			.withMessage(ITEM_ID_NOT_NUMERIC),
 		validate(logger),
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password', 'client_credentials']),
+		checkScopes(['item.thumbnail.write'], db, logger),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const sub = req.auth?.sub;
+		const sub = req.auth?.sub!;
 		const { itemId } = req.params;
-		const grantType = req.auth?.grant_type;
-		const clientId = req.auth?.client_id;
-		const organizationId = req.auth?.organization_id;
+		const {
+			grant_type: grantType,
+			client_id: clientId,
+			organization_id: organizationId,
+		} = req.auth as {
+			grant_type: string;
+			client_id: string;
+			organization_id: number;
+		};
 
 		try {
 			let isAllowed = false;
@@ -99,7 +105,7 @@ router.post(
 					[itemId, sub],
 				);
 
-				if (rowCount) isAllowed = true;
+				if (rowCount === 1) isAllowed = true;
 			} else {
 				const { rowCount } = await db.query(
 					{
@@ -118,23 +124,31 @@ router.post(
 						`,
 						name: 'storage-api-check-item-owner-client'
 					},
-					[itemId, organizationId, clientId],
+					[
+						itemId,
+						organizationId,
+						clientId
+					],
 				);
 
-				if (rowCount) isAllowed = true;
+				if (rowCount === 1) isAllowed = true;
 			}
 
 			if (!isAllowed) {
 				const consumer = grantType === 'password' ? 'User' : 'Client';
 				const consumerId = grantType === 'password' ? sub : clientId;
 
-				logger.warn(
-					`${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${consumerId}`,
-				);
+				logger.debug(`${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${consumerId}`);
 
 				return res
 					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+					.json(
+						message(
+							'Unauthorized access to upload/update the thumbnail of an item.',
+							{},
+							[{ info: UNAUTHORIZED_ACCESS }]
+						)
+					);
 			}
 		} catch (e) {
 			logger.error(
@@ -142,7 +156,15 @@ router.post(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while checking authorization.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
@@ -165,9 +187,9 @@ router.post(
 			Expires: 60 * 5, // 5 minutes
 		});
 
-		logger.info(`Created signed post url for item thumbnail: ${itemId}`);
+		logger.debug(`Created new presigned post url for item thumbnail: ${itemId}`);
 
-		return res.json(signedPost);
+		return res.json(message('Presigned post url generated successfully.', { ...signedPost }));
 	},
 );
 

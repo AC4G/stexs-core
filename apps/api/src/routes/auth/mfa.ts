@@ -4,10 +4,11 @@ import db from '../../db';
 import logger from '../../loggers/logger';
 import {
 	CustomValidationError,
-	errorMessages,
+	message,
 } from 'utils-node/messageBuilder';
 import {
 	CODE_REQUIRED,
+	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_TYPE,
 	TYPE_REQUIRED,
@@ -46,17 +47,19 @@ router.get(
 		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const userId = req.auth?.sub;
-		let flows;
+		const userId = req.auth?.sub!;
 
 		try {
-			const { rowCount, rows } = await db.query(
+			const { rowCount, rows } = await db.query<{
+				email: boolean;
+				totp: boolean;
+			}>(
 				`
-					SELECT 
-						email, 
-						CASE 
-							WHEN totp_verified_at IS NOT NULL THEN TRUE 
-						ELSE FALSE 
+					SELECT
+						email,
+						CASE
+							WHEN totp_verified_at IS NOT NULL THEN TRUE
+						ELSE FALSE
 						END AS totp
 					FROM auth.mfa
 					WHERE user_id = $1::uuid;
@@ -64,33 +67,29 @@ router.get(
 				[userId],
 			);
 
-			if (rowCount === 0) {
-				logger.error(`MFA flows not found for user: ${userId}`);
-				return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
-			}
+			logger.debug(`MFA flows successfully retrieved for user: ${userId}`);
 
-			flows = rows[0];
+			res.json(message('MFA flows successfully retrieved.', !rowCount || rowCount === 0 ? {} : { ...rows[0] }));
 		} catch (e) {
 			logger.error(
 				`Error while fetching MFA flows for user: ${userId}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res.status(500).json(
+				message(
+					'An unexpected error occured while retrieving MFA flows.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
+			);
 		}
-
-		logger.debug(`MFA flows successfully retrieved for user: ${userId}`);
-
-		res.json(flows);
 	},
 );
 
 router.post(
 	'/enable',
 	[
-		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
 		body('type')
 			.notEmpty()
 			.withMessage(TYPE_REQUIRED)
@@ -104,21 +103,29 @@ router.post(
 
 				return true;
 			}),
-		body('code').custom((value, { req }) => {
-			if (req.body?.type !== 'email') {
+		body('code')
+			.custom((value, { req }) => {
+				if (req.body?.type !== 'email') {
+					return true;
+				}
+
+				if (value === undefined || value.length === 0) {
+					throw new CustomValidationError(CODE_REQUIRED);
+				}
+
 				return true;
-			}
-
-			if (value === undefined || value.length === 0) {
-				throw new CustomValidationError(CODE_REQUIRED);
-			}
-
-			return true;
-		}),
+			}),
 		validate(logger),
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password']),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { type } = req.body;
+		const {
+			type
+		}: {
+			type: 'email' | 'totp';
+		} = req.body;
 
 		switch (type) {
 			case 'totp':
@@ -133,9 +140,6 @@ router.post(
 router.post(
 	'/disable',
 	[
-		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
 		body('type')
 			.notEmpty()
 			.withMessage(TYPE_REQUIRED)
@@ -149,11 +153,23 @@ router.post(
 
 				return true;
 			}),
-		body('code').notEmpty().withMessage(CODE_REQUIRED),
+		body('code')
+			.notEmpty()
+			.withMessage(CODE_REQUIRED)
+			.bail()
+			.isString()
+			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password']),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { type } = req.body;
+		const {
+			type
+		}: {
+			type: 'email' | 'totp';
+		} = req.body;
 
 		switch (type) {
 			case 'totp':
@@ -169,9 +185,6 @@ router.post(
 router.post(
 	'/verify',
 	[
-		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
 		body('type')
 			.notEmpty()
 			.withMessage(TYPE_REQUIRED)
@@ -184,11 +197,23 @@ router.post(
 
 				return true;
 			}),
-		body('code').notEmpty().withMessage(CODE_REQUIRED),
+		body('code')
+			.notEmpty()
+			.withMessage(CODE_REQUIRED)
+			.bail()
+			.isString()
+			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password']),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { type } = req.body;
+		const {
+			type
+		}: {
+			type: 'totp';
+		} = req.body;
 
 		switch (type) {
 			case 'totp':
@@ -201,13 +226,6 @@ router.post(
 router.post(
 	'/send-code',
 	[
-		validateSignInConfirmOrAccessToken(
-			ACCESS_TOKEN_SECRET,
-			SIGN_IN_CONFIRM_TOKEN_SECRET,
-			AUDIENCE,
-			ISSUER,
-		),
-		transformJwtErrorMessages(logger),
 		body('type')
 			.notEmpty()
 			.withMessage(TYPE_REQUIRED)
@@ -222,9 +240,20 @@ router.post(
 				return true;
 			}),
 		validate(logger),
+		validateSignInConfirmOrAccessToken(
+			ACCESS_TOKEN_SECRET,
+			SIGN_IN_CONFIRM_TOKEN_SECRET,
+			AUDIENCE,
+			ISSUER,
+		),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { type } = req.body;
+		const {
+			type
+		}: {
+			type: 'email';
+		} = req.body;
 
 		switch (type) {
 			case 'email':

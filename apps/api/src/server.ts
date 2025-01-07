@@ -6,7 +6,7 @@ import storageRouter from './routes/storage';
 import { ENV, SERVER_PORT } from '../env-config';
 import logger from './loggers/logger';
 import responseTime from 'response-time';
-import { errorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import { ROUTE_NOT_FOUND } from 'utils-node/errors';
 import cors from 'cors';
 import db from './db';
@@ -54,17 +54,23 @@ app.use('/storage', storageRouter);
 app.use((req, res, next) => {
 	logger.debug(`Route not found: ${req.method} ${req.path}`);
 
-	res.status(404).json(
-		errorMessages([
-			{
-				info: ROUTE_NOT_FOUND,
-				data: {
-					method: req.method,
-					route: req.path,
-				},
-			},
-		]),
-	);
+	res
+		.status(404)
+		.json(
+			message(
+				'Route not found.',
+				{},
+				[
+					{
+						info: ROUTE_NOT_FOUND,
+						data: {
+							method: req.method,
+							route: req.path,
+						},
+					},
+				]
+			),
+		);
 	next();
 });
 
@@ -72,9 +78,7 @@ let server: Server;
 
 if (ENV !== 'test') {
 	server = app.listen(SERVER_PORT, () => {
-		logger.info(
-			`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`,
-		);
+		logger.info(`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`);
 	});
 }
 

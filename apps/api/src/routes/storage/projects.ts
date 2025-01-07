@@ -9,7 +9,7 @@ import {
 	UNAUTHORIZED_ACCESS,
 } from 'utils-node/errors';
 import db from '../../db';
-import { errorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
@@ -75,21 +75,17 @@ router.get(
 			Expires: time,
 		});
 
-		logger.info(`Generated new presigned url for project logo: ${projectId}`);
+		logger.debug(`Generated new presigned url for project logo: ${projectId}`);
 
-		return res.json({
+		return res.json(message('Presigned url generated successfully.', {
 			url: signedUrl,
-		});
+		}));
 	},
 );
 
 router.post(
 	'/:projectId',
 	[
-		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['project.logo.write'], db, logger),
-		transformJwtErrorMessages(logger),
 		param('projectId')
 			.notEmpty()
 			.withMessage(PROJECT_ID_REQUIRED)
@@ -97,13 +93,23 @@ router.post(
 			.isNumeric()
 			.withMessage(PROJECT_ID_NOT_NUMERIC),
 		validate(logger),
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password', 'client_credentials']),
+		checkScopes(['project.logo.write'], db, logger),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const sub = req.auth?.sub;
+		const sub = req.auth?.sub!;
 		const { projectId } = req.params;
-		const grantType = req.auth?.grant_type;
-		const clientId = req.auth?.client_id;
-		const organizationId = req.auth?.organization_id;
+		const {
+			grant_type: grantType,
+			client_id: clientId,
+			organization_id: organizationId,			
+		} = req.auth as {
+			grant_type: string;
+			client_id: string;
+			organization_id: number;
+		};
 
 		try {
 			let isAllowed = false;
@@ -114,27 +120,31 @@ router.post(
 					[sub, projectId],
 				);
 
-				if (rowCount) isAllowed = true;
+				if (rowCount === 1) isAllowed = true;
 			} else {
 				const { rowCount } = await db.query(
 					checkProjectOwnerClientQuery,
 					[organizationId, projectId, clientId],
 				);
 
-				if (rowCount) isAllowed = true;
+				if (rowCount === 1) isAllowed = true;
 			}
 
 			if (!isAllowed) {
 				const consumer = grantType === 'password' ? 'User' : 'Client';
 				const consumerId = grantType === 'password' ? sub : clientId;
 
-				logger.warn(
-					`${consumer} is not authorized to upload/update the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`,
-				);
+				logger.debug(`${consumer} is not authorized to upload/update the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`);
 
 				return res
 					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+					.json(
+						message(
+							'Unauthorized access to upload/update the logo of the given project.',
+							{},
+							[{ info: UNAUTHORIZED_ACCESS }]
+						)
+					);
 			}
 		} catch (e) {
 			logger.error(
@@ -142,7 +152,15 @@ router.post(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while checking authorization.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
@@ -165,19 +183,15 @@ router.post(
 			Expires: 60 * 5, // 5 minutes
 		});
 
-		logger.info(`Created signed post url for project logo: ${projectId}`);
+		logger.debug(`Created signed post url for project logo: ${projectId}`);
 
-		return res.json(signedPost);
+		return res.json(message('', { ...signedPost }));
 	},
 );
 
 router.delete(
 	'/:projectId',
 	[
-		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['project.logo.delete'], db, logger),
-		transformJwtErrorMessages(logger),
 		param('projectId')
 			.notEmpty()
 			.withMessage(PROJECT_ID_REQUIRED)
@@ -185,9 +199,13 @@ router.delete(
 			.isNumeric()
 			.withMessage(PROJECT_ID_NOT_NUMERIC),
 		validate(logger),
+		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
+		checkTokenGrantType(['password', 'client_credentials']),
+		checkScopes(['project.logo.delete'], db, logger),
+		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const sub = req.auth?.sub;
+		const sub = req.auth?.sub!;
 		const { projectId } = req.params;
 		const grantType = req.auth?.grant_type;
 		const clientId = req.auth?.client_id;
@@ -202,27 +220,31 @@ router.delete(
 					[sub, projectId],
 				);
 
-				if (rowCount) rowsFound = true;
+				if (rowCount === 1) rowsFound = true;
 			} else {
 				const { rowCount } = await db.query(
 					checkProjectOwnerClientQuery,
 					[organizationId, projectId, clientId],
 				);
 
-				if (rowCount) rowsFound = true;
+				if (rowCount === 1) rowsFound = true;
 			}
 
 			if (!rowsFound) {
 				const consumer = grantType === 'password' ? 'User' : 'Client';
 				const consumerId = grantType === 'password' ? sub : clientId;
 
-				logger.warn(
-					`${consumer} is not authorized to delete the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`,
-				);
+				logger.debug(`${consumer} is not authorized to delete the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`);
 
 				return res
 					.status(401)
-					.json(errorMessages([{ info: UNAUTHORIZED_ACCESS }]));
+					.json(
+						message(
+							'Unauthorized access to delete the logo of the given project.',
+							{},
+							[{ info: UNAUTHORIZED_ACCESS }]
+						)
+					);
 			}
 		} catch (e) {
 			logger.error(
@@ -230,7 +252,15 @@ router.delete(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while checking authorization.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		try {
@@ -243,17 +273,25 @@ router.delete(
 				})
 				.promise();
 
-			logger.info(`Deleted logo from project: ${projectId}`);
+			logger.debug(`Deleted logo from project: ${projectId}`);
+
+			res.sendStatus(204);
 		} catch (e) {
 			logger.error(
 				`Error while deleting project logo. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while deleting project logo.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
-
-		return res.sendStatus(204);
 	},
 );
 

@@ -1,4 +1,8 @@
-import { StexsAuthClient, AuthEvents } from './StexsAuthClient';
+import {
+	StexsAuthClient,
+	AuthEvents,
+	ApiAuthRoutes
+} from './StexsAuthClient';
 import { StexsStorageClient } from './StexsStorageClient';
 import {
 	PostgrestClient,
@@ -7,7 +11,10 @@ import {
 } from '@supabase/postgrest-js';
 import type { Session } from './lib/types';
 
-export { AuthEvents };
+export {
+	AuthEvents,
+	ApiAuthRoutes,
+};
 
 export default class StexsClient {
 	auth: StexsAuthClient;

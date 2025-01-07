@@ -50,16 +50,11 @@ export type Session = {
 } | undefined;
 */
 
-export interface SignInInit {
-	continuousAutoRefresh: boolean;
-	expires: number;
-	token: string;
-	types: string[];
-}
-
-export interface SignedUrl {
-	url: string;
-	expires: number;
+export interface MessageResponse {
+	success: boolean;
+	message: string;
+	timestamp: string;
+	data: { [key: string]: any };
 }
 
 export interface ErrorResponse {
@@ -71,6 +66,25 @@ export interface ErrorResponse {
 		};
 		timestamp: string;
 	}[];
+}
+
+export type RequestOptions = {
+    path: string;
+    method?: 'GET' | 'POST' | 'DELETE' | 'PUT';
+    body?: Record<string, any>;
+    headers?: Record<string, string>;
+};
+
+export interface SignInInit {
+	continuousAutoRefresh: boolean;
+	expires: number;
+	token: string;
+	types: string[];
+}
+
+export interface SignedUrl {
+	url: string;
+	expires: number;
 }
 
 export interface SignInInitResponse {
@@ -87,3 +101,9 @@ export interface TokenResponse {
 }
 
 export interface UserResponse extends User {}
+
+export interface SignUpResponse extends MessageResponse {}
+
+export interface ActiveSessionsResponse {
+	amount: number;
+}

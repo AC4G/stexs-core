@@ -7,7 +7,7 @@ import generateAccessToken, {
 } from '../../services/jwtService';
 import {
 	CustomValidationError,
-	errorMessages,
+	message,
 } from 'utils-node/messageBuilder';
 import {
 	ACCOUNT_BANNED,
@@ -65,13 +65,15 @@ router.post(
 			password: string
 		} = req.body;
 
-		logger.log('debug', `Sign in for user: ${identifier} and identifier type: ${typeof identifier}`);
-
-		let uuid: string;
-		let types: string[] = [];
+		logger.debug(`Sign in for user: ${identifier} and identifier type: ${typeof identifier}`);
 
 		try {
-			const { rowCount, rows } = await db.query(
+			const { rowCount, rows } = await db.query<{
+				id: string;
+				email_verified_at: Date | null;
+				types: string[];
+				banned_at: Date | null;
+			}>(
 				`
 					SELECT 
 						u.id, 
@@ -92,58 +94,82 @@ router.post(
 				[identifier, password],
 			);
 
-			if (rowCount === 0) {
+			if (!rowCount || rowCount === 0) {
 				logger.debug(`Invalid credentials for sign in for user: ${identifier}`);
-				return res.status(400).json(
-					errorMessages([
-						{
-							info: {
-								code: INVALID_CREDENTIALS.code,
-								message: INVALID_CREDENTIALS.messages[0],
-							},
-							data: {
-								location: 'body',
-								paths: ['identifier', 'password'],
-							},
-						},
-					]),
-				);
+				return res
+					.status(400)
+					.json(
+						message(
+							'Sign In failed.',
+							{},
+							[
+								{
+									info: {
+										code: INVALID_CREDENTIALS.code,
+										message: INVALID_CREDENTIALS.messages[0],
+									},
+									data: {
+										location: 'body',
+										paths: ['identifier', 'password'],
+									},
+								},
+							]
+						)
+					);
 			}
 
 			if (rows[0].banned_at) {
-				logger.debug(
-					`Attempt to sign in to banned account for user: ${identifier}`,
-				);
-				return res.status(400).json(errorMessages([{ info: ACCOUNT_BANNED }]));
+				logger.debug(`Attempt to sign in into a banned account for user: ${identifier}`);
+				return res
+					.status(400)
+					.json(
+						message(
+							'Attempt to sign in into a banned account.',
+							{}, 
+							[{ info: ACCOUNT_BANNED }]
+						)
+					);
 			}
 
 			if (!rows[0].email_verified_at) {
 				logger.debug(`Email not verified for user: ${identifier}`);
 				return res
 					.status(400)
-					.json(errorMessages([{ info: EMAIL_NOT_VERIFIED }]));
+					.json(
+						message(
+							'Email not verified.',
+							{},
+							[{ info: EMAIL_NOT_VERIFIED }]
+						)
+					);
 			}
 
-			uuid = rows[0].id;
-			types = rows[0].types;
+			let types = rows[0].types;
+
+			const data = generateSignInConfirmToken(rows[0].id, types);
+
+			logger.debug(`Sign-in initialized for user: ${identifier}`);
+
+			res.json(message('Sign-in initialized successfully.', {
+				...data,
+				types,
+			}));
 		} catch (e) {
 			logger.error(
 				`Error during sign in for user: ${identifier}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred during sign in.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
-
-		const { token, expires } = generateSignInConfirmToken(uuid, types);
-
-		logger.debug(`Sign-in initialized for user: ${identifier}`);
-
-		res.json({
-			token,
-			types,
-			expires,
-		});
 	},
 );
 
@@ -152,7 +178,10 @@ router.post(
 	[
 		body('code')
 			.notEmpty()
-			.withMessage(CODE_REQUIRED),
+			.withMessage(CODE_REQUIRED)
+			.bail()
+			.isString()
+			.withMessage(FIELD_MUST_BE_A_STRING),
 		body('type')
 			.notEmpty()
 			.withMessage(TYPE_REQUIRED)
@@ -167,58 +196,85 @@ router.post(
 			}),
 		body('token')
 			.notEmpty()
-			.withMessage(TOKEN_REQUIRED),
+			.withMessage(TOKEN_REQUIRED)
+			.bail()
+			.isString()
+			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 		validateSignInConfirmToken(SIGN_IN_CONFIRM_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['sign_in_confirm']),
 		transformJwtErrorMessages(logger),
 	],
 	async (req: JWTRequest, res: Response) => {
-		const userId = req.auth?.sub;
-		const supportedTypes = req.auth?.types;
-		const { type, code } = req.body;
+		const userId = req.auth?.sub!;
+		const supportedTypes: string[] = req.auth?.types;
+		const {
+			type,
+			code
+		}: {
+			type: string;
+			code: string
+		} = req.body;
 
 		if (!supportedTypes.includes(type)) {
 			logger.debug(`Unsupported MFA type provided for user: ${userId}`);
-			return res.status(400).json(
-				errorMessages([
-					{
-						info: UNSUPPORTED_TYPE,
-						data: {
-							location: 'body',
-							path: 'token',
-						},
-					},
-				]),
-			);
+			return res
+				.status(400)
+				.json(
+					message(
+						'Unsupported MFA type provided.',
+						{},
+						[
+							{
+								info: UNSUPPORTED_TYPE,
+								data: {
+									location: 'body',
+									path: 'token',
+								},
+							},
+						]
+					)
+				);
 		}
 
-		let mfaError = await validateMFA(userId!, type, code);
+		let mfaError = await validateMFA(userId, type, code);
 
 		if (mfaError) {
-			return res.status(mfaError.status).json(
-				errorMessages([
-					{
-						info: mfaError.info,
-						data: mfaError.data,
-					},
-				]),
-			);
+			return res
+				.status(mfaError.status)
+				.json(
+					message(
+						'MFA validation failed.',
+						{},
+						[
+							{
+								info: mfaError.info,
+								data: mfaError.data,
+							},
+						]
+					)
+				);
 		}
 
 		try {
-			const body = await generateAccessToken({
+			const data = await generateAccessToken({
 				sub: userId,
 			});
 
-			res.json(body);
+			logger.debug(`Sign-in successful for user: ${userId}`);
 
-			logger.debug(`New access token generated for user: ${userId}`);
+			res.json(message('Sign-in successful.', { ...data }));
 		} catch (e) {
-			res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred during sign in confirmation.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
-
-		logger.debug(`Sign-in successful for user: ${userId}`);
 	},
 );
 

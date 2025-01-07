@@ -1,9 +1,12 @@
-import { Router, Request, Response } from 'express';
+import {
+	Router,
+	Request,
+	Response
+} from 'express';
 import db from '../../db';
 import sendEmail from '../../services/emailService';
 import {
 	message,
-	errorMessages,
 	CustomValidationError,
 } from 'utils-node/messageBuilder';
 import { body } from 'express-validator';
@@ -46,7 +49,6 @@ router.post(
 
 				return true;
 			})
-
 			.custom((value: string) => {
 				if (/^\w+([-]?\w+)*@\w+([-]?\w+)*(\.\w{2,3})+$/.test(value))
 					throw new CustomValidationError({
@@ -79,7 +81,15 @@ router.post(
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { username, password, email } = req.body;
+		const {
+			username,
+			password,
+			email
+		}: {
+			username: string;
+			password: string;
+			email: string;
+		} = req.body;
 		const token = uuidv4();
 
 		try {
@@ -98,57 +108,79 @@ router.post(
 						$3::jsonb, 
 						$4::uuid,
 						CURRENT_TIMESTAMP
-					)
-					RETURNING id;
+					);
 				`,
-				[email, password, { username }, token],
+				[
+					email,
+					password,
+					{ username },
+					token
+				],
 			);
 
-			if (rowCount === 0) {
+			if (!rowCount || rowCount === 0) {
 				logger.error('Sign up: Database insertion failed.');
-				return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+				return res
+					.status(500)
+					.json(
+						message(
+							'Failed to sign up. Please try again.',
+							{},
+							[{ info: INTERNAL_ERROR }]
+						)
+					);
 			}
 
 			logger.debug(`Sign up successful for user: ${username}`);
 
 			res
 				.status(201)
-				.json(
-					message(
-						'Sign up successful. Check your email for an verification link!',
-					),
-				);
+				.json(message('Sign up successful. Check your email for an verification link!'));
 		} catch (e) {
 			const err = e as { hint: string | null };
 
 			if (err.hint) {
 				const path = err.hint.split(' ').pop()!;
 
-				logger.debug(
-					`Sign up validation failed for user: ${username}, path: ${path}`,
-				);
+				logger.debug(`Sign up validation failed for user: ${username}, path: ${path}`);
 
-				return res.status(400).json(
-					errorMessages([
-						{
-							info: {
-								code: INVALID_INPUT_DATA.code,
-								message: err.hint + '.',
-							},
-							data: {
-								path,
-								location: 'body',
-							},
-						},
-					]),
-				);
+				return res
+					.status(400)
+					.json(
+						message(
+							'Failed to sign up because of invalid input.',
+							{},
+							[
+								{
+									info: {
+										code: INVALID_INPUT_DATA.code,
+										message: err.hint + '.',
+									},
+									data: {
+										path,
+										location: 'body',
+									},
+								},
+							]
+						)
+					);
 			}
 
 			logger.error(
-				`Error during sign up: ${e instanceof Error ? e.message : e}`,
+				`Error during sign up: ${
+					e instanceof Error ? e.message : e
+				}`,
 			);
 
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while signing up.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		try {
@@ -157,19 +189,25 @@ router.post(
 				'Verification Email',
 				undefined,
 				`Please verify your email. ${
-					ISSUER + '/verify?email=' + email + '&token=' + token
+					ISSUER + '/auth/verify?email=' + email + '&token=' + token
 				}`,
 			);
-			logger.debug(
-				`Email verification message sent successfully for user: ${username}`,
-			);
+			logger.debug(`Email verification message sent successfully for user: ${username}`);
 		} catch (e) {
 			logger.error(
 				`Sending verification email failed for email: ${email}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while sending verification email.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 	},
 );

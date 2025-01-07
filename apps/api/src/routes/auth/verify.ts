@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { errorMessages, message } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import db from '../../db';
 import { body, query } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../../env-config';
@@ -8,6 +8,7 @@ import {
 	EMAIL_ALREADY_VERIFIED,
 	EMAIL_NOT_FOUND,
 	EMAIL_REQUIRED,
+	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_EMAIL,
 	TOKEN_REQUIRED,
@@ -31,11 +32,19 @@ router.get(
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
-		query('token').notEmpty().withMessage(TOKEN_REQUIRED),
+		query('token')
+			.notEmpty()
+			.withMessage(TOKEN_REQUIRED)
+			.bail()
+			.isString()
+			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
-		const { email, token } = req.query;
+		const {
+			email,
+			token
+		} = req.query;
 
 		const signInURL = new URL(REDIRECT_TO_SIGN_IN);
 		const source = 'verify';
@@ -43,32 +52,24 @@ router.get(
 		signInURL.searchParams.set('source', source);
 
 		try {
-			const { rowCount, rows: users } = await db.query(
+			const { rowCount, rows } = await db.query<{
+				id: string;
+				email_verified_at: string | null;
+				verification_sent_at: string | null;
+			}>(
 				`
-					SELECT 
-						id, 
-						email_verified_at, 
-						verification_sent_at 
-					FROM auth.users 
-					WHERE email = $1::text 
+					SELECT
+						id,
+						email_verified_at,
+						verification_sent_at
+					FROM auth.users
+					WHERE email = $1::text
 						AND verification_token = $2::uuid;
 				`,
 				[email, token],
 			);
 
-			if (users[0]?.email_verified_at) {
-				signInURL.searchParams.append('code', 'error');
-				signInURL.searchParams.append(
-					'message',
-					'Your email has been already verified.',
-				);
-
-				logger.debug(`Email already verified for email: ${email}`);
-
-				return res.redirect(302, signInURL.toString());
-			}
-
-			if (rowCount === 0) {
+			if (!rowCount || rowCount === 0) {
 				signInURL.searchParams.append('code', 'error');
 				signInURL.searchParams.append(
 					'message',
@@ -80,7 +81,21 @@ router.get(
 				return res.redirect(302, signInURL.toString());
 			}
 
-			if (isExpired(users[0].verification_sent_at, 60 * 24)) {
+			if (rows[0].email_verified_at) {
+				signInURL.searchParams.append('code', 'error');
+				signInURL.searchParams.append(
+					'message',
+					'Your email has been already verified.',
+				);
+
+				logger.debug(`Email already verified for email: ${email}`);
+
+				return res.redirect(302, signInURL.toString());
+			}
+
+			const verificationSentAt = rows[0].verification_sent_at;
+
+			if (!verificationSentAt || isExpired(verificationSentAt, 60 * 24)) {
 				signInURL.searchParams.append('code', 'error');
 				signInURL.searchParams.append(
 					'message',
@@ -104,9 +119,17 @@ router.get(
 				[email],
 			);
 
-			if (count === 0) {
+			if (!count || count === 0) {
 				logger.error(`User not found for email: ${email}`);
-				return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+				return res
+					.status(500)
+					.json(
+						message(
+							'An unexpected error occurred while verifying email.',
+							{},
+							[{ info: INTERNAL_ERROR }]
+						)
+					);
 			}
 		} catch (e) {
 			logger.error(
@@ -114,7 +137,15 @@ router.get(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while verifying email.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		logger.debug(`Email successfully verified for email: ${email}`);
@@ -141,30 +172,47 @@ router.post(
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
-		const email = req.body.email;
+		const email: string = req.body.email;
 
 		try {
-			const { rowCount, rows } = await db.query(
+			const { rowCount, rows } = await db.query<{
+				id: string;
+				email_confirmed_at: string | null;
+			}>(
 				`
 					SELECT
-						id, 
-						email_verified_at 
+						id,
+						email_verified_at
 					FROM auth.users
 					WHERE email = $1::text;
 				`,
 				[email],
 			);
 
-			if (rowCount === 0) {
+			if (!rowCount || rowCount === 0) {
 				logger.debug(`Email not found for resend: ${email}`);
-				return res.status(404).json(errorMessages([{ info: EMAIL_NOT_FOUND }]));
+				return res
+					.status(404)
+					.json(
+						message(
+							'Email not found.',
+							{},
+							[{ info: EMAIL_NOT_FOUND }]
+						)
+					);
 			}
 
 			if (rows[0].email_confirmed_at) {
 				logger.debug(`Email already verified for resend: ${email}`);
 				return res
 					.status(400)
-					.json(errorMessages([{ info: EMAIL_ALREADY_VERIFIED }]));
+					.json(
+						message(
+							'Email already verified.',
+							{},
+							[{ info: EMAIL_ALREADY_VERIFIED }]
+						)
+					);
 			}
 		} catch (e) {
 			logger.error(
@@ -172,7 +220,15 @@ router.post(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while checking email.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		const token = uuidv4();
@@ -189,11 +245,17 @@ router.post(
 				[token, email],
 			);
 
-			if (rowCount === 0) {
-				logger.error(
-					`Verification token update failed during resend for email: ${email}`,
-				);
-				return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			if (!rowCount || rowCount === 0) {
+				logger.error(`Verification token update failed during resend for email: ${email}`);
+				return res
+					.status(500)
+					.json(
+						message(
+							'An unexpected error occurred while updating verification token.',
+							{},
+							[{ info: INTERNAL_ERROR }]
+						)
+					);
 			}
 		} catch (e) {
 			logger.error(
@@ -201,7 +263,15 @@ router.post(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while updating verification token.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		try {
@@ -210,7 +280,7 @@ router.post(
 				'Verification Email',
 				undefined,
 				`Please verify your email. ${
-					ISSUER + '/verify?email=' + email + '&token=' + token
+					ISSUER + '/auth/verify?email=' + email + '&token=' + token
 				}`,
 			);
 		} catch (e) {
@@ -219,7 +289,15 @@ router.post(
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while sending verification email.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		logger.debug(`Verification email resent successful for email: ${email}`);

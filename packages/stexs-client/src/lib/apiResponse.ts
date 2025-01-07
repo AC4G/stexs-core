@@ -1,4 +1,6 @@
-export class ApiResponse<TSuccess, TError> extends Response {
+import { ErrorResponse } from "./types";
+
+export class ApiResponse<TSuccess, TError = ErrorResponse> extends Response {
     constructor(response: Response) {
         super(response.body, {
           status: response.status,
@@ -12,37 +14,37 @@ export class ApiResponse<TSuccess, TError> extends Response {
      */
     async json(): Promise<TSuccess | TError> {
         const rawData = await super.json();
-    
+
         if (this.isError(rawData)) {
             return rawData as TError;
         }
 
         return rawData as TSuccess;
     }
-  
+
     /**
      * Get the success body directly, throwing an error if the response is not successful.
      */
     async getSuccessBody(): Promise<TSuccess> {
         const rawData = await super.json();
-    
+
         if (!this.isError(rawData)) {
             return rawData as TSuccess;
         }
-        
+
         throw new Error('The response is not a success response.');
     }
-  
+
     /**
      * Get the error body directly, throwing an error if the response is successful.
      */
     async getErrorBody(): Promise<TError> {
         const rawData = await super.json();
-    
+
         if (this.isError(rawData)) {
             return rawData as TError;
         }
-        
+
         throw new Error('The response is not an error response.');
     }
 

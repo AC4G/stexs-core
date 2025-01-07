@@ -1,4 +1,4 @@
-import { Pool, PoolClient, QueryConfig, QueryResult } from 'pg';
+import { Pool, PoolClient, QueryConfig, QueryResult, QueryResultRow } from 'pg';
 
 interface DbPoolConfig {
   connectionString: string;
@@ -24,7 +24,7 @@ export class DbPool {
     });
   }
 
-  async query(queryTextOrConfig: string | QueryConfig<any[]>, values?: any[]): Promise<QueryResult> {
+  async query<T extends QueryResultRow = any>(queryTextOrConfig: string | QueryConfig<any[]>, values?: any[]): Promise<QueryResult<T>> {
     const client = await this.pool.connect();
 
     try {

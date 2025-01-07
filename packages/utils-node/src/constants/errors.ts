@@ -191,6 +191,10 @@ export const RECOVERY_LINK_EXPIRED = {
 	code: 'RECOVERY_LINK_EXPIRED',
 	message: 'Recovery link expired. Please request a new recovery link.',
 };
+export const RECOVERY_CONFIRM_WITHOUT_RECOVERY_REQUESTED = {
+	code: 'RECOVERY_CONFIRM_WITHOUT_RECOVERY_REQUESTED',
+	message: 'Please request a recovery link first before trying to confirm recovery.',
+}
 export const EMAIL_CHANGE_LINK_EXPIRED = {
 	code: 'EMAIL_CHANGE_LINK_EXPIRED',
 	message:

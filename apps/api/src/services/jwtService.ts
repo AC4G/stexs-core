@@ -39,7 +39,7 @@ export default async function generateAccessToken(
 		| 'password'
 		| 'client_credentials'
 		| 'authorization_code' = 'password',
-	connectionId: string | null = null,
+	connectionId: number | null = null,
 	refreshToken: string | null = null,
 	oldRefreshToken: string | null = null,
 ) {

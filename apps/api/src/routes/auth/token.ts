@@ -1,9 +1,10 @@
 import { Router, Response } from 'express';
-import { errorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import db from '../../db';
 import generateAccessToken from '../../services/jwtService';
 import { Request } from 'express-jwt';
 import {
+	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_TOKEN,
 	REFRESH_TOKEN_REQUIRED,
@@ -23,14 +24,27 @@ const router = Router();
 router.post(
 	'/',
 	[
-		body('refresh_token').notEmpty().withMessage(REFRESH_TOKEN_REQUIRED),
+		body('refresh_token')
+			.notEmpty()
+			.withMessage(REFRESH_TOKEN_REQUIRED)
+			.bail()
+			.isString()
+			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 		validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const token = req.auth;
+		const {
+			sub,
+			jti,
+			session_id
+		} = req.auth as {
+			sub: string;
+			jti: string;
+			session_id: string;
+		};
 
 		try {
 			const { rowCount } = await db.query(
@@ -41,48 +55,70 @@ router.post(
 						AND token = $2::uuid 
 						AND session_id = $3::uuid;
 				`,
-				[token?.sub, token?.jti, token?.session_id],
+				[
+					sub,
+					jti,
+					session_id
+				],
 			);
 
-			if (rowCount === 0) {
-				logger.debug(
-					`Refresh token invalid or expired for user: ${token?.sub}`,
-				);
-				return res.status(401).send(
-					errorMessages([
-						{
-							info: INVALID_TOKEN,
-							data: {
-								location: 'body',
-								path: 'refresh_token',
-							},
-						},
-					]),
-				);
+			if (!rowCount || rowCount === 0) {
+				logger.debug(`Refresh token invalid or expired for user: ${sub}`);
+				return res
+					.status(401)
+					.send(
+						message(
+							'Invalid refresh token.',
+							{},
+							[
+								{
+									info: INVALID_TOKEN,
+									data: {
+										location: 'body',
+										path: 'refresh_token',
+									},
+								},
+							]
+						)
+					);
 			}
 
-			logger.debug(
-				`Refresh token successfully processed for user: ${token?.sub} (Revoked)`,
-			);
+			logger.debug(`Refresh token successfully processed for user: ${sub} (Revoked)`);
 		} catch (e) {
 			logger.error(
-				`Error while processing refresh token for user: ${token?.sub}. Error: ${
+				`Error while processing refresh token for user: ${sub}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while processing refresh token.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		try {
-			const body = await generateAccessToken({
-				sub: token?.sub,
+			const data = await generateAccessToken({
+				sub,
 			});
 
-			res.json(body);
+			logger.debug(`A new access token generated for user: ${sub}`);
 
-			logger.debug(`New access token generated for user: ${token?.sub}`);
+			res.json(message('Access token successfully generated.', { ...data }));
 		} catch (e) {
-			res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while generating new access token.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 	},
 );

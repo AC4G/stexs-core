@@ -7,7 +7,7 @@ import {
 } from 'utils-node/errors';
 import {
 	CustomValidationError,
-	errorMessages,
+	message
 } from 'utils-node/messageBuilder';
 import { 
 	validate,
@@ -44,7 +44,6 @@ router.get(
 	],
 	async (req: Request, res: Response) => {
 		const { userId } = req.params;
-
 		const expires = 60 * 60 * 24; // 1 day
 
 		const signedUrl = await s3.getSignedUrl('getObject', {
@@ -53,11 +52,11 @@ router.get(
 			Expires: expires,
 		});
 
-		logger.info(`Generated new presigned url for avatar: ${userId}`);
+		logger.debug(`Generated new presigned url for avatar: ${userId}`);
 
-		return res.json({
+		return res.json(message('Presigned get url generated successfully.', {
 			url: signedUrl,
-		});
+		}));
 	},
 );
 
@@ -69,8 +68,7 @@ router.post(
 		transformJwtErrorMessages(logger)
 	],
 	async (req: Request, res: Response) => {
-		const userId = req.auth?.sub;
-
+		const userId = req.auth?.sub!;
 		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
 
 		const signedPost = await s3.createPresignedPost({
@@ -91,9 +89,9 @@ router.post(
 			Expires: 60, // 10 seconds,
 		});
 
-		logger.info(`Created signed post url for avatar: ${userId}`);
+		logger.debug(`Generated signed post url for avatar: ${userId}`);
 
-		return res.json(signedPost);
+		return res.json(message('Presigned post url generated successfully.', { ...signedPost }));
 	},
 );
 
@@ -105,7 +103,7 @@ router.delete(
 		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const userId = req.auth?.sub;
+		const userId = req.auth?.sub!;
 
 		try {
 			await s3
@@ -117,12 +115,20 @@ router.delete(
 				})
 				.promise();
 
-			logger.info(`Deleted avatar from user: ${userId}`);
+			logger.debug(`Deleted avatar from user: ${userId}`);
 		} catch (e) {
 			logger.error(
 				`Error while deleting avatar. Error: ${e instanceof Error ? e.message : e}`,
 			);
-			return res.status(500).json(errorMessages([{ info: INTERNAL_ERROR }]));
+			return res
+				.status(500)
+				.json(
+					message(
+						'An unexpected error occurred while deleting avatar.',
+						{},
+						[{ info: INTERNAL_ERROR }]
+					)
+				);
 		}
 
 		return res.sendStatus(204);
