@@ -1,6 +1,6 @@
 import { NextFunction, Response, Request } from 'express';
 import { expressjwt as jwt, Request as JWTRequest } from 'express-jwt';
-import { errorMessages } from '../messageBuilder';
+import { message } from '../messageBuilder';
 import {
 	CREDENTIALS_BAD_FORMAT,
 	CREDENTIALS_REQUIRED,
@@ -189,16 +189,14 @@ export function transformJwtErrorMessages(logger: Logger): (err: MiddlewareError
 	) => {
 		logger.warn(`JWT Error: ${err.message}`);
 
-		return res.status(err.status).json(
-			errorMessages([
-				{
-					info: {
-						code: err.code.toUpperCase(),
-						message: err.message,
-					},
-					data: err.data || {},
+		return res.status(err.status).json(message('Failed to verify JWT token.', {}, [
+			{
+				info: {
+					code: err.code.toUpperCase(),
+					message: err.message,
 				},
-			]),
-		);
+				data: err.data || {},
+			}
+		]));
 	};
 }

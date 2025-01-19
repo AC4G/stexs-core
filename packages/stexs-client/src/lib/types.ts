@@ -1,22 +1,24 @@
+export interface User {
+	id: string;
+	email: string;
+	username: string;
+	raw_user_meta_data: {
+		[key: string]: any;
+	};
+	created_at: string;
+	updated_at: string;
+}
+
 export type Session =
 	| {
-			access_token: string;
-			refresh_token: string;
-			expires: number;
-			refresh: {
-				enabled: boolean;
-				count: number;
-			};
-			user: {
-				id: string;
-				email: string;
-				username: string;
-				raw_user_meta_data: {
-					[key: string]: any;
-				};
-				created_at: string;
-				updated_at: string;
-			};
+		access_token: string;
+		refresh_token: string;
+		expires: number;
+		refresh: {
+			enabled: boolean;
+			count: number;
+		};
+		user: User;
 	  }
 	| undefined;
 
@@ -48,6 +50,31 @@ export type Session = {
 } | undefined;
 */
 
+export interface MessageResponse {
+	success: boolean;
+	message: string;
+	timestamp: string;
+	data: { [key: string]: any };
+}
+
+export interface ErrorResponse {
+	errors: {
+		code: string;
+		message: string;
+		data?: {
+			[key: string]: any;
+		};
+		timestamp: string;
+	}[];
+}
+
+export type RequestOptions = {
+    path: string;
+    method?: 'GET' | 'POST' | 'DELETE' | 'PUT';
+    body?: Record<string, any>;
+    headers?: Record<string, string>;
+};
+
 export interface SignInInit {
 	continuousAutoRefresh: boolean;
 	expires: number;
@@ -58,4 +85,25 @@ export interface SignInInit {
 export interface SignedUrl {
 	url: string;
 	expires: number;
+}
+
+export interface SignInInitResponse {
+	token: string;
+	types: string[];
+	expires: number;
+}
+
+export interface TokenResponse {
+	access_token: string;
+	refresh_token: string;
+	token_type: string;
+	expires: number;
+}
+
+export interface UserResponse extends User {}
+
+export interface SignUpResponse extends MessageResponse {}
+
+export interface ActiveSessionsResponse {
+	amount: number;
 }

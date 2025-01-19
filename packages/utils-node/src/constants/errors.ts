@@ -40,7 +40,7 @@ export const INVALID_PASSWORD_LENGTH = {
 };
 export const INVALID_INPUT_DATA = {
 	code: 'INVALID_INPUT_DATA',
-	message: 'Provided data are invalid.',
+	message: 'Provided data is invalid.',
 };
 export const INVALID_REQUEST = {
 	code: 'INVALID_REQUEST',
@@ -191,6 +191,10 @@ export const RECOVERY_LINK_EXPIRED = {
 	code: 'RECOVERY_LINK_EXPIRED',
 	message: 'Recovery link expired. Please request a new recovery link.',
 };
+export const RECOVERY_CONFIRM_WITHOUT_RECOVERY_REQUESTED = {
+	code: 'RECOVERY_CONFIRM_WITHOUT_RECOVERY_REQUESTED',
+	message: 'Please request a recovery link first before trying to confirm recovery.',
+}
 export const EMAIL_CHANGE_LINK_EXPIRED = {
 	code: 'EMAIL_CHANGE_LINK_EXPIRED',
 	message:
@@ -309,4 +313,8 @@ export const INVALID_REDIRECT_URL = {
 export const INVALID_SCOPES = {
 	code: 'INVALID_SCOPES',
 	message: 'Please provide only the scopes that are specified in client settings.',
+};
+export const FIELD_MUST_BE_A_STRING = {
+	code: 'FIELD_MUST_BE_A_STRING',
+	message: 'Please provide a valid string value for this field.',
 };

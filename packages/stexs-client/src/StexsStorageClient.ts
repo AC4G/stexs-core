@@ -14,24 +14,19 @@ export class StexsStorageClient {
 
 	/**
 	 * Retrieves presigned url for avatar by the given user id
-	 *
-	 * @param userId - user id of the user which the avatar is requested
-	 * @returns {Promise<string | undefined>} - returns the presinged url or undefined
 	 */
 	async getAvatarUrl(userId: string): Promise<string | undefined> {
-		return await this._getSignedUrl(`avatars:${userId}`, `avatars/${userId}`);
+		return await this._getSignedUrl(`avatars:${userId}`, `/storage/avatars/${userId}`);
 	}
 
 	/**
 	 * Uploads avatar
 	 *
 	 * Note: action available for authenticated users only
-	 *
-	 * @returns {Promise<Response>} - response from s3
 	 */
 	async uploadAvatar(file: Blob): Promise<Response> {
 		const response = await this._request({
-			path: `avatars`,
+			path: `/storage/avatars`,
 			method: 'POST'
 		});
 
@@ -51,17 +46,15 @@ export class StexsStorageClient {
 	}
 
 	/**
-	 * Deletes the current avatar
+	 * Deletes the current avatar from current user
 	 *
 	 * Note: action available for authenticated users only
-	 *
-	 * @returns {Promise<Response>}
 	 */
 	async deleteAvatar(): Promise<Response> {
 		sessionStorage.removeItem(`avatars:${this._getSession()?.user.id}`);
 
 		return await this._request({
-			path: 'avatars',
+			path: '/storage/avatars',
 			method: 'DELETE',
 		});
 	}
@@ -75,9 +68,6 @@ export class StexsStorageClient {
 
 	/**
 	 * Sets avatar ETag in memory cache for a specific user to be used across all avatar component instances
-	 *
-	 * @param userId - user id of the user which the avatar is requested
-	 * @param avatarETag - avatar ETag
 	 */
 	setAvatarETagInCache(userId: string, ETag: string): void {
 		this.memoryCache.set(this.createAvatarsCacheKey(userId), ETag);
@@ -85,9 +75,6 @@ export class StexsStorageClient {
 	
 	/**
 	 * Gets avatar ETag from memory cache for a specific user
-	 *
-	 * @param userId - user id of the user which the avatar is requested
-	 * @returns {string | null} - avatar ETag
 	 */
 	getAvatarETagFromCache(userId: string): string | null {
 		return this.memoryCache.get(this.createAvatarsCacheKey(userId)) || null;
@@ -95,9 +82,6 @@ export class StexsStorageClient {
 
 	/**
 	 * Deletes avatar ETag from memory cache for a specific user
-	 *
-	 * @param userId - user id of the user which the avatar is requested
-	 * @returns {boolean} - true if avatar ETag was deleted
 	 */
 	deleteAvatarCache(userId: string): boolean {
 		return this.memoryCache.delete(this.createAvatarsCacheKey(userId));
@@ -105,14 +89,11 @@ export class StexsStorageClient {
 
 	/**
 	 * Retrieves presigned url for item thumbnail by the given item id
-	 *
-	 * @param itemId - id of the item which the thumbnail url is requested
-	 * @returns {Promise<string | undefined>} - returns the presinged url or undefined
 	 */
 	async getItemThumbnailUrl(itemId: string): Promise<string | undefined> {
 		return await this._getSignedUrl(
 			`items:${itemId}`,
-			`items/thumbnail/${itemId}`,
+			`/storage/items/thumbnail/${itemId}`,
 		);
 	}
 
@@ -120,27 +101,21 @@ export class StexsStorageClient {
 	 * Retrieves presigned post url for item thumbnail by the given item id
 	 *
 	 * Note: action available for authenticated users only
-	 *
-	 * @param itemId - id of the item which the thumbnail post url is requested
-	 * @returns {Promise<Response>}
 	 */
 	async getItemThumbnailPostUrl(itemId: string): Promise<Response> {
 		return await this._request({
-			path: `items/thumbnail/${itemId}`,
+			path: `/storage/items/thumbnail/${itemId}`,
 			method: 'POST',
 		});
 	}
 
 	/**
 	 * Retrieves presigned url for project logo by the given project id
-	 *
-	 * @param projectId - id of the project which the logo url is requested
-	 * @returns {Promise<string | undefined>} - returns the presinged url or undefined
 	 */
 	async getProjectLogoUrl(projectId: string): Promise<string | undefined> {
 		return await this._getSignedUrl(
 			`projects:${projectId}`,
-			`projects/${projectId}`,
+			`/storage/projects/${projectId}`,
 		);
 	}
 
@@ -148,13 +123,10 @@ export class StexsStorageClient {
 	 * Retrieves presigned post url for project logo by the given project id
 	 *
 	 * Note: action available for authenticated users only
-	 *
-	 * @param projectId - id of the project which the logo post url is requested
-	 * @returns {Promise<Response>}
 	 */
 	async getProjectLogoPostUrl(projectId: string): Promise<Response> {
 		return await this._request({
-			path: `projects/${projectId}`,
+			path: `/storage/projects/${projectId}`,
 			method: 'POST',
 		});
 	}
@@ -163,29 +135,23 @@ export class StexsStorageClient {
 	 * Deletes the projects logo by the given project id
 	 *
 	 * Note: action available for authenticated users only
-	 *
-	 * @param projectId - id of the project from which the logo needs to be deleted
-	 * @returns {Promise<Response>}
 	 */
 	async deleteProjectLogo(projectId: string): Promise<Response> {
 		return await this._request({
-			path: `projects/${projectId}`,
+			path: `/storage/projects/${projectId}`,
 			method: 'DELETE',
 		});
 	}
 
 	/**
 	 * Retrieves presigned url for organization logo by the given organization id
-	 *
-	 * @param organizationId - id of the organization which the presigned url is requested
-	 * @returns {Promise<string | undefined>} - returns the presinged url or undefined
 	 */
 	async getOrganizationLogoUrl(
 		organizationId: string,
 	): Promise<string | undefined> {
 		return await this._getSignedUrl(
 			`organizations:${organizationId}`,
-			`organizations/${organizationId}`,
+			`/storage/organizations/${organizationId}`,
 		);
 	}
 
@@ -193,13 +159,10 @@ export class StexsStorageClient {
 	 * Retrieves presigned post url for organization logo by the given organization id
 	 *
 	 * Note: action available for authenticated users only
-	 *
-	 * @param organizationId - id of the organization which the logo post ulr is requested
-	 * @returns {Promise<Response>}
 	 */
 	async getOrganizationLogoPostUrl(organizationId: string): Promise<Response> {
 		return await this._request({
-			path: `organizations/${organizationId}`,
+			path: `/storage/organizations/${organizationId}`,
 			method: 'POST',
 		});
 	}
@@ -208,13 +171,10 @@ export class StexsStorageClient {
 	 * Deletes the organizations logo by the given organization id
 	 *
 	 * Note: action available for authenticated users only
-	 *
-	 * @param organizationId - id of the organization from which the logo needs to be deleted
-	 * @returns {Promise<Response>}
 	 */
 	async deleteOrganizationLogo(organizationId: string): Promise<Response> {
 		return await this._request({
-			path: `organizations/${organizationId}`,
+			path: `/storage/organizations/${organizationId}`,
 			method: 'DELETE',
 		});
 	}
@@ -294,6 +254,6 @@ export class StexsStorageClient {
 			options.body = JSON.stringify(body);
 		}
 
-		return await this.fetch(`${this.storageUrl}/${path}`, options);
+		return await this.fetch(`${this.storageUrl}${path}`, options);
 	}
 }

@@ -1,5 +1,16 @@
 import EventEmitter from 'events';
-import type { Session, SignInInit } from './lib/types';
+import type {
+	ErrorResponse,
+	TokenResponse,
+	Session,
+	SignInInit,
+	SignInInitResponse,
+	UserResponse,
+	RequestOptions,
+	SignUpResponse,
+	ActiveSessionsResponse,
+} from './lib/types';
+import { ApiResponse } from './lib/apiResponse';
 
 export enum AuthEvents {
 	SIGNED_IN = 'SIGNED_IN',
@@ -8,6 +19,40 @@ export enum AuthEvents {
 	TOKEN_REFRESHED = 'TOKEN_REFRESHED',
 	USER_UPDATED = 'USER_UPDATED',
 	RECOVERY = 'RECOVERY',
+}
+
+export enum ApiAuthRoutes {
+	SIGN_IN = '/auth/sign-in',
+	SIGN_IN_CONFIRM = '/auth/sign-in/confirm',
+
+	SIGN_UP = '/auth/sign-up',
+
+	SIGN_OUT = '/auth/sign-out',
+	SIGN_OUT_ALL_SESSIONS = '/auth/sign-out/all-sessions',
+
+	TOKEN = '/auth/token',
+
+	USER = '/auth/user',
+	USER_SESSIONS = '/auth/user/sessions',
+	USER_PASSWORD = '/auth/user/password',
+	USER_EMAIL = '/auth/user/email',
+	USER_EMAIL_VERIFY = '/auth/user/email/verify',
+	
+	VERIFY = '/auth/verify',
+	VERIFY_RESEND = '/auth/verify/resend',
+
+	MFA_STATUS = '/auth/mfa',
+	MFA_VERIFY = '/auth/mfa/verify',
+	MFA_SEND_CODE = '/auth/mfa/send-code',
+	MFA_ENABLE = '/auth/mfa/enable',
+	MFA_DISABLE = '/auth/mfa/disable',
+
+	OAUTH2_AUTHORIZE = '/auth/oauth2/authorize',
+	OAUTH2_TOKEN = '/auth/oauth2/token',
+	OAUTH2_CONNECTIONS = '/auth/oauth2/connections',
+
+	RECOVERY = '/auth/recovery',
+	RECOVERY_CONFIRM = '/auth/recovery/confirm',
 }
 
 export class StexsAuthClient {
@@ -97,39 +142,49 @@ export class StexsAuthClient {
 	/**
 	 * Initiates the user sign-in process with the provided identifier and password.
 	 *
-	 * @param {string} identifier - The user's identifier (e.g., username or email).
-	 * @param {string} password - The user's password.
-	 * @param {boolean} continuousAutoRefresh - Set to true for continuous access token refresh.
-	 * @returns {Promise<Response>} A Promise that resolves with the sign-in response data.
+	 * Requests a MFA code on sign-in initialization success and if email MFA is enabled and is the only option.
 	 */
 	async signIn(
 		identifier: string,
 		password: string,
 		continuousAutoRefresh: boolean = false,
-	): Promise<Response> {
-		return await this._baseSignIn(
-			{
-				path: 'sign-in',
-				body: {
-					identifier,
-					password,
-				},
+	): Promise<ApiResponse<SignInInitResponse>> {
+		const response = await this._request<SignInInitResponse>({
+			path: ApiAuthRoutes.SIGN_IN,
+			body: {
+				identifier,
+				password,
 			},
-			continuousAutoRefresh,
+		});
+
+		if (!response.ok) {
+			return response;
+		}
+
+		const body = await response.clone().getSuccessBody();
+
+		localStorage.setItem(
+			'sign_in_init',
+			JSON.stringify({
+				...body,
+				continuousAutoRefresh,
+			}),
 		);
+
+		// subject to change in the future
+		if (body.types.length === 1 && body.types[0] === 'email') {
+			await this._requestCode();
+		}
+
+		this.triggerEvent(AuthEvents.SIGN_IN_INIT);
+
+		return response;
 	}
 
 	/**
 	 * Confirms the user's Multi-Factor Authentication (MFA) sign-in with the provided type and MFA code.
-	 *
-	 * This function confirms the user's MFA sign-in by providing the MFA code and type.
-	 *
-	 * @param {string} type - The type of MFA confirmation (e.g., email).
-	 * @param {string} code - The Multi-Factor Authentication (MFA) code.
-	 * @returns {Promise<Response>} A Promise that resolves with the confirmation response data.
-	 * @throws {Error} Throws an error if the sign-in token is not found or has expired.
 	 */
-	async signInConfirm(type: string, code: string): Promise<Response> {
+	async signInConfirm(type: string, code: string): Promise<ApiResponse<TokenResponse>> {
 		const signInInitData: SignInInit = JSON.parse(
 			localStorage.getItem('sign_in_init') as string,
 		) as SignInInit;
@@ -148,21 +203,44 @@ export class StexsAuthClient {
 			throw new Error('Sign in token has expired.');
 		}
 
-		const response = await this._baseSignIn(
-			{
-				path: 'sign-in/confirm',
-				body: {
-					code,
-					type,
-					token,
-				},
+		const response = await this._request<TokenResponse>({
+			path: ApiAuthRoutes.SIGN_IN_CONFIRM,
+			body: {
+				code,
+				type,
+				token,
 			},
-			continuousAutoRefresh,
+		});
+
+		if (!response.ok) {
+			return response;
+		}
+
+		localStorage.removeItem('sign_in_init');
+
+		const tokenBody = await response.clone().getSuccessBody();
+
+		const userResponse = await this.getUser();
+
+		if (!userResponse.ok) {
+			return Promise.reject(new Error('Failed to fetch user data'));
+		}
+
+		const user = await userResponse.getSuccessBody();
+
+		localStorage.setItem(
+			'session',
+			JSON.stringify({
+				...tokenBody,
+				user,
+				refresh: {
+					enabled: continuousAutoRefresh,
+					count: 0
+				}
+			} as Session)
 		);
 
-		if (response.ok) {
-			localStorage.removeItem('sign_in_init');
-		}
+		this.triggerEvent(AuthEvents.SIGNED_IN);
 
 		return response;
 	}
@@ -175,66 +253,15 @@ export class StexsAuthClient {
 	}
 
 	/**
-	 * Performs the base logic for the sign-in process.
-	 *
-	 * @param {Object} requestParameter - The request parameters, including path, method, and request body.
-	 * @param {boolean} continuousAutoRefresh - Set to true for continuous access token refresh.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
-	 */
-	private async _baseSignIn(
-		requestParameter: {
-			path: string;
-			body: Record<string, any>;
-		},
-		continuousAutoRefresh: boolean,
-	): Promise<Response> {
-		const response = await this._request({
-			...requestParameter,
-			method: 'POST',
-		});
-
-		if (!response.ok) {
-			return response;
-		}
-
-		const clonedResponse = response.clone();
-		const body = await clonedResponse.json();
-
-		if (body.token) {
-			localStorage.setItem(
-				'sign_in_init',
-				JSON.stringify({
-					...body,
-					continuousAutoRefresh,
-				}),
-			);
-
-			// subject to change in the future
-			if (body.types.length === 1 && body.types[0] === 'email') {
-				await this._requestCode();
-			}
-
-			this.triggerEvent(AuthEvents.SIGN_IN_INIT);
-		}
-
-		return response;
-	}
-
-	/**
 	 * Initiates the user signup process with the provided username, email, and password.
-	 *
-	 * @param {string} username - The username for the new account.
-	 * @param {string} email - The email address for the new account.
-	 * @param {string} password - The password for the new account.
-	 * @returns {Promise<Response>} A Promise that resolves with the signup response data.
 	 */
 	async signUp(
 		username: string,
 		email: string,
 		password: string,
-	): Promise<Response> {
+	): Promise<ApiResponse<SignUpResponse>> {
 		return await this._request({
-			path: 'sign-up',
+			path: ApiAuthRoutes.SIGN_UP,
 			method: 'POST',
 			body: {
 				username,
@@ -246,35 +273,29 @@ export class StexsAuthClient {
 
 	/**
 	 * Gets the number of active sessions for the current user.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with the active sessions response data.
 	 */
-	async getActiveSessionsAmount(): Promise<Response> {
+	async getActiveSessionsAmount(): Promise<ApiResponse<ActiveSessionsResponse>> {
 		return await this._request({
-			path: 'user/sessions',
+			path: ApiAuthRoutes.USER_SESSIONS,
 			method: 'GET',
 		});
 	}
 
 	/**
 	 * Signs the user out from the current session.
-	 *
-	 * @returns {Promise<void>} A Promise that resolves with void.
 	 */
 	async signOut(): Promise<void> {
-		await this._baseSignOut('sign-out');
+		await this._baseSignOut(ApiAuthRoutes.SIGN_OUT);
 	}
 
 	/**
 	 * Signs the user out from all active sessions.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with void.
 	 */
 	async signOutFromAllSessions(
 		code: string,
 		type: 'totp' | 'email',
 	): Promise<Response> {
-		return await this._baseSignOut('sign-out/all-sessions', {
+		return await this._baseSignOut(ApiAuthRoutes.SIGN_OUT_ALL_SESSIONS, {
 			code,
 			type,
 		});
@@ -282,9 +303,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Signs the user out based on the provided path, with optional session check and data clearing.
-	 *
-	 * @param {string} path - The path specifying the sign-out action.
-	 * @returns {Promise<void>} A Promise that resolves with void.
 	 */
 	private async _baseSignOut(
 		path: string,
@@ -309,13 +327,10 @@ export class StexsAuthClient {
 
 	/**
 	 * Resends the email verification link to the provided email address.
-	 *
-	 * @param {string} email - The email address for which the verification link is to be resent.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async verifyResend(email: string): Promise<Response> {
 		return await this._request({
-			path: 'verify/resend',
+			path: ApiAuthRoutes.VERIFY_RESEND,
 			method: 'POST',
 			body: { email },
 		});
@@ -323,13 +338,10 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates the password recovery process.
-	 *
-	 * @param {string} email - The user's email address for account recovery.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async recovery(email: string): Promise<Response> {
 		const response = await this._request({
-			path: 'recovery',
+			path: ApiAuthRoutes.RECOVERY,
 			method: 'POST',
 			body: { email },
 		});
@@ -343,11 +355,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Confirms the password recovery process by providing the necessary information.
-	 *
-	 * @param {string} email - The email address associated with the account.
-	 * @param {string} token - The recovery token received via email.
-	 * @param {string} password - The new password to set for the account.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async recoveryConfirm(
 		email: string,
@@ -355,7 +362,7 @@ export class StexsAuthClient {
 		password: string,
 	): Promise<Response> {
 		return await this._request({
-			path: 'recovery/confirm',
+			path: ApiAuthRoutes.RECOVERY_CONFIRM,
 			method: 'POST',
 			body: {
 				email,
@@ -367,28 +374,21 @@ export class StexsAuthClient {
 
 	/**
 	 * Retrieves data from the authenticated user.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
-	async getUser(): Promise<Response> {
-		return await this._request({ path: 'user' });
+	async getUser(): Promise<ApiResponse<UserResponse>> {
+		return await this._request<UserResponse>({ path: ApiAuthRoutes.USER });
 	}
 
 	/**
-	 * Updates the password of the authenticated user.
-	 *
-	 * @param {string} password - The new password to set.
-	 * @param {string} code - The authentication code from the selected MFA method (either email code or TOTP secret).
-	 * @param {string} type - The MFA method to be used for authentication.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
+	 * Changes the password of the authenticated user with the provided password.
 	 */
-	async updatePassword(
+	async changePassword(
 		password: string,
 		code: string,
 		type: 'totp' | 'email',
 	): Promise<Response> {
 		return await this._request({
-			path: 'user/password',
+			path: ApiAuthRoutes.USER_PASSWORD,
 			method: 'POST',
 			body: {
 				password,
@@ -400,11 +400,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates the process of changing the email for the authenticated user.
-	 *
-	 * @param {string} email - The new email address to be set.
-	 * @param {string} code - The authentication code from the selected MFA method (either email code or TOTP secret).
-	 * @param {string} type - The MFA method to be used for authentication.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async changeEmail(
 		email: string,
@@ -412,7 +407,7 @@ export class StexsAuthClient {
 		type: 'totp' | 'email',
 	): Promise<Response> {
 		return await this._request({
-			path: 'user/email',
+			path: ApiAuthRoutes.USER_EMAIL,
 			method: 'POST',
 			body: {
 				email,
@@ -424,13 +419,10 @@ export class StexsAuthClient {
 
 	/**
 	 * Verifies the requested email change for the authenticated user.
-	 *
-	 * @param {string} code - The verification code sent to the new email address.
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	async verifyEmailChange(code: string): Promise<Response> {
 		return await this._request({
-			path: 'user/email/verify',
+			path: ApiAuthRoutes.USER_EMAIL_VERIFY,
 			method: 'POST',
 			body: { code },
 		});
@@ -438,25 +430,19 @@ export class StexsAuthClient {
 
 	/**
 	 * Retrieves the Multi-Factor Authentication (MFA) status for the authenticated user.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with the MFA status data.
 	 */
 	private async _factorStatus(): Promise<Response> {
 		return await this._request({
-			path: 'mfa',
+			path: ApiAuthRoutes.MFA_STATUS,
 		});
 	}
 
 	/**
 	 * Enables Multi-Factor Authentication (MFA) for the authenticated user.
-	 *
-	 * @param {('totp' | 'email')} type - The MFA type to enable ('totp' for Time-based One-Time Password, 'email' for email-based MFA).
-	 * @param {string | null} code - The MFA verification code (only required for 'email' MFA).
-	 * @returns {Promise<Response>} A Promise that resolves with the enablement response.
 	 */
 	private async _enable(type: 'totp' | 'email', code: string | null = null): Promise<Response> {
 		return await this._request({
-			path: `mfa/enable`,
+			path: ApiAuthRoutes.MFA_ENABLE,
 			method: 'POST',
 			body: {
 				type,
@@ -467,17 +453,13 @@ export class StexsAuthClient {
 
 	/**
 	 * Disables Multi-Factor Authentication (MFA) for the authenticated user.
-	 *
-	 * @param {('totp' | 'email')} type - The MFA type to disable ('totp' for Time-based One-Time Password, 'email' for email-based MFA).
-	 * @param {string} code - The MFA verification code required to disable MFA.
-	 * @returns {Promise<Response>} A Promise that resolves with the disabling response.
 	 */
 	private async _disable(
 		type: 'totp' | 'email',
 		code: string,
 	): Promise<Response> {
 		return await this._request({
-			path: `mfa/disable`,
+			path: ApiAuthRoutes.MFA_DISABLE,
 			method: 'POST',
 			body: {
 				code,
@@ -492,14 +474,10 @@ export class StexsAuthClient {
 	 * Currently, only Time-based One-Time Password (TOTP) is supported.
 	 *
 	 * Note: As new MFA methods may be implemented in the future, the required parameters for this function may change.
-	 *
-	 * @param {string} type - The MFA type to verify ('totp' supported for now. 'email' will be moved to this api endpoint).
-	 * @param {string} code - The MFA verification code.
-	 * @returns {Promise<Response>} A Promise that resolves with the verification response.
 	 */
 	private async _verify(type: 'totp', code: string): Promise<Response> {
 		return await this._request({
-			path: 'mfa/verify',
+			path: ApiAuthRoutes.MFA_VERIFY,
 			method: 'POST',
 			body: {
 				type,
@@ -510,8 +488,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Requests a new Multi-Factor Authentication (MFA) email verification code for authenticated and users in sign confirm process.
-	 *
-	 * @returns {Promise<Response>} A Promise that resolves with the response data.
 	 */
 	private async _requestCode(type: string = 'email'): Promise<Response> {
 		const signInInitData: SignInInit = JSON.parse(
@@ -527,7 +503,7 @@ export class StexsAuthClient {
 		}
 
 		return await this._request({
-			path: 'mfa/send-code',
+			path: ApiAuthRoutes.MFA_SEND_CODE,
 			method: 'POST',
 			body,
 		});
@@ -535,11 +511,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Initiates an OAuth2 authorization request to obtain consent from the authenticated user.
-	 *
-	 * @param {string} client_id - The client identifier.
-	 * @param {string} redirect_url - The URL to redirect after approval.
-	 * @param {Array} scopes - An array of requested scopes.
-	 * @returns {Promise<Response>} A Promise that resolves with the authorization response.
 	 */
 	private async _authorize(
 		client_id: string,
@@ -547,7 +518,7 @@ export class StexsAuthClient {
 		scopes: string[],
 	): Promise<Response> {
 		return await this._request({
-			path: 'oauth2/authorize',
+			path: ApiAuthRoutes.OAUTH2_AUTHORIZE,
 			method: 'POST',
 			body: {
 				client_id,
@@ -558,25 +529,17 @@ export class StexsAuthClient {
 	}
 
 	/**
-	 * Deletes an OAuth2 connection associated with the authenticated user and linked to a client.
-	 *
-	 * @param {string} client_id - The client identifier of the connection to be deleted.
-	 * @returns {Promise<Response>} A Promise that resolves with the deletion response.
+	 * Deletes the connection with the provided connection id.
 	 */
-	private async _deleteConnection(client_id: string): Promise<Response> {
+	private async _deleteConnection(connectionId: string): Promise<Response> {
 		return await this._request({
-			path: 'oauth2/connection',
+			path: ApiAuthRoutes.OAUTH2_CONNECTIONS + `/${connectionId}`,
 			method: 'DELETE',
-			body: {
-				client_id,
-			},
 		});
 	}
 
 	/**
 	 * Retrieves an user session from local storage.
-	 *
-	 * @returns {Session} The user session obtained from local storage.
 	 */
 	getSession(): Session {
 		return this._getSession();
@@ -584,8 +547,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Updates and retrieves user session from local storage.
-	 *
-	 * @returns {Session} The user session obtained from local storage.
 	 */
 	async updateUserInSession(): Promise<Session> {
 		const session = this._getSession();
@@ -594,7 +555,13 @@ export class StexsAuthClient {
 			return Promise.reject(new Error('Session is undefined'));
 		}
 
-		const user = await (await this.getUser()).json();
+		const response = await this.getUser();
+
+		if (!response.ok) {
+			return Promise.reject(new Error('Failed to fetch user data'));
+		}
+
+		const user = await response.getSuccessBody();
 
 		const newSession: Session = {
 			...session,
@@ -608,8 +575,6 @@ export class StexsAuthClient {
 
 	/**
 	 * Retrieves the sign in init session from local storage.
-	 *
-	 * @returns {SignInInit} The user sign in init session obtained from local storage.
 	 */
 	getSignInInit(): SignInInit {
 		return this._getSignInInit();
@@ -713,8 +678,8 @@ export class StexsAuthClient {
 				return false;
 			}
 
-			const response = await this._request({
-				path: 'token',
+			const response = await this._request<TokenResponse>({
+				path: ApiAuthRoutes.TOKEN,
 				method: 'POST',
 				body: {
 					refresh_token: session.refresh_token,
@@ -726,7 +691,7 @@ export class StexsAuthClient {
 				return false;
 			}
 
-			const body = await response.json();
+			const body = await response.getSuccessBody();
 			const refresh = { ...session.refresh };
 
 			this._setAccessTokenToAuthHeaders(body.access_token);
@@ -765,18 +730,16 @@ export class StexsAuthClient {
 		) as SignInInit;
 	}
 
-	private async _request({
-		path,
-		method = 'GET',
-		body = undefined,
-		headers = {},
-	}: {
-		path: string;
-		method?: 'GET' | 'POST' | 'DELETE' | 'PUT';
-		body?: Record<string, any>;
-		headers?: Record<string, string>;
-	}): Promise<Response> {
-		const options: RequestInit = {
+	private async _request<TSuccess, TError = ErrorResponse>(
+		options: RequestOptions,
+	): Promise<ApiResponse<TSuccess, TError>> {
+		const {
+			path,
+			method = 'GET',
+			body,
+			headers,
+		} = options;
+		const requestInit: RequestInit = {
 			method,
 			headers: {
 				'Content-Type': 'application/json',
@@ -786,10 +749,12 @@ export class StexsAuthClient {
 		};
 
 		if (method !== 'GET' && body !== null) {
-			options.body = JSON.stringify(body);
+			requestInit.body = JSON.stringify(body);
 		}
 
-		return await this.fetch(`${this.authUrl}/${path}`, options);
+		const response = await this.fetch(`${this.authUrl}${path}`, requestInit);
+
+  		return new ApiResponse<TSuccess, TError>(response);
 	}
 
 	private _setAccessTokenToAuthHeaders(accessToken: string) {

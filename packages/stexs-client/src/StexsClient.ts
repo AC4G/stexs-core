@@ -1,4 +1,8 @@
-import { StexsAuthClient, AuthEvents } from './StexsAuthClient';
+import {
+	StexsAuthClient,
+	AuthEvents,
+	ApiAuthRoutes
+} from './StexsAuthClient';
 import { StexsStorageClient } from './StexsStorageClient';
 import {
 	PostgrestClient,
@@ -7,7 +11,10 @@ import {
 } from '@supabase/postgrest-js';
 import type { Session } from './lib/types';
 
-export { AuthEvents };
+export {
+	AuthEvents,
+	ApiAuthRoutes,
+};
 
 export default class StexsClient {
 	auth: StexsAuthClient;
@@ -19,19 +26,18 @@ export default class StexsClient {
 		// @ts-ignore
 		fetch: typeof fetch,
 		config: {
-			authUrl: string;
+			apiUrl: string;
 			restUrl: string;
-			storageURL: string;
 		},
 	) {
-		this.auth = new StexsAuthClient(fetch, config.authUrl);
+		this.auth = new StexsAuthClient(fetch, config.apiUrl);
 		this.rest = new PostgrestClient(config.restUrl, {
 			// @ts-ignore
 			fetch: this._fetchWithAuth.bind(this, fetch),
 		});
 		this.storage = new StexsStorageClient(
 			this._fetchWithAuth.bind(this, fetch),
-			config.storageURL,
+			config.apiUrl,
 		);
 	}
 

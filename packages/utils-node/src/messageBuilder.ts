@@ -1,17 +1,40 @@
 import { Result } from 'express-validator';
 
+export interface ApiError {
+	info: {
+		code: string;
+		message: string;
+	};
+	data?: Record<string, any>;
+}
+export interface ApiErrorResponse {
+	code: string;
+	message: string;
+	data?: Record<string, any>;
+	timestamp: string;
+}
+
+export interface ApiResponse {
+	success: boolean;
+	message: string;
+	timestamp: string;
+	data: Record<string, any>;
+	errors: ApiErrorResponse[];
+}
+
 export function message(
 	message: string,
 	data: Record<string, any> = {},
-	success: boolean = true,
+	errors: ApiError[] = [],
 ) {
 	const baseMessage = {
-		success,
+		success: errors.length === 0,
 		message,
 		timestamp: new Date().toISOString(),
 		data: {
 			...data,
 		},
+		errors: errors.length > 0 ? errorMessages(errors) : [],
 	};
 
 	const onTest = () => {
@@ -28,52 +51,15 @@ export function message(
 	};
 }
 
-interface Error {
-	info: {
-		code: string;
-		message: string;
-	};
-	data?: {
-		[key: string]: any;
-	};
-}
-
-interface ErrorResponse {
-	code: string;
-	message: string;
-	data?: {
-		[key: string]: any;
-	};
-	timestamp: string;
-}
-
-export function errorMessages(errors: Error[]): { errors: ErrorResponse[] } {
-	return {
-		errors: errors.map((error) => ({
-			code: error.info.code,
-			message: error.info.message,
-			timestamp: new Date().toISOString(),
-			data: {
-				...error.data,
-			},
-		})),
-	};
-}
-
-export function testErrorMessages(errors: Error[]): {
-	errors: ErrorResponse[];
-} {
-	return {
-		errors: errors.map((error) => ({
-			code: error.info.code,
-			message: error.info.message,
-			//@ts-ignore
-			timestamp: expect.any(String) as unknown as string,
-			data: {
-				...error.data,
-			},
-		})),
-	};
+function errorMessages(errors: ApiError[]): ApiErrorResponse[]{
+	return errors.map((error) => ({
+		code: error.info.code,
+		message: error.info.message,
+		timestamp: new Date().toISOString(),
+		data: {
+			...error.data,
+		},
+	}));
 }
 
 export interface ValidatorError {
@@ -89,24 +75,21 @@ export interface ValidatorError {
 	location: string;
 }
 
-export function errorMessagesFromValidator(errors: Result<ValidatorError>): {
-	errors: ErrorResponse[];
-} {
-	return {
-		errors: errors.array().map((error: ValidatorError) => {
-			const msg =
-				typeof error.msg === 'string' ? JSON.parse(error.msg) : error.msg;
-			return {
+export function errorMessagesFromValidator(errors: Result<ValidatorError>): ApiResponse {
+	return message('Validation of request data failed.', {}, errors.array().map((error: ValidatorError) => {
+		const msg =
+			typeof error.msg === 'string' ? JSON.parse(error.msg) : error.msg;
+		return {
+			info: {
 				code: msg.code,
 				message: msg.message,
-				timestamp: new Date().toISOString(),
-				data: {
-					path: error.path,
-					location: error.location,
-				},
-			};
-		}),
-	};
+			},
+			data: {
+				path: error.path,
+				location: error.location,
+			},
+		};
+	}));
 }
 
 export class CustomValidationError extends Error {
