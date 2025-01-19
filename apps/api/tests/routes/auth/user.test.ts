@@ -27,7 +27,7 @@ import {
 	TYPE_REQUIRED,
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message, testErrorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import { getTOTPForVerification } from '../../../src/services/totpService';
 
 jest.mock('utils-node/middlewares', () => {
@@ -108,7 +108,11 @@ describe('User Routes', () => {
 			.send({ code: 'code' });
 
 		expect(response.status).toBe(403);
-		expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
+		expect(response.body).toEqual(
+			message('Email change code has expired.', {}, [
+				{ info: CODE_EXPIRED }
+			]).onTest(),
+		);
 	});
 
 	it('should handle email change verification with invalid code', async () => {
@@ -122,7 +126,11 @@ describe('User Routes', () => {
 			.send({ code: 'code' });
 
 		expect(response.status).toBe(400);
-		expect(response.body).toEqual(testErrorMessages([{ info: INVALID_CODE }]));
+		expect(response.body).toEqual(
+			message('Invalid email verification code.', {}, [
+				{ info: INVALID_CODE }
+			]).onTest(),
+		);
 	});
 
 	it('should handle email change with expired verification code', async () => {
@@ -140,7 +148,11 @@ describe('User Routes', () => {
 			.send({ code: 'expired-code' });
 
 		expect(response.status).toBe(403);
-		expect(response.body).toEqual(testErrorMessages([{ info: CODE_EXPIRED }]));
+		expect(response.body).toEqual(
+			message('Email change code has expired.', {}, [
+				{ info: CODE_EXPIRED }
+			]).onTest(),
+		);
 	});
 
 	it('should handle email change verification', async () => {
@@ -182,24 +194,28 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).get('/auth/user');
+		const response = await request(server)
+			.get('/auth/user');
 
 		expect(response.status).toBe(200);
-		expect(response.body).toEqual({
-			id: 1,
-			email: 'test@example.com',
-			raw_user_meta_data: {},
-			created_at: expect.any(String),
-			updated_at: expect.any(String),
-		});
+		expect(response.body).toEqual(
+			message('User data retrieved successfully.', {
+				id: 1,
+				email: 'test@example.com',
+				raw_user_meta_data: {},
+				created_at: expect.any(String),
+				updated_at: expect.any(String),
+			}).onTest(),
+		);
 	});
 
 	it('should handle password change with missing password', async () => {
-		const response = await request(server).post('/auth/user/password');
+		const response = await request(server)
+			.post('/auth/user/password');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
 					data: {
@@ -221,20 +237,22 @@ describe('User Routes', () => {
 						path: 'type',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle password change with invalid password according to regex specification', async () => {
-		const response = await request(server).post('/auth/user/password').send({
-			password: 'test123456',
-			code: 'mfa_code',
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/user/password')
+			.send({
+				password: 'test123456',
+				code: 'mfa_code',
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_PASSWORD,
 					data: {
@@ -242,7 +260,7 @@ describe('User Routes', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -270,15 +288,17 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/user/password').send({
-			password: 'Test12345.',
-			code,
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/user/password')
+			.send({
+				password: 'Test12345.',
+				code,
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('New password matches the current password.', {}, [
 				{
 					info: NEW_PASSWORD_EQUALS_CURRENT,
 					data: {
@@ -286,7 +306,7 @@ describe('User Routes', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -319,11 +339,13 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/user/password').send({
-			password: 'Test12345.',
-			code,
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/user/password')
+			.send({
+				password: 'Test12345.',
+				code,
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -332,15 +354,17 @@ describe('User Routes', () => {
 	});
 
 	it('should handle password change with password having less then 10 characters', async () => {
-		const response = await request(server).post('/auth/user/password').send({
-			password: 'Test123.',
-			code: 'mfa_code',
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/user/password')
+			.send({
+				password: 'Test123.',
+				code: 'mfa_code',
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_PASSWORD_LENGTH,
 					data: {
@@ -348,19 +372,21 @@ describe('User Routes', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle email change with missing email', async () => {
-		const response = await request(server).post('/auth/user/email').send({
-			code: 'mfa_code',
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/user/email')
+			.send({
+				code: 'mfa_code',
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
 					data: {
@@ -368,20 +394,22 @@ describe('User Routes', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle email change with invalid email', async () => {
-		const response = await request(server).post('/auth/user/email').send({
-			email: 'test',
-			code: 'mfa_code',
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/user/email')
+			.send({
+				email: 'test',
+				code: 'mfa_code',
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_EMAIL.code,
@@ -392,7 +420,7 @@ describe('User Routes', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -421,26 +449,27 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/user/email').send({
-			email: 'test@example.com',
-			code,
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/user/email')
+			.send({
+				email: 'test@example.com',
+				code,
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
-			message(
-				'Email change verification link has been sent to the new email address.',
-			).onTest(),
+			message('Email change verification link has been sent to the new email address.').onTest(),
 		);
 	});
 
 	it('should handle email change verification with missing code', async () => {
-		const response = await request(server).post('/auth/user/email/verify');
+		const response = await request(server)
+			.post('/auth/user/email/verify');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CODE_REQUIRED,
 					data: {
@@ -448,7 +477,7 @@ describe('User Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 });

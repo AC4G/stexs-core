@@ -34,7 +34,7 @@ import {
 } from '../../../env-config';
 import { getTOTPForVerification } from '../../../src/services/totpService';
 import { advanceTo, clear } from 'jest-date-mock';
-import { testErrorMessages, message } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -110,13 +110,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).get('/auth/mfa');
+		const response = await request(server)
+			.get('/auth/mfa');
 
 		expect(response.status).toBe(200);
-		expect(response.body).toEqual({
-			email: true,
-			totp: true,
-		});
+		expect(response.body).toEqual(
+			message('MFA flows successfully retrieved.', {
+				email: true,
+				totp: true,
+			}).onTest(),
+		);
 	});
 
 	it('should handle MFA TOTP enable with TOTP already enabled', async () => {
@@ -130,13 +133,15 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/enable').send({
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/enable')
+			.send({
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([{ info: TOTP_ALREADY_ENABLED }]),
+			message('MFA TOTP is already enabled.', {}, [{ info: TOTP_ALREADY_ENABLED }]).onTest(),
 		);
 	});
 
@@ -156,27 +161,33 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/enable').send({
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/enable')
+			.send({
+				type: 'totp',
+			});
 
 		const otpAuthUriPattern = `otpauth://totp/${SERVICE_NAME}:test%40example.com\\?issuer=${SERVICE_NAME}&secret=[A-Z0-9]{32}&algorithm=${TOTP_ALGORITHM}&digits=${TOTP_DIGITS}&period=${TOTP_PERIOD}$`;
 
 		expect(response.status).toBe(200);
-		expect(response.body).toEqual({
-			secret: expect.stringMatching(/^.{32}$/),
-			otp_auth_uri: expect.stringMatching(new RegExp(otpAuthUriPattern)),
-		});
+		expect(response.body).toEqual(
+			message('MFA TOTP successfully enabled.', {
+				secret: expect.stringMatching(/^.{32}$/),
+				otp_auth_uri: expect.stringMatching(new RegExp(otpAuthUriPattern)),
+			}).onTest(),
+		);
 	});
 
 	it('should handle MFA TOTP disable without code', async () => {
-		const response = await request(server).post('/auth/mfa/disable').send({
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CODE_REQUIRED,
 					data: {
@@ -184,7 +195,7 @@ describe('MFA Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -199,14 +210,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/disable').send({
-			code: 'code',
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				code: 'code',
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([{ info: TOTP_ALREADY_DISABLED }]),
+			message('MFA TOTP is already disabled.', {}, [{ info: TOTP_ALREADY_DISABLED }]).onTest(),
 		);
 	});
 
@@ -222,14 +235,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/disable').send({
-			code: '34456T',
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				code: '34456T',
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid code provided.', {}, [
 				{
 					info: INVALID_CODE,
 					data: {
@@ -237,7 +252,7 @@ describe('MFA Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -262,10 +277,12 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/disable').send({
-			code,
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				code,
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -274,13 +291,15 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA email enable without code', async () => {
-		const response = await request(server).post('/auth/mfa/enable').send({
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/enable')
+			.send({
+				type: 'email',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CODE_REQUIRED,
 					data: {
@@ -288,7 +307,7 @@ describe('MFA Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -304,14 +323,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/enable').send({
-			code: 'code',
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/enable')
+			.send({
+				code: 'code',
+				type: 'email',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([{ info: MFA_EMAIL_ALREADY_ENABLED }]),
+			message('MFA email is already enabled.', {}, [{ info: MFA_EMAIL_ALREADY_ENABLED }]).onTest(),
 		);
 	});
 
@@ -327,14 +348,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/enable').send({
-			code: 'invalid-code',
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/enable')
+			.send({
+				code: 'invalid-code',
+				type: 'email',
+			});
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid MFA activation code provided.', {}, [
 				{
 					info: INVALID_CODE,
 					data: {
@@ -342,7 +365,7 @@ describe('MFA Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -358,14 +381,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/enable').send({
-			code: 'code',
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/enable')
+			.send({
+				code: 'code',
+				type: 'email',
+			});
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('MFA activation code expired.', {}, [
 				{
 					info: CODE_EXPIRED,
 					data: {
@@ -373,7 +398,7 @@ describe('MFA Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -394,10 +419,12 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/enable').send({
-			code: 'code',
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/enable')
+			.send({
+				code: 'code',
+				type: 'email',
+			});
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -406,13 +433,15 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA email disable without code', async () => {
-		const response = await request(server).post('/auth/mfa/disable').send({
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				type: 'email',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CODE_REQUIRED,
 					data: {
@@ -420,7 +449,7 @@ describe('MFA Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -436,14 +465,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/disable').send({
-			code: 'code',
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				code: 'code',
+				type: 'email',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([{ info: MFA_EMAIL_ALREADY_DISABLED }]),
+			message('MFA email is already disabled.', {}, [{ info: MFA_EMAIL_ALREADY_DISABLED }]).onTest(),
 		);
 	});
 
@@ -460,14 +491,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/disable').send({
-			code: 'invalid-code',
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				code: 'invalid-code',
+				type: 'email',
+			});
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid code provided.', {}, [
 				{
 					info: INVALID_CODE,
 					data: {
@@ -475,7 +508,67 @@ describe('MFA Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
+		);
+	});
+
+	it('should handle MFA verify without type', async () => {
+		const response = await request(server)
+			.post('/auth/mfa/verify')
+			.send({ code: 'code' });
+
+		expect(response.status).toBe(400);
+		expect(response.body).toEqual(
+			message('Validation of request data failed.', {}, [
+				{
+					info: TYPE_REQUIRED,
+					data: {
+						location: 'body',
+						path: 'type',
+					},
+				},
+			]).onTest(),
+		);
+	});
+
+	it('should handle MFA verify with unsupported type', async () => {
+		const response = await request(server)
+			.post('/auth/mfa/verify')
+			.send({
+				code: 'code',
+				type: 'sms',
+			});
+
+		expect(response.status).toBe(400);
+		expect(response.body).toEqual(
+			message('Validation of request data failed.', {}, [
+				{
+					info: INVALID_TYPE,
+					data: {
+						location: 'body',
+						path: 'type',
+					},
+				},
+			]).onTest(),
+		);
+	});
+
+	it('should handle MFA verify without code', async () => {
+		const response = await request(server)
+			.post('/auth/mfa/verify')
+			.send({ type: 'totp' });
+
+		expect(response.status).toBe(400);
+		expect(response.body).toEqual(
+			message('Validation of request data failed.', {}, [
+				{
+					info: CODE_REQUIRED,
+					data: {
+						location: 'body',
+						path: 'code',
+					},
+				},
+			]).onTest(),
 		);
 	});
 
@@ -485,21 +578,23 @@ describe('MFA Routes', () => {
 				{
 					totp_verified_at: '2023-09-15T12:00:00',
 					email: true,
-					email_code: 'code',
+					email_code: 'codeHereTest',
 					email_code_sent_at: '2023-09-15T11:54:00',
 				},
 			],
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/disable').send({
-			code: 'code',
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				code: 'codeHereTest',
+				type: 'email',
+			}); 
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Provided code expired.', {}, [
 				{
 					info: CODE_EXPIRED,
 					data: {
@@ -507,7 +602,7 @@ describe('MFA Routes', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -529,124 +624,16 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/disable').send({
-			code: 'code',
-			type: 'email',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/disable')
+			.send({
+				code: 'code',
+				type: 'email',
+			});
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
 			message('Email MFA successfully disabled.').onTest(),
-		);
-	});
-
-	it('should handle MFA verify without type', async () => {
-		const response = await request(server)
-			.post('/auth/mfa/verify')
-			.send({ code: 'code' });
-
-		expect(response.status).toBe(400);
-		expect(response.body).toEqual(
-			testErrorMessages([
-				{
-					info: TYPE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'type',
-					},
-				},
-			]),
-		);
-	});
-
-	it('should handle MFA verify with unsupported type', async () => {
-		const response = await request(server).post('/auth/mfa/verify').send({
-			code: 'code',
-			type: 'sms',
-		});
-
-		expect(response.status).toBe(400);
-		expect(response.body).toEqual(
-			testErrorMessages([
-				{
-					info: INVALID_TYPE,
-					data: {
-						location: 'body',
-						path: 'type',
-					},
-				},
-			]),
-		);
-	});
-
-	it('should handle MFA verify without code', async () => {
-		const response = await request(server)
-			.post('/auth/mfa/verify')
-			.send({ type: 'totp' });
-
-		expect(response.status).toBe(400);
-		expect(response.body).toEqual(
-			testErrorMessages([
-				{
-					info: CODE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'code',
-					},
-				},
-			]),
-		);
-	});
-
-	it('should handle MFA verify TOTP with already verified TOTP', async () => {
-		mockQuery.mockResolvedValueOnce({
-			rows: [
-				{
-					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
-					totp_verified_at: '2023-09-15T12:00:00',
-				},
-			],
-			rowCount: 1,
-		} as never);
-
-		const response = await request(server).post('/auth/mfa/verify').send({
-			code: '45928T',
-			type: 'totp',
-		});
-
-		expect(response.status).toBe(400);
-		expect(response.body).toEqual(
-			testErrorMessages([{ info: TOTP_ALREADY_VERIFIED }]),
-		);
-	});
-
-	it('should handle MFA verify TOTP with invalid code', async () => {
-		mockQuery.mockResolvedValueOnce({
-			rows: [
-				{
-					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
-					totp_verified_at: null,
-				},
-			],
-			rowCount: 1,
-		} as never);
-
-		const response = await request(server).post('/auth/mfa/verify').send({
-			code: '45928T',
-			type: 'totp',
-		});
-
-		expect(response.status).toBe(403);
-		expect(response.body).toEqual(
-			testErrorMessages([
-				{
-					info: INVALID_CODE,
-					data: {
-						location: 'body',
-						path: 'code',
-					},
-				},
-			]),
 		);
 	});
 
@@ -670,14 +657,40 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/mfa/verify').send({
-			code,
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/mfa/verify')
+			.send({
+				code,
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
 			message('TOTP MFA successfully enabled.').onTest(),
+		);
+	});
+
+	it('should handle MFA verify TOTP with already verified TOTP', async () => {
+		mockQuery.mockResolvedValueOnce({
+			rows: [
+				{
+					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
+					totp_verified_at: '2023-09-15T12:00:00',
+				},
+			],
+			rowCount: 1,
+		} as never);
+
+		const response = await request(server)
+			.post('/auth/mfa/verify')
+			.send({
+				code: '45928T',
+				type: 'totp',
+			});
+
+		expect(response.status).toBe(400);
+		expect(response.body).toEqual(
+			message('MFA TOTP is already verified.', {}, [{ info: TOTP_ALREADY_VERIFIED }]).onTest(),
 		);
 	});
 });

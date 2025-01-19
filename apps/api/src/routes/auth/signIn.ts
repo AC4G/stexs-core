@@ -100,7 +100,7 @@ router.post(
 					.status(400)
 					.json(
 						message(
-							'Sign In failed.',
+							'Sign in failed.',
 							{},
 							[
 								{

@@ -30,7 +30,7 @@ import {
 } from 'utils-node/errors';
 import { sign } from 'jsonwebtoken';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../../env-config';
-import { testErrorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 
 jest.mock('../../../src/db', () => {
 	return {
@@ -70,14 +70,16 @@ describe('OAuth2 Token', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'refresh_token',
-			refresh_token: refreshToken,
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'refresh_token',
+				refresh_token: refreshToken,
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid refresh token provided.', {}, [
 				{
 					info: INVALID_REFRESH_TOKEN,
 					data: {
@@ -85,16 +87,17 @@ describe('OAuth2 Token', () => {
 						path: 'refresh_token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle token route without grant type', async () => {
-		const response = await request(server).post('/auth/oauth2/token');
+		const response = await request(server)
+			.post('/auth/oauth2/token');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: GRANT_TYPE_REQUIRED,
 					data: {
@@ -102,7 +105,7 @@ describe('OAuth2 Token', () => {
 						path: 'grant_type',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -113,7 +116,7 @@ describe('OAuth2 Token', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_GRANT_TYPE.code,
@@ -124,7 +127,7 @@ describe('OAuth2 Token', () => {
 						path: 'grant_type',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -135,7 +138,7 @@ describe('OAuth2 Token', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CLIENT_ID_REQUIRED,
 					data: {
@@ -157,21 +160,23 @@ describe('OAuth2 Token', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle token route with authorization code with invalid client id format', async () => {
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'authorization_code',
-			code: 'code',
-			client_id: 'id',
-			client_secret: 'secret',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'authorization_code',
+				code: 'code',
+				client_id: 'id',
+				client_secret: 'secret',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_UUID,
 					data: {
@@ -179,7 +184,7 @@ describe('OAuth2 Token', () => {
 						path: 'client_id',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -189,16 +194,18 @@ describe('OAuth2 Token', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'authorization_code',
-			code: 'code',
-			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
-			client_secret: 'secret',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'authorization_code',
+				code: 'code',
+				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				client_secret: 'secret',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid authorization code provided.', {}, [
 				{
 					info: INVALID_AUTHORIZATION_CODE,
 					data: {
@@ -206,7 +213,7 @@ describe('OAuth2 Token', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -223,16 +230,18 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'authorization_code',
-			code: 'code',
-			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
-			client_secret: 'secret',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'authorization_code',
+				code: 'code',
+				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				client_secret: 'secret',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Authorization code expired.', {}, [
 				{
 					info: CODE_EXPIRED,
 					data: {
@@ -240,7 +249,7 @@ describe('OAuth2 Token', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -276,24 +285,28 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'authorization_code',
-			code: 'code',
-			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
-			client_secret: 'secret',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'authorization_code',
+				code: 'code',
+				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				client_secret: 'secret',
+			});
 
 		expect(response.status).toBe(200);
-		expect(response.body).toEqual({
-			access_token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			refresh_token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			token_type: 'bearer',
-			expires: expect.any(Number),
-		});
+		expect(response.body).toEqual(
+			message('Connection successfully created.', {
+				access_token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				refresh_token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				token_type: 'bearer',
+				expires: expect.any(Number),
+			}).onTest(),
+		);
 	});
 
 	it('should handle token route with grant type client credentials without client secret and client id', async () => {
@@ -303,7 +316,7 @@ describe('OAuth2 Token', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CLIENT_ID_REQUIRED,
 					data: {
@@ -318,7 +331,7 @@ describe('OAuth2 Token', () => {
 						path: 'client_secret',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -328,15 +341,17 @@ describe('OAuth2 Token', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'client_credentials',
-			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
-			client_secret: 'secret',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'client_credentials',
+				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				client_secret: 'secret',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid client credentials provided.', {}, [
 				{
 					info: INVALID_CLIENT_CREDENTIALS,
 					data: {
@@ -344,7 +359,7 @@ describe('OAuth2 Token', () => {
 						paths: ['client_id', 'client_secret'],
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -361,15 +376,19 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'client_credentials',
-			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
-			client_secret: 'secret',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'client_credentials',
+				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				client_secret: 'secret',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([{ info: NO_CLIENT_SCOPES_SELECTED }]),
+			message('No client scopes selected.', {}, [
+				{ info: NO_CLIENT_SCOPES_SELECTED }
+			]).onTest(),
 		);
 	});
 
@@ -391,20 +410,24 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'client_credentials',
-			client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
-			client_secret: 'secret',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'client_credentials',
+				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				client_secret: 'secret',
+			});
 
 		expect(response.status).toBe(200);
-		expect(response.body).toEqual({
-			access_token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			token_type: 'bearer',
-			expires: expect.any(Number),
-		});
+		expect(response.body).toEqual(
+			message('Access token retrieved successfully.', {
+				access_token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				token_type: 'bearer',
+				expires: expect.any(Number),
+			}).onTest(),
+		);
 	});
 
 	it('should handle token route with grant type refresh token without refresh token', async () => {
@@ -414,7 +437,7 @@ describe('OAuth2 Token', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: REFRESH_TOKEN_REQUIRED,
 					data: {
@@ -422,7 +445,7 @@ describe('OAuth2 Token', () => {
 						path: 'refresh_token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -437,14 +460,16 @@ describe('OAuth2 Token', () => {
 			},
 		);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'refresh_token',
-			refresh_token: refreshToken,
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'refresh_token',
+				refresh_token: refreshToken,
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_TOKEN,
 					data: {
@@ -452,7 +477,7 @@ describe('OAuth2 Token', () => {
 						path: 'refresh_token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -463,14 +488,16 @@ describe('OAuth2 Token', () => {
 			algorithm: 'HS256',
 		});
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'refresh_token',
-			refresh_token: refreshToken,
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'refresh_token',
+				refresh_token: refreshToken,
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_GRANT_TYPE.code,
@@ -481,7 +508,7 @@ describe('OAuth2 Token', () => {
 						path: 'refresh_token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -506,21 +533,25 @@ describe('OAuth2 Token', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/oauth2/token').send({
-			grant_type: 'refresh_token',
-			refresh_token: refreshToken,
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/token')
+			.send({
+				grant_type: 'refresh_token',
+				refresh_token: refreshToken,
+			});
 
 		expect(response.status).toBe(200);
-		expect(response.body).toEqual({
-			access_token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			refresh_token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			token_type: 'bearer',
-			expires: expect.any(Number),
-		});
+		expect(response.body).toEqual(
+			message('Access token retrieved successfully.', {
+				access_token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				refresh_token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				token_type: 'bearer',
+				expires: expect.any(Number),
+			}).onTest(),
+		);
 	});
 });

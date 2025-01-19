@@ -3,9 +3,9 @@ import {
 	jest,
 	describe,
 	afterEach,
+	it,
 	beforeAll,
 	afterAll,
-	it,
 } from '@jest/globals';
 
 const mockQuery = jest.fn();
@@ -14,7 +14,8 @@ import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../../src/server';
 import { INVALID_TOKEN } from 'utils-node/errors';
-import { testErrorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
+import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -59,6 +60,14 @@ describe('Token Route', () => {
 		jest.clearAllMocks();
 	});
 
+	beforeAll(() => {
+		advanceTo(new Date('2023-09-15T12:00:00'));
+	});
+
+	afterAll(() => {
+		clear();
+	});
+
 	it('should handle refresh with already signed out session', async () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [],
@@ -71,7 +80,7 @@ describe('Token Route', () => {
 
 		expect(response.status).toBe(401);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid refresh token.', {}, [
 				{
 					info: INVALID_TOKEN,
 					data: {
@@ -79,7 +88,7 @@ describe('Token Route', () => {
 						path: 'refresh_token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -98,15 +107,17 @@ describe('Token Route', () => {
 			.send({ refresh_token: 'token' });
 
 		expect(response.status).toBe(200);
-		expect(response.body).toMatchObject({
-			access_token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			refresh_token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			token_type: 'bearer',
-			expires: expect.any(Number),
-		});
+		expect(response.body).toMatchObject(
+			message('Access token successfully generated.', {
+				access_token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				refresh_token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				token_type: 'bearer',
+				expires: expect.any(Number),
+			}).onTest(),
+		);
 	});
 });

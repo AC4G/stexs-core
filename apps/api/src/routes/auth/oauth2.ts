@@ -221,7 +221,7 @@ router.post(
 				[userId, client_id],
 			);
 
-			if (!rowCount || rowCount !== 0) {
+			if (rowCount && rowCount > 0) {
 				await db.query(
 					`
 						INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
@@ -229,7 +229,7 @@ router.post(
 							c.id AS connection_id,
 							s.id AS scope_id
 						FROM public.oauth2_connections AS c
-						JOIN public.oauth2_apps AS a ON c.client_id = a.client_id  -- Ensure client_id matches type
+						JOIN public.oauth2_apps AS a ON c.client_id = a.client_id
 						JOIN public.scopes AS s ON s.name = ANY($3::text[])
 						WHERE c.user_id = $1::uuid
 						AND a.client_id = $2::uuid
@@ -591,13 +591,7 @@ router.delete(
 		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const {
-			sub,
-			jti
-		} = req.auth as {
-			sub: string;
-			jti: string;
-		};
+		const auth = req.auth;
 
 		try {
 			const { rowCount } = await db.query(
@@ -608,11 +602,11 @@ router.delete(
 						AND token = $2::uuid 
 						AND session_id IS NULL;
 				`,
-				[sub, jti],
+				[auth?.sub, auth?.jti],
 			);
 
 			if (!rowCount || rowCount === 0) {
-				logger.debug(`No connection found for revocation for user: ${sub}`);
+				logger.debug(`No connection found for revocation for user: ${auth?.sub}`);
 				return res
 					.status(404)
 					.json(
@@ -625,7 +619,7 @@ router.delete(
 			}
 		} catch (e) {
 			logger.error(
-				`Error while revoking connection for user: ${sub}. Error: ${
+				`Error while revoking connection for user: ${auth?.sub}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
@@ -640,7 +634,7 @@ router.delete(
 				);
 		}
 
-		logger.debug(`Connection revoked successfully for user: ${sub}`);
+		logger.debug(`Connection revoked successfully for user: ${auth?.sub}`);
 
 		res.json(message('Connection successfully revoked.'));
 	},

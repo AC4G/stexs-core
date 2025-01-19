@@ -3,7 +3,7 @@ import { transports, createLogger, format } from 'winston';
 export const devLogger = createLogger({
 	level: 'debug',
 	defaultMeta: {
-		service: 'auth-api',
+		service: 'api',
 	},
 	format: format.combine(
 		format.colorize(),

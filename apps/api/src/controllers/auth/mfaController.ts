@@ -528,7 +528,7 @@ export async function disableEmail(req: Request, res: Response) {
 
 		const emailCodeSentAt = rows[0].email_code_sent_at;
 
-		if (!emailCodeSentAt || !isExpired(emailCodeSentAt, 5)) {
+		if (!emailCodeSentAt || isExpired(emailCodeSentAt, 5)) {
 			logger.debug(`MFA code expired for user: ${userId}`);
 			return res
 				.status(403)

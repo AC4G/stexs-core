@@ -16,7 +16,6 @@ import { NextFunction } from 'express';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
 	ARRAY_REQUIRED,
-	CLIENT_ALREADY_CONNECTED,
 	CLIENT_ID_REQUIRED,
 	CLIENT_NOT_FOUND,
 	EMPTY_ARRAY,
@@ -25,7 +24,7 @@ import {
 	REDIRECT_URL_REQUIRED,
 	SCOPES_REQUIRED,
 } from 'utils-node/errors'; 
-import { testErrorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -88,7 +87,7 @@ describe('OAuth2 Authorize', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CLIENT_ID_REQUIRED,
 					data: {
@@ -96,7 +95,7 @@ describe('OAuth2 Authorize', () => {
 						path: 'client_id',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -111,7 +110,7 @@ describe('OAuth2 Authorize', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_UUID,
 					data: {
@@ -119,7 +118,7 @@ describe('OAuth2 Authorize', () => {
 						path: 'client_id',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -133,7 +132,7 @@ describe('OAuth2 Authorize', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: REDIRECT_URL_REQUIRED,
 					data: {
@@ -141,7 +140,7 @@ describe('OAuth2 Authorize', () => {
 						path: 'redirect_url',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -156,7 +155,7 @@ describe('OAuth2 Authorize', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_URL,
 					data: {
@@ -164,19 +163,21 @@ describe('OAuth2 Authorize', () => {
 						path: 'redirect_url',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle authorize without scopes', async () => {
-		const response = await request(server).post('/auth/oauth2/authorize').send({
-			client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
-			redirect_url: 'https://example.com',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/authorize')
+			.send({
+				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+				redirect_url: 'https://example.com',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: SCOPES_REQUIRED,
 					data: {
@@ -184,20 +185,22 @@ describe('OAuth2 Authorize', () => {
 						path: 'scopes',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle authorize with scopes as string', async () => {
-		const response = await request(server).post('/auth/oauth2/authorize').send({
-			client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
-			redirect_url: 'https://example.com',
-			scopes: 'scopes',
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/authorize')
+			.send({
+				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+				redirect_url: 'https://example.com',
+				scopes: 'scopes',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: ARRAY_REQUIRED,
 					data: {
@@ -205,20 +208,22 @@ describe('OAuth2 Authorize', () => {
 						path: 'scopes',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle authorize with empty scopes array', async () => {
-		const response = await request(server).post('/auth/oauth2/authorize').send({
-			client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
-			redirect_url: 'https://example.com',
-			scopes: [],
-		});
+		const response = await request(server)
+			.post('/auth/oauth2/authorize')
+			.send({
+				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
+				redirect_url: 'https://example.com',
+				scopes: [],
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: EMPTY_ARRAY,
 					data: {
@@ -226,7 +231,7 @@ describe('OAuth2 Authorize', () => {
 						path: 'scopes',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -246,7 +251,7 @@ describe('OAuth2 Authorize', () => {
 
 		expect(response.status).toBe(404);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Client not found.', {}, [
 				{
 					info: CLIENT_NOT_FOUND,
 					data: {
@@ -254,7 +259,7 @@ describe('OAuth2 Authorize', () => {
 						paths: ['client_id'],
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -328,11 +333,13 @@ describe('OAuth2 Authorize', () => {
 			});
 
 		expect(response.status).toBe(200);
-		expect(response.body).toMatchObject({
-			code: expect.stringMatching(
-				/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
-			),
-			expires: expires,
-		});
+		expect(response.body).toMatchObject(
+			message('Authorization token successfully created.', {
+				code: expect.stringMatching(
+					/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+				),
+				expires: expires,
+			}).onTest(),
+		);
 	});
 });

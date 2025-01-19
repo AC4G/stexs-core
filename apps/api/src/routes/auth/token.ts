@@ -36,15 +36,7 @@ router.post(
 		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const {
-			sub,
-			jti,
-			session_id
-		} = req.auth as {
-			sub: string;
-			jti: string;
-			session_id: string;
-		};
+		const auth = req.auth;
 
 		try {
 			const { rowCount } = await db.query(
@@ -56,14 +48,14 @@ router.post(
 						AND session_id = $3::uuid;
 				`,
 				[
-					sub,
-					jti,
-					session_id
+					auth?.sub,
+					auth?.jti,
+					auth?.session_id
 				],
 			);
 
 			if (!rowCount || rowCount === 0) {
-				logger.debug(`Refresh token invalid or expired for user: ${sub}`);
+				logger.debug(`Refresh token invalid or expired for user: ${auth?.sub}`);
 				return res
 					.status(401)
 					.send(
@@ -83,10 +75,10 @@ router.post(
 					);
 			}
 
-			logger.debug(`Refresh token successfully processed for user: ${sub} (Revoked)`);
+			logger.debug(`Refresh token successfully processed for user: ${auth?.sub} (Revoked)`);
 		} catch (e) {
 			logger.error(
-				`Error while processing refresh token for user: ${sub}. Error: ${
+				`Error while processing refresh token for user: ${auth?.sub}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
@@ -103,10 +95,10 @@ router.post(
 
 		try {
 			const data = await generateAccessToken({
-				sub,
+				sub: auth?.sub,
 			});
 
-			logger.debug(`A new access token generated for user: ${sub}`);
+			logger.debug(`A new access token generated for user: ${auth?.sub}`);
 
 			res.json(message('Access token successfully generated.', { ...data }));
 		} catch (e) {

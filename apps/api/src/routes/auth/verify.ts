@@ -53,13 +53,11 @@ router.get(
 
 		try {
 			const { rowCount, rows } = await db.query<{
-				id: string;
 				email_verified_at: string | null;
 				verification_sent_at: string | null;
 			}>(
 				`
 					SELECT
-						id,
 						email_verified_at,
 						verification_sent_at
 					FROM auth.users
@@ -176,12 +174,10 @@ router.post(
 
 		try {
 			const { rowCount, rows } = await db.query<{
-				id: string;
 				email_confirmed_at: string | null;
 			}>(
 				`
 					SELECT
-						id,
 						email_verified_at
 					FROM auth.users
 					WHERE email = $1::text;

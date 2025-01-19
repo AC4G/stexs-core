@@ -1,4 +1,12 @@
-import { expect, jest, describe, afterEach, it } from '@jest/globals';
+import {
+	expect,
+	jest,
+	describe,
+	afterEach,
+	it,
+	beforeAll,
+	afterAll
+} from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -11,7 +19,8 @@ import {
 	CONNECTION_NOT_FOUND,
 	REFRESH_TOKEN_REQUIRED,
 } from 'utils-node/errors';
-import { message, testErrorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
+import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -56,14 +65,21 @@ describe('OAuth2 Routes', () => {
 		jest.clearAllMocks();
 	});
 
+	beforeAll(() => {
+		advanceTo(new Date('2023-09-15T12:00:00'));
+	});
+
+	afterAll(() => {
+		clear();
+	});
+
 	it('should handle delete connection with connection id not as numeric', async () => {
-		const response = await request(server).delete(
-			`/auth/oauth2/connections/${'not_a_number'}`,
-		);
+		const response = await request(server)
+			.delete(`/auth/oauth2/connections/${'not_a_number'}`);
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CONNECTION_ID_NOT_NUMERIC,
 					data: {
@@ -71,7 +87,7 @@ describe('OAuth2 Routes', () => {
 						path: 'connectionId',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -81,11 +97,14 @@ describe('OAuth2 Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).delete(`/auth/oauth2/connections/${1}`);
+		const response = await request(server)
+			.delete(`/auth/oauth2/connections/${1}`);
 
 		expect(response.status).toBe(404);
 		expect(response.body).toEqual(
-			testErrorMessages([{ info: CONNECTION_NOT_FOUND }]),
+			message('Connection not found.', {}, [
+				{ info: CONNECTION_NOT_FOUND }
+			]).onTest(),
 		);
 	});
 
@@ -95,7 +114,8 @@ describe('OAuth2 Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).delete(`/auth/oauth2/connections/${1}`);
+		const response = await request(server)
+			.delete(`/auth/oauth2/connections/${1}`);
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -104,11 +124,12 @@ describe('OAuth2 Routes', () => {
 	});
 
 	it('should handle connection revoking without refresh token', async () => {
-		const response = await request(server).delete('/auth/oauth2/revoke');
+		const response = await request(server)
+			.delete('/auth/oauth2/revoke');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: REFRESH_TOKEN_REQUIRED,
 					data: {
@@ -116,7 +137,7 @@ describe('OAuth2 Routes', () => {
 						path: 'refresh_token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -132,7 +153,9 @@ describe('OAuth2 Routes', () => {
 
 		expect(response.status).toBe(404);
 		expect(response.body).toEqual(
-			testErrorMessages([{ info: CONNECTION_ALREADY_REVOKED }]),
+			message('Connection not found.', {}, [
+				{ info: CONNECTION_ALREADY_REVOKED }
+			]).onTest(),
 		);
 	});
 

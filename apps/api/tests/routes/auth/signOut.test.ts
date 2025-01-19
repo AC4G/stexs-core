@@ -1,4 +1,9 @@
-import { expect, jest, describe, it } from '@jest/globals';
+import {
+	expect,
+	jest,
+	describe,
+	it
+} from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -52,7 +57,8 @@ describe('Sign Out Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-out');
+		const response = await request(server)
+			.post('/auth/sign-out');
 
 		expect(response.status).toBe(404);
 	});
@@ -67,7 +73,8 @@ describe('Sign Out Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-out');
+		const response = await request(server)
+			.post('/auth/sign-out');
 
 		expect(response.status).toBe(204);
 	});
@@ -78,7 +85,8 @@ describe('Sign Out Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-out');
+		const response = await request(server)
+			.post('/auth/sign-out');
 
 		expect(response.status).toBe(404);
 	});
@@ -110,10 +118,12 @@ describe('Sign Out Routes', () => {
 			rowCount: 2,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-out/all-sessions').send({
-			code,
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/sign-out/all-sessions')
+			.send({
+				code,
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(204);
 	});

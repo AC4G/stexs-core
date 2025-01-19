@@ -5,6 +5,8 @@ import {
 	afterEach,
 	it,
 	beforeEach,
+	beforeAll,
+	afterAll,
 } from '@jest/globals';
 
 const mockQuery = jest.fn();
@@ -21,7 +23,8 @@ import {
 	PASSWORD_REQUIRED,
 	USERNAME_REQUIRED,
 } from 'utils-node/errors';
-import { message, testErrorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
+import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('../../../src/db', () => {
 	return {
@@ -49,15 +52,25 @@ describe('Sign Up', () => {
 		jest.clearAllMocks();
 	});
 
+	beforeAll(() => {
+			advanceTo(new Date('2023-09-15T12:00:00'));
+	});
+	
+	afterAll(() => {
+		clear();
+	});
+
 	it('should handle sign up with missing username', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			email: 'test@example.com',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				email: 'test@example.com',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: USERNAME_REQUIRED,
 					data: {
@@ -65,20 +78,22 @@ describe('Sign Up', () => {
 						path: 'username',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign up with username longer then 20 characters', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'ZaZlZeBu1mFOqDuultl1P',
-			email: 'test@example.com',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'ZaZlZeBu1mFOqDuultl1P',
+				email: 'test@example.com',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_USERNAME.code,
@@ -89,20 +104,22 @@ describe('Sign Up', () => {
 						path: 'username',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign up with username as email', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'test@example.com',
-			email: 'test@example.com',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'test@example.com',
+				email: 'test@example.com',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_USERNAME.code,
@@ -123,20 +140,22 @@ describe('Sign Up', () => {
 						path: 'username',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sing up with username using non QWERTY characters', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'тт123',
-			email: 'test@example.com',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'тт123',
+				email: 'test@example.com',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_USERNAME.code,
@@ -147,19 +166,21 @@ describe('Sign Up', () => {
 						path: 'username',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign up with missing email', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'Test123',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'Test123',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
 					data: {
@@ -167,20 +188,22 @@ describe('Sign Up', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign up with invalid email', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'Test123',
-			email: 'test@example',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'Test123',
+				email: 'test@example',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_EMAIL.code,
@@ -191,19 +214,21 @@ describe('Sign Up', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign up with missing password', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'Test123',
-			email: 'test@example.com',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'Test123',
+				email: 'test@example.com',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
 					data: {
@@ -211,20 +236,22 @@ describe('Sign Up', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign up with invalid password according to regex specification', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'Test123',
-			email: 'test@example.com',
-			password: 'test123456',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'Test123',
+				email: 'test@example.com',
+				password: 'test123456',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_PASSWORD,
 					data: {
@@ -232,20 +259,22 @@ describe('Sign Up', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign up with less then 10 characters', async () => {
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'Test123',
-			email: 'test@example.com',
-			password: 'Test123.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'Test123',
+				email: 'test@example.com',
+				password: 'Test123.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_PASSWORD_LENGTH,
 					data: {
@@ -253,7 +282,7 @@ describe('Sign Up', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -262,15 +291,17 @@ describe('Sign Up', () => {
 			hint: 'Please choose a different username',
 		} as never);
 
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'Test123',
-			email: 'test@example.com',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'Test123',
+				email: 'test@example.com',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Failed to sign up because of invalid input.', {}, [
 				{
 					info: {
 						code: INVALID_INPUT_DATA.code,
@@ -281,7 +312,7 @@ describe('Sign Up', () => {
 						path: 'username',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -290,15 +321,17 @@ describe('Sign Up', () => {
 			hint: 'Please choose a different email',
 		} as never);
 
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'Test123',
-			email: 'test@example.com',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'Test123',
+				email: 'test@example.com',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Failed to sign up because of invalid input.', {}, [
 				{
 					info: {
 						code: INVALID_INPUT_DATA.code,
@@ -309,7 +342,7 @@ describe('Sign Up', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -323,17 +356,17 @@ describe('Sign Up', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-up').send({
-			username: 'Test123',
-			email: 'test@example.com',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-up')
+			.send({
+				username: 'Test123',
+				email: 'test@example.com',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(201);
 		expect(response.body).toEqual(
-			message(
-				'Sign up successful. Check your email for an verification link!',
-			).onTest(),
+			message('Sign up successful. Check your email for an verification link!').onTest(),
 		);
 	});
 });

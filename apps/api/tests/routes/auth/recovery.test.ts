@@ -26,7 +26,7 @@ import {
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message, testErrorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 
 jest.mock('../../../src/db', () => {
 	return {
@@ -63,11 +63,12 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle recovery with missing email', async () => {
-		const response = await request(server).post('/auth/recovery');
+		const response = await request(server)
+			.post('/auth/recovery');
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
 					data: {
@@ -75,7 +76,7 @@ describe('Recovery Routes', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -86,7 +87,7 @@ describe('Recovery Routes', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_EMAIL.code,
@@ -97,7 +98,7 @@ describe('Recovery Routes', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -113,7 +114,7 @@ describe('Recovery Routes', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid email for password recovery provided.', {}, [
 				{
 					info: {
 						code: INVALID_EMAIL.code,
@@ -124,7 +125,7 @@ describe('Recovery Routes', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -149,7 +150,7 @@ describe('Recovery Routes', () => {
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
-			message('Recovery email was been send.').onTest(),
+			message('Recovery email was been send to the email provided.').onTest(),
 		);
 	});
 
@@ -161,7 +162,7 @@ describe('Recovery Routes', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
 					data: {
@@ -169,20 +170,22 @@ describe('Recovery Routes', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle confirm recovery with invalid email', async () => {
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test',
-			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test',
+				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_EMAIL.code,
@@ -193,19 +196,21 @@ describe('Recovery Routes', () => {
 						path: 'email',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle confirm recovery with missing token', async () => {
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: TOKEN_REQUIRED,
 					data: {
@@ -213,20 +218,22 @@ describe('Recovery Routes', () => {
 						path: 'token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle confirm recovery with token not in uuid format', async () => {
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			token: 'token',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				token: 'token',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_UUID,
 					data: {
@@ -234,19 +241,21 @@ describe('Recovery Routes', () => {
 						path: 'token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle confirm recovery with missing password', async () => {
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
 					data: {
@@ -254,20 +263,22 @@ describe('Recovery Routes', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle confirm recovery with invalid password according to regex specification', async () => {
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-			password: 'test123',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
+				password: 'test123',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_PASSWORD,
 					data: {
@@ -275,20 +286,22 @@ describe('Recovery Routes', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle confirm recovery with password having less then 10 characters', async () => {
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-			password: 'Test123.',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
+				password: 'Test123.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_PASSWORD_LENGTH,
 					data: {
@@ -296,7 +309,7 @@ describe('Recovery Routes', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -306,15 +319,17 @@ describe('Recovery Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Invalid request for password recovery confirmation.', {}, [
 				{
 					info: INVALID_REQUEST,
 					data: {
@@ -322,7 +337,7 @@ describe('Recovery Routes', () => {
 						paths: ['email', 'token'],
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -336,15 +351,17 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Password recovery token expired.', {}, [
 				{
 					info: RECOVERY_LINK_EXPIRED,
 					data: {
@@ -352,7 +369,7 @@ describe('Recovery Routes', () => {
 						path: 'token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -375,15 +392,17 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('New password matches the current password.', {}, [
 				{
 					info: NEW_PASSWORD_EQUALS_CURRENT,
 					data: {
@@ -391,7 +410,7 @@ describe('Recovery Routes', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -419,11 +438,13 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/recovery/confirm').send({
-			email: 'test@example.com',
-			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-			password: 'Test12345.',
-		});
+		const response = await request(server)
+			.post('/auth/recovery/confirm')
+			.send({
+				email: 'test@example.com',
+				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
+				password: 'Test12345.',
+			});
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(

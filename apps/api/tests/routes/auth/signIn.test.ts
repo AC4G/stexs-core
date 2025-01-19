@@ -1,4 +1,12 @@
-import { expect, jest, describe, afterEach, it } from '@jest/globals';
+import {
+	expect,
+	jest,
+	describe,
+	afterEach,
+	it,
+	beforeAll,
+	afterAll
+} from '@jest/globals';
 
 const mockQuery = jest.fn();
 
@@ -15,7 +23,8 @@ import {
 	TYPE_REQUIRED,
 } from 'utils-node/errors';
 import { NextFunction } from 'express';
-import { testErrorMessages } from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
+import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -60,6 +69,14 @@ describe('Sign In Route', () => {
 		jest.clearAllMocks();
 	});
 
+	beforeAll(() => {
+		advanceTo(new Date('2023-09-15T12:00:00'));
+	});
+
+	afterAll(() => {
+		clear();
+	});
+
 	it('should handle sign in without identifier', async () => {
 		const response = await request(server)
 			.post('/auth/sign-in')
@@ -67,7 +84,7 @@ describe('Sign In Route', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: IDENTIFIER_REQUIRED,
 					data: {
@@ -75,7 +92,7 @@ describe('Sign In Route', () => {
 						path: 'identifier',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -86,7 +103,7 @@ describe('Sign In Route', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
 					data: {
@@ -94,7 +111,7 @@ describe('Sign In Route', () => {
 						path: 'password',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -104,14 +121,16 @@ describe('Sign In Route', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-in').send({
-			identifier: 'test',
-			password: 'Test123.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-in')
+			.send({
+				identifier: 'test',
+				password: 'Test123.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Sign in failed.', {}, [
 				{
 					info: {
 						code: INVALID_CREDENTIALS.code,
@@ -122,7 +141,7 @@ describe('Sign In Route', () => {
 						paths: ['identifier', 'password'],
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
@@ -136,14 +155,18 @@ describe('Sign In Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-in').send({
-			identifier: 'test',
-			password: 'Test123.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-in')
+			.send({
+				identifier: 'test',
+				password: 'Test123.',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([{ info: EMAIL_NOT_VERIFIED }]),
+			message('Email not verified.', {}, [
+				{ info: EMAIL_NOT_VERIFIED }
+			]).onTest(),
 		);
 	});
 
@@ -159,19 +182,23 @@ describe('Sign In Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-in').send({
-			identifier: 'test',
-			password: 'Test123.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-in')
+			.send({
+				identifier: 'test',
+				password: 'Test123.',
+			});
 
 		expect(response.status).toBe(200);
-		expect(response.body).toEqual({
-			token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			types: ['email'],
-			expires: expect.any(Number),
-		});
+		expect(response.body).toEqual(
+			message('Sign-in initialized successfully.', {
+				token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				types: ['email'],
+				expires: expect.any(Number),
+			}).onTest()
+		);
 	});
 
 	it('should handle sign in initialization with totp MFA', async () => {
@@ -186,30 +213,36 @@ describe('Sign In Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server).post('/auth/sign-in').send({
-			identifier: 'test',
-			password: 'Test123.',
-		});
+		const response = await request(server)
+			.post('/auth/sign-in')
+			.send({
+				identifier: 'test',
+				password: 'Test123.',
+			});
 
 		expect(response.status).toBe(200);
-		expect(response.body).toEqual({
-			token: expect.stringMatching(
-				/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
-			),
-			types: ['totp'],
-			expires: expect.any(Number),
-		});
+		expect(response.body).toEqual(
+			message('Sign-in initialized successfully.', {
+				token: expect.stringMatching(
+					/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
+				),
+				types: ['totp'],
+				expires: expect.any(Number),
+			}).onTest(),
+		);
 	});
 
 	it('should handle sign in confirm without code', async () => {
-		const response = await request(server).post('/auth/sign-in/confirm').send({
-			type: 'totp',
-			token: 'token',
-		});
+		const response = await request(server)
+			.post('/auth/sign-in/confirm')
+			.send({
+				type: 'totp',
+				token: 'token',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: CODE_REQUIRED,
 					data: {
@@ -217,19 +250,21 @@ describe('Sign In Route', () => {
 						path: 'code',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign in confirm without type', async () => {
-		const response = await request(server).post('/auth/sign-in/confirm').send({
-			code: 'code',
-			token: 'token',
-		});
+		const response = await request(server)
+			.post('/auth/sign-in/confirm')
+			.send({
+				code: 'code',
+				token: 'token',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: TYPE_REQUIRED,
 					data: {
@@ -237,19 +272,21 @@ describe('Sign In Route', () => {
 						path: 'type',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign in confirm without token', async () => {
-		const response = await request(server).post('/auth/sign-in/confirm').send({
-			code: 'code',
-			type: 'totp',
-		});
+		const response = await request(server)
+			.post('/auth/sign-in/confirm')
+			.send({
+				code: 'code',
+				type: 'totp',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: TOKEN_REQUIRED,
 					data: {
@@ -257,20 +294,22 @@ describe('Sign In Route', () => {
 						path: 'token',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 
 	it('should handle sign in confirm with unsupported type', async () => {
-		const response = await request(server).post('/auth/sign-in/confirm').send({
-			code: 'code',
-			type: 'sms',
-			token: 'token',
-		});
+		const response = await request(server)
+			.post('/auth/sign-in/confirm')
+			.send({
+				code: 'code',
+				type: 'sms',
+				token: 'token',
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			testErrorMessages([
+			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_TYPE,
 					data: {
@@ -278,7 +317,7 @@ describe('Sign In Route', () => {
 						path: 'type',
 					},
 				},
-			]),
+			]).onTest(),
 		);
 	});
 });

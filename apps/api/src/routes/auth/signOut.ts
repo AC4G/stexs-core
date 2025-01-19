@@ -33,13 +33,7 @@ router.post(
 		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const {
-			sub,
-			session_id
-		} = req.auth as {
-			sub: string;
-			session_id: string;
-		};
+		const auth = req.auth;
 
 		try {
 			const { rowCount } = await db.query(
@@ -49,16 +43,16 @@ router.post(
 						AND grant_type = 'password' 
 						AND session_id = $2::uuid;
 				`,
-				[sub, session_id],
+				[auth?.sub, auth?.session_id],
 			);
 
 			if (!rowCount || rowCount === 0) {
-				logger.debug(`Sign-out: No refresh tokens found for user: ${sub} and session: ${session_id}`);
+				logger.debug(`Sign-out: No refresh tokens found for user: ${auth?.sub} and session: ${auth?.session_id}`);
 				return res.status(404).send();
 			}
 		} catch (e) {
 			logger.error(
-				`Error during sign out for user: ${sub} and session: ${session_id}. Error:  ${
+				`Error during sign out for user: ${auth?.sub} and session: ${auth?.session_id}. Error:  ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
@@ -73,7 +67,7 @@ router.post(
 				);
 		}
 
-		logger.debug(`Sign-out successful for user: ${sub} from session: ${session_id}`);
+		logger.debug(`Sign-out successful for user: ${auth?.sub} from session: ${auth?.session_id}`);
 
 		res.status(204).send();
 	},

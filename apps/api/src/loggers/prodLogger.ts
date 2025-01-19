@@ -5,7 +5,7 @@ import LokiTransport from 'winston-loki';
 export const prodLogger = createLogger({
 	level: 'info',
 	defaultMeta: {
-		service: 'auth-api',
+		service: 'api',
 	},
 	format: format.json(),
 	transports: [

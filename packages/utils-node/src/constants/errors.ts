@@ -40,7 +40,7 @@ export const INVALID_PASSWORD_LENGTH = {
 };
 export const INVALID_INPUT_DATA = {
 	code: 'INVALID_INPUT_DATA',
-	message: 'Provided data are invalid.',
+	message: 'Provided data is invalid.',
 };
 export const INVALID_REQUEST = {
 	code: 'INVALID_REQUEST',
