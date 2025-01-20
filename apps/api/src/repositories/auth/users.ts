@@ -14,14 +14,17 @@ export async function getEmailVerificationState(
     const query = getQuery(client);
 
     const { rowCount, rows } = await query<EmailVerificationState>(
-        `
-            SELECT
-                email_verified_at,
-                verification_sent_at
-            FROM auth.users
-            WHERE email = $1::text
-                AND verification_token = $2::uuid;
-        `,
+        {
+            text: `
+                SELECT
+                    email_verified_at,
+                    verification_sent_at
+                FROM auth.users
+                WHERE email = $1::text
+                    AND verification_token = $2::uuid;
+            `,
+            name: 'auth-get-email-verification-state'
+        },
         [email, token],
     );
 
@@ -42,12 +45,15 @@ export async function getEmailVerifiedStatus(
     const query = getQuery(client);
 
     const { rowCount, rows } = await query<EmailVerifiedStatus>(
-        `
-            SELECT
-                email_verified_at
-            FROM auth.users
-            WHERE email = $1::text;
-        `,
+        {
+            text: `
+                SELECT
+                    email_verified_at
+                FROM auth.users
+                WHERE email = $1::text;
+            `,
+            name: 'auth-get-email-verified-status'
+        },
         [email],
     );
 
@@ -64,14 +70,17 @@ export async function verifyEmail(
     const query = getQuery(client);
 
     const { rowCount, rows } = await query(
-        `
-            UPDATE auth.users
-            SET 
-                verification_token = NULL,
-                verification_sent_at = NULL,
-                email_verified_at = CURRENT_TIMESTAMP
-            WHERE email = $1::text;
-        `,
+        {
+            text: `
+                UPDATE auth.users
+                SET 
+                    verification_token = NULL,
+                    verification_sent_at = NULL,
+                    email_verified_at = CURRENT_TIMESTAMP
+                WHERE email = $1::text;
+            `,
+            name: 'auth-verify-email'
+        },
         [email],
     );
 
@@ -89,13 +98,16 @@ export async function updateEmailVerificationToken(
     const query = getQuery(client);
 
     const { rowCount, rows } = await query(
-        `
-            UPDATE auth.users
-            SET 
-                verification_token = $1::uuid,
-                verification_sent_at = CURRENT_TIMESTAMP
-            WHERE email = $2::text;
-        `,
+        {
+            text: `
+                UPDATE auth.users
+                SET 
+                    verification_token = $1::uuid,
+                    verification_sent_at = CURRENT_TIMESTAMP
+                WHERE email = $2::text;
+            `,
+            name: 'auth-update-email-verification-token'
+        },
         [token, email],
     );
 
