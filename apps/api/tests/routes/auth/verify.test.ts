@@ -56,7 +56,7 @@ describe('Email Verification Routes', () => {
 
 	afterAll(() => {
 		clear();
-	});
+	}); 
 
 	it('should handle email verification with missing email', async () => {
 		const response = await request(server)
@@ -298,7 +298,7 @@ describe('Email Verification Routes', () => {
 			rows: [
 				{
 					id: 1,
-					email_confirmed_at: '2023-08-21T12:34:56Z',
+					email_verified_at: '2023-08-21T12:34:56Z',
 				},
 			],
 			rowCount: 1,

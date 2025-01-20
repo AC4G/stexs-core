@@ -9,8 +9,8 @@ const config: Config = {
 			displayName: 'db-tests',
 			testMatch: ['**/*.db.test.ts'],
 			testEnvironment: 'node',
-			globalSetup: '<rootDir>/jest.testSetup.ts',
-			globalTeardown: '<rootDir>/jest.testTeardown.ts',
+			globalSetup: '<rootDir>/jest.db.testSetup.ts',
+			globalTeardown: '<rootDir>/jest.db.testTeardown.ts',
 			transform: {
 				'^.+\\.ts$': 'ts-jest',
 			},
@@ -26,7 +26,10 @@ const config: Config = {
 				'^.+\\.ts$': 'ts-jest',
 			},
 		}
-	]
+	],
+	moduleNameMapper: {
+		"^db$": "<rootDir>/src/db",
+	}
 };
 
 export default config;
