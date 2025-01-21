@@ -1,9 +1,52 @@
 import { PoolClient } from 'pg';
 import { getQuery, type QueryResult } from '../utils';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface EmailVerificationState {
     email_verified_at: Date | null;
     verification_sent_at: Date | null;
+}
+
+export async function createTestUser(
+    client: PoolClient,
+    id: string = uuidv4(),
+    email: string = 'test@example.com',
+    raw_user_meta_data: Record<string, any> = { username: 'test-user' },
+    encrypted_password: string = 'encrypted-password',
+    email_verified_at: Date | null = null,
+    verification_sent_at: Date | null = null,
+    verification_token: string | null = null
+): Promise<QueryResult> {
+    return await client.query(
+        `
+            INSERT INTO auth.users (
+                id,
+                email,
+                raw_user_meta_data,
+                encrypted_password,
+                email_verified_at,
+                verification_sent_at,
+                verification_token
+            ) VALUES (
+                $1::uuid,
+                $2::text,
+                $3::jsonb,
+                $4::text,
+                $5::timestamptz,
+                $6::timestamptz,
+                $7::uuid
+            );
+        `,
+        [
+            id,
+            email,
+            raw_user_meta_data,
+            encrypted_password,
+            email_verified_at,
+            verification_sent_at,
+            verification_token
+        ],
+    );
 }
 
 export async function getEmailVerificationState(
