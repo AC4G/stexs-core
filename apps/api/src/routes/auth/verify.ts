@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import { message } from 'utils-node/messageBuilder';
-import db from '../../db';
 import { body, query } from 'express-validator';
 import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../../env-config';
 import sendEmail from '../../services/emailService';
@@ -17,6 +16,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { validate } from 'utils-node/middlewares';
 import logger from '../../loggers/logger';
 import { isExpired } from 'utils-node';
+import {
+	getEmailVerificationState,
+	getEmailVerifiedStatus,
+	updateEmailVerificationToken,
+	verifyEmail
+} from '../../repositories/auth/users';
 
 const router = Router();
 
@@ -52,20 +57,7 @@ router.get(
 		signInURL.searchParams.set('source', source);
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				email_verified_at: string | null;
-				verification_sent_at: string | null;
-			}>(
-				`
-					SELECT
-						email_verified_at,
-						verification_sent_at
-					FROM auth.users
-					WHERE email = $1::text
-						AND verification_token = $2::uuid;
-				`,
-				[email, token],
-			);
+			const { rowCount, rows } = await getEmailVerificationState(email as string, token as string);
 
 			if (!rowCount || rowCount === 0) {
 				signInURL.searchParams.append('code', 'error');
@@ -105,17 +97,7 @@ router.get(
 				return res.redirect(302, signInURL.toString());
 			}
 
-			const { rowCount: count } = await db.query(
-				`
-					UPDATE auth.users
-					SET 
-						verification_token = NULL,
-						verification_sent_at = NULL,
-						email_verified_at = CURRENT_TIMESTAMP
-					WHERE email = $1::text;
-				`,
-				[email],
-			);
+			const { rowCount: count } = await verifyEmail(email as string);
 
 			if (!count || count === 0) {
 				logger.error(`User not found for email: ${email}`);
@@ -173,17 +155,7 @@ router.post(
 		const email: string = req.body.email;
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				email_confirmed_at: string | null;
-			}>(
-				`
-					SELECT
-						email_verified_at
-					FROM auth.users
-					WHERE email = $1::text;
-				`,
-				[email],
-			);
+			const { rowCount, rows } = await getEmailVerifiedStatus(email);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Email not found for resend: ${email}`);
@@ -198,7 +170,7 @@ router.post(
 					);
 			}
 
-			if (rows[0].email_confirmed_at) {
+			if (rows[0].email_verified_at) {
 				logger.debug(`Email already verified for resend: ${email}`);
 				return res
 					.status(400)
@@ -230,16 +202,7 @@ router.post(
 		const token = uuidv4();
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					UPDATE auth.users
-					SET 
-						verification_token = $1::uuid,
-						verification_sent_at = CURRENT_TIMESTAMP
-					WHERE email = $2::text;
-				`,
-				[token, email],
-			);
+			const { rowCount } = await updateEmailVerificationToken(email, token);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(`Verification token update failed during resend for email: ${email}`);

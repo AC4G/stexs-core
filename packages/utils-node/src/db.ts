@@ -52,6 +52,20 @@ export class DbPool {
     }
   }
 
+  async withRollbackTransaction(
+    callback: (client: PoolClient) => Promise<void>
+  ): Promise<void> {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+      await callback(client);
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+    }
+  }
+
   async close(): Promise<void> {
     await this.pool.end();
   }

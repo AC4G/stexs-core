@@ -1,6 +1,5 @@
 import { Router, Response } from 'express';
 import { message } from 'utils-node/messageBuilder';
-import db from '../../db';
 import generateAccessToken from '../../services/jwtService';
 import { Request } from 'express-jwt';
 import {
@@ -18,6 +17,7 @@ import {
 	transformJwtErrorMessages,
 } from 'utils-node/middlewares';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../../env-config';
+import { deleteRefreshToken } from '../../repositories/auth/refreshTokens';
 
 const router = Router();
 
@@ -39,20 +39,7 @@ router.post(
 		const auth = req.auth;
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					DELETE FROM auth.refresh_tokens
-					WHERE user_id = $1::uuid 
-						AND grant_type = 'password' 
-						AND token = $2::uuid 
-						AND session_id = $3::uuid;
-				`,
-				[
-					auth?.sub,
-					auth?.jti,
-					auth?.session_id
-				],
-			);
+			const { rowCount } = await deleteRefreshToken(auth?.sub!, auth?.jti!, auth?.session_id!);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Refresh token invalid or expired for user: ${auth?.sub}`);
