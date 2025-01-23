@@ -11,7 +11,7 @@ export async function createTestUser(
     client: PoolClient,
     id: string = uuidv4(),
     email: string = 'test@example.com',
-    raw_user_meta_data: Record<string, any> = { username: 'test-user' },
+    raw_user_meta_data: Record<string, any> = { username: 'testuser' },
     encrypted_password: string = 'encrypted-password',
     email_verified_at: Date | null = null,
     verification_sent_at: Date | null = null,
@@ -74,7 +74,7 @@ export async function getEmailVerificationState(
     return {
         rowCount,
         rows,
-    }
+    };
 }
 
 export interface EmailVerifiedStatus {
@@ -103,7 +103,7 @@ export async function getEmailVerifiedStatus(
     return {
         rowCount,
         rows,
-    }
+    };
 }
 
 export async function verifyEmail(
@@ -130,7 +130,7 @@ export async function verifyEmail(
     return {
         rowCount,
         rows,
-    }
+    };
 }
 
 export async function updateEmailVerificationToken(
@@ -157,5 +157,45 @@ export async function updateEmailVerificationToken(
     return {
         rowCount,
         rows
-    }
+    };
+}
+
+export async function signUpUser(
+    email: string,
+    password: string,
+    username: string,
+    token: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    const { rowCount, rows } = await query(
+        `
+            INSERT INTO auth.users (
+                email, 
+                encrypted_password, 
+                raw_user_meta_data,
+                verification_token,
+                verification_sent_at
+            ) 
+            VALUES (
+                $1::text, 
+                $2::text, 
+                $3::jsonb, 
+                $4::uuid,
+                CURRENT_TIMESTAMP
+            );
+        `,
+        [
+            email,
+            password,
+            { username },
+            token
+        ],
+    );
+
+    return {
+        rowCount,
+        rows
+    };
 }

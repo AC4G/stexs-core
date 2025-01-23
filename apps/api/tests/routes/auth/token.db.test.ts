@@ -1,16 +1,16 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it } from '@jest/globals';
 import db from '../../../src/db';
 import { deleteRefreshToken } from '../../../src/repositories/auth/refreshTokens';
-import { v4 as uuidv4 } from "uuid";
-import { createTestUser } from "../../../src/repositories/auth/users";
+import { v4 as uuidv4 } from 'uuid';
+import { createTestUser } from '../../../src/repositories/auth/users';
 
 describe('Token Queries', () => {
-    it('should handle deleting refresh token', () => {
-        const sub = uuidv4();
-        const jti = uuidv4();
-        const session_id = uuidv4();
+    it('should handle deleting refresh token', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const sub = uuidv4();
+            const jti = uuidv4();
+            const session_id = uuidv4();
 
-        db.withRollbackTransaction(async (client) => {
             expect((await createTestUser(
                 client,
                 sub

@@ -17,6 +17,8 @@
     "test": "dotenv -- turbo run test",
     "test:coverage": "turbo run test:coverage",
     "test:watch": "turbo run test:watch",
+    "test:db": "dotenv -- turbo run test:db",
+    "test:unit": "dotenv -- turbo run test:unit",
     "format": "prettier --write '{apps,packages}/**/*.{ts,svelte}'",
     "preview": "turbo run preview",
     "seed": "dotenv -- turbo run seed --filter=db",

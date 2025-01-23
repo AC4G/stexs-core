@@ -30,5 +30,5 @@ export async function deleteRefreshToken(
     return {
         rowCount,
         rows
-    }
+    };
 }

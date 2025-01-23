@@ -7,5 +7,9 @@ export interface QueryResult<T = any> {
 }
 
 export function getQuery(client: PoolClient | undefined = undefined) {
-    return client?.query || db.query;
+    if (client) {
+        return client.query.bind(client);
+    }
+
+    return db.query.bind(db);
 }

@@ -132,15 +132,6 @@ AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION auth.create_mfa_for_user();
 
-CREATE OR REPLACE FUNCTION auth.delete_unverified_users()
-RETURNS void AS $$
-BEGIN
-	DELETE FROM auth.users
-	WHERE email_verified_at IS NULL
-	AND verification_sent_at + INTERVAL '24 hours' < CURRENT_TIMESTAMP;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION auth.check_username_and_email()
 RETURNS TRIGGER AS $$
 BEGIN

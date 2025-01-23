@@ -11,6 +11,8 @@
         },
         "test": {},
         "test:watch": {},
+        "test:db": {},
+        "test:unit": {},
         "dev": { 
             "cache": false, 
             "persistent": true 
