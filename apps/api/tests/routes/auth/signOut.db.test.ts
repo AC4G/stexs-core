@@ -2,7 +2,11 @@ import { describe, expect, it } from "@jest/globals";
 import db from "../../../src/db";
 import { createTestUser } from "../../../src/repositories/auth/users";
 import { v4 as uuidv4 } from 'uuid';
-import { saveRefreshToken, signOutFromAllSessions, signOutFromSession } from "../../../src/repositories/auth/refreshTokens";
+import {
+    saveRefreshToken,
+    signOutFromAllSessions,
+    signOutFromSession
+} from "../../../src/repositories/auth/refreshTokens";
 
 describe('Sign Out Queries', () => {
     it('should handle sign out from one session', async () => {

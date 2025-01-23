@@ -18,25 +18,28 @@ export async function createTestUser(
     verification_token: string | null = null
 ): Promise<QueryResult> {
     return await client.query(
-        `
-            INSERT INTO auth.users (
-                id,
-                email,
-                raw_user_meta_data,
-                encrypted_password,
-                email_verified_at,
-                verification_sent_at,
-                verification_token
-            ) VALUES (
-                $1::uuid,
-                $2::text,
-                $3::jsonb,
-                $4::text,
-                $5::timestamptz,
-                $6::timestamptz,
-                $7::uuid
-            );
-        `,
+        {
+            text: `
+                INSERT INTO auth.users (
+                    id,
+                    email,
+                    raw_user_meta_data,
+                    encrypted_password,
+                    email_verified_at,
+                    verification_sent_at,
+                    verification_token
+                ) VALUES (
+                    $1::uuid,
+                    $2::text,
+                    $3::jsonb,
+                    $4::text,
+                    $5::timestamptz,
+                    $6::timestamptz,
+                    $7::uuid
+                );
+            `,
+            name: 'auth-create-test-user'
+        },
         [
             userId,
             email,
@@ -193,23 +196,26 @@ export async function signInUser(
     const query = getQuery(client);
 
     return await query<SignInUser>(
-        `
-            SELECT 
-                u.id, 
-                u.email_verified_at,
-                ARRAY_REMOVE(ARRAY[
-                    CASE WHEN mfa.email = TRUE THEN 'email' END,
-                    CASE WHEN mfa.totp_verified_at IS NOT NULL THEN 'totp' END
-                ], NULL) AS types,
-                u.banned_at
-            FROM auth.users AS u
-            LEFT JOIN public.profiles AS p ON u.id = p.user_id
-            LEFT JOIN auth.mfa ON u.id = mfa.user_id
-            WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
-                AND (
-                    (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
-                );
-        `,
+        {
+            text: `
+                SELECT 
+                    u.id, 
+                    u.email_verified_at,
+                    ARRAY_REMOVE(ARRAY[
+                        CASE WHEN mfa.email = TRUE THEN 'email' END,
+                        CASE WHEN mfa.totp_verified_at IS NOT NULL THEN 'totp' END
+                    ], NULL) AS types,
+                    u.banned_at
+                FROM auth.users AS u
+                LEFT JOIN public.profiles AS p ON u.id = p.user_id
+                LEFT JOIN auth.mfa ON u.id = mfa.user_id
+                WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
+                    AND (
+                        (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
+                    );
+            `,
+            name: 'auth-sign-in-user'
+        },
         [identifier, password],
     );
 }

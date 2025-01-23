@@ -39,22 +39,25 @@ export async function saveRefreshToken(
     const query = getQuery(client);
 
     return await query(
-        `
-            INSERT INTO auth.refresh_tokens (
-                token, 
-                user_id, 
-                grant_type, 
-                session_id,
-                connection_id
-            )
-            VALUES (
-                $1::uuid, 
-                $2::uuid, 
-                $3::text, 
-                $4::uuid,
-                $5::int
-            );
-        `,
+        {
+            text: `
+                INSERT INTO auth.refresh_tokens (
+                    token, 
+                    user_id, 
+                    grant_type, 
+                    session_id,
+                    connection_id
+                )
+                VALUES (
+                    $1::uuid, 
+                    $2::uuid, 
+                    $3::text, 
+                    $4::uuid,
+                    $5::int
+                );
+            `,
+            name: 'auth-save-refresh-token'
+        },
         [
             token,
             userId,
@@ -75,17 +78,20 @@ export async function updateAuthorizationCodeRefreshToken(
     const query = getQuery(client);
 
     return await query(
-        `
-            UPDATE auth.refresh_tokens
-            SET
-                token = $1::uuid,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE token = $2::uuid 
-                AND user_id = $3::uuid 
-                AND grant_type = 'authorization_code'
-                AND connection_id = $4::integer
-                AND session_id IS NULL;
-        `,
+        {
+            text: `
+                UPDATE auth.refresh_tokens
+                SET
+                    token = $1::uuid,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE token = $2::uuid 
+                    AND user_id = $3::uuid 
+                    AND grant_type = 'authorization_code'
+                    AND connection_id = $4::integer
+                    AND session_id IS NULL;
+            `,
+            name: 'auth-update-authorization-code-refresh-token'
+        },
         [
             token,
             oldRefreshToken,
@@ -123,11 +129,14 @@ export async function signOutFromAllSessions(
     const query = getQuery(client);
 
     return await query(
-        `
-            DELETE FROM auth.refresh_tokens
-            WHERE user_id = $1::uuid 
-                AND grant_type = 'password';
-        `,
+        {
+            text: `
+                DELETE FROM auth.refresh_tokens
+                WHERE user_id = $1::uuid 
+                    AND grant_type = 'password';
+            `,
+            name: 'auth-sign-out-from-all-sessions'
+        },
         [userId],
     );
 }

@@ -35,7 +35,7 @@ import {
 	SIGN_IN_CONFIRM_TOKEN_SECRET,
 } from '../../../env-config';
 import { validateMFA } from '../../services/mfaService';
-import { signInUser } from '~/repositories/auth/users';
+import { signInUser } from '../../repositories/auth/users';
 
 const router = Router();
 
