@@ -3,13 +3,13 @@ import { getQuery, type QueryResult } from '../utils';
 
 export async function deleteRefreshToken(
     sub: string,
-    jti: string,
+    token: string,
     session_id: string,
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    const { rowCount, rows } = await query(
+    return await query(
         {
             text:`
                 DELETE FROM auth.refresh_tokens
@@ -22,13 +22,112 @@ export async function deleteRefreshToken(
         },
         [
             sub,
-            jti,
+            token,
             session_id
         ],
     );
+}
 
-    return {
-        rowCount,
-        rows
-    };
+export async function saveRefreshToken(
+    token: string,
+    userId: string,
+    grantType: string,
+    sessionId: string,
+    connectionId: number | null,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        `
+            INSERT INTO auth.refresh_tokens (
+                token, 
+                user_id, 
+                grant_type, 
+                session_id,
+                connection_id
+            )
+            VALUES (
+                $1::uuid, 
+                $2::uuid, 
+                $3::text, 
+                $4::uuid,
+                $5::int
+            );
+        `,
+        [
+            token,
+            userId,
+            grantType,
+            sessionId,
+            connectionId,
+        ],
+    );
+}
+
+export async function updateAuthorizationCodeRefreshToken(
+    token: string,
+    oldRefreshToken: string,
+    userId: string,
+    connectionId: number,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        `
+            UPDATE auth.refresh_tokens
+            SET
+                token = $1::uuid,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE token = $2::uuid 
+                AND user_id = $3::uuid 
+                AND grant_type = 'authorization_code'
+                AND connection_id = $4::integer
+                AND session_id IS NULL;
+        `,
+        [
+            token,
+            oldRefreshToken,
+            userId,
+            connectionId
+        ],
+    );
+}
+
+export async function signOutFromSession(
+    userId: string,
+    sessionId: string,
+    client: PoolClient | undefined = undefined
+) {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                DELETE FROM auth.refresh_tokens
+                WHERE user_id = $1::uuid 
+                    AND grant_type = 'password' 
+                    AND session_id = $2::uuid;
+            `,
+            name: 'auth-sign-out-from-session'
+        },
+        [userId, sessionId],
+    );
+}
+
+export async function signOutFromAllSessions(
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        `
+            DELETE FROM auth.refresh_tokens
+            WHERE user_id = $1::uuid 
+                AND grant_type = 'password';
+        `,
+        [userId],
+    );
 }

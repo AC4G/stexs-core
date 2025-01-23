@@ -7,7 +7,7 @@ describe('Sign Up Queries', () => {
     it('should handle inserting a new user', async () => {
         await db.withRollbackTransaction(async (client) => {            
             const email = 'test@example.com';
-            const password = 'test-password'; 
+            const password = 'save-password'; 
             const username = 'testuser';
             const token = uuidv4();
 
@@ -34,7 +34,7 @@ describe('Sign Up Queries', () => {
     it('should handle inserting a new user with existing email', async () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
-            const password = 'test-password';
+            const password = 'save-password';
             const username = 'testuser';
             const differentUsername = 'differentuser';
             const token = uuidv4();
@@ -67,7 +67,7 @@ describe('Sign Up Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
             const differentEmail = 'different@example.com';
-            const password = 'test-password';
+            const password = 'save-password';
             const username = 'testuser';
             const token = uuidv4();
 

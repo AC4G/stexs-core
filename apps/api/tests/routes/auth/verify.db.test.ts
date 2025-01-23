@@ -22,7 +22,7 @@ describe('Email Verification Queries', () => {
                 uuidv4(),
                 email,
                 { username: 'testuser' },
-                'encrypted-password',
+                'save-password',
                 email_verified_at,
                 verification_sent_at,
                 token
@@ -45,7 +45,7 @@ describe('Email Verification Queries', () => {
                 uuidv4(),
                 email,
                 { username: 'testuser' },
-                'encrypted-password',
+                'save-password',
                 null,
                 new Date(),
                 uuidv4()
@@ -85,7 +85,7 @@ describe('Email Verification Queries', () => {
                 uuidv4(),
                 'test@example.com',
                 { username: 'testuser' },
-                'encrypted-password',
+                'save-password',
                 email_verified_at,
                 new Date(),
                 uuidv4(),
@@ -108,7 +108,7 @@ describe('Email Verification Queries', () => {
                 uuidv4(),
                 email,
                 { username: 'testuser' },
-                'encrypted-password',
+                'save-password',
                 null,
                 new Date(),
                 uuidv4()
