@@ -10,8 +10,11 @@ import {
 	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT,
 } from '../../env-config';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../db';
 import logger from '../loggers/logger';
+import {
+	saveRefreshToken,
+	updateAuthorizationCodeRefreshToken
+} from '../repositories/auth/refreshTokens';
 
 export function generateSignInConfirmToken(sub: string, types: string[]) {
 	const iat = Math.floor(Date.now() / 1000);
@@ -50,7 +53,7 @@ export default async function generateAccessToken(
 			: JWT_EXPIRY_LIMIT;
 	const exp = iat + EXP_LIMIT;
 
-	if (grantType === 'password') additionalPayload.session_id = uuidv4();
+	if (grantType === 'password' && !additionalPayload.session_id) additionalPayload.session_id = uuidv4();
 
 	const accessTokenPayload = {
 		iss: ISSUER,
@@ -88,44 +91,19 @@ export default async function generateAccessToken(
 
 	try {
 		if (oldRefreshToken && grantType === 'authorization_code') {
-			await db.query(
-				`
-					UPDATE auth.refresh_tokens
-					SET
-						token = $1::uuid,
-						updated_at = CURRENT_TIMESTAMP
-					WHERE token = $2::uuid 
-						AND user_id = $3::uuid 
-						AND grant_type = 'authorization_code' 
-						AND session_id IS NULL;
-				`,
-				[jti, oldRefreshToken, additionalPayload.sub],
+			await updateAuthorizationCodeRefreshToken(
+				jti,
+				oldRefreshToken,
+				additionalPayload.sub,
+				connectionId!
 			);
 		} else {
-			await db.query(
-				`
-					INSERT INTO auth.refresh_tokens (
-						token, 
-						user_id, 
-						grant_type, 
-						session_id,
-						connection_id
-					)
-					VALUES (
-						$1::uuid, 
-						$2::uuid, 
-						$3::text, 
-						$4::uuid,
-						$5::int
-					);
-				`,
-				[
-					jti,
-					additionalPayload.sub,
-					grantType,
-					additionalPayload.session_id,
-					connectionId,
-				],
+			await saveRefreshToken(
+				jti,
+				additionalPayload.sub,
+				grantType,
+				additionalPayload.session_id,
+				connectionId
 			);
 		}
 	} catch (e) {
@@ -148,7 +126,7 @@ export default async function generateAccessToken(
 
 	return {
 		access_token: accessToken,
-		refresh_token: jwt.sign(refreshTokenPayload, REFRESH_TOKEN_SECRET!),
+		refresh_token: jwt.sign(refreshTokenPayload, REFRESH_TOKEN_SECRET),
 		token_type: 'bearer',
 		expires: exp,
 	};

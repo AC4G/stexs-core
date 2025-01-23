@@ -1,8 +1,4 @@
-import {
-	expect,
-	describe,
-	it,
-} from '@jest/globals';
+import { expect, describe, it } from '@jest/globals';
 import db from '../../../src/db';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -15,18 +11,18 @@ import {
 
 describe('Email Verification Queries', () => {
     it('should handle querying email verification state', async () => {
-        const email = 'test@example.com';
-        const token = uuidv4();
-        const email_verified_at = new Date();
-        const verification_sent_at = new Date();
+        await db.withRollbackTransaction(async (client) => {
+            const email = 'test@example.com';
+            const token = uuidv4();
+            const email_verified_at = new Date();
+            const verification_sent_at = new Date();
 
-        db.withRollbackTransaction(async (client) => {
             expect((await createTestUser(
                 client,
                 uuidv4(),
                 email,
-                { username: 'test-user' },
-                'encrypted-password',
+                { username: 'testuser' },
+                'save-password',
                 email_verified_at,
                 verification_sent_at,
                 token
@@ -41,15 +37,15 @@ describe('Email Verification Queries', () => {
     });
 
     it('should handle update email verification status to verified', async () => {
-        const email = 'test@example.com';
+        await db.withRollbackTransaction(async (client) => {
+            const email = 'test@example.com';
 
-        db.withRollbackTransaction(async (client) => {
             expect((await createTestUser(
                 client,
                 uuidv4(),
                 email,
-                { username: 'test-user' },
-                'encrypted-password',
+                { username: 'testuser' },
+                'save-password',
                 null,
                 new Date(),
                 uuidv4()
@@ -57,7 +53,7 @@ describe('Email Verification Queries', () => {
 
             expect((await verifyEmail(email, client)).rowCount).toBe(1);
 
-            const { rows } = await client.query<{
+            const { rowCount, rows } = await client.query<{
                 email_verified_at: Date | null;
                 verification_sent_at: Date | null;
                 verification_token: string | null;
@@ -73,6 +69,7 @@ describe('Email Verification Queries', () => {
                 [email]
             );
 
+            expect(rowCount).toBe(1);
             expect(rows[0].email_verified_at).not.toBeNull();
             expect(rows[0].verification_sent_at).toBeNull();
             expect(rows[0].verification_token).toBeNull();
@@ -80,15 +77,15 @@ describe('Email Verification Queries', () => {
     });
 
     it('should handle querying email verification status', async () => {
-        const email_verified_at = new Date();
+        await db.withRollbackTransaction(async (client) => {
+            const email_verified_at = new Date();
 
-        db.withRollbackTransaction(async (client) => {
             expect((await createTestUser(
                 client,
                 uuidv4(),
                 'test@example.com',
-                { username: 'test-user' },
-                'encrypted-password',
+                { username: 'testuser' },
+                'save-password',
                 email_verified_at,
                 new Date(),
                 uuidv4(),
@@ -102,16 +99,16 @@ describe('Email Verification Queries', () => {
     });
 
     it('should handle updating the email verification token', async () => {
-        const email = 'test@example.com';
-        const token = uuidv4();
+        await db.withRollbackTransaction(async (client) => {
+            const email = 'test@example.com';
+            const token = uuidv4();
 
-        db.withRollbackTransaction(async (client) => {
             expect((await createTestUser(
                 client,
                 uuidv4(),
                 email,
-                { username: 'test-user' },
-                'encrypted-password',
+                { username: 'testuser' },
+                'save-password',
                 null,
                 new Date(),
                 uuidv4()
@@ -119,7 +116,7 @@ describe('Email Verification Queries', () => {
 
             expect((await updateEmailVerificationToken(email, token, client)).rowCount).toBe(1);
 
-            const { rows } = await client.query<{
+            const { rowCount, rows } = await client.query<{
                 verification_sent_at: Date | null;
                 verification_token: Date | null;
             }>(
@@ -133,6 +130,7 @@ describe('Email Verification Queries', () => {
                 [email]
             );
 
+            expect(rowCount).toBe(1);
             expect(rows[0].verification_sent_at).not.toBeNull();
             expect(rows[0].verification_token).toEqual(token);
         });

@@ -22,6 +22,7 @@ import {
 } from 'utils-node/middlewares';
 import { body } from 'express-validator';
 import { validateMFA } from '../../services/mfaService';
+import { signOutFromSession } from '../../repositories/auth/refreshTokens';
 
 const router = Router();
 
@@ -36,15 +37,7 @@ router.post(
 		const auth = req.auth;
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					DELETE FROM auth.refresh_tokens
-					WHERE user_id = $1::uuid 
-						AND grant_type = 'password' 
-						AND session_id = $2::uuid;
-				`,
-				[auth?.sub, auth?.session_id],
-			);
+			const { rowCount } = await signOutFromSession(auth?.sub!, auth?.session_id!);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Sign-out: No refresh tokens found for user: ${auth?.sub} and session: ${auth?.session_id}`);

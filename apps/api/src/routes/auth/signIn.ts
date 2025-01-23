@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import { Request as JWTRequest } from 'express-jwt';
-import db from '../../db';
 import { body } from 'express-validator';
 import generateAccessToken, {
 	generateSignInConfirmToken,
@@ -36,6 +35,7 @@ import {
 	SIGN_IN_CONFIRM_TOKEN_SECRET,
 } from '../../../env-config';
 import { validateMFA } from '../../services/mfaService';
+import { signInUser } from '../../repositories/auth/users';
 
 const router = Router();
 
@@ -68,31 +68,7 @@ router.post(
 		logger.debug(`Sign in for user: ${identifier} and identifier type: ${typeof identifier}`);
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				id: string;
-				email_verified_at: Date | null;
-				types: string[];
-				banned_at: Date | null;
-			}>(
-				`
-					SELECT 
-						u.id, 
-						u.email_verified_at,
-						ARRAY_REMOVE(ARRAY[
-							CASE WHEN mfa.email = TRUE THEN 'email' END,
-							CASE WHEN mfa.totp_verified_at IS NOT NULL THEN 'totp' END
-						], NULL) AS types,
-						u.banned_at
-					FROM auth.users AS u
-					LEFT JOIN public.profiles AS p ON u.id = p.user_id
-					LEFT JOIN auth.mfa ON u.id = mfa.user_id
-					WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
-						AND (
-							(CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
-						);
-				`,
-				[identifier, password],
-			);
+			const { rowCount, rows } = await signInUser(identifier, password);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Invalid credentials for sign in for user: ${identifier}`);

@@ -6,9 +6,16 @@ const POSTGRES_PORT = 5555;
 const POSTGRES_PASSWORD = 'postgres';
 
 export default async function globalSetup() {
+    logger.info('Checking if Docker is running...');
+
+    const dockerInfo = spawnSync('docker', ['info']);
+    if (dockerInfo.error || dockerInfo.status !== 0) {
+        logger.error('Docker is not running. Please start Docker and try again.');
+        process.exit(1);
+    }
+
     logger.info('Starting Docker container for PostgreSQL...');
 
-    // Start the PostgreSQL container
     const dockerRun = spawnSync('docker', [
         'run', 
         '-d', 

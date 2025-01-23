@@ -25,6 +25,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../../loggers/logger';
 import { validate } from 'utils-node/middlewares';
+import { signUpUser } from '../../repositories/auth/users';
 
 const router = Router();
 
@@ -93,29 +94,11 @@ router.post(
 		const token = uuidv4();
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					INSERT INTO auth.users (
-						email, 
-						encrypted_password, 
-						raw_user_meta_data,
-						verification_token,
-						verification_sent_at
-					)
-					VALUES (
-						$1::text, 
-						$2::text, 
-						$3::jsonb, 
-						$4::uuid,
-						CURRENT_TIMESTAMP
-					);
-				`,
-				[
-					email,
-					password,
-					{ username },
-					token
-				],
+			const { rowCount } = await signUpUser(
+				email,
+				password,
+				username,
+				token
 			);
 
 			if (!rowCount || rowCount === 0) {

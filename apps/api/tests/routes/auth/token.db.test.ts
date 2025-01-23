@@ -1,19 +1,19 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it } from '@jest/globals';
 import db from '../../../src/db';
 import { deleteRefreshToken } from '../../../src/repositories/auth/refreshTokens';
-import { v4 as uuidv4 } from "uuid";
-import { createTestUser } from "../../../src/repositories/auth/users";
+import { v4 as uuidv4 } from 'uuid';
+import { createTestUser } from '../../../src/repositories/auth/users';
 
 describe('Token Queries', () => {
-    it('should handle deleting refresh token', () => {
-        const sub = uuidv4();
-        const jti = uuidv4();
-        const session_id = uuidv4();
+    it('should handle deleting refresh token', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const token = uuidv4();
+            const sessionId = uuidv4();
 
-        db.withRollbackTransaction(async (client) => {
             expect((await createTestUser(
                 client,
-                sub
+                userId
             )).rowCount).toBe(1);
 
             expect((await client.query(
@@ -30,13 +30,17 @@ describe('Token Queries', () => {
                         $3::uuid
                     );
                 `,
-                [sub, jti, session_id]
+                [
+                    userId,
+                    token,
+                    sessionId
+                ]
             )).rowCount).toBe(1);
 
             expect((await deleteRefreshToken(
-                sub,
-                jti,
-                session_id,
+                userId,
+                token,
+                sessionId,
                 client
             )).rowCount).toBe(1);
 
@@ -49,7 +53,11 @@ describe('Token Queries', () => {
                         AND token = $2::uuid
                         AND session_id = $3::uuid;
                 `,
-                [sub, jti, session_id]
+                [
+                    userId,
+                    token,
+                    sessionId
+                ]
             )).rowCount).toBe(0);
         });
     });

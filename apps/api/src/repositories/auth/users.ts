@@ -9,36 +9,39 @@ export interface EmailVerificationState {
 
 export async function createTestUser(
     client: PoolClient,
-    id: string = uuidv4(),
+    userId: string = uuidv4(),
     email: string = 'test@example.com',
-    raw_user_meta_data: Record<string, any> = { username: 'test-user' },
-    encrypted_password: string = 'encrypted-password',
+    raw_user_meta_data: Record<string, any> = { username: 'testuser' },
+    encrypted_password: string = 'save-password',
     email_verified_at: Date | null = null,
     verification_sent_at: Date | null = null,
     verification_token: string | null = null
 ): Promise<QueryResult> {
     return await client.query(
-        `
-            INSERT INTO auth.users (
-                id,
-                email,
-                raw_user_meta_data,
-                encrypted_password,
-                email_verified_at,
-                verification_sent_at,
-                verification_token
-            ) VALUES (
-                $1::uuid,
-                $2::text,
-                $3::jsonb,
-                $4::text,
-                $5::timestamptz,
-                $6::timestamptz,
-                $7::uuid
-            );
-        `,
+        {
+            text: `
+                INSERT INTO auth.users (
+                    id,
+                    email,
+                    raw_user_meta_data,
+                    encrypted_password,
+                    email_verified_at,
+                    verification_sent_at,
+                    verification_token
+                ) VALUES (
+                    $1::uuid,
+                    $2::text,
+                    $3::jsonb,
+                    $4::text,
+                    $5::timestamptz,
+                    $6::timestamptz,
+                    $7::uuid
+                );
+            `,
+            name: 'auth-create-test-user'
+        },
         [
-            id,
+            userId,
             email,
             raw_user_meta_data,
             encrypted_password,
@@ -56,7 +59,7 @@ export async function getEmailVerificationState(
 ): Promise<QueryResult<EmailVerificationState>> {
     const query = getQuery(client);
 
-    const { rowCount, rows } = await query<EmailVerificationState>(
+    return await query<EmailVerificationState>(
         {
             text: `
                 SELECT
@@ -70,11 +73,6 @@ export async function getEmailVerificationState(
         },
         [email, token],
     );
-
-    return {
-        rowCount,
-        rows,
-    }
 }
 
 export interface EmailVerifiedStatus {
@@ -87,7 +85,7 @@ export async function getEmailVerifiedStatus(
 ): Promise<QueryResult<EmailVerifiedStatus>> {
     const query = getQuery(client);
 
-    const { rowCount, rows } = await query<EmailVerifiedStatus>(
+    return await query<EmailVerifiedStatus>(
         {
             text: `
                 SELECT
@@ -99,11 +97,6 @@ export async function getEmailVerifiedStatus(
         },
         [email],
     );
-
-    return {
-        rowCount,
-        rows,
-    }
 }
 
 export async function verifyEmail(
@@ -112,7 +105,7 @@ export async function verifyEmail(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    const { rowCount, rows } = await query(
+    return await query(
         {
             text: `
                 UPDATE auth.users
@@ -126,11 +119,6 @@ export async function verifyEmail(
         },
         [email],
     );
-
-    return {
-        rowCount,
-        rows,
-    }
 }
 
 export async function updateEmailVerificationToken(
@@ -140,7 +128,7 @@ export async function updateEmailVerificationToken(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    const { rowCount, rows } = await query(
+    return await query(
         {
             text: `
                 UPDATE auth.users
@@ -153,9 +141,81 @@ export async function updateEmailVerificationToken(
         },
         [token, email],
     );
+}
 
-    return {
-        rowCount,
-        rows
-    }
+export async function signUpUser(
+    email: string,
+    password: string,
+    username: string,
+    token: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                INSERT INTO auth.users (
+                    email, 
+                    encrypted_password, 
+                    raw_user_meta_data,
+                    verification_token,
+                    verification_sent_at
+                ) 
+                VALUES (
+                    $1::text, 
+                    $2::text, 
+                    $3::jsonb, 
+                    $4::uuid,
+                    CURRENT_TIMESTAMP
+                );
+            `,
+            name: 'auth-sign-up-user'
+        },
+        [
+            email,
+            password,
+            { username },
+            token
+        ],
+    );
+}
+
+export interface SignInUser {
+    id: string;
+    email_verified_at: Date | null;
+    types: string[];
+    banned_at: Date | null;
+}
+
+export async function signInUser(
+    identifier: string,
+    password: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<SignInUser>> {
+    const query = getQuery(client);
+
+    return await query<SignInUser>(
+        {
+            text: `
+                SELECT 
+                    u.id, 
+                    u.email_verified_at,
+                    ARRAY_REMOVE(ARRAY[
+                        CASE WHEN mfa.email = TRUE THEN 'email' END,
+                        CASE WHEN mfa.totp_verified_at IS NOT NULL THEN 'totp' END
+                    ], NULL) AS types,
+                    u.banned_at
+                FROM auth.users AS u
+                LEFT JOIN public.profiles AS p ON u.id = p.user_id
+                LEFT JOIN auth.mfa ON u.id = mfa.user_id
+                WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
+                    AND (
+                        (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
+                    );
+            `,
+            name: 'auth-sign-in-user'
+        },
+        [identifier, password],
+    );
 }

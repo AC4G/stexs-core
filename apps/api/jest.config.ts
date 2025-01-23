@@ -6,22 +6,22 @@ const config: Config = {
 	collectCoverage: false,
 	projects: [
 		{
-			displayName: 'db-tests',
-			testMatch: ['**/*.db.test.ts'],
-			testEnvironment: 'node',
-			globalSetup: '<rootDir>/jest.db.testSetup.ts',
-			globalTeardown: '<rootDir>/jest.db.testTeardown.ts',
-			transform: {
-				'^.+\\.ts$': 'ts-jest',
-			},
-		},
-		{
 			displayName: 'unit-tests',
 			testMatch: [
 				'**/*.test.ts',
 				'!**/*.db.test.ts'
 			],
 			testEnvironment: 'node',
+			transform: {
+				'^.+\\.ts$': 'ts-jest',
+			},
+		},
+		{
+			displayName: 'db-tests',
+			testMatch: ['**/*.db.test.ts'],
+			testEnvironment: 'node',
+			globalSetup: '<rootDir>/jest.db.testSetup.ts',
+			globalTeardown: '<rootDir>/jest.db.testTeardown.ts',
 			transform: {
 				'^.+\\.ts$': 'ts-jest',
 			},
