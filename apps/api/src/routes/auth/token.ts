@@ -83,6 +83,7 @@ router.post(
 		try {
 			const data = await generateAccessToken({
 				sub: auth?.sub,
+				session_id: auth?.session_id,
 			});
 
 			logger.debug(`A new access token generated for user: ${auth?.sub}`);

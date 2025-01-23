@@ -50,7 +50,7 @@ export default async function generateAccessToken(
 			: JWT_EXPIRY_LIMIT;
 	const exp = iat + EXP_LIMIT;
 
-	if (grantType === 'password') additionalPayload.session_id = uuidv4();
+	if (grantType === 'password' && !additionalPayload.session_id) additionalPayload.session_id = uuidv4();
 
 	const accessTokenPayload = {
 		iss: ISSUER,
