@@ -287,9 +287,7 @@ export async function compareNewPasswordWithOldPassword(
 }>> {
     const query = getQuery(client);
 
-    return await query<{
-        is_current_password: boolean | null;
-    }>(
+    return await query(
         {
             text: `
                 SELECT 
@@ -327,5 +325,38 @@ export async function confirmRecovery(
             name: 'auth-confirm-recovery'
         },
         [password, email],
+    );
+}
+
+export async function getUserData(
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    id: string;
+    email: string;
+    username: string;
+    raw_user_meta_data: Record<string, any>;
+    created_at: Date;
+    updated_at: Date | null;
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT
+                    u.id,
+                    u.email,
+                    p.username,
+                    u.raw_user_meta_data,
+                    u.created_at,
+                    u.updated_at
+                FROM auth.users AS u
+                JOIN public.profiles AS p ON u.id = p.user_id
+                WHERE id = $1::uuid;
+            `,
+            name: 'auth-get-user-data'
+        },
+        [userId],
     );
 }

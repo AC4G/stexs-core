@@ -16,10 +16,38 @@ import {
     setRecoveryToken,
     confirmRecovery,
     compareNewPasswordWithOldPassword,
-    validateRecoveryToken
+    validateRecoveryToken,
+    getUserData
 } from '../../../src/repositories/auth/users';
 
 describe('User Queries', () => {
+    it('should handle getting user data', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const email = 'test@example.com';
+            const username = 'testuser';
+
+            expect((await createTestUser(
+                client,
+                userId,
+                email,
+                { username },
+            )).rowCount).toBe(1);
+
+            const { rowCount, rows } = await getUserData(userId, client);
+
+            const row = rows[0];
+
+            expect(rowCount).toBe(1);
+            expect(row.id).toBe(userId);
+            expect(row.username).toBe(username);
+            expect(row.email).toBe(email);
+            expect(row.raw_user_meta_data).toEqual({});
+            expect(row.created_at).toBeInstanceOf(Date);
+            expect(row.updated_at).toBeNull();
+        });
+    });
+
     it('should handle checking if user exists by email', async () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';

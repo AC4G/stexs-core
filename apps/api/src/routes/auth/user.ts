@@ -35,6 +35,7 @@ import {
 } from 'utils-node/middlewares';
 import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../../env-config';
 import { validateMFA } from '../../services/mfaService';
+import { getUserData } from '../../repositories/auth/users';
 
 const router = Router();
 
@@ -49,28 +50,7 @@ router.get(
 		const userId = req.auth?.sub!;
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				id: string;
-				email: string;
-				username: string;
-				raw_user_meta_data: Record<string, any>;
-				created_at: string;
-				updated_at: string;
-			}>(
-				`
-					SELECT
-						u.id,
-						u.email,
-						p.username,
-						u.raw_user_meta_data,
-						u.created_at,
-						u.updated_at
-					FROM auth.users AS u
-					JOIN public.profiles AS p ON u.id = p.user_id
-					WHERE id = $1::uuid;
-				`,
-				[userId],
-			);
+			const { rowCount, rows } = await getUserData(userId);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(`User not found for user id: ${userId}`);
@@ -98,7 +78,7 @@ router.get(
 				.status(500)
 				.json(
 					message(
-						'',
+						'An unexpected error occurred while retrieving user data.',
 						{},
 						[{ info: INTERNAL_ERROR }]
 					)
@@ -143,7 +123,7 @@ router.get(
 				.status(500)
 				.json(
 					message(
-						'',
+						'An unexpected error occurred while retrieving sessions amount.',
 						{},
 						[{ info: INTERNAL_ERROR }]
 					)

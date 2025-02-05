@@ -185,7 +185,7 @@ router.post(
 
 		logger.debug(`Created signed post url for project logo: ${projectId}`);
 
-		return res.json(message('', { ...signedPost }));
+		return res.json(message('Presigned url generated successfully.', { ...signedPost }));
 	},
 );
 
