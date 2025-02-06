@@ -1,4 +1,4 @@
-import { PoolClient } from 'pg';
+import { PoolClient, Query } from 'pg';
 import { getQuery, type QueryResult } from '../utils';
 
 export async function deleteRefreshToken(
@@ -136,6 +136,26 @@ export async function signOutFromAllSessions(
                     AND grant_type = 'password';
             `,
             name: 'auth-sign-out-from-all-sessions'
+        },
+        [userId],
+    );
+}
+
+export async function getActiveUserSessions(
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text:`
+                SELECT 1
+                FROM auth.refresh_tokens
+                WHERE user_id = $1::uuid
+                    AND grant_type = 'password';
+            `,
+            name: 'auth-get-active-user-sessions'
         },
         [userId],
     );

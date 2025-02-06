@@ -1,6 +1,5 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../../db';
 import { body } from 'express-validator';
 import {
 	CODE_EXPIRED,
@@ -33,8 +32,22 @@ import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 } from 'utils-node/middlewares';
-import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../../env-config';
+import {
+	ACCESS_TOKEN_SECRET,
+	AUDIENCE,
+	ISSUER
+} from '../../../env-config';
 import { validateMFA } from '../../services/mfaService';
+import {
+	changePassword,
+	compareNewPasswordWithOldPasswordByUserId,
+	finalizeEmailChange,
+	getUserData,
+	initalizeEmailChange,
+	userExistsByEmail,
+	validateEmailChange
+} from '../../repositories/auth/users';
+import { getActiveUserSessions } from '../../repositories/auth/refreshTokens';
 
 const router = Router();
 
@@ -49,28 +62,7 @@ router.get(
 		const userId = req.auth?.sub!;
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				id: string;
-				email: string;
-				username: string;
-				raw_user_meta_data: Record<string, any>;
-				created_at: string;
-				updated_at: string;
-			}>(
-				`
-					SELECT
-						u.id,
-						u.email,
-						p.username,
-						u.raw_user_meta_data,
-						u.created_at,
-						u.updated_at
-					FROM auth.users AS u
-					JOIN public.profiles AS p ON u.id = p.user_id
-					WHERE id = $1::uuid;
-				`,
-				[userId],
-			);
+			const { rowCount, rows } = await getUserData(userId);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(`User not found for user id: ${userId}`);
@@ -98,7 +90,7 @@ router.get(
 				.status(500)
 				.json(
 					message(
-						'',
+						'An unexpected error occurred while retrieving user data.',
 						{},
 						[{ info: INTERNAL_ERROR }]
 					)
@@ -118,15 +110,7 @@ router.get(
 		const userId = req.auth?.sub!;
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					SELECT 1
-					FROM auth.refresh_tokens
-					WHERE user_id = $1::uuid
-						AND grant_type = 'password';
-				`,
-				[userId],
-			);
+			const { rowCount } = await getActiveUserSessions(userId);
 
 			logger.debug(`Sessions amount retrieve successful for user: ${userId}`);
 
@@ -143,7 +127,7 @@ router.get(
 				.status(500)
 				.json(
 					message(
-						'',
+						'An unexpected error occurred while retrieving sessions amount.',
 						{},
 						[{ info: INTERNAL_ERROR }]
 					)
@@ -221,21 +205,7 @@ router.post(
 		}
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				is_current_password: boolean;
-			}>(
-				`
-					SELECT
-						CASE
-							WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password
-							THEN true
-							ELSE false
-						END AS is_current_password
-					FROM auth.users
-					WHERE id = $2::uuid;
-				`,
-				[password, userId],
-			);
+			const { rowCount, rows } = await compareNewPasswordWithOldPasswordByUserId(userId, password);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(`Password change failed for user: ${userId}`);
@@ -270,18 +240,9 @@ router.post(
 						)
 					);
 			}
+			const { rowCount: rowCount2 } = await changePassword(userId, password);
 
-			const { rowCount: count } = await db.query(
-				`
-					UPDATE auth.users
-					SET
-						encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
-					WHERE id = $2::uuid;
-				`,
-				[password, userId],
-			);
-
-			if (!count || count === 0) {
+			if (!rowCount2 || rowCount2 === 0) {
 				logger.error(`Password change failed for user: ${userId}`);
 				return res
 					.status(500)
@@ -383,14 +344,7 @@ router.post(
 		}
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					SELECT 1
-					FROM auth.users
-					WHERE email = $1::text;
-				`,
-				[newEmail],
-			);
+			const { rowCount } = await userExistsByEmail(newEmail);
 
 			if (rowCount && rowCount > 0) {
 				logger.debug(`Provided email for change is already in use for user: ${userId}`);
@@ -425,21 +379,7 @@ router.post(
 		const confirmationCode = generateCode(8);
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					UPDATE auth.users
-					SET
-						email_change = $1::text,
-						email_change_sent_at = CURRENT_TIMESTAMP,
-						email_change_code = $2::text
-					WHERE id = $3::uuid;
-				`,
-				[
-					newEmail,
-					confirmationCode,
-					userId
-				],
-			);
+			const { rowCount } = await initalizeEmailChange(userId, newEmail, confirmationCode);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(`Email change failed for user: ${userId}`);
@@ -526,17 +466,7 @@ router.post(
 		} = req.body;
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				email_change_sent_at: string | null
-			}>(
-				`
-					SELECT email_change_sent_at 
-					FROM auth.users
-					WHERE id = $1::uuid 
-						AND email_change_code = $2::text
-				`,
-				[userId, code],
-			);
+			const { rowCount, rows } = await validateEmailChange(userId, code);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Invalid email verification code for user: ${userId}`);
@@ -566,22 +496,9 @@ router.post(
 					);
 			}
 
-			const { rowCount: count } = await db.query(
-				`
-					UPDATE auth.users
-					SET
-						email = email_change,
-						email_verified_at = CURRENT_TIMESTAMP,
-						email_change = NULL,
-						email_change_sent_at = NULL,
-						email_change_code = NULL
-					WHERE id = $1::uuid 
-						AND email_change_code = $2::text;
-				`,
-				[userId, code],
-			);
+			const { rowCount: rowCount2 } = await finalizeEmailChange(userId);
 
-			if (!count || count === 0) {
+			if (!rowCount2 || rowCount2 === 0) {
 				logger.error(`Email verification failed for user: ${userId}`);
 				return res
 					.status(500)

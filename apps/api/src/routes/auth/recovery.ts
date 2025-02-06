@@ -18,13 +18,19 @@ import {
 	CustomValidationError,
 	message,
 } from 'utils-node/messageBuilder';
-import db from '../../db';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import sendEmail from '../../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../../env-config';
 import { validate } from 'utils-node/middlewares';
 import logger from '../../loggers/logger';
 import { isExpired } from 'utils-node';
+import {
+	compareNewPasswordWithOldPasswordByEmail,
+	confirmRecovery,
+	setRecoveryToken,
+	userExistsByEmail,
+	validateRecoveryToken
+} from '../../repositories/auth/users';
 
 const router = Router();
 
@@ -50,14 +56,7 @@ router.post(
 		} = req.body;
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					SELECT 1 
-					FROM auth.users
-					WHERE email = $1::text;
-				`,
-				[email],
-			);
+			const { rowCount } = await userExistsByEmail(email);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Invalid email for password recovery: ${email}`);
@@ -104,16 +103,7 @@ router.post(
 		const token = uuidv4();
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					UPDATE auth.users
-					SET
-						recovery_token = $1::uuid,
-						recovery_sent_at = CURRENT_TIMESTAMP
-					WHERE email = $2::text;
-				`,
-				[token, email],
-			);
+			const { rowCount } = await setRecoveryToken(email, token);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(`Failed to update recovery token for email: ${email}`);
@@ -224,17 +214,7 @@ router.post(
 		} = req.body;
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				recovery_sent_at: string | null;
-			}>(
-				`
-					SELECT recovery_sent_at 
-					FROM auth.users
-					WHERE email = $1::text 
-						AND recovery_token = $2::uuid;
-				`,
-				[email, token],
-			);
+			const { rowCount, rows } = await validateRecoveryToken(email, token);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Invalid request for password recovery confirmation with email: ${email}`);
@@ -320,21 +300,28 @@ router.post(
 		}
 
 		try {
-			const { rows } = await db.query<{
-				is_current_password: boolean | null;
-			}>(
-				`
-					SELECT 
-						CASE 
-							WHEN crypt($1::text, encrypted_password) = encrypted_password 
-							THEN true 
-							ELSE false 
-						END AS is_current_password
-					FROM auth.users
-					WHERE email = $2::text;
-				`,
-				[password, email],
-			);
+			const { rowCount, rows } = await compareNewPasswordWithOldPasswordByEmail(email, password);
+
+			if (!rowCount || rowCount === 0) {
+				logger.debug(`Invalid password provided for recovery for email: ${email}`);
+				return res
+					.status(400)
+					.json(
+						message(
+							'Invalid password provided.',
+							{},
+							[
+								{
+									info: INVALID_PASSWORD,
+									data: {
+										path: 'password',
+										location: 'body',
+									},
+								},
+							]
+						)
+					);
+			}
 
 			if (rows[0].is_current_password) {
 				logger.debug(`New password matches the current password for email: ${email}`);
@@ -357,19 +344,9 @@ router.post(
 					);
 			}
 
-			const { rowCount } = await db.query(
-				`
-					UPDATE auth.users
-					SET 
-						encrypted_password = crypt($1::text, gen_salt('bf')),
-						recovery_token = NULL,
-						recovery_sent_at = NULL
-					WHERE email = $2::text;
-				`,
-				[password, email],
-			);
+			const { rowCount: rowCount2 } = await confirmRecovery(email, password);
 
-			if (!rowCount || rowCount === 0) {
+			if (!rowCount2 || rowCount2 === 0) {
 				logger.error(`Failed to update password for email: ${email}`);
 				return res
 					.status(500)

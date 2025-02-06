@@ -2,11 +2,6 @@ import { PoolClient } from 'pg';
 import { getQuery, type QueryResult } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 
-export interface EmailVerificationState {
-    email_verified_at: Date | null;
-    verification_sent_at: Date | null;
-}
-
 export async function createTestUser(
     client: PoolClient,
     userId: string = uuidv4(),
@@ -56,10 +51,13 @@ export async function getEmailVerificationState(
     email: string,
     token: string,
     client: PoolClient | undefined = undefined
-): Promise<QueryResult<EmailVerificationState>> {
+): Promise<QueryResult<{
+    email_verified_at: Date | null;
+    verification_sent_at: Date | null;
+}>> {
     const query = getQuery(client);
 
-    return await query<EmailVerificationState>(
+    return await query(
         {
             text: `
                 SELECT
@@ -75,17 +73,15 @@ export async function getEmailVerificationState(
     );
 }
 
-export interface EmailVerifiedStatus {
-    email_verified_at: Date | null;
-}
-
 export async function getEmailVerifiedStatus(
     email: string,
     client: PoolClient | undefined = undefined
-): Promise<QueryResult<EmailVerifiedStatus>> {
-    const query = getQuery(client);
+): Promise<QueryResult<{
+    email_verified_at: Date | null;
+}>> {
+    const query = getQuery(client);                                                                                                                                                                                 
 
-    return await query<EmailVerifiedStatus>(
+    return await query(
         {
             text: `
                 SELECT
@@ -100,7 +96,7 @@ export async function getEmailVerifiedStatus(
 }
 
 export async function verifyEmail(
-    email: string,
+    email: string,                                   
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult> {
     const query = getQuery(client);
@@ -181,21 +177,19 @@ export async function signUpUser(
     );
 }
 
-export interface SignInUser {
-    id: string;
-    email_verified_at: Date | null;
-    types: string[];
-    banned_at: Date | null;
-}
-
 export async function signInUser(
     identifier: string,
     password: string,
     client: PoolClient | undefined = undefined
-): Promise<QueryResult<SignInUser>> {
+): Promise<QueryResult<{
+    id: string;
+    email_verified_at: Date | null;
+    types: string[];
+    banned_at: Date | null;
+}>> {
     const query = getQuery(client);
 
-    return await query<SignInUser>(
+    return await query(
         {
             text: `
                 SELECT 
@@ -217,5 +211,275 @@ export async function signInUser(
             name: 'auth-sign-in-user'
         },
         [identifier, password],
+    );
+}
+
+export async function userExistsByEmail(
+    email: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT 1
+                FROM auth.users
+                WHERE email = $1::text;
+            `,
+            name: 'auth-user-exists-by-email'
+        },
+        [email],
+    );
+}
+
+export async function setRecoveryToken(
+    email: string,
+    token: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.users
+                SET 
+                    recovery_token = $1::uuid,
+                    recovery_sent_at = CURRENT_TIMESTAMP
+                WHERE email = $2::text;
+            `,
+            name: 'auth-set-recovery-token'
+        },
+        [token, email],
+    );
+}
+
+export async function validateRecoveryToken(
+    email: string,
+    token: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    recovery_sent_at: Date | null;
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT recovery_sent_at
+                FROM auth.users
+                WHERE email = $1::text
+                    AND recovery_token = $2::uuid;
+            `,
+            name: 'auth-validate-recovery-token'
+        },
+        [email, token],
+    );
+}
+
+export async function compareNewPasswordWithOldPasswordByEmail(
+    email: string,
+    password: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    is_current_password: boolean | null;
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT 
+                    CASE 
+                        WHEN crypt($1::text, encrypted_password) = encrypted_password 
+                        THEN true 
+                        ELSE false 
+                    END AS is_current_password
+                FROM auth.users
+                WHERE email = $2::text;
+            `,
+            name: 'auth-compare-new-password-with-old-password-by-email'
+        },
+        [password, email],
+    );
+}
+
+export async function compareNewPasswordWithOldPasswordByUserId(
+    userId: string,
+    password: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    is_current_password: boolean | null;
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT
+                    CASE
+                        WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password
+                        THEN true
+                        ELSE false
+                    END AS is_current_password
+                FROM auth.users
+                WHERE id = $2::uuid;
+            `,
+            name: 'auth-compare-new-password-with-old-password-by-user-id'
+        },
+        [password, userId],
+    );
+}
+
+export async function confirmRecovery(
+    email: string,
+    password: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.users
+                SET 
+                    recovery_token = NULL,
+                    recovery_sent_at = NULL,
+                    encrypted_password = crypt($1::text, gen_salt('bf'))
+                WHERE email = $2::text;
+            `,
+            name: 'auth-confirm-recovery'
+        },
+        [password, email],
+    );
+}
+
+export async function changePassword(
+    userId: string,
+    password: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.users
+                SET
+                    encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
+                WHERE id = $2::uuid;
+            `,
+            name: 'auth-change-password'
+        },
+        [password, userId],
+    );
+}
+
+export async function getUserData(
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    id: string;
+    email: string;
+    username: string;
+    raw_user_meta_data: Record<string, any>;
+    created_at: Date;
+    updated_at: Date | null;
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT
+                    u.id,
+                    u.email,
+                    p.username,
+                    u.raw_user_meta_data,
+                    u.created_at,
+                    u.updated_at
+                FROM auth.users AS u
+                JOIN public.profiles AS p ON u.id = p.user_id
+                WHERE id = $1::uuid;
+            `,
+            name: 'auth-get-user-data'
+        },
+        [userId],
+    );
+}
+
+export async function initalizeEmailChange(
+    userId: string,
+    newEmail: string,
+    confirmationCode: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.users
+                SET
+                    email_change = $1::text,
+                    email_change_sent_at = CURRENT_TIMESTAMP,
+                    email_change_code = $2::text
+                WHERE id = $3::uuid;
+            `,
+            name: 'auth-initialize-email-change'
+        },
+        [
+            newEmail,
+            confirmationCode,
+            userId
+        ],
+    );
+}
+
+export async function validateEmailChange(
+    userId: string,
+    confirmationCode: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    email_change_sent_at: Date | null
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT email_change_sent_at 
+                FROM auth.users
+                WHERE id = $1::uuid 
+                    AND email_change_code = $2::text
+            `,
+            name: 'auth-validate-email-change'
+        },
+        [userId, confirmationCode],
+    );
+}
+
+export async function finalizeEmailChange(
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.users
+                SET
+                    email = email_change,
+                    email_verified_at = CURRENT_TIMESTAMP,
+                    email_change = NULL,
+                    email_change_sent_at = NULL,
+                    email_change_code = NULL
+                WHERE id = $1::uuid;
+            `,
+            name: 'auth-finalize-email-change'
+        },
+        [userId],
     );
 }

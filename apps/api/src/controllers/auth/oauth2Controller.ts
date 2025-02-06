@@ -391,7 +391,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
 			.status(500)
 			.json(
 				message(
-					'',
+					'An unexpected error occurred while generating access token.',
 					{},
 					[{ info: INTERNAL_ERROR }]
 				)

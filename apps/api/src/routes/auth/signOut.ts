@@ -1,6 +1,5 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../../db';
 import {
 	CustomValidationError,
 	message,
@@ -22,7 +21,7 @@ import {
 } from 'utils-node/middlewares';
 import { body } from 'express-validator';
 import { validateMFA } from '../../services/mfaService';
-import { signOutFromSession } from '../../repositories/auth/refreshTokens';
+import { signOutFromAllSessions, signOutFromSession } from '../../repositories/auth/refreshTokens';
 
 const router = Router();
 
@@ -122,14 +121,7 @@ router.post(
 		}
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					DELETE FROM auth.refresh_tokens
-					WHERE user_id = $1::uuid 
-						AND grant_type = 'password';
-				`,
-				[userId],
-			);
+			const { rowCount } = await signOutFromAllSessions(userId);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Sign-out from all sessions: No refresh tokens found for user: ${userId}`);
