@@ -15,12 +15,221 @@ import {
     signInUser,
     setRecoveryToken,
     confirmRecovery,
-    compareNewPasswordWithOldPassword,
+    compareNewPasswordWithOldPasswordByEmail,
     validateRecoveryToken,
-    getUserData
+    getUserData,
+    compareNewPasswordWithOldPasswordByUserId,
+    changePassword,
+    initalizeEmailChange,
+    validateEmailChange,
+    finalizeEmailChange
 } from '../../../src/repositories/auth/users';
+import logger from '../../../src/loggers/logger'
+import { generateCode } from 'utils-node';
 
 describe('User Queries', () => {
+    it('should handle initializing email change', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const newEmail = 'newemail@example.com';
+            const emailChangeCode = generateCode(8);
+
+            expect((await createTestUser(
+                client,
+                userId
+            )).rowCount).toBe(1);
+
+            expect((await initalizeEmailChange(
+                userId,
+                newEmail,
+                emailChangeCode,
+                client
+            )).rowCount).toBe(1);
+
+            const { rowCount, rows } = await client.query(
+                `
+                    SELECT
+                        email_change,
+                        email_change_sent_at,
+                        email_change_code
+                    FROM auth.users
+                    WHERE id = $1::uuid;
+                `,
+                [userId]
+            );
+
+            const row = rows[0];
+
+            expect(rowCount).toBe(1);
+            expect(row.email_change).toBe(newEmail);
+            expect(row.email_change_sent_at).toBeInstanceOf(Date);
+            expect(row.email_change_code).toBe(emailChangeCode);
+        });
+    });
+
+    it('should handle validating email change', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const newEmail = 'newemail@example.com';
+            const emailChangeCode = generateCode(8);
+            const wrongEmailChangeCode = generateCode(8);
+
+            expect((await createTestUser(
+                client,
+                userId
+            )).rowCount).toBe(1);
+
+            expect((await initalizeEmailChange(
+                userId,
+                newEmail,
+                emailChangeCode,
+                client
+            )).rowCount).toBe(1);
+
+            const { rowCount, rows } = await validateEmailChange(
+                userId,
+                emailChangeCode,
+                client
+            );
+
+            expect(rowCount).toBe(1);
+            expect(rows[0].email_change_sent_at).toBeInstanceOf(Date);
+
+            const { rowCount: rowCount2 } = await validateEmailChange(
+                userId,
+                wrongEmailChangeCode,
+                client
+            );
+
+            expect(rowCount2).toBe(0);
+        });
+    });
+
+    it('should handle finalizing email change', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const newEmail = 'newemail@example.com';
+            const emailChangeCode = generateCode(8);
+
+            expect((await createTestUser(
+                client,
+                userId
+            )).rowCount).toBe(1);
+
+            expect((await initalizeEmailChange(
+                userId,
+                newEmail,
+                emailChangeCode,
+                client
+            )).rowCount).toBe(1);
+
+            expect((await finalizeEmailChange(
+                userId,
+                client
+            )).rowCount).toBe(1);
+
+            const { rowCount, rows } = await client.query<{
+                email: string;
+                email_verified_at: Date | null;
+                email_change: string | null;
+                email_change_sent_at: Date | null;
+                email_change_code: string | null;
+            }>(
+                `
+                    SELECT
+                        email,
+                        email_verified_at,
+                        email_change,
+                        email_change_sent_at,
+                        email_change_code
+                    FROM auth.users
+                    WHERE id = $1::uuid;
+                `,
+                [userId]
+            );
+
+            const now = new Date().getTime();
+            const row = rows[0];
+
+            expect(rowCount).toBe(1);
+            expect(row.email).toBe(newEmail);
+            expect(row.email_verified_at).toBeInstanceOf(Date);
+            expect(row.email_verified_at?.getTime()).toBeGreaterThan(now - 100);
+            expect(row.email_change).toBeNull();
+            expect(row.email_change_sent_at).toBeNull();
+            expect(row.email_change_code).toBeNull();
+        });
+    });
+
+    it('should handle changing password', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const email = 'test@example.com';
+            const password = 'save-password';
+            const newPassword = 'new-password';
+
+            expect((await createTestUser(
+                client,
+                userId,
+                email,
+                { username: 'testuser' },
+                password
+            )).rowCount).toBe(1);
+            
+            expect((await changePassword(
+                userId,
+                newPassword,
+                client
+            )).rowCount).toBe(1);
+
+            const { rowCount, rows } = await compareNewPasswordWithOldPasswordByUserId(
+                userId,
+                newPassword,
+                client
+            );
+
+            expect(rowCount).toBe(1);
+            expect(rows[0].is_current_password).toBe(true);
+        });
+    });
+
+    it('should handle checking if the new password equals the old one by user id', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const email = 'test@example.com';
+            const password = 'save-password';
+            const differentPassword = 'different-password';
+
+            expect((await createTestUser(
+                client,
+                userId,
+                email,
+                { username: 'testuser' },
+                password
+            )).rowCount).toBe(1);
+
+            const { rowCount, rows } = await compareNewPasswordWithOldPasswordByUserId(
+                userId,
+                password,
+                client
+            );
+
+            logger.debug(`${rowCount}, ${rows}`);
+            
+            expect(rowCount).toBe(1);
+            expect(rows[0].is_current_password).toBe(true);
+
+            const { rowCount: rowCount2, rows: rows2 } = await compareNewPasswordWithOldPasswordByUserId(
+                userId,
+                differentPassword,
+                client
+            );
+
+            expect(rowCount2).toBe(1);
+            expect(rows2[0].is_current_password).toBe(false);
+        });
+    });
+
     it('should handle getting user data', async () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
@@ -96,9 +305,11 @@ describe('User Queries', () => {
                 [email]
             );
 
+            const row = rows[0];
+
             expect(rowCount).toBe(1);
-            expect(rows[0].recovery_token).toBe(token);
-            expect(rows[0].recovery_sent_at).toBeInstanceOf(Date);
+            expect(row.recovery_token).toBe(token);
+            expect(row.recovery_sent_at).toBeInstanceOf(Date);
         });
     });
 
@@ -130,7 +341,7 @@ describe('User Queries', () => {
         });
     });
 
-    it('should handle checking if the new password equals the old one', async () => {
+    it('should handle checking if the new password equals the old one by email', async () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
             const password = 'save-password';
@@ -144,7 +355,7 @@ describe('User Queries', () => {
                 password
             )).rowCount).toBe(1);
 
-            const { rowCount, rows } = await compareNewPasswordWithOldPassword(
+            const { rowCount, rows } = await compareNewPasswordWithOldPasswordByEmail(
                 email,
                 password,
                 client
@@ -153,7 +364,7 @@ describe('User Queries', () => {
             expect(rowCount).toBe(1);
             expect(rows[0].is_current_password).toBe(true);
 
-            const { rowCount: rowCount2, rows: rows2 } = await compareNewPasswordWithOldPassword(
+            const { rowCount: rowCount2, rows: rows2 } = await compareNewPasswordWithOldPasswordByEmail(
                 email,
                 differentPassword,
                 client
@@ -201,10 +412,12 @@ describe('User Queries', () => {
                 `,
                 [email]
             );
+
+            const row = rows[0];
         
             expect(rowCount).toBe(1);
-            expect(rows[0].recovery_token).toBe(null);
-            expect(rows[0].recovery_sent_at).toBe(null);
+            expect(row.recovery_token).toBe(null);
+            expect(row.recovery_sent_at).toBe(null);
         });
     });
 
@@ -224,11 +437,13 @@ describe('User Queries', () => {
 
             const { rowCount, rows } = await signInUser(email, password, client);
 
+            const row = rows[0];
+
             expect(rowCount).toBe(1);
-            expect(rows[0].id).toBe(id);
-            expect(rows[0].email_verified_at).toBeNull();
-            expect(rows[0].types).toEqual(['email']);
-            expect(rows[0].banned_at).toBeNull();
+            expect(row.id).toBe(id);
+            expect(row.email_verified_at).toBeNull();
+            expect(row.types).toEqual(['email']);
+            expect(row.banned_at).toBeNull();
         });
     });
 
@@ -249,11 +464,13 @@ describe('User Queries', () => {
 
             const { rowCount, rows } = await signInUser(username, password, client);
 
+            const row = rows[0];
+
             expect(rowCount).toBe(1);
-            expect(rows[0].id).toBe(id);
-            expect(rows[0].email_verified_at).toBeNull();
-            expect(rows[0].types).toEqual(['email']);
-            expect(rows[0].banned_at).toBeNull();
+            expect(row.id).toBe(id);
+            expect(row.email_verified_at).toBeNull();
+            expect(row.types).toEqual(['email']);
+            expect(row.banned_at).toBeNull();
         });
     });
 
@@ -390,9 +607,11 @@ describe('User Queries', () => {
     
             const { rowCount, rows } = await getEmailVerificationState(email, token, client);
     
+            const row = rows[0];
+
             expect(rowCount).toBe(1);
-            expect(rows[0].email_verified_at).toEqual(email_verified_at);
-            expect(rows[0].verification_sent_at).toEqual(verification_sent_at);
+            expect(row.email_verified_at).toEqual(email_verified_at);
+            expect(row.verification_sent_at).toEqual(verification_sent_at);
         });
     });
 
@@ -429,10 +648,12 @@ describe('User Queries', () => {
                 [email]
             );
 
+            const row = rows[0];
+
             expect(rowCount).toBe(1);
-            expect(rows[0].email_verified_at).not.toBeNull();
-            expect(rows[0].verification_sent_at).toBeNull();
-            expect(rows[0].verification_token).toBeNull();
+            expect(row.email_verified_at).not.toBeNull();
+            expect(row.verification_sent_at).toBeNull();
+            expect(row.verification_token).toBeNull();
         });
     });
 
@@ -490,9 +711,11 @@ describe('User Queries', () => {
                 [email]
             );
 
+            const row = rows[0];
+
             expect(rowCount).toBe(1);
-            expect(rows[0].verification_sent_at).not.toBeNull();
-            expect(rows[0].verification_token).toEqual(token);
+            expect(row.verification_sent_at).not.toBeNull();
+            expect(row.verification_token).toEqual(token);
         });
     });
 });

@@ -278,7 +278,7 @@ export async function validateRecoveryToken(
     );
 }
 
-export async function compareNewPasswordWithOldPassword(
+export async function compareNewPasswordWithOldPasswordByEmail(
     email: string,
     password: string,
     client: PoolClient | undefined = undefined
@@ -299,9 +299,36 @@ export async function compareNewPasswordWithOldPassword(
                 FROM auth.users
                 WHERE email = $2::text;
             `,
-            name: 'auth-compare-new-password-with-old-password'
+            name: 'auth-compare-new-password-with-old-password-by-email'
         },
         [password, email],
+    );
+}
+
+export async function compareNewPasswordWithOldPasswordByUserId(
+    userId: string,
+    password: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    is_current_password: boolean | null;
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT
+                    CASE
+                        WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password
+                        THEN true
+                        ELSE false
+                    END AS is_current_password
+                FROM auth.users
+                WHERE id = $2::uuid;
+            `,
+            name: 'auth-compare-new-password-with-old-password-by-user-id'
+        },
+        [password, userId],
     );
 }
 
@@ -325,6 +352,27 @@ export async function confirmRecovery(
             name: 'auth-confirm-recovery'
         },
         [password, email],
+    );
+}
+
+export async function changePassword(
+    userId: string,
+    password: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.users
+                SET
+                    encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
+                WHERE id = $2::uuid;
+            `,
+            name: 'auth-change-password'
+        },
+        [password, userId],
     );
 }
 
@@ -356,6 +404,81 @@ export async function getUserData(
                 WHERE id = $1::uuid;
             `,
             name: 'auth-get-user-data'
+        },
+        [userId],
+    );
+}
+
+export async function initalizeEmailChange(
+    userId: string,
+    newEmail: string,
+    confirmationCode: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.users
+                SET
+                    email_change = $1::text,
+                    email_change_sent_at = CURRENT_TIMESTAMP,
+                    email_change_code = $2::text
+                WHERE id = $3::uuid;
+            `,
+            name: 'auth-initialize-email-change'
+        },
+        [
+            newEmail,
+            confirmationCode,
+            userId
+        ],
+    );
+}
+
+export async function validateEmailChange(
+    userId: string,
+    confirmationCode: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    email_change_sent_at: Date | null
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT email_change_sent_at 
+                FROM auth.users
+                WHERE id = $1::uuid 
+                    AND email_change_code = $2::text
+            `,
+            name: 'auth-validate-email-change'
+        },
+        [userId, confirmationCode],
+    );
+}
+
+export async function finalizeEmailChange(
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.users
+                SET
+                    email = email_change,
+                    email_verified_at = CURRENT_TIMESTAMP,
+                    email_change = NULL,
+                    email_change_sent_at = NULL,
+                    email_change_code = NULL
+                WHERE id = $1::uuid;
+            `,
+            name: 'auth-finalize-email-change'
         },
         [userId],
     );

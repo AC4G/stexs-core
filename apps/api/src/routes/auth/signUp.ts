@@ -3,7 +3,6 @@ import {
 	Request,
 	Response
 } from 'express';
-import db from '../../db';
 import sendEmail from '../../services/emailService';
 import {
 	message,

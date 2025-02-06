@@ -18,7 +18,6 @@ import {
 	CustomValidationError,
 	message,
 } from 'utils-node/messageBuilder';
-import db from '../../db';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import sendEmail from '../../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../../env-config';
@@ -26,7 +25,7 @@ import { validate } from 'utils-node/middlewares';
 import logger from '../../loggers/logger';
 import { isExpired } from 'utils-node';
 import {
-	compareNewPasswordWithOldPassword,
+	compareNewPasswordWithOldPasswordByEmail,
 	confirmRecovery,
 	setRecoveryToken,
 	userExistsByEmail,
@@ -301,7 +300,7 @@ router.post(
 		}
 
 		try {
-			const { rowCount, rows } = await compareNewPasswordWithOldPassword(email, password);
+			const { rowCount, rows } = await compareNewPasswordWithOldPasswordByEmail(email, password);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Invalid password provided for recovery for email: ${email}`);

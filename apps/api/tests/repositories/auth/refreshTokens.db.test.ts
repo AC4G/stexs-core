@@ -6,6 +6,7 @@ import {
 import db from '../../../src/db';
 import {
     deleteRefreshToken,
+    getActiveUserSessions,
     saveRefreshToken,
     signOutFromAllSessions,
     signOutFromSession
@@ -14,6 +15,30 @@ import { v4 as uuidv4 } from 'uuid';
 import { createTestUser } from '../../../src/repositories/auth/users';
 
 describe('Refresh Token Queries', () => {
+    it('should handle getting active user sessions', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+
+            expect((await createTestUser(
+                client,
+                userId,
+            )).rowCount).toBe(1);
+
+            for (let i = 0; i < 5; i++) {
+                expect((await saveRefreshToken(
+                    uuidv4(),
+                    userId,
+                    'password',
+                    uuidv4(),
+                    null,
+                    client
+                )).rowCount).toBe(1);
+            }
+
+            expect((await getActiveUserSessions(userId, client)).rowCount).toBe(5);
+        });
+    });
+
     it('should handle saving refresh token for grant type password', async () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
