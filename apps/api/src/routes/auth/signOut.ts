@@ -11,7 +11,7 @@ import {
 	INVALID_TYPE,
 	TYPE_REQUIRED,
 } from 'utils-node/errors';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER } from '../../../env-config';
 import {
 	validate,

@@ -1,4 +1,4 @@
-import { PoolClient, Query } from 'pg';
+import { PoolClient } from 'pg';
 import { getQuery, type QueryResult } from '../utils';
 
 export async function deleteRefreshToken(

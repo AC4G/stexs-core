@@ -256,6 +256,10 @@ export const MFA_CANNOT_BE_COMPLETELY_DISABLED = {
 	code: 'MFA_CANNOT_BE_COMPLETELY_DISABLED',
 	message: 'MFA cannot be disabled completely from the account.',
 };
+export const MFA_FLOWS_NOT_FOUND = {
+	code: 'MFA_FLOWS_NOT_FOUND',
+	message: 'MFA flows not found.',
+}
 export const UNAUTHORIZED_ACCESS = {
 	code: 'UNAUTHORIZED_ACCESS',
 	message: 'You are not authorized to access this resource.',

@@ -21,6 +21,9 @@
       ],
       "middlewares": [
         "./dist/middlewares/index.d.ts"
+      ],
+      "logger": [
+        "./dist/loggers/logger.d.ts"
       ]
     }
   },
@@ -32,7 +35,8 @@
     "jsonwebtoken": "^9.0.2",
     "otpauth": "^9.1.4",
     "pg": "^8.11.2",
-    "winston": "^3.11.0"
+    "winston": "^3.11.0",
+    "winston-loki": "^6.0.7"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
@@ -46,6 +50,7 @@
     ".": "./dist/index.js",
     "./messageBuilder": "./dist/messageBuilder.js",
     "./errors": "./dist/constants/errors.js",
-    "./middlewares": "./dist/middlewares/index.js"
+    "./middlewares": "./dist/middlewares/index.js",
+    "./logger": "./dist/loggers/logger.js"
   }
 }

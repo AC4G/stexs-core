@@ -22,7 +22,7 @@ import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import sendEmail from '../../services/emailService';
 import { REDIRECT_TO_RECOVERY } from '../../../env-config';
 import { validate } from 'utils-node/middlewares';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { isExpired } from 'utils-node';
 import {
 	compareNewPasswordWithOldPasswordByEmail,

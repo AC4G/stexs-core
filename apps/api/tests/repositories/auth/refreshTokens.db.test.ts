@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { createTestUser } from '../../../src/repositories/auth/users';
 
 describe('Refresh Token Queries', () => {
-    it('should handle getting active user sessions', async () => {
+    it('should handle retrieving active user sessions', async () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
 
