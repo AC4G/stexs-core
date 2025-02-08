@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { Request } from 'express-jwt';
 import db from '../../db';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { message } from 'utils-node/messageBuilder';
 import {
 	CODE_EXPIRED,
@@ -20,6 +20,17 @@ import {
 } from '../../services/totpService';
 import { generateCode, isExpired } from 'utils-node';
 import sendEmail from '../../services/emailService';
+import {
+	disableTOTPMethod,
+	finalizeEnablingEmailMFA,
+	getEmailInfo,
+	getTOTPInfoForDisabling,
+	getTOTPInfoForEnabling,
+	getTOTPStatus,
+	setEmailCode,
+	setTOTPSecret,
+	verifyTOTPMethod
+} from '../../repositories/auth/mfa';
 
 export async function enableTOTP(req: Request, res: Response) {
 	const userId = req.auth?.sub!;
@@ -27,20 +38,7 @@ export async function enableTOTP(req: Request, res: Response) {
 	let email: string;
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			totp_verified_at: string | null;
-			email: string;
-		}>(
-			`
-				SELECT 
-					t.totp_verified_at,
-					u.email
-				FROM auth.mfa AS t 
-				INNER JOIN auth.users AS u ON t.user_id = u.id
-				WHERE t.user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount, rows } = await getTOTPInfoForEnabling(userId);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(`MFA TOTP status not found for user: ${userId}`);
@@ -90,15 +88,7 @@ export async function enableTOTP(req: Request, res: Response) {
 	const secret = totp.secret.base32;
 
 	try {
-		const { rowCount } = await db.query(
-			`
-				UPDATE auth.mfa
-				SET
-					totp_secret = $2::text
-				WHERE user_id = $1::uuid;
-			`,
-			[userId, secret],
-		);
+		const { rowCount } = await setTOTPSecret(userId, secret);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(`Failed to set MFA TOTP secret for user: ${userId}`);
@@ -129,7 +119,7 @@ export async function enableTOTP(req: Request, res: Response) {
 			);
 	}
 
-	res.json(message('MFA TOTP successfully enabled.', {
+	res.json(message('MFA TOTP successfully initialized.', {
 		secret,
 		otp_auth_uri: totp.toString(),
 	}));
@@ -144,21 +134,7 @@ export async function enableEmail(req: Request, res: Response) {
 	} = req.body;
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			email: boolean;
-			email_code: string | null;
-			email_code_sent_at: string | null;
-		}>(
-			`
-				SELECT 
-					email, 
-					email_code, 
-					email_code_sent_at
-				FROM auth.mfa
-				WHERE user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount, rows } = await getEmailInfo(userId);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(
@@ -232,19 +208,9 @@ export async function enableEmail(req: Request, res: Response) {
 				);
 		}
 
-		const { rowCount: count } = await db.query(
-			`
-				UPDATE auth.mfa
-				SET
-					email = TRUE,
-					email_code = NULL,
-					email_code_sent_at = NULL
-				WHERE user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount: rowCount2 } = await finalizeEnablingEmailMFA(userId);
 
-		if (!count || count === 0) {
+		if (!rowCount2 || rowCount2 === 0) {
 			logger.error(
 				`Failed to update MFA email status, code and timestamp for user: ${userId}`,
 			);
@@ -291,21 +257,7 @@ export async function disableTOTP(req: Request, res: Response) {
 	let secret: string;
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			totp_verified_at: string | null;
-			email: boolean;
-			totp_secret: string | null;
-		}>(
-			`
-				SELECT 
-					totp_verified_at, 
-					email, 
-					totp_secret
-				FROM auth.mfa
-				WHERE user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount, rows } = await getTOTPInfoForDisabling(userId);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(
@@ -390,16 +342,7 @@ export async function disableTOTP(req: Request, res: Response) {
 	}
 
 	try {
-		const { rowCount } = await db.query(
-			`
-				UPDATE auth.mfa
-				SET
-					totp_secret = NULL,
-					totp_verified_at = NULL
-				WHERE user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount } = await disableTOTPMethod(userId)
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(
@@ -598,25 +541,13 @@ export async function disableEmail(req: Request, res: Response) {
 }
 
 export async function verifyTOTP(req: Request, res: Response) {
-	const userId = req.auth?.sub;
+	const userId = req.auth?.sub!;
 	const { code } = req.body;
 
 	let secret: string;
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			totp_secret: string | null;
-			totp_verified_at: string | null;
-		}>(
-			`
-				SELECT 
-					totp_secret, 
-					totp_verified_at
-				FROM auth.mfa
-				WHERE user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount, rows } = await getTOTPStatus(userId);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(
@@ -688,15 +619,7 @@ export async function verifyTOTP(req: Request, res: Response) {
 	}
 
 	try {
-		const { rowCount } = await db.query(
-			`
-				UPDATE auth.mfa
-				SET
-					totp_verified_at = CURRENT_TIMESTAMP
-				WHERE user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount } = await verifyTOTPMethod(userId);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(
@@ -741,24 +664,7 @@ export async function sendEmailCode(req: Request, res: Response) {
 	let email: string;
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			email: string;
-		}>(
-			`
-				WITH updated_mfa AS (
-					UPDATE auth.mfa
-					SET
-						email_code = $1::text,
-						email_code_sent_at = CURRENT_TIMESTAMP
-					WHERE user_id = $2::uuid
-					RETURNING user_id
-				)
-				SELECT u.email
-				FROM auth.users u
-				WHERE u.id = $2::uuid;
-			`,
-			[code, userId],
-		);
+		const { rowCount, rows } = await setEmailCode(userId, code);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(`User not found for MFA code update for user: ${userId}`);

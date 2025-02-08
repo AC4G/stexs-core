@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import logger from './src/loggers/logger';
+import logger from './src/logger';
 
 const CONTAINER_NAME = 'db-test';
 const POSTGRES_PORT = 5555;

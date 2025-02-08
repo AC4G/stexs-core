@@ -24,7 +24,6 @@ import {
     validateEmailChange,
     finalizeEmailChange
 } from '../../../src/repositories/auth/users';
-import logger from '../../../src/loggers/logger'
 import { generateCode } from 'utils-node';
 
 describe('User Queries', () => {
@@ -213,8 +212,6 @@ describe('User Queries', () => {
                 password,
                 client
             );
-
-            logger.debug(`${rowCount}, ${rows}`);
             
             expect(rowCount).toBe(1);
             expect(rows[0].is_current_password).toBe(true);
@@ -230,7 +227,7 @@ describe('User Queries', () => {
         });
     });
 
-    it('should handle getting user data', async () => {
+    it('should handle retrieving user data', async () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
             const email = 'test@example.com';

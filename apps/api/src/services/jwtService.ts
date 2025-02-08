@@ -10,7 +10,7 @@ import {
 	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT,
 } from '../../env-config';
 import { v4 as uuidv4 } from 'uuid';
-import logger from '../loggers/logger';
+import logger from '../logger';
 import {
 	saveRefreshToken,
 	updateAuthorizationCodeRefreshToken

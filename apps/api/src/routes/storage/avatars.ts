@@ -16,7 +16,7 @@ import {
 	transformJwtErrorMessages,
 } from 'utils-node/middlewares';
 import s3 from '../../s3';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,

@@ -24,7 +24,7 @@ import {
 	message,
 } from 'utils-node/messageBuilder';
 import sendEmail from '../../services/emailService';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { generateCode, isExpired } from 'utils-node';
 import {
 	validate,

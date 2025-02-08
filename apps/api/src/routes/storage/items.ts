@@ -12,7 +12,7 @@ import {
 	transformJwtErrorMessages,
 	validateAccessToken,
 } from 'utils-node/middlewares';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { Request } from 'express-jwt';
 import db from '../../db';
 import { message } from 'utils-node/messageBuilder';

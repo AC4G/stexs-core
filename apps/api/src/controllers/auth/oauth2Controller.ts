@@ -11,7 +11,7 @@ import {
 import db from '../../db';
 import generateAccessToken from '../../services/jwtService';
 import { Request } from 'express-jwt';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { isExpired } from 'utils-node';
 
 export async function authorizationCodeController(req: Request, res: Response) {

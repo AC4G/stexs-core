@@ -171,7 +171,7 @@ describe('MFA Routes', () => {
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
-			message('MFA TOTP successfully enabled.', {
+			message('MFA TOTP successfully initialized.', {
 				secret: expect.stringMatching(/^.{32}$/),
 				otp_auth_uri: expect.stringMatching(new RegExp(otpAuthUriPattern)),
 			}).onTest(),

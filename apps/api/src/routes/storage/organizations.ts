@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { Request } from 'express-jwt';
 import { param } from 'express-validator';
 import {

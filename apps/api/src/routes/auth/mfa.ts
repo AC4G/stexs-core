@@ -1,7 +1,6 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../../db';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import {
 	CustomValidationError,
 	message,
@@ -11,6 +10,7 @@ import {
 	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_TYPE,
+	MFA_FLOWS_NOT_FOUND,
 	TYPE_REQUIRED,
 	UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
@@ -36,6 +36,7 @@ import {
 	ISSUER,
 	SIGN_IN_CONFIRM_TOKEN_SECRET,
 } from '../../../env-config';
+import { getMFAStatus } from '../../repositories/auth/mfa';
 
 const router = Router();
 
@@ -50,26 +51,24 @@ router.get(
 		const userId = req.auth?.sub!;
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				email: boolean;
-				totp: boolean;
-			}>(
-				`
-					SELECT
-						email,
-						CASE
-							WHEN totp_verified_at IS NOT NULL THEN TRUE
-						ELSE FALSE
-						END AS totp
-					FROM auth.mfa
-					WHERE user_id = $1::uuid;
-				`,
-				[userId],
-			);
+			const { rowCount, rows } = await getMFAStatus(userId);
+
+			if (!rowCount || rowCount === 0) {
+				logger.error(`MFA flows not found for user: ${userId}`);
+				return res
+					.status(404)
+					.json(
+						message(
+							'No MFA flows found for current user.',
+							{},
+							[{ info: MFA_FLOWS_NOT_FOUND }]
+						)
+					);
+			}
 
 			logger.debug(`MFA flows successfully retrieved for user: ${userId}`);
 
-			res.json(message('MFA flows successfully retrieved.', !rowCount || rowCount === 0 ? {} : { ...rows[0] }));
+			res.json(message('MFA flows successfully retrieved.', rows[0]));
 		} catch (e) {
 			logger.error(
 				`Error while fetching MFA flows for user: ${userId}. Error: ${

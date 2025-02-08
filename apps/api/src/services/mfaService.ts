@@ -6,7 +6,7 @@ import {
 	TOTP_DISABLED,
 } from 'utils-node/errors';
 import db from '../db';
-import logger from '../loggers/logger';
+import logger from '../logger';
 import { getTOTPForVerification } from './totpService';
 import { isExpired } from 'utils-node';
 

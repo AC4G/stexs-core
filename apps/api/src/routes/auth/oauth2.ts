@@ -36,7 +36,7 @@ import {
 	clientCredentialsController,
 	refreshTokenController,
 } from '../../controllers/auth/oauth2Controller';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { verify } from 'jsonwebtoken';
 import {
 	ACCESS_TOKEN_SECRET,

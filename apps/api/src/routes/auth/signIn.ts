@@ -22,7 +22,7 @@ import {
 	TYPE_REQUIRED,
 	UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import {
 	validate,
 	validateSignInConfirmToken,

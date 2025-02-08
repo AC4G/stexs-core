@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 import authRouter from './routes/auth';
 import storageRouter from './routes/storage';
 import { ENV, SERVER_PORT } from '../env-config';
-import logger from './loggers/logger';
+import logger from './logger';
 import responseTime from 'response-time';
 import { message } from 'utils-node/messageBuilder';
 import { ROUTE_NOT_FOUND } from 'utils-node/errors';

@@ -8,7 +8,7 @@ import {
 	INVALID_TOKEN,
 	REFRESH_TOKEN_REQUIRED,
 } from 'utils-node/errors';
-import logger from '../../loggers/logger';
+import logger from '../../logger';
 import { body } from 'express-validator';
 import {
 	validate,
