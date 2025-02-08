@@ -242,3 +242,53 @@ export async function setEmailCode(
         [code, userId],
     );
 }
+
+export async function getEmailInfoForDisabling(
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    email: boolean;
+    totp_verified_at: string | null;
+    email_code: string | null;
+    email_code_sent_at: string | null;
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT 
+					email, 
+					totp_verified_at, 
+					email_code, 
+					email_code_sent_at
+				FROM auth.mfa
+				WHERE user_id = $1::uuid;
+            `,
+            name: 'auth-get-email-info-for-disabling'
+        },
+        [userId],
+    );
+}
+
+export async function disableEmailMethod(
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                UPDATE auth.mfa
+                SET
+                    email = FALSE,
+                    email_code = NULL,
+                    email_code_sent_at = NULL
+                WHERE user_id = $1::uuid;
+            `,
+            name: 'auth-disable-email-method'
+        },
+        [userId],
+    );
+}

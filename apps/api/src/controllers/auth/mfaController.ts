@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import { Request } from 'express-jwt';
-import db from '../../db';
 import logger from '../../logger';
 import { message } from 'utils-node/messageBuilder';
 import {
@@ -21,9 +20,11 @@ import {
 import { generateCode, isExpired } from 'utils-node';
 import sendEmail from '../../services/emailService';
 import {
+	disableEmailMethod,
 	disableTOTPMethod,
 	finalizeEnablingEmailMFA,
 	getEmailInfo,
+	getEmailInfoForDisabling,
 	getTOTPInfoForDisabling,
 	getTOTPInfoForEnabling,
 	getTOTPStatus,
@@ -389,23 +390,7 @@ export async function disableEmail(req: Request, res: Response) {
 	} = req.body;
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			email: boolean;
-			totp_verified_at: string | null;
-			email_code: string | null;
-			email_code_sent_at: string | null;
-		}>(
-			`
-				SELECT 
-					email, 
-					totp_verified_at, 
-					email_code, 
-					email_code_sent_at
-				FROM auth.mfa
-				WHERE user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount, rows } = await getEmailInfoForDisabling(userId);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(
@@ -492,19 +477,9 @@ export async function disableEmail(req: Request, res: Response) {
 				);
 		}
 
-		const { rowCount: count } = await db.query(
-			`
-				UPDATE auth.mfa
-				SET
-					email = FALSE,
-					email_code = NULL,
-					email_code_sent_at = NULL
-				WHERE user_id = $1::uuid;
-			`,
-			[userId],
-		);
+		const { rowCount: rowCount2 } = await disableEmailMethod(userId);
 
-		if (!count || count === 0) {
+		if (!rowCount2 || rowCount2 === 0) {
 			logger.error(
 				`Failed to update MFA email status, code and timestamp for user: ${userId}`,
 			);
