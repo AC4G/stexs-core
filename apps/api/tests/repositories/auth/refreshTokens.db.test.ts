@@ -127,26 +127,14 @@ describe('Refresh Token Queries', () => {
                 userId
             )).rowCount).toBe(1);
 
-            expect((await client.query(
-                `
-                    INSERT INTO auth.refresh_tokens (
-                        user_id,
-                        grant_type,
-                        token,
-                        session_id
-                    ) VALUES (
-                        $1::uuid,
-                        'password',
-                        $2::uuid,
-                        $3::uuid
-                    );
-                `,
-                [
-                    userId,
-                    token,
-                    sessionId
-                ]
-            )).rowCount).toBe(1);
+            expect((await saveRefreshToken(
+                token,
+                userId,
+                'password',
+                sessionId,
+                null,
+                client
+            )).rowCount).toBe(1); 
 
             expect((await deleteRefreshToken(
                 userId,
