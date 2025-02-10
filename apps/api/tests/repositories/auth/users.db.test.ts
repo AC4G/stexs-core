@@ -25,6 +25,7 @@ import {
     finalizeEmailChange
 } from '../../../src/repositories/auth/users';
 import { generateCode } from 'utils-node';
+import { compare } from 'bcrypt';
 
 describe('User Queries', () => {
     it('should handle initializing email change', async () => {
@@ -491,8 +492,8 @@ describe('User Queries', () => {
         });
     });
 
-    it('should handle inserting a new user', async () => {
-        await db.withRollbackTransaction(async (client) => {            
+    it('should handle sing up a new user', async () => {
+        await db.withRollbackTransaction(async (client) => {      
             const email = 'test@example.com';
             const password = 'save-password'; 
             const username = 'testuser';
@@ -506,19 +507,141 @@ describe('User Queries', () => {
                 client
             )).rowCount).toBe(1);
 
-            expect((await client.query(
+            const { rowCount, rows } = await client.query<{
+                id: string;
+                email: string;
+                encrypted_password: string;
+                email_verified_at: Date | null;
+                verification_token: string | null;
+                verification_sent_at: Date | null;
+                raw_user_meta_data: Record<string, unknown>;
+                is_super_admin: boolean;
+                email_change: string | null;
+                email_change_sent_at: Date | null;
+                email_change_code: string | null;
+                recovery_token: string | null;
+                recovery_sent_at: Date | null;
+                banned_at: Date | null;
+                created_at: Date;
+                updated_at: Date | null;
+            }>(
                 `
-                    SELECT 1
-                    FROM auth.users AS u
-                    JOIN public.profiles AS p ON p.user_id = u.id
-                    WHERE u.email = $1::text;
+                    SELECT
+                        id,
+                        email,
+                        encrypted_password,
+                        email_verified_at,
+                        verification_token,
+                        verification_sent_at,
+                        raw_user_meta_data,
+                        is_super_admin,
+                        email_change,
+                        email_change_sent_at,
+                        email_change_code,
+                        recovery_token,
+                        recovery_sent_at,
+                        banned_at,
+                        created_at,
+                        updated_at
+                    FROM auth.users
+                    WHERE email = $1::text;
                 `,
                 [email]
-            )).rowCount).toBe(1);
+            );
+
+            const row = rows[0];
+
+            expect(rowCount).toBe(1);
+            expect(row.email).toBe(email);
+
+            const passwordMatch = await compare(password, row.encrypted_password);
+            
+            expect(passwordMatch).toBe(true);
+
+            expect(row.email_verified_at).toBe(null);
+            expect(row.verification_token).toBe(token);
+            expect(row.verification_sent_at).toBeInstanceOf(Date);
+            expect(row.raw_user_meta_data).toEqual({});
+            expect(row.is_super_admin).toBe(false);
+            expect(row.email_change).toBe(null);
+            expect(row.email_change_sent_at).toBe(null);
+            expect(row.email_change_code).toBe(null);
+            expect(row.recovery_token).toBe(null);
+            expect(row.recovery_sent_at).toBe(null);
+            expect(row.banned_at).toBe(null);
+            expect(row.created_at).toBeInstanceOf(Date);
+            expect(row.updated_at).toBe(null);
+
+            const {  rowCount: rowCount2, rows: rows2 } = await client.query<{
+                user_id: string;
+                email: boolean;
+                totp_secret: string | null;
+                totp_verified_at: Date | null;
+                email_code: string | null;
+                email_code_sent_at: Date | null;
+            }>(
+                `
+                    SELECT
+                        user_id,
+                        email,
+                        totp_secret,
+                        totp_verified_at,
+                        email_code,
+                        email_code_sent_at
+                    FROM auth.mfa
+                    WHERE user_id = $1::uuid
+                `,
+                [row.id]
+            );
+
+            const row2 = rows2[0];
+
+            expect(rowCount2).toBe(1);
+            expect(row2.user_id).toBe(row.id);
+            expect(row2.email).toBe(true);
+            expect(row2.totp_secret).toBe(null);
+            expect(row2.totp_verified_at).toBe(null);
+            expect(row2.email_code).toBe(null);
+            expect(row2.email_code_sent_at).toBe(null);
+
+            const { rowCount: rowCount3, rows: rows3 } = await client.query<{
+                user_id: string;
+                username: string;
+                bio: string | null;
+                url: string | null;
+                is_private: boolean;
+                accept_friend_requests: boolean;
+                created_at: Date;
+            }>(
+                `
+                    SELECT
+                        user_id,
+                        username,
+                        bio,
+                        url,
+                        is_private,
+                        accept_friend_requests,
+                        created_at
+                    FROM public.profiles
+                    WHERE user_id = $1::uuid
+                `,
+                [row.id]
+            );
+
+            const row3 = rows3[0];
+
+            expect(rowCount3).toBe(1);
+            expect(row3.user_id).toBe(row.id);
+            expect(row3.username).toBe(username);
+            expect(row3.bio).toBe(null);
+            expect(row3.url).toBe(null);
+            expect(row3.is_private).toBe(false);
+            expect(row3.accept_friend_requests).toBe(true);
+            expect(row3.created_at).toBeInstanceOf(Date);
         });
     });
 
-    it('should handle inserting a new user with existing email', async () => {
+    it('should handle signing upa new user with existing email', async () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
             const password = 'save-password';
@@ -550,7 +673,7 @@ describe('User Queries', () => {
         });
     });
 
-    it('should handle inserting a new user with existing username', async () => {
+    it('should handle signing up a new user with existing username', async () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
             const differentEmail = 'different@example.com';
@@ -713,6 +836,140 @@ describe('User Queries', () => {
             expect(rowCount).toBe(1);
             expect(row.verification_sent_at).not.toBeNull();
             expect(row.verification_token).toEqual(token);
+        });
+    });
+
+    it('should handle creating a test user', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const email = 'test@example.com';
+            const username = 'testuser';
+
+            expect((await createTestUser(
+                client,
+                userId,
+                email,
+                { username: username },
+            )).rowCount).toBe(1);
+    
+            const { rowCount, rows } = await client.query<{
+                id: string;
+                email: string;
+                raw_user_meta_data: Record<string, any>;
+                encrypted_password: string;
+                email_verified_at: Date | null;
+                verification_token: string | null;
+                verification_sent_at: Date | null;
+                is_super_admin: boolean;
+                email_change: string | null;
+                email_change_sent_at: Date | null;
+                email_change_code: string | null;
+                recovery_token: string | null;
+                recovery_sent_at: Date | null;
+            }>(
+                `
+                    SELECT
+                        id,
+                        email,
+                        raw_user_meta_data,
+                        encrypted_password,
+                        email_verified_at,
+                        verification_token,
+                        verification_sent_at,
+                        is_super_admin,
+                        email_change,
+                        email_change_sent_at,
+                        email_change_code,
+                        recovery_token,
+                        recovery_sent_at
+                    FROM auth.users
+                    WHERE id = $1::uuid;
+                `,
+                [userId]
+            );
+
+            const row = rows[0];
+
+            expect(rowCount).toBe(1);
+            expect(row.id).toBe(userId);
+            expect(row.email).toBe(email);
+            expect(row.raw_user_meta_data).toEqual({});
+            expect(row.email_verified_at).toBeNull();
+            expect(row.verification_token).toBeNull();
+            expect(row.verification_sent_at).toBeNull();
+            expect(row.is_super_admin).toBe(false);
+            expect(row.email_change).toBeNull();
+            expect(row.email_change_sent_at).toBeNull();
+            expect(row.email_change_code).toBeNull();
+            expect(row.recovery_token).toBeNull();
+            expect(row.recovery_sent_at).toBeNull;
+
+            const {  rowCount: rowCount2, rows: rows2 } = await client.query<{
+                user_id: string;
+                email: boolean;
+                totp_secret: string | null;
+                totp_verified_at: Date | null;
+                email_code: string | null;
+                email_code_sent_at: Date | null;
+            }>(
+                `
+                    SELECT
+                        user_id,
+                        email,
+                        totp_secret,
+                        totp_verified_at,
+                        email_code,
+                        email_code_sent_at
+                    FROM auth.mfa
+                    WHERE user_id = $1::uuid
+                `,
+                [userId]
+            );
+
+            const row2 = rows2[0];
+
+            expect(rowCount2).toBe(1);
+            expect(row2.user_id).toBe(userId);
+            expect(row2.email).toBe(true);
+            expect(row2.totp_secret).toBeNull();
+            expect(row2.totp_verified_at).toBeNull();
+            expect(row2.email_code).toBeNull();
+            expect(row2.email_code_sent_at).toBeNull();
+
+            const { rowCount: rowCount3, rows: rows3 } = await client.query<{
+                user_id: string;
+                username: string;
+                bio: string | null;
+                url: string | null;
+                is_private: boolean;
+                accept_friend_requests: boolean;
+                created_at: Date;
+            }>(
+                `
+                    SELECT
+                        user_id,
+                        username,
+                        bio,
+                        url,
+                        is_private,
+                        accept_friend_requests,
+                        created_at
+                    FROM public.profiles
+                    WHERE user_id = $1::uuid;
+                `,
+                [userId]
+            );
+
+            const row3 = rows3[0];
+
+            expect(rowCount3).toBe(1);
+            expect(row3.user_id).toBe(userId);
+            expect(row3.username).toBe(username);
+            expect(row3.bio).toBeNull();
+            expect(row3.url).toBeNull();
+            expect(row3.is_private).toBe(false);
+            expect(row3.accept_friend_requests).toBe(true);
+            expect(row3.created_at).not.toBeNull();
         });
     });
 });

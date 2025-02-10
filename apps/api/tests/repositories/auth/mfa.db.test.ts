@@ -3,9 +3,11 @@ import db from '../../../src/db';
 import { v4 as uuidv4 } from 'uuid';
 import { createTestUser } from '../../../src/repositories/auth/users';
 import {
+    disableEmailMethod,
     disableTOTPMethod,
     finalizeEnablingEmailMFA,
     getEmailInfo,
+    getEmailInfoForDisabling,
     getMFAStatus,
     getTOTPInfoForDisabling,
     getTOTPInfoForEnabling,
@@ -18,6 +20,79 @@ import { getTOTPForSettup } from '../../../src/services/totpService';
 import { generateCode } from 'utils-node';
 
 describe('MFA Queries', () => {
+    it('should handle retrieving Email info for disabling', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+            const email = 'test@example.com';
+
+            expect((await createTestUser(
+                client,
+                userId
+            )).rowCount).toBe(1);
+
+            const { rowCount, rows } = await getEmailInfoForDisabling(
+                userId,
+                client
+            );
+
+            const row = rows[0];
+
+            expect(rowCount).toBe(1);
+            expect(row.email).toBe(true);
+            expect(row.totp_verified_at).toBeNull();
+            expect(row.email_code).toBeNull();
+            expect(row.email_code_sent_at).toBeNull();
+
+            const code = generateCode(8);
+
+            expect((await setEmailCode(
+                userId,
+                code,
+                client
+            )).rowCount).toBe(1);
+
+            const { rowCount: rowCount2, rows: rows2 } = await getEmailInfoForDisabling(
+                userId,
+                client
+            );
+
+            const row2 = rows2[0];
+
+            expect(rowCount2).toBe(1);
+            expect(row2.email).toBe(true);
+            expect(row2.totp_verified_at).toBeNull();
+            expect(row2.email_code).toBe(code);
+            expect(row2.email_code_sent_at).toBeInstanceOf(Date);
+
+            const totp = getTOTPForSettup(email);
+            const secret = totp.secret.base32;
+
+            expect((await setTOTPSecret(
+                userId,
+                secret,
+                client
+            )).rowCount).toBe(1);
+
+            expect((await verifyTOTPMethod(
+                userId,
+                client
+            )).rowCount).toBe(1);
+
+            const { rowCount: rowCount3, rows: rows3 } = await getEmailInfoForDisabling(
+                userId,
+                client
+            );
+
+            const row3 = rows3[0];
+
+            expect(rowCount3).toBe(1);
+            expect(row3.email).toBe(true);
+            expect(row3.totp_verified_at).toBeInstanceOf(Date);
+            expect(row3.email_code).toBe(code);
+            expect(row3.email_code_sent_at).toBeInstanceOf(Date);
+        });
+    });
+
     it('should retrieving email info', async () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
@@ -401,6 +476,42 @@ describe('MFA Queries', () => {
             expect(rowCount).toBe(1);
             expect(row.email).toBe(true);
             expect(row.totp).toBe(false);
+        });
+    });
+
+    it('should handle disabling Email method', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const userId = uuidv4();
+
+            expect((await createTestUser(
+                client,
+                userId
+            )).rowCount).toBe(1);
+
+            const code = generateCode(8);
+
+            expect((await setEmailCode(
+                userId,
+                code,
+                client
+            )).rowCount).toBe(1);
+
+            expect((await disableEmailMethod(
+                userId,
+                client
+            )).rowCount).toBe(1);
+
+            const { rowCount, rows } = await getEmailInfo(
+                userId,
+                client
+            );
+
+            const row = rows[0];
+
+            expect(rowCount).toBe(1);
+            expect(row.email).toBe(false);
+            expect(row.email_code).toBeNull();
+            expect(row.email_code_sent_at).toBeNull();
         });
     });
 });

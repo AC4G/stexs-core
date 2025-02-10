@@ -24,20 +24,9 @@ import {
 import db from '../../db';
 import { message } from 'utils-node/messageBuilder';
 import s3 from '../../s3';
-import { QueryConfig } from 'pg';
+import { isUserAdminOrOwnerOfOrganization } from '../../repositories/public/organizationMembers';
 
 const router = Router();
-
-const checkOrganizationOwnerUserQuery: QueryConfig = {
-	text: `
-		SELECT 1
-		FROM public.organization_members
-		WHERE member_id = $1::uuid 
-			AND organization_id = $2::integer 
-			AND role IN ('Admin', 'Owner');
-	`,
-	name: 'storage-api-check-organization-owner-user'
-};
 
 router.get(
 	'/:organizationId',
@@ -101,10 +90,7 @@ router.post(
 			let isAllowed = false;
 
 			if (grantType === 'password') {
-				const { rowCount } = await db.query(
-					checkOrganizationOwnerUserQuery,
-					[sub, organizationId],
-				);
+				const { rowCount } = await isUserAdminOrOwnerOfOrganization(sub, organizationId);
 
 				if (rowCount === 1) isAllowed = true;
 			} 
@@ -204,10 +190,7 @@ router.delete(
 			let isAllowed = false;
 
 			if (grantType === 'password') {
-				const { rowCount } = await db.query(
-					checkOrganizationOwnerUserQuery,
-					[sub, organizationId],
-				);
+				const { rowCount } = await isUserAdminOrOwnerOfOrganization(sub, organizationId);
 
 				if (rowCount) isAllowed = true;
 			}
