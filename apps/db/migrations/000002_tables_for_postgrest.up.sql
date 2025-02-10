@@ -618,6 +618,10 @@ DECLARE
 	org_id INT;
 	user_role TEXT;
 BEGIN
+	IF auth.uid() IS NULL THEN
+		RETURN NULL;
+	END IF;
+
 	org_id := (
 		SELECT p.organization_id
 		FROM public.projects AS p

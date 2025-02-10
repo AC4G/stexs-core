@@ -6,11 +6,6 @@ import { QueryConfig } from 'pg';
 import { DbPool } from '../db';
 import { Logger } from 'winston';
 
-const supportedGrantTypes = [
-	'authorization_code', 
-	'client_credentials'
-];
-
 export function checkScopes(
 	requiredScopes: string[],
 	db: DbPool,
@@ -19,7 +14,10 @@ export function checkScopes(
 	return (req: Request, res: Response, next: NextFunction) => {
 		const grantType = req.auth?.grant_type;
 
-		if (!supportedGrantTypes.includes(grantType)) return next();
+		if (![
+			'authorization_code', 
+			'client_credentials'
+		].includes(grantType)) return next();
 
 		const clientId = req.auth?.client_id;
 		const sub = req.auth?.sub;
