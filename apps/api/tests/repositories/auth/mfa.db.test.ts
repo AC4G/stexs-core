@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import db from '../../../src/db';
 import { v4 as uuidv4 } from 'uuid';
-import { createTestUser } from '../../../src/repositories/auth/users';
+import { createUser } from '../../../src/repositories/auth/users';
 import {
     disableEmailMethod,
     disableTOTPMethod,
@@ -25,7 +25,7 @@ describe('MFA Queries', () => {
             const userId = uuidv4();
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
@@ -97,7 +97,7 @@ describe('MFA Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
@@ -141,7 +141,7 @@ describe('MFA Queries', () => {
             const userId = uuidv4();
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email
@@ -175,7 +175,7 @@ describe('MFA Queries', () => {
             const userId = uuidv4();
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email
@@ -213,7 +213,7 @@ describe('MFA Queries', () => {
             const userId = uuidv4();
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email
@@ -262,7 +262,7 @@ describe('MFA Queries', () => {
             const userId = uuidv4();
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email
@@ -305,7 +305,7 @@ describe('MFA Queries', () => {
             const userId = uuidv4();
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email
@@ -343,7 +343,7 @@ describe('MFA Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
@@ -380,7 +380,7 @@ describe('MFA Queries', () => {
             const userId = uuidv4();
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email
@@ -432,7 +432,7 @@ describe('MFA Queries', () => {
             const userId = uuidv4();
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
@@ -464,7 +464,7 @@ describe('MFA Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
             
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
@@ -483,7 +483,7 @@ describe('MFA Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);

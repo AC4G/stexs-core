@@ -1,12 +1,12 @@
-import { PoolClient } from 'pg';
-import { getQuery, type QueryResult } from '../utils';
+import type { PoolClient, QueryResult } from 'pg';
+import { getQuery } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 
-export async function createTestUser(
+export async function createUser(
     client: PoolClient,
     userId: string = uuidv4(),
     email: string = 'test@example.com',
-    raw_user_meta_data: Record<string, any> = { username: 'testuser' },
+    raw_user_meta_data: Record<string, any> = { username: 'username' },
     encrypted_password: string = 'save-password',
     email_verified_at: Date | null = null,
     verification_sent_at: Date | null = null,
@@ -33,7 +33,7 @@ export async function createTestUser(
                     $7::uuid
                 );
             `,
-            name: 'auth-create-test-user'
+            name: 'auth-create-user'
         },
         [
             userId,

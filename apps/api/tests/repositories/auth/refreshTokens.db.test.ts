@@ -12,14 +12,14 @@ import {
     signOutFromSession
 } from '../../../src/repositories/auth/refreshTokens';
 import { v4 as uuidv4 } from 'uuid';
-import { createTestUser } from '../../../src/repositories/auth/users';
+import { createUser } from '../../../src/repositories/auth/users';
 
 describe('Refresh Token Queries', () => {
     it('should handle retrieving active user sessions', async () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
             )).rowCount).toBe(1);
@@ -43,7 +43,7 @@ describe('Refresh Token Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
             )).rowCount).toBe(1);
@@ -66,7 +66,7 @@ describe('Refresh Token Queries', () => {
             const password = 'save-password';
             const sessionId = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email,
@@ -93,7 +93,7 @@ describe('Refresh Token Queries', () => {
             const email = 'test@example.com';
             const password = 'save-password';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email,
@@ -122,7 +122,7 @@ describe('Refresh Token Queries', () => {
             const token = uuidv4();
             const sessionId = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
