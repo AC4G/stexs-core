@@ -15,6 +15,24 @@ import { v4 as uuidv4 } from 'uuid';
 import { createUser } from '../../../src/repositories/auth/users';
 
 describe('Refresh Token Queries', () => {
+    it('should handle validating oauth2 refresh token', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            // validateOAuth2RefreshToken 
+        });
+    });
+
+    it('should handle revoking oauth2 refresh token', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            // revokeOAuth2RefreshToken 
+        });
+    });
+
+    it('should handle deleting oauth2 connection', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            // deleteOAuth2Connection
+        });
+    });
+
     it('should handle retrieving active user sessions', async () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();

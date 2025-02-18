@@ -160,3 +160,70 @@ export async function getActiveUserSessions(
         [userId],
     );
 }
+
+export async function deleteOAuth2Connection(
+    connectionId: number,
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                DELETE FROM auth.refresh_tokens
+                WHERE connection_id = $1::integer
+                    AND user_id = $2::uuid
+                    AND session_id IS NULL
+                    AND grant_type = 'authorization_code';
+            `,
+            name: 'auth-delete-connection'
+        },
+        [connectionId, userId]
+    );
+}
+
+export async function revokeOAuth2RefreshToken(
+    userId: string,
+    token: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                DELETE FROM auth.refresh_tokens
+                WHERE user_id = $1::uuid 
+                    AND grant_type = 'authorization_code' 
+                    AND token = $2::uuid 
+                    AND session_id IS NULL;
+            `,
+            name: 'auth-revoke-refresh-token'
+        },
+        [userId, token]
+    );
+}
+
+export async function validateOAuth2RefreshToken(
+    token: string,
+    userId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT 1
+				FROM auth.refresh_tokens
+				WHERE token = $1::uuid 
+					AND user_id = $2::uuid 
+					AND grant_type = 'authorization_code' 
+					AND session_id IS NULL;
+            `,
+            name: 'auth-validate-refresh-token'
+        },
+        [token, userId]
+    );
+}

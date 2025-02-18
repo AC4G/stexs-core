@@ -72,10 +72,20 @@ export default async function globalSetup() {
 
     logger.info('Database migrations completed.');
 
-    const seedingResult = spawnSync('pnpm', [
-        'run',
-        'seed'
-    ]);
+    const seedingResult = spawnSync(
+        'cross-env',
+        [
+            'ENV=test',
+            'pnpm',
+            '-w',
+            'run',
+            'seed',
+            '--force'
+        ],
+        {
+            env: process.env,
+        }
+    );
 
     if (seedingResult.error) {
         logger.error('Failed to seed database:', seedingResult.error);

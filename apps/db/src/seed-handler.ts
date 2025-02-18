@@ -3,7 +3,7 @@ import path from 'path';
 import { readdirSync } from 'fs';
 import db from './db';
 import { fileURLToPath } from 'url';
-import logger from './loggers/logger';
+import logger from './logger';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,10 +14,9 @@ const runSQL = async (filepath: string): Promise<boolean> => {
   logger.info(`Executing seed file: ${filepath}`);
 
   try {
-    const result = await db.query(sql);
+    await db.query(sql);
 
     logger.info(`Finished ${filepath} seed successfully!`);
-    logger.info(`PostgreSQL Logs:\n${JSON.stringify(result, null, 2)}`);
 
     return true;
   } catch (e) {

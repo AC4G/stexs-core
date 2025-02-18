@@ -396,21 +396,21 @@ GRANT SELECT ON TABLE public.oauth2_app_scopes TO authenticated;
 
 
 
-CREATE TABLE auth.oauth2_authorization_tokens (
+CREATE TABLE auth.oauth2_authorization_codes (
 	id SERIAL PRIMARY KEY,
-	token UUID NOT NULL UNIQUE,
+	code UUID NOT NULL UNIQUE,
 	user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
 	app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	CONSTRAINT unique_oauth2_authorization_tokens_combination UNIQUE (user_id, app_id)
+	CONSTRAINT unique_oauth2_authorization_codes_combination UNIQUE (user_id, app_id)
 );
 
-CREATE TABLE auth.oauth2_authorization_token_scopes (
+CREATE TABLE auth.oauth2_authorization_code_scopes (
 	id SERIAL PRIMARY KEY,
-	token_id INT REFERENCES auth.oauth2_authorization_tokens(id) ON DELETE CASCADE NOT NULL,
+	code_id INT REFERENCES auth.oauth2_authorization_codes(id) ON DELETE CASCADE NOT NULL,
 	scope_id INT REFERENCES public.scopes(id) ON DELETE CASCADE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	CONSTRAINT unique_oauth2_authorization_token_scopes_combination UNIQUE (token_id, scope_id)
+	CONSTRAINT unique_oauth2_authorization_code_scopes_combination UNIQUE (code_id, scope_id)
 );
 
 CREATE TABLE public.oauth2_connections (

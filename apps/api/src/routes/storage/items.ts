@@ -25,7 +25,7 @@ import {
 import s3 from '../../s3';
 import { param } from 'express-validator';
 import { isUserAdminOrOwnerOfProjectByItemId } from '../../repositories/public/projectMembers';
-import { isClientAllowedToAccessProjectByItemId } from '~/repositories/public/items';
+import { isClientAllowedToAccessProjectByItemId } from '../../repositories/public/items';
 
 const router = Router();
 

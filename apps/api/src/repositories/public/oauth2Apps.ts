@@ -39,3 +39,62 @@ export async function createOAuth2App(
         ]
     );
 }
+
+export async function getRedirectUrlAndScopesByClientId(
+    clientId: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    redirect_url: string;
+    scopes: string[];
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT 
+                    oa.redirect_url,
+                    COALESCE(
+                        ARRAY_AGG(s.name) FILTER (WHERE s.type = 'user'),
+                        '{}'
+                    ) AS scopes
+                FROM public.oauth2_apps AS oa
+                LEFT JOIN public.oauth2_app_scopes AS oas ON oa.id = oas.app_id
+                LEFT JOIN public.scopes AS s ON oas.scope_id = s.id
+                WHERE oa.client_id = $1::uuid
+                GROUP BY oa.redirect_url;
+            `,
+            name: 'public-get-redirect-url-and-scopes-by-client-id'
+        },
+        [clientId]
+    )
+}
+
+export async function validateClientCredentials(
+    clientId: string,
+    clientSecret: string,
+    client: PoolClient | undefined = undefined
+): Promise<QueryResult<{
+    scopes: string[] | null;
+    organization_id: number;
+}>> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT 
+                    oa.organization_id,
+                    ARRAY_AGG(s.name) AS scopes
+                FROM public.oauth2_apps AS oa
+                LEFT JOIN public.oauth2_app_scopes AS oas ON oa.id = oas.app_id
+                LEFT JOIN public.scopes AS s ON oas.scope_id = s.id AND s.type = 'client'
+                WHERE oa.client_id = $1::uuid
+                    AND oa.client_secret = $2::text
+                GROUP BY oa.organization_id;
+            `,
+            name: 'public-validate-client-credentials'
+        },
+        [clientId, clientSecret],
+    );
+}
