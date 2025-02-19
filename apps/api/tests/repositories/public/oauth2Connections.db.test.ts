@@ -14,7 +14,7 @@ describe('OAuth2 Connections Queries', () => {
         });
     });
 
-    it('should handle creating a oauth2 connection', async () => {
+    it('should handle creating an oauth2 connection', async () => {
         await db.withRollbackTransaction(async (client) => {
             // createOAuth2Connection
         });

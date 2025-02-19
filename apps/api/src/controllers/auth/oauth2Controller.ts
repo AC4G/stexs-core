@@ -32,7 +32,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 	let userId: string;
 	let organization_id: number;
 	let codeId: number;
-	let scopes: string[];
+	let scopes: number[];
 
 	try {
 		const { rowCount, rows } = await validateAuthorizationCode(
@@ -253,7 +253,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
 				);
 		}
 
-		const scopes = rows[0].scopes;
+		const scopes = rows[0].scope_ids;
 		({ organization_id } = rows[0]);
 
 		if (!scopes || scopes.length === 0) {

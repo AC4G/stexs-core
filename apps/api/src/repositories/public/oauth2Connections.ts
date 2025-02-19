@@ -4,7 +4,7 @@ import { getQuery } from "../utils";
 export async function createOAuth2Connection(
     userId: string,
     clientId: string,
-    scopes: string[],
+    scopeIds: number[],
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult<{
     id: number;
@@ -30,7 +30,7 @@ export async function createOAuth2Connection(
         [
             userId,
             clientId,
-            scopes
+            scopeIds
         ],
     );
 }

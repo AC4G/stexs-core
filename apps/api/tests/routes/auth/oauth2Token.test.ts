@@ -397,7 +397,7 @@ describe('OAuth2 Token', () => {
 			rows: [
 				{
 					id: 1,
-					scopes: ['inventory.read'],
+					scope_ids: [1,2,3,4],
 					organization_id: 1,
 					project_id: 1,
 				},
@@ -417,6 +417,8 @@ describe('OAuth2 Token', () => {
 				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
 				client_secret: 'secret',
 			});
+
+		console.log(response.body);
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(

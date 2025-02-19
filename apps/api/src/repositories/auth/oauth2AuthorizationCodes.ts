@@ -30,7 +30,7 @@ export async function setAuthorizationCode(
             name: 'auth-set-authorization-code'
         },
         [
-            code,
+            code, 
             userId,
             clientId
         ]
@@ -45,7 +45,7 @@ export async function validateAuthorizationCode(
 ): Promise<QueryResult<{
     id: number;
     user_id: string;
-    scopes: string[];
+    scopes: number[];
     created_at: string;
     organization_id: number;
 }>> {
@@ -59,9 +59,12 @@ export async function validateAuthorizationCode(
 					aot.user_id,
 					aot.created_at,
 					oa.organization_id,
-					(SELECT array_agg(scope_id)
-					FROM auth.oauth2_authorization_code_scopes
-					WHERE code_id = aot.id) AS scopes
+					COALESCE(
+                        (SELECT array_agg(scope_id)
+                        FROM auth.oauth2_authorization_code_scopes
+                        WHERE code_id = aot.id),
+                        '{}'::integer[]
+                    ) AS scopes
 				FROM auth.oauth2_authorization_codes AS aot
 				JOIN public.oauth2_apps AS oa ON aot.app_id = oa.id
 				WHERE aot.code = $1::uuid
