@@ -3,19 +3,80 @@ import db from '../../../src/db';
 import { validate } from 'uuid';
 import { createOrganization } from '../../../src/repositories/public/organizations';
 import { createProject } from '../../../src/repositories/public/projects';
-import { createOAuth2App, getRedirectUrlAndScopesByClientId } from '../../../src/repositories/public/oauth2Apps';
+import {
+    createOAuth2App,
+    getRedirectUrlAndScopesByClientId,
+    validateClientCredentials
+} from '../../../src/repositories/public/oauth2Apps';
 import { addScopesToApp } from '../../../src/repositories/public/oauth2AppScopes';
 
 describe('OAuth2 Apps Queries', () => {
     it('should handle validating client credentials', async () => {
         await db.withRollbackTransaction(async (client) => {
-            // validateClientCredentials 
+            const { rowCount, rows } = await createOrganization(client, 'TestOrganization');
+                         
+            const organizationId = rows[0].id;
+
+            expect(rowCount).toBe(1);
+
+            const { rowCount: rowCount2, rows: rows2 } = await createOAuth2App(
+                'Test OAuth2 App',
+                organizationId,
+                null,
+                'https://example.com/callback',
+                client
+            );
+
+            const row2 = rows2[0];
+
+            expect(rowCount2).toBe(1);
+
+            const appId = row2.id;
+            const clientId = row2.client_id;
+            const clientSecret = row2.client_secret;
+
+            const scopeIds = [
+                1, 2, 3, 4, // client
+                5, 6, 7, 8 // user
+            ];
+
+            expect((await addScopesToApp(
+                appId,
+                scopeIds,
+                client
+            )).rowCount).toBe(scopeIds.length);
+
+            const { rowCount: rowCount3, rows: rows3 } = await validateClientCredentials(
+                clientId,
+                clientSecret,
+                client
+            );
+
+            const row3 = rows3[0];
+
+            expect(rowCount3).toBe(1);
+            expect(row3.organization_id).toBe(organizationId);
+            expect(row3.scope_ids?.length).toBe(4);
+
+            const { rowCount: rowCount4 } = await client.query(
+                `
+                    SELECT 1
+                    FROM public.scopes
+                    WHERE id = ANY($1::int[])
+                        AND type = 'client'
+                    GROUP BY 1
+                    HAVING COUNT(*) = array_length($1::int[], 1);
+                `,
+                [row3.scope_ids]
+            );
+
+            expect(rowCount4).toBe(1);            
         });
     });
 
     it('should handle retrieving redirect url and scopes by client id with valid user type scopes', async () => {
         await db.withRollbackTransaction(async (client) => {
-            const { rowCount, rows } = await createOrganization(client, 'TestOrganization2');
+            const { rowCount, rows } = await createOrganization(client, 'TestOrganization');
                          
             const organizationId = rows[0].id;
 

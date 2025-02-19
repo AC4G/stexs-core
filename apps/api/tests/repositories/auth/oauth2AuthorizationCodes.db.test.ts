@@ -1,7 +1,7 @@
 import { describe, it } from "@jest/globals";
 import db from '../../../src/db';
 
-describe('OAuth2 Authorization Tokens Queries', () => {
+describe('OAuth2 Authorization Codes Queries', () => {
     it('should handle deleting authorization code', async () => {
         await db.withRollbackTransaction(async (client) => {
             // deleteAuthorizationCode

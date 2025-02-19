@@ -75,7 +75,7 @@ export async function validateClientCredentials(
     clientSecret: string,
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult<{
-    scopes: string[] | null;
+    scope_ids: number[] | null;
     organization_id: number;
 }>> {
     const query = getQuery(client);
@@ -85,12 +85,13 @@ export async function validateClientCredentials(
             text: `
                 SELECT 
                     oa.organization_id,
-                    ARRAY_AGG(s.name) AS scopes
+                    ARRAY_AGG(s.id) AS scope_ids
                 FROM public.oauth2_apps AS oa
                 LEFT JOIN public.oauth2_app_scopes AS oas ON oa.id = oas.app_id
-                LEFT JOIN public.scopes AS s ON oas.scope_id = s.id AND s.type = 'client'
+                LEFT JOIN public.scopes AS s ON oas.scope_id = s.id
                 WHERE oa.client_id = $1::uuid
                     AND oa.client_secret = $2::text
+                    AND s.type = 'client'
                 GROUP BY oa.organization_id;
             `,
             name: 'public-validate-client-credentials'
