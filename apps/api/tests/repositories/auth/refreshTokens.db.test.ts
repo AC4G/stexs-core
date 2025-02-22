@@ -17,13 +17,13 @@ import { createUser } from '../../../src/repositories/auth/users';
 describe('Refresh Token Queries', () => {
     it('should handle validating oauth2 refresh token', async () => {
         await db.withRollbackTransaction(async (client) => {
-            // validateOAuth2RefreshToken 
+            // validateOAuth2RefreshToken
         });
     });
 
     it('should handle revoking oauth2 refresh token', async () => {
         await db.withRollbackTransaction(async (client) => {
-            // revokeOAuth2RefreshToken 
+            // revokeOAuth2RefreshToken
         });
     });
 

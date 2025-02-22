@@ -8,6 +8,7 @@ export async function createOAuth2Connection(
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult<{
     id: number;
+    inserted_scopes_count: number;
 }>> {
     const query = getQuery(client);
 
@@ -18,14 +19,20 @@ export async function createOAuth2Connection(
                     INSERT INTO public.oauth2_connections (user_id, client_id)
                     VALUES ($1::uuid, $2::uuid)
                     RETURNING id
+                ), inserted_scopes AS (
+                    INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
+                    SELECT ic.id, s.id
+                    FROM inserted_connection ic
+                    CROSS JOIN UNNEST($3::int[]) AS scope_id
+                    JOIN public.scopes s ON s.id = scope_id
+                    RETURNING connection_id
                 )
-                INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
-                SELECT inserted_connection.id, scope_id
-                FROM inserted_connection
-                CROSS JOIN UNNEST($3::int[]) AS scope_id
-                RETURNING connection_id AS id;      
+                SELECT ic.id, COUNT(*)::int AS inserted_scopes_count
+                FROM inserted_connection ic
+                LEFT JOIN inserted_scopes ON ic.id = inserted_scopes.connection_id
+                GROUP BY ic.id;  
             `,
-            name: 'public-create-connection'
+            name: 'public-create-oauth2-connection'
         },
         [
             userId,
