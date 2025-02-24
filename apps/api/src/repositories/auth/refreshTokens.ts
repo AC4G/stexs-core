@@ -32,7 +32,7 @@ export async function saveRefreshToken(
     token: string,
     userId: string,
     grantType: string,
-    sessionId: string,
+    sessionId: string | null,
     connectionId: number | null,
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult> {
