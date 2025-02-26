@@ -5,7 +5,7 @@
     "type": "commonjs",
     "scripts": {
         "build": "tsc",
-        "dev": "tsc-watch --onSuccess \"node ./dist/src/server.js\"",
+        "dev": "wait-on ../../packages/utils-node/dist/index.js && tsc-watch --onSuccess \"node ./dist/src/server.js\"",
         "test:unit": "cross-env ENV=test jest --verbose --silent=false --selectProjects unit-tests",
         "test:db": "cross-env ENV=test jest --verbose --runInBand --silent=false --selectProjects db-tests",
         "test": "npm run test:unit && npm run test:db",
@@ -76,6 +76,7 @@
         "tsc-alias": "^1.8.10",
         "tsc-watch": "^6.0.4",
         "tsconfig-paths": "^4.2.0",
-        "typescript": "^5.2.2"
+        "typescript": "^5.2.2",
+        "wait-on": "^8.0.2"
     }
 }
