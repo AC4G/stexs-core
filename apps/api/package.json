@@ -7,7 +7,7 @@
         "build": "tsc",
         "dev": "tsc-watch --onSuccess \"node ./dist/src/server.js\"",
         "test:unit": "cross-env ENV=test jest --verbose --silent=false --selectProjects unit-tests",
-        "test:db": "cross-env ENV=test jest --verbose --silent=false --selectProjects db-tests",
+        "test:db": "cross-env ENV=test jest --verbose --runInBand --silent=false --selectProjects db-tests",
         "test": "npm run test:unit && npm run test:db",
         "lint": "oxlint --fix --jest-plugin --max-warnings=5 $(find ./src -type f -name \"*.ts\") $(find ./tests -type f -name \"*.ts\")",
         "clean": "rm -rf dist",

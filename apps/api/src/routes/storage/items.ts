@@ -24,6 +24,8 @@ import {
 } from 'utils-node/errors';
 import s3 from '../../s3';
 import { param } from 'express-validator';
+import { isUserAdminOrOwnerOfProjectByItemId } from '../../repositories/public/projectMembers';
+import { isClientAllowedToAccessProjectByItemId } from '../../repositories/public/items';
 
 const router = Router();
 
@@ -89,47 +91,15 @@ router.post(
 			let isAllowed = false;
 
 			if (grantType === 'password') {
-				const { rowCount } = await db.query(
-					{
-						text: `
-							SELECT 1
-							FROM public.project_members AS pm
-							JOIN public.profiles AS p ON pm.member_id = p.user_id
-							JOIN public.items AS i ON pm.project_id = i.project_id
-							WHERE i.id = $1::integer 
-								AND pm.member_id = $2::uuid 
-								AND pm.role IN ('Admin', 'Owner');
-						`,
-						name: 'storage-api-check-item-owner-user'
-					},
-					[itemId, sub],
-				);
+				const { rowCount } = await isUserAdminOrOwnerOfProjectByItemId(sub, Number(itemId));
 
 				if (rowCount === 1) isAllowed = true;
 			} else {
-				const { rowCount } = await db.query(
-					{
-						text: `
-							SELECT 1
-							FROM public.items AS i
-							JOIN public.projects AS p ON p.id = i.project_id
-							JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
-							JOIN public.organizations AS o ON o.id = p.organization_id
-							WHERE i.id = $1::integer
-								AND (
-									oa.project_id = i.project_id OR
-									oa.project_id IS NULL
-								)
-								AND o.id = $2::integer;
-						`,
-						name: 'storage-api-check-item-owner-client'
-					},
-					[
-						itemId,
-						organizationId,
-						clientId
-					],
-				);
+				const { rowCount } = await isClientAllowedToAccessProjectByItemId(
+					Number(itemId),
+					organizationId,
+					clientId
+				)
 
 				if (rowCount === 1) isAllowed = true;
 			}

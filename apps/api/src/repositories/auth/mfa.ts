@@ -1,5 +1,5 @@
-import { PoolClient } from "pg";
-import { getQuery, type QueryResult } from "../utils";
+import type { PoolClient, QueryResult } from "pg";
+import { getQuery } from "../utils";
 
 export async function getMFAStatus(
     userId: string,

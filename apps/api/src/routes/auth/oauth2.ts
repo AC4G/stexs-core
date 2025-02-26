@@ -51,6 +51,12 @@ import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 } from 'utils-node/middlewares';
+import { getRedirectUrlAndScopesByClientId } from '../../repositories/public/oauth2Apps';
+import { connectionExistsByUserIdAndClientId } from '../../repositories/public/oauth2Connections';
+import { setAuthorizationCode } from '../../repositories/auth/oauth2AuthorizationCodes';
+import { insertOrUpdateAuthorizationCodeScopes } from '../../repositories/auth/oauth2AuthorizationCodeScopes';
+import { updateConnectionScopes } from '../../repositories/public/oauth2ConnectionScopes';
+import { deleteOAuth2Connection, revokeOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
 
 const router = Router();
 
@@ -102,23 +108,7 @@ router.post(
 		} = req.body;
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				redirect_url: string;
-				scopes: string[];
-			}>(
-				`
-					SELECT 
-						oa.redirect_url,
-						ARRAY_AGG(s.name) AS scopes
-					FROM public.oauth2_apps AS oa
-					JOIN public.oauth2_app_scopes AS oas ON oa.id = oas.app_id
-					JOIN public.scopes AS s ON oas.scope_id = s.id
-					WHERE oa.client_id = $1::uuid
-						AND s.type = 'user'
-					GROUP BY oa.redirect_url;
-				`,
-				[client_id]
-			);
+			const { rowCount, rows } = await getRedirectUrlAndScopesByClientId(client_id);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`Client not found for client id: ${client_id}`);
@@ -210,43 +200,10 @@ router.post(
 		}
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					SELECT 1
-					FROM public.oauth2_connections
-					WHERE 
-						user_id = $1::uuid 
-						AND client_id = $2::uuid;
-				`,
-				[userId, client_id],
-			);
+			const { rowCount } = await connectionExistsByUserIdAndClientId(userId, client_id);
 
 			if (rowCount && rowCount > 0) {
-				await db.query(
-					`
-						INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
-						SELECT
-							c.id AS connection_id,
-							s.id AS scope_id
-						FROM public.oauth2_connections AS c
-						JOIN public.oauth2_apps AS a ON c.client_id = a.client_id
-						JOIN public.scopes AS s ON s.name = ANY($3::text[])
-						WHERE c.user_id = $1::uuid
-						AND a.client_id = $2::uuid
-						AND NOT EXISTS (
-							SELECT 1
-							FROM public.oauth2_connection_scopes ocs
-							WHERE ocs.connection_id = c.id
-							AND ocs.scope_id = s.id
-						)
-						RETURNING connection_id, scope_id;
-					`,
-					[
-						userId,
-						client_id,
-						scopes
-					],
-				);
+				await updateConnectionScopes(userId, client_id, scopes);
 
 				return res.sendStatus(204);
 			}
@@ -267,33 +224,15 @@ router.post(
 				);
 		}
 
-		const token = uuidv4();
-		let tokenId: number;
+		const code = uuidv4();
+		let codeId: number;
 		let expires: number;
 
 		try {
-			const { rowCount, rows } = await db.query<{
-				id: number;
-				created_at: Date;
-			}>(
-				`
-					WITH app_info AS (
-						SELECT id
-						FROM public.oauth2_apps
-						WHERE client_id = $3::uuid
-					)
-					INSERT INTO auth.oauth2_authorization_tokens (token, user_id, app_id)
-					VALUES ($1::uuid, $2::uuid, (SELECT id FROM app_info))
-					ON CONFLICT (user_id, app_id)
-					DO UPDATE
-					SET token = $1::uuid, created_at = CURRENT_TIMESTAMP
-					RETURNING id, created_at;
-				`,
-				[
-					token,
-					userId,
-					client_id
-				],
+			const { rowCount, rows } = await setAuthorizationCode(
+				code,
+				userId,
+				client_id
 			);
 
 			if (!rowCount || rowCount === 0) {
@@ -313,7 +252,7 @@ router.post(
 
 			logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
 
-			tokenId = rows[0].id;
+			codeId = rows[0].id;
 			expires = rows[0].created_at.getTime() + 5 * 60 * 1000;
 		} catch (e) {
 			logger.error(
@@ -333,31 +272,10 @@ router.post(
 		}
 
 		try {
-			await db.query(
-				`
-					WITH scope_ids AS (
-						SELECT id
-						FROM public.scopes
-						WHERE name = ANY($2::text[])
-					),
-					deleted_scopes AS (
-						DELETE FROM auth.oauth2_authorization_token_scopes
-						WHERE token_id = $1::integer
-							AND scope_id NOT IN (SELECT id FROM scope_ids)
-						RETURNING token_id
-					)
-					INSERT INTO auth.oauth2_authorization_token_scopes (token_id, scope_id)
-					SELECT 
-						$1::integer, 
-						id
-					FROM scope_ids
-					ON CONFLICT DO NOTHING;
-				`,
-				[tokenId, scopes],
-			);
+			await insertOrUpdateAuthorizationCodeScopes(codeId, scopes);
 		} catch (e) {
 			logger.error(
-				`Error while inserting/updating authorization token scopes for token: ${tokenId}. Error: ${
+				`Error while inserting/updating authorization token scopes for token: ${codeId}. Error: ${
 					e instanceof Error ? e.message : e
 				}`,
 			);
@@ -375,7 +293,7 @@ router.post(
 		res.json(message(
 			'Authorization token successfully created.',
 			{
-				code: token,
+				code,
 				expires
 			}
 		));
@@ -530,16 +448,7 @@ router.delete(
 		const userId = req.auth?.sub!;
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					DELETE FROM auth.refresh_tokens
-					WHERE connection_id = $1::integer
-						AND user_id = $2::uuid
-						AND session_id IS NULL
-						AND grant_type = 'authorization_code';
-				`,
-				[connectionId, userId],
-			);
+			const { rowCount } = await deleteOAuth2Connection(Number(connectionId), userId);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`No connection found for deletion for user: ${userId} and connection: ${connectionId}`);
@@ -594,16 +503,7 @@ router.delete(
 		const auth = req.auth;
 
 		try {
-			const { rowCount } = await db.query(
-				`
-					DELETE FROM auth.refresh_tokens
-					WHERE user_id = $1::uuid 
-						AND grant_type = 'authorization_code' 
-						AND token = $2::uuid 
-						AND session_id IS NULL;
-				`,
-				[auth?.sub, auth?.jti],
-			);
+			const { rowCount } = await revokeOAuth2RefreshToken(auth?.sub!, auth?.jti!);
 
 			if (!rowCount || rowCount === 0) {
 				logger.debug(`No connection found for revocation for user: ${auth?.sub}`);

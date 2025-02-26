@@ -397,7 +397,7 @@ describe('OAuth2 Token', () => {
 			rows: [
 				{
 					id: 1,
-					scopes: ['inventory.read'],
+					scope_ids: [1,2,3,4],
 					organization_id: 1,
 					project_id: 1,
 				},

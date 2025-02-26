@@ -1,10 +1,10 @@
-import { PoolClient, type QueryResult } from "pg";
+import type { PoolClient, QueryResult } from "pg";
 import { getQuery } from "../utils";
 
-export async function createTestProject(
+export async function createProject(
     client: PoolClient | undefined = undefined,
     organizationId: number,
-    name: string = 'test-project',
+    name: string,
 	description: string | null = null,
 	readme: string | null = null,
 	email: string | null = null,
@@ -33,7 +33,7 @@ export async function createTestProject(
                     $6::text
                 ) RETURNING id;
             `,
-            name: 'public-create-test-project'
+            name: 'public-create-project'
         },
         [
             organizationId,
@@ -44,4 +44,35 @@ export async function createTestProject(
             url
         ]
     );
+}
+
+export async function isClientAllowedToAccessProject(
+    organizationId: number,
+    projectId: number,
+    clientId: string,
+    client: PoolClient | undefined = undefined,
+): Promise<QueryResult> {
+    const query = getQuery(client);
+
+    return await query(
+        {
+            text: `
+                SELECT 1
+                FROM public.projects AS p
+                JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
+                WHERE p.organization_id = $1::integer 
+                    AND (
+                        oa.project_id = $2::integer OR
+                        oa.project_id IS NULL
+                    )
+                    AND p.id = $2::integer;
+            `,
+            name: 'public-is-client-allowed-to-access-project'
+        },
+        [
+            organizationId,
+            projectId,
+            clientId
+        ]
+    )
 }

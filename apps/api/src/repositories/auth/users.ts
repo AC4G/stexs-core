@@ -1,17 +1,22 @@
-import { PoolClient } from 'pg';
-import { getQuery, type QueryResult } from '../utils';
+import type { PoolClient, QueryResult } from 'pg';
+import { getQuery } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
+import { hashPassword } from '../../services/password';
 
-export async function createTestUser(
+export async function createUser(
     client: PoolClient,
     userId: string = uuidv4(),
     email: string = 'test@example.com',
-    raw_user_meta_data: Record<string, any> = { username: 'testuser' },
-    encrypted_password: string = 'save-password',
-    email_verified_at: Date | null = null,
-    verification_sent_at: Date | null = null,
-    verification_token: string | null = null
+    rawUserMetaData: Record<string, any> = { username: 'username' },
+    encryptedPassword: string | null = null,
+    emailVerifiedAt: Date | null = null,
+    verificationSentAt: Date | null = null,
+    verificationToken: string | null = null
 ): Promise<QueryResult> {
+    if (!encryptedPassword) {
+        encryptedPassword = await hashPassword('save-password');
+    }
+
     return await client.query(
         {
             text: `
@@ -33,16 +38,16 @@ export async function createTestUser(
                     $7::uuid
                 );
             `,
-            name: 'auth-create-test-user'
+            name: 'auth-create-user'
         },
         [
             userId,
             email,
-            raw_user_meta_data,
-            encrypted_password,
-            email_verified_at,
-            verification_sent_at,
-            verification_token
+            rawUserMetaData,
+            encryptedPassword,
+            emailVerifiedAt,
+            verificationSentAt,
+            verificationToken
         ],
     );
 }
@@ -141,7 +146,7 @@ export async function updateEmailVerificationToken(
 
 export async function signUpUser(
     email: string,
-    password: string,
+    encryptedPassword: string,
     username: string,
     token: string,
     client: PoolClient | undefined = undefined
@@ -170,7 +175,7 @@ export async function signUpUser(
         },
         [
             email,
-            password,
+            encryptedPassword,
             { username },
             token
         ],
@@ -179,11 +184,11 @@ export async function signUpUser(
 
 export async function signInUser(
     identifier: string,
-    password: string,
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult<{
     id: string;
     email_verified_at: Date | null;
+    encrypted_password: string;
     types: string[];
     banned_at: Date | null;
 }>> {
@@ -195,6 +200,7 @@ export async function signInUser(
                 SELECT 
                     u.id, 
                     u.email_verified_at,
+                    u.encrypted_password,
                     ARRAY_REMOVE(ARRAY[
                         CASE WHEN mfa.email = TRUE THEN 'email' END,
                         CASE WHEN mfa.totp_verified_at IS NOT NULL THEN 'totp' END
@@ -203,14 +209,13 @@ export async function signInUser(
                 FROM auth.users AS u
                 LEFT JOIN public.profiles AS p ON u.id = p.user_id
                 LEFT JOIN auth.mfa ON u.id = mfa.user_id
-                WHERE u.encrypted_password = extensions.crypt($2::text, u.encrypted_password)
                     AND (
                         (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
                     );
             `,
             name: 'auth-sign-in-user'
         },
-        [identifier, password],
+        [identifier],
     );
 }
 
@@ -278,39 +283,11 @@ export async function validateRecoveryToken(
     );
 }
 
-export async function compareNewPasswordWithOldPasswordByEmail(
-    email: string,
-    password: string,
-    client: PoolClient | undefined = undefined
-): Promise<QueryResult<{
-    is_current_password: boolean | null;
-}>> {
-    const query = getQuery(client);
-
-    return await query(
-        {
-            text: `
-                SELECT 
-                    CASE 
-                        WHEN crypt($1::text, encrypted_password) = encrypted_password 
-                        THEN true 
-                        ELSE false 
-                    END AS is_current_password
-                FROM auth.users
-                WHERE email = $2::text;
-            `,
-            name: 'auth-compare-new-password-with-old-password-by-email'
-        },
-        [password, email],
-    );
-}
-
-export async function compareNewPasswordWithOldPasswordByUserId(
+export async function getUsersEncryptedPassword(
     userId: string,
-    password: string,
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult<{
-    is_current_password: boolean | null;
+    encrypted_password: string;
 }>> {
     const query = getQuery(client);
 
@@ -318,23 +295,19 @@ export async function compareNewPasswordWithOldPasswordByUserId(
         {
             text: `
                 SELECT
-                    CASE
-                        WHEN extensions.crypt($1::text, encrypted_password) = encrypted_password
-                        THEN true
-                        ELSE false
-                    END AS is_current_password
+                    encrypted_password
                 FROM auth.users
-                WHERE id = $2::uuid;
+                WHERE id = $1::uuid;
             `,
-            name: 'auth-compare-new-password-with-old-password-by-user-id'
+            name: 'auth-get-users-encrypted-password'
         },
-        [password, userId],
+        [userId],
     );
 }
 
 export async function confirmRecovery(
     email: string,
-    password: string,
+    encryptedPassword: string,
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult> {
     const query = getQuery(client);
@@ -346,18 +319,18 @@ export async function confirmRecovery(
                 SET 
                     recovery_token = NULL,
                     recovery_sent_at = NULL,
-                    encrypted_password = crypt($1::text, gen_salt('bf'))
-                WHERE email = $2::text;
+                    encrypted_password = $2::text
+                WHERE email = $1::text;
             `,
             name: 'auth-confirm-recovery'
         },
-        [password, email],
+        [email, encryptedPassword],
     );
 }
 
 export async function changePassword(
     userId: string,
-    password: string,
+    encryptedPassword: string,
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult> {
     const query = getQuery(client);
@@ -367,12 +340,12 @@ export async function changePassword(
             text: `
                 UPDATE auth.users
                 SET
-                    encrypted_password = extensions.crypt($1::text, extensions.gen_salt('bf'))
-                WHERE id = $2::uuid;
+                    encrypted_password = $2::text
+                WHERE id = $1::uuid;
             `,
             name: 'auth-change-password'
         },
-        [password, userId],
+        [userId, encryptedPassword],
     );
 }
 

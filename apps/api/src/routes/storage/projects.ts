@@ -24,34 +24,10 @@ import {
 	transformJwtErrorMessages,
 	validateAccessToken,
 } from 'utils-node/middlewares';
-import { QueryConfig } from 'pg';
+import { isUserAdminOrOwnerOfProject } from '../../repositories/public/projectMembers';
+import { isClientAllowedToAccessProject } from '../../repositories/public/projects';
 
 const router = Router();
-
-const checkProjectOwnerUserQuery: QueryConfig = {
-	text: `
-		SELECT 1
-		FROM public.project_members AS pm
-		WHERE pm.member_id = $1::uuid 
-			AND pm.project_id = $2::integer 
-			AND pm.role IN ('Admin', 'Owner');
-	`,
-	name: 'storage-api-check-project-owner-user'
-};
-const checkProjectOwnerClientQuery: QueryConfig = {
-	text: `
-		SELECT 1
-		FROM public.projects AS p
-		JOIN public.oauth2_apps AS oa ON oa.client_id = $3::uuid
-		WHERE pm.organization_id = $1::integer 
-			AND (
-				oa.project_id = $2::integer OR
-				oa.project_id IS NULL
-			)
-			AND p.id = $2::integer;
-	`,
-	name: 'storage-api-check-project-owner-client'
-}
 
 router.get(
 	'/:projectId',
@@ -115,16 +91,14 @@ router.post(
 			let isAllowed = false;
 
 			if (grantType === 'password') {
-				const { rowCount } = await db.query(
-					checkProjectOwnerUserQuery,
-					[sub, projectId],
-				);
+				const { rowCount } = await isUserAdminOrOwnerOfProject(sub, Number(projectId));
 
 				if (rowCount === 1) isAllowed = true;
 			} else {
-				const { rowCount } = await db.query(
-					checkProjectOwnerClientQuery,
-					[organizationId, projectId, clientId],
+				const { rowCount } = await isClientAllowedToAccessProject(
+					organizationId,
+					Number(projectId),
+					clientId
 				);
 
 				if (rowCount === 1) isAllowed = true;
@@ -207,24 +181,28 @@ router.delete(
 	async (req: Request, res: Response) => {
 		const sub = req.auth?.sub!;
 		const { projectId } = req.params;
-		const grantType = req.auth?.grant_type;
-		const clientId = req.auth?.client_id;
-		const organizationId = req.auth?.organization_id;
+		const {
+			grant_type: grantType,
+			client_id: clientId,
+			organization_id: organizationId,			
+		} = req.auth as {
+			grant_type: string;
+			client_id: string;
+			organization_id: number;
+		};
 
 		try {
 			let rowsFound = false;
 
 			if (grantType === 'password') {
-				const { rowCount } = await db.query(
-					checkProjectOwnerUserQuery,
-					[sub, projectId],
-				);
+				const { rowCount } = await isUserAdminOrOwnerOfProject(sub, Number(projectId));
 
 				if (rowCount === 1) rowsFound = true;
 			} else {
-				const { rowCount } = await db.query(
-					checkProjectOwnerClientQuery,
-					[organizationId, projectId, clientId],
+				const { rowCount } = await isClientAllowedToAccessProject(
+					organizationId,
+					Number(projectId),
+					clientId
 				);
 
 				if (rowCount === 1) rowsFound = true;

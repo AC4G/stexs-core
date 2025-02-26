@@ -164,19 +164,6 @@ BEFORE INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION auth.check_username_and_email();
 
-CREATE OR REPLACE FUNCTION auth.encrypt_password()
-RETURNS TRIGGER AS $$
-BEGIN
-	NEW.encrypted_password := crypt(NEW.encrypted_password, gen_salt('bf'));
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER encrypt_password_trigger
-BEFORE INSERT ON auth.users
-FOR EACH ROW
-EXECUTE FUNCTION auth.encrypt_password();
-
 
 
 CREATE TABLE auth.mfa (
@@ -396,21 +383,21 @@ GRANT SELECT ON TABLE public.oauth2_app_scopes TO authenticated;
 
 
 
-CREATE TABLE auth.oauth2_authorization_tokens (
+CREATE TABLE auth.oauth2_authorization_codes (
 	id SERIAL PRIMARY KEY,
-	token UUID NOT NULL UNIQUE,
+	code UUID NOT NULL UNIQUE,
 	user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
 	app_id INT REFERENCES public.oauth2_apps(id) ON DELETE CASCADE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	CONSTRAINT unique_oauth2_authorization_tokens_combination UNIQUE (user_id, app_id)
+	CONSTRAINT unique_oauth2_authorization_codes_combination UNIQUE (user_id, app_id)
 );
 
-CREATE TABLE auth.oauth2_authorization_token_scopes (
+CREATE TABLE auth.oauth2_authorization_code_scopes (
 	id SERIAL PRIMARY KEY,
-	token_id INT REFERENCES auth.oauth2_authorization_tokens(id) ON DELETE CASCADE NOT NULL,
+	code_id INT REFERENCES auth.oauth2_authorization_codes(id) ON DELETE CASCADE NOT NULL,
 	scope_id INT REFERENCES public.scopes(id) ON DELETE CASCADE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	CONSTRAINT unique_oauth2_authorization_token_scopes_combination UNIQUE (token_id, scope_id)
+	CONSTRAINT unique_oauth2_authorization_code_scopes_combination UNIQUE (code_id, scope_id)
 );
 
 CREATE TABLE public.oauth2_connections (
@@ -546,3 +533,26 @@ CREATE TABLE public.oauth2_connection_scopes (
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	CONSTRAINT unique_oauth2_connection_scopes_combination UNIQUE (connection_id, scope_id)
 );
+
+
+
+CREATE OR REPLACE FUNCTION public.enforce_user_scope()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (SELECT type FROM public.scopes WHERE id = NEW.scope_id) <> 'user' THEN
+        RETURN NULL;
+    END IF;
+	
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_oauth2_authorization_code_scopes_user_trigger
+BEFORE INSERT OR UPDATE ON public.oauth2_connection_scopes
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_user_scope();
+
+CREATE TRIGGER check_oauth2_connection_scopes_user_trigger
+BEFORE INSERT OR UPDATE ON public.oauth2_connection_scopes
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_user_scope();

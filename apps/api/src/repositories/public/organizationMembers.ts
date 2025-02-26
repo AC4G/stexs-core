@@ -1,4 +1,4 @@
-import { PoolClient, type QueryResult } from "pg";
+import type { PoolClient, QueryResult } from "pg";
 import { getQuery } from "../utils";
 
 export async function joinUserToOrganization(
@@ -53,3 +53,4 @@ export async function isUserAdminOrOwnerOfOrganization(
         [userId, organizationId]
     );
 }
+

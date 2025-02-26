@@ -1,9 +1,9 @@
-import { PoolClient, type QueryResult } from "pg";
+import type { PoolClient, QueryResult } from "pg";
 import { getQuery } from "../utils";
 
-export async function createTestOrganization(
+export async function createOrganization(
     client: PoolClient | undefined = undefined,
-    name: string = 'test-organization',
+    name: string,
     displayName: string | null = null,
     description: string | null = null,
     readme: string | null = null,
@@ -33,7 +33,7 @@ export async function createTestOrganization(
                     $6::text
                 ) RETURNING id;
             `,
-            name: 'public-create-test-organization'
+            name: 'public-create-organization'
         },
         [
             name,

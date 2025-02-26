@@ -1,8 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
 import db from '../../../src/db';
 import { v4 as uuidv4 } from 'uuid';
-import { createTestUser } from '../../../src/repositories/auth/users';
-import { createTestOrganization } from '../../../src/repositories/public/organizations';
+import { createUser } from '../../../src/repositories/auth/users';
+import { createOrganization } from '../../../src/repositories/public/organizations';
 import { joinUserToOrganization } from '../../../src/repositories/public/organizationMembers';
 import { isUserAdminOrOwnerOfOrganization } from '../../../src/repositories/public/organizationMembers';
 
@@ -17,17 +17,16 @@ describe('Organization Members Queries', () => {
                 { role: null, expectedRowCount: 0 },
             ];
 
-            const { rowCount, rows } = await createTestOrganization(client);
+            const { rowCount, rows } = await createOrganization(client, 'TestOrganization');
 
             expect(rowCount).toBe(1);
-            expect(rows[0].id).toEqual(expect.any(Number));
 
             const organizationId = rows[0].id;
 
             for (const [index, { role, expectedRowCount }] of roles.entries()) {
                 const userId = uuidv4();
 
-                expect((await createTestUser(
+                expect((await createUser(
                     client,
                     userId,
                     `${index}test@example.com`,
@@ -56,19 +55,20 @@ describe('Organization Members Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
             )).rowCount).toBe(1);
 
-            const { rowCount, rows } = await createTestOrganization(client);
+            const { rowCount, rows } = await createOrganization(client, 'TestOrganization');
+
+            const organizationId = rows[0].id;
 
             expect(rowCount).toBe(1);
-            expect(rows[0].id).toEqual(expect.any(Number));
 
             expect((await joinUserToOrganization(
                 userId,
-                rows[0].id,
+                organizationId,
                 'Owner',
                 client
             )).rowCount).toBe(1);
@@ -86,14 +86,14 @@ describe('Organization Members Queries', () => {
                     WHERE member_id = $1::uuid
                         AND organization_id = $2::integer;
                 `,
-                [userId, rows[0].id]
+                [userId, organizationId]
             );
 
             const row2 = rows2[0];
 
             expect(rowCount2).toBe(1);
             expect(row2.member_id).toBe(userId);
-            expect(row2.organization_id).toBe(rows[0].id);
+            expect(row2.organization_id).toBe(organizationId);
             expect(row2.role).toBe('Owner');
             expect(row2.created_at).toBeInstanceOf(Date);
             expect(row2.updated_at).toBeNull();

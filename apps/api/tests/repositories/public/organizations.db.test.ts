@@ -1,11 +1,13 @@
 import { describe, it, expect } from '@jest/globals';
 import db from '../../../src/db';
-import { createTestOrganization } from '../../../src/repositories/public/organizations';
+import { createOrganization } from '../../../src/repositories/public/organizations';
 
 describe('Organizations Queries', () => {
     it('should handle creating a test organization', async () => {
         await db.withRollbackTransaction(async (client) => {
-            const { rowCount, rows } = await createTestOrganization(client);
+            const name = 'TestOrganization';
+            
+            const { rowCount, rows } = await createOrganization(client, name);
 
             expect(rowCount).toBe(1);
             expect(rows[0].id).toEqual(expect.any(Number));
@@ -38,7 +40,7 @@ describe('Organizations Queries', () => {
 
             expect(rowCount2).toBe(1);
             expect(row2.id).toEqual(expect.any(Number));
-            expect(row2.name).toBe('test-organization');
+            expect(row2.name).toBe(name);
             expect(row2.display_name).toBeNull();
             expect(row2.description).toBeNull();
             expect(row2.readme).toBeNull();

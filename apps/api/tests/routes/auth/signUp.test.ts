@@ -366,7 +366,7 @@ describe('Sign Up', () => {
 
 		expect(response.status).toBe(201);
 		expect(response.body).toEqual(
-			message('Sign up successful. Check your email for an verification link!').onTest(),
+			message('Sign up successful. Check your email for a verification link!').onTest(),
 		);
 	});
 });

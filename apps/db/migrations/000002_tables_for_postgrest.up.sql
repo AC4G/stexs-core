@@ -3,7 +3,6 @@ CREATE TABLE public.items (id SERIAL PRIMARY KEY,
 	parameter JSONB DEFAULT '{}'::JSONB NOT NULL,
 	description VARCHAR(800),
 	project_id INT REFERENCES public.projects (id) ON DELETE CASCADE NOT NULL,
-	creator_id UUID REFERENCES public.profiles (user_id) ON DELETE SET NULL,
 	is_private BOOLEAN DEFAULT FALSE NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated_at TIMESTAMPTZ,
@@ -13,8 +12,8 @@ CREATE TABLE public.items (id SERIAL PRIMARY KEY,
 	CONSTRAINT name_allowed_characters CHECK (name ~ '^[^\s]+(\s[^\s]+)*$')
 );
 
-GRANT INSERT (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
-GRANT UPDATE (name, parameter, project_id, creator_id, is_private) ON TABLE public.items TO authenticated;
+GRANT INSERT (name, parameter, project_id, is_private) ON TABLE public.items TO authenticated;
+GRANT UPDATE (name, parameter, project_id, is_private) ON TABLE public.items TO authenticated;
 GRANT DELETE ON TABLE public.items TO authenticated;
 GRANT SELECT ON TABLE public.items TO anon;
 GRANT SELECT ON TABLE public.items TO authenticated;

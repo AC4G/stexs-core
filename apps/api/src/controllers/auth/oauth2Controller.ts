@@ -13,6 +13,10 @@ import generateAccessToken from '../../services/jwtService';
 import { Request } from 'express-jwt';
 import logger from '../../logger';
 import { isExpired } from 'utils-node';
+import { deleteAuthorizationCode, validateAuthorizationCode } from '../../repositories/auth/oauth2AuthorizationCodes';
+import { createOAuth2Connection } from '../../repositories/public/oauth2Connections';
+import { validateClientCredentials } from '../../repositories/public/oauth2Apps';
+import { validateOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
 
 export async function authorizationCodeController(req: Request, res: Response) {
 	const {
@@ -27,56 +31,14 @@ export async function authorizationCodeController(req: Request, res: Response) {
 
 	let userId: string;
 	let organization_id: number;
-	let tokenId: number;
-	let scopes: string[];
+	let codeId: number;
+	let scopes: number[];
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			id: number;
-			user_id: string;
-			scopes: string[];
-			created_at: string;
-			organization_id: number;
-		}>(
-			`
-				WITH app_info AS (
-					SELECT 
-						id, 
-						organization_id
-					FROM public.oauth2_apps
-					WHERE client_id = $2::uuid
-						AND client_secret = $3::text
-				),
-				token_info AS (
-					SELECT 
-						aot.id, 
-						aot.user_id, 
-						aot.created_at, 
-						ai.organization_id
-					FROM auth.oauth2_authorization_tokens AS aot
-					JOIN app_info AS ai ON aot.app_id = ai.id
-					WHERE aot.token = $1::uuid
-				),
-				token_scopes AS (
-					SELECT ARRAY(SELECT scope_id
-						FROM auth.oauth2_authorization_token_scopes
-						WHERE token_id IN (SELECT id FROM token_info)
-					) AS scopes
-				)
-				SELECT 
-					id, 
-					user_id, 
-					scopes, 
-					created_at, 
-					organization_id
-				FROM token_info
-				CROSS JOIN token_scopes;
-			`,
-			[
-				code,
-				client_id,
-				clientSecret
-			],
+		const { rowCount, rows } = await validateAuthorizationCode(
+			code,
+			client_id,
+			clientSecret
 		);
 
 		if (!rowCount || rowCount === 0) {
@@ -122,7 +84,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 		}
 
 		({
-			id: tokenId,
+			id: codeId,
 			user_id: userId,
 			scopes,
 			organization_id
@@ -147,13 +109,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 	}
 
 	try {
-		const { rowCount } = await db.query(
-			`
-				DELETE FROM auth.oauth2_authorization_tokens
-				WHERE id = $1::integer;
-			`,
-			[tokenId],
-		);
+		const { rowCount } = await deleteAuthorizationCode(codeId);
 
 		if (!rowCount || rowCount === 0) {
 			logger.error(
@@ -189,26 +145,10 @@ export async function authorizationCodeController(req: Request, res: Response) {
 	let connectionId: number;
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			id: number;
-		}>(
-			`
-				WITH inserted_connection AS (
-					INSERT INTO public.oauth2_connections (user_id, client_id)
-					VALUES ($1::uuid, $2::uuid)
-					RETURNING id
-				)
-				INSERT INTO public.oauth2_connection_scopes (connection_id, scope_id)
-				SELECT inserted_connection.id, scope_id
-				FROM inserted_connection
-				CROSS JOIN UNNEST($3::int[]) AS scope_id
-				RETURNING connection_id AS id;      
-			`,
-			[
-				userId,
-				client_id,
-				scopes
-			],
+		const { rowCount, rows } = await createOAuth2Connection(
+			userId,
+			client_id,
+			scopes
 		);
 
 		if (!rowCount || rowCount === 0) {
@@ -290,34 +230,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
 	let organization_id: number;
 
 	try {
-		const { rowCount, rows } = await db.query<{
-			scopes: string[] | null;
-			organization_id: number;
-		}>(
-			`
-				WITH app_info AS (
-					SELECT 
-						id, 
-						organization_id
-					FROM public.oauth2_apps
-					WHERE client_id = $1::uuid
-						AND client_secret = $2::text
-				),
-				app_scopes AS (
-					SELECT STRING_TO_ARRAY(STRING_AGG(s.name, ','), ',') AS scopes
-					FROM app_info AS ai
-					JOIN public.oauth2_app_scopes AS oas ON ai.id = oas.app_id
-					JOIN public.scopes AS s ON oas.scope_id = s.id
-					WHERE s.type = 'client'
-				)
-				SELECT 
-					scopes, 
-					organization_id
-				FROM app_info
-				CROSS JOIN app_scopes;
-			`,
-			[client_id, client_secret],
-		);
+		const { rowCount, rows } = await validateClientCredentials(client_id, client_secret);
 
 		if (!rowCount || rowCount === 0) {
 			logger.debug(`Invalid client credentials for client: ${client_id}`);
@@ -340,7 +253,7 @@ export async function clientCredentialsController(req: Request, res: Response) {
 				);
 		}
 
-		const scopes = rows[0].scopes;
+		const scopes = rows[0].scope_ids;
 		({ organization_id } = rows[0]);
 
 		if (!scopes || scopes.length === 0) {
@@ -413,17 +326,7 @@ export async function refreshTokenController(req: Request, res: Response) {
 	};
 
 	try {
-		const { rowCount } = await db.query(
-			`
-				SELECT 1
-				FROM auth.refresh_tokens
-				WHERE token = $1::uuid 
-					AND user_id = $2::uuid 
-					AND grant_type = 'authorization_code' 
-					AND session_id IS NULL;
-			`,
-			[jti, sub],
-		);
+		const { rowCount } = await validateOAuth2RefreshToken(jti, sub);
 
 		if (!rowCount || rowCount === 0) {
 			logger.debug(`Invalid refresh token for user: ${sub} and client: ${client_id}`);

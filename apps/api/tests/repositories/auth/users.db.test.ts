@@ -10,15 +10,14 @@ import {
     getEmailVerifiedStatus,
     updateEmailVerificationToken,
     verifyEmail,
-    createTestUser,
+    createUser,
     signUpUser,
     signInUser,
     setRecoveryToken,
     confirmRecovery,
-    compareNewPasswordWithOldPasswordByEmail,
     validateRecoveryToken,
     getUserData,
-    compareNewPasswordWithOldPasswordByUserId,
+    getUsersEncryptedPassword,
     changePassword,
     initalizeEmailChange,
     validateEmailChange,
@@ -26,6 +25,7 @@ import {
 } from '../../../src/repositories/auth/users';
 import { generateCode } from 'utils-node';
 import { compare } from 'bcrypt';
+import { hashPassword } from '../../../src/services/password';
 
 describe('User Queries', () => {
     it('should handle initializing email change', async () => {
@@ -34,7 +34,7 @@ describe('User Queries', () => {
             const newEmail = 'newemail@example.com';
             const emailChangeCode = generateCode(8);
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
@@ -74,7 +74,7 @@ describe('User Queries', () => {
             const emailChangeCode = generateCode(8);
             const wrongEmailChangeCode = generateCode(8);
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
@@ -111,7 +111,7 @@ describe('User Queries', () => {
             const newEmail = 'newemail@example.com';
             const emailChangeCode = generateCode(8);
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId
             )).rowCount).toBe(1);
@@ -154,7 +154,7 @@ describe('User Queries', () => {
             expect(rowCount).toBe(1);
             expect(row.email).toBe(newEmail);
             expect(row.email_verified_at).toBeInstanceOf(Date);
-            expect(row.email_verified_at?.getTime()).toBeGreaterThan(now - 100);
+            expect(row.email_verified_at?.getTime()).toBeGreaterThan(now - 1000);
             expect(row.email_change).toBeNull();
             expect(row.email_change_sent_at).toBeNull();
             expect(row.email_change_code).toBeNull();
@@ -165,31 +165,31 @@ describe('User Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
             const email = 'test@example.com';
-            const password = 'save-password';
             const newPassword = 'new-password';
+            const newPasswordHash = await hashPassword(newPassword);
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email,
-                { username: 'testuser' },
-                password
+                { username: 'testuser' }
             )).rowCount).toBe(1);
             
             expect((await changePassword(
                 userId,
-                newPassword,
+                newPasswordHash,
                 client
             )).rowCount).toBe(1);
 
-            const { rowCount, rows } = await compareNewPasswordWithOldPasswordByUserId(
+            const { rowCount, rows } = await getUsersEncryptedPassword(
                 userId,
-                newPassword,
                 client
             );
 
+            const row = rows[0];
+
             expect(rowCount).toBe(1);
-            expect(rows[0].is_current_password).toBe(true);
+            expect(await compare(newPassword, row.encrypted_password)).toBe(true);
         });
     });
 
@@ -199,32 +199,31 @@ describe('User Queries', () => {
             const email = 'test@example.com';
             const password = 'save-password';
             const differentPassword = 'different-password';
+            const passwordHash = await hashPassword(password);
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email,
                 { username: 'testuser' },
-                password
+                passwordHash
             )).rowCount).toBe(1);
 
-            const { rowCount, rows } = await compareNewPasswordWithOldPasswordByUserId(
+            const { rowCount, rows } = await getUsersEncryptedPassword(
                 userId,
-                password,
                 client
             );
             
             expect(rowCount).toBe(1);
-            expect(rows[0].is_current_password).toBe(true);
+            expect(await compare(password, rows[0].encrypted_password)).toBe(true);
 
-            const { rowCount: rowCount2, rows: rows2 } = await compareNewPasswordWithOldPasswordByUserId(
+            const { rowCount: rowCount2, rows: rows2 } = await getUsersEncryptedPassword(
                 userId,
-                differentPassword,
                 client
             );
 
             expect(rowCount2).toBe(1);
-            expect(rows2[0].is_current_password).toBe(false);
+            expect(await compare(differentPassword, rows2[0].encrypted_password)).toBe(false);
         });
     });
 
@@ -234,7 +233,7 @@ describe('User Queries', () => {
             const email = 'test@example.com';
             const username = 'testuser';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email,
@@ -259,7 +258,7 @@ describe('User Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 email,
@@ -277,7 +276,7 @@ describe('User Queries', () => {
             const email = 'test@example.com';
             const token = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 email,
@@ -316,7 +315,7 @@ describe('User Queries', () => {
             const email = 'test@example.com';
             const token = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 email,
@@ -339,47 +338,14 @@ describe('User Queries', () => {
         });
     });
 
-    it('should handle checking if the new password equals the old one by email', async () => {
-        await db.withRollbackTransaction(async (client) => {
-            const email = 'test@example.com';
-            const password = 'save-password';
-            const differentPassword = 'different-password';
-
-            expect((await createTestUser(
-                client,
-                uuidv4(),
-                email,
-                { username: 'testuser' },
-                password
-            )).rowCount).toBe(1);
-
-            const { rowCount, rows } = await compareNewPasswordWithOldPasswordByEmail(
-                email,
-                password,
-                client
-            );
-            
-            expect(rowCount).toBe(1);
-            expect(rows[0].is_current_password).toBe(true);
-
-            const { rowCount: rowCount2, rows: rows2 } = await compareNewPasswordWithOldPasswordByEmail(
-                email,
-                differentPassword,
-                client
-            );
-
-            expect(rowCount2).toBe(1);
-            expect(rows2[0].is_current_password).toBe(false);
-        });
-    });
-
     it('should handle confirming recovery', async () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
             const token = uuidv4();
             const newPassword = 'new-password';
+            const newPasswordHash = await hashPassword(newPassword);
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 email,
@@ -393,16 +359,18 @@ describe('User Queries', () => {
 
             expect((await confirmRecovery(
                 email,
-                newPassword,
+                newPasswordHash,
                 client
             )).rowCount).toBe(1);
 
             const { rowCount, rows } = await client.query<{
+                encrypted_password: string;
                 recovery_token: string | null;
                 recovery_sent_at: Date | null;
             }>(
                 `
                     SELECT
+                        encrypted_password,
                         recovery_token,
                         recovery_sent_at
                     FROM auth.users
@@ -414,6 +382,7 @@ describe('User Queries', () => {
             const row = rows[0];
         
             expect(rowCount).toBe(1);
+            expect(await compare(newPassword, row.encrypted_password)).toBe(true);
             expect(row.recovery_token).toBe(null);
             expect(row.recovery_sent_at).toBe(null);
         });
@@ -424,22 +393,24 @@ describe('User Queries', () => {
             const id = uuidv4();
             const email = 'test@example.com';
             const password = 'save-password';
+            const passwordHash = await hashPassword(password);
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 id,
                 email,
                 { username: 'testuser' },
-                password
+                passwordHash
             )).rowCount).toBe(1);
 
-            const { rowCount, rows } = await signInUser(email, password, client);
+            const { rowCount, rows } = await signInUser(email, client);
 
             const row = rows[0];
 
             expect(rowCount).toBe(1);
             expect(row.id).toBe(id);
             expect(row.email_verified_at).toBeNull();
+            expect(await compare(password, row.encrypted_password)).toBe(true);
             expect(row.types).toEqual(['email']);
             expect(row.banned_at).toBeNull();
         });
@@ -451,22 +422,24 @@ describe('User Queries', () => {
             const email = 'test@example.com';
             const username = 'testuser';
             const password = 'save-password';
+            const passwordHash = await hashPassword(password);
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 id,
                 email,
                 { username },
-                password
+                passwordHash
             )).rowCount).toBe(1);
 
-            const { rowCount, rows } = await signInUser(username, password, client);
+            const { rowCount, rows } = await signInUser(username, client);
 
             const row = rows[0];
 
             expect(rowCount).toBe(1);
             expect(row.id).toBe(id);
             expect(row.email_verified_at).toBeNull();
+            expect(await compare(password, row.encrypted_password)).toBe(true);
             expect(row.types).toEqual(['email']);
             expect(row.banned_at).toBeNull();
         });
@@ -475,33 +448,34 @@ describe('User Queries', () => {
     it('should handle sign in with invalid credentials', async () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
-            const password = 'save-password';
             const wrongPassword = 'wrong-password';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 email,
                 { username: 'testuser' },
-                password
+                null
             )).rowCount).toBe(1);
 
-            const response = await signInUser(email, wrongPassword, client);            
+            const response = await signInUser(email, client);            
 
-            expect(response.rowCount).toBe(0);
+            expect(response.rowCount).toBe(1);
+            expect(await compare(wrongPassword, response.rows[0].encrypted_password)).toBe(false);
         });
     });
 
     it('should handle sing up a new user', async () => {
         await db.withRollbackTransaction(async (client) => {      
             const email = 'test@example.com';
-            const password = 'save-password'; 
+            const password = 'save-password';
+            const passwordHash = await hashPassword(password);
             const username = 'testuser';
             const token = uuidv4();
 
             expect((await signUpUser(
                 email,
-                password,
+                passwordHash,
                 username,
                 token,
                 client
@@ -644,14 +618,14 @@ describe('User Queries', () => {
     it('should handle signing upa new user with existing email', async () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
-            const password = 'save-password';
+            const passwordHash = await hashPassword('save-password');
             const username = 'testuser';
             const differentUsername = 'differentuser';
             const token = uuidv4();
 
             expect((await signUpUser(
                 email,
-                password,
+                passwordHash,
                 username,
                 token,
                 client
@@ -660,7 +634,7 @@ describe('User Queries', () => {
             try {
                 await signUpUser(
                     email,
-                    password,
+                    passwordHash,
                     differentUsername,
                     token,
                     client
@@ -677,13 +651,13 @@ describe('User Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
             const differentEmail = 'different@example.com';
-            const password = 'save-password';
+            const passwordHash = await hashPassword('save-password');
             const username = 'testuser';
             const token = uuidv4();
 
             expect((await signUpUser(
                 email,
-                password,
+                passwordHash,
                 username,
                 token,
                 client
@@ -692,7 +666,7 @@ describe('User Queries', () => {
             try {
                 await signUpUser(
                     differentEmail,
-                    password,
+                    passwordHash,
                     username,
                     token,
                     client
@@ -714,12 +688,12 @@ describe('User Queries', () => {
             const email_verified_at = new Date();
             const verification_sent_at = new Date();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 email,
                 { username: 'testuser' },
-                'save-password',
+                null,
                 email_verified_at,
                 verification_sent_at,
                 token
@@ -739,12 +713,12 @@ describe('User Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const email = 'test@example.com';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 email,
                 { username: 'testuser' },
-                'save-password',
+                null,
                 null,
                 new Date(),
                 uuidv4()
@@ -781,12 +755,12 @@ describe('User Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const email_verified_at = new Date();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 'test@example.com',
                 { username: 'testuser' },
-                'save-password',
+                null,
                 email_verified_at,
                 new Date(),
                 uuidv4(),
@@ -804,12 +778,12 @@ describe('User Queries', () => {
             const email = 'test@example.com';
             const token = uuidv4();
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 uuidv4(),
                 email,
                 { username: 'testuser' },
-                'save-password',
+                null,
                 null,
                 new Date(),
                 uuidv4()
@@ -845,7 +819,7 @@ describe('User Queries', () => {
             const email = 'test@example.com';
             const username = 'testuser';
 
-            expect((await createTestUser(
+            expect((await createUser(
                 client,
                 userId,
                 email,
