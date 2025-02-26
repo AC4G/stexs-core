@@ -21,6 +21,7 @@ import {
 	TOKEN_REQUIRED,
 	TYPE_REQUIRED,
 	UNSUPPORTED_TYPE,
+	USER_NOT_FOUND,
 } from 'utils-node/errors';
 import logger from '../../logger';
 import {
@@ -36,6 +37,7 @@ import {
 } from '../../../env-config';
 import { validateMFA } from '../../services/mfaService';
 import { signInUser } from '../../repositories/auth/users';
+import { compare } from 'bcrypt';
 
 const router = Router();
 
@@ -68,22 +70,42 @@ router.post(
 		logger.debug(`Sign in for user: ${identifier} and identifier type: ${typeof identifier}`);
 
 		try {
-			const { rowCount, rows } = await signInUser(identifier, password);
+			const { rowCount, rows } = await signInUser(identifier);
 
 			if (!rowCount || rowCount === 0) {
-				logger.debug(`Invalid credentials for sign in for user: ${identifier}`);
+				logger.debug(`No user found: ${identifier}`);
+				return res
+					.status(404)
+					.json(
+						message(
+							'User not found.',
+							{},
+							[
+								{
+									info: USER_NOT_FOUND,
+									data: {
+										location: 'body',
+										paths: ['identifier'],
+									},
+								},
+							]
+						)
+					);
+			}
+
+			const isRightPassword = await compare(password, rows[0].encrypted_password);
+
+			if (!isRightPassword) {
+				logger.debug(`Invalid credentials for user: ${identifier}`);
 				return res
 					.status(400)
 					.json(
 						message(
-							'Sign in failed.',
+							'Invalid credentials.',
 							{},
 							[
 								{
-									info: {
-										code: INVALID_CREDENTIALS.code,
-										message: INVALID_CREDENTIALS.messages[0],
-									},
+									info: INVALID_CREDENTIALS,
 									data: {
 										location: 'body',
 										paths: ['identifier', 'password'],

@@ -27,6 +27,7 @@ import {
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
+import { hashPassword } from '../../../src/services/password';
 
 jest.mock('../../../src/db', () => {
 	return {
@@ -383,10 +384,13 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
+		const password = 'Test12345.';
+		const passwordHash = await hashPassword(password);
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					is_current_password: true,
+					encrypted_password: passwordHash,
 				},
 			],
 			rowCount: 1,
@@ -397,7 +401,7 @@ describe('Recovery Routes', () => {
 			.send({
 				email: 'test@example.com',
 				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-				password: 'Test12345.',
+				password,
 			});
 
 		expect(response.status).toBe(400);
@@ -424,10 +428,12 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
+		const passwordHash = await hashPassword('Test12345678.');
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					is_current_password: false,
+					encrypted_password: passwordHash,
 				},
 			],
 			rowCount: 1,
@@ -443,7 +449,7 @@ describe('Recovery Routes', () => {
 			.send({
 				email: 'test@example.com',
 				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
-				password: 'Test12345.',
+				password: 'Test123456.',
 			});
 
 		expect(response.status).toBe(200);

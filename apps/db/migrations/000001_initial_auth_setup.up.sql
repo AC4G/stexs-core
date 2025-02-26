@@ -164,19 +164,6 @@ BEFORE INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION auth.check_username_and_email();
 
-CREATE OR REPLACE FUNCTION auth.encrypt_password()
-RETURNS TRIGGER AS $$
-BEGIN
-	NEW.encrypted_password := crypt(NEW.encrypted_password, gen_salt('bf'));
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER encrypt_password_trigger
-BEFORE INSERT ON auth.users
-FOR EACH ROW
-EXECUTE FUNCTION auth.encrypt_password();
-
 
 
 CREATE TABLE auth.mfa (

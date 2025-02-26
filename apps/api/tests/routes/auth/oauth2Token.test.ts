@@ -418,8 +418,6 @@ describe('OAuth2 Token', () => {
 				client_secret: 'secret',
 			});
 
-		console.log(response.body);
-
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
 			message('Access token retrieved successfully.', {

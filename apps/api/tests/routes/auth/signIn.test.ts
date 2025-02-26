@@ -21,10 +21,12 @@ import {
 	PASSWORD_REQUIRED,
 	TOKEN_REQUIRED,
 	TYPE_REQUIRED,
+	USER_NOT_FOUND,
 } from 'utils-node/errors';
 import { NextFunction } from 'express';
 import { message } from 'utils-node/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
+import { hashPassword } from '../../../src/services/password';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -115,7 +117,7 @@ describe('Sign In Route', () => {
 		);
 	});
 
-	it('should handle sign in with invalid credentials', async () => {
+	it('should handle sign in to an unknown user', async () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [],
 			rowCount: 0,
@@ -128,17 +130,14 @@ describe('Sign In Route', () => {
 				password: 'Test123.',
 			});
 
-		expect(response.status).toBe(400);
+		expect(response.status).toBe(404);
 		expect(response.body).toEqual(
-			message('Sign in failed.', {}, [
+			message('User not found.', {}, [
 				{
-					info: {
-						code: INVALID_CREDENTIALS.code,
-						message: INVALID_CREDENTIALS.messages[0],
-					},
+					info: USER_NOT_FOUND,
 					data: {
 						location: 'body',
-						paths: ['identifier', 'password'],
+						paths: ['identifier'],
 					},
 				},
 			]).onTest(),
@@ -146,10 +145,14 @@ describe('Sign In Route', () => {
 	});
 
 	it('should handle sign in without verified email', async () => {
+		const password = 'Test123.';
+		const passwordHash = await hashPassword(password);
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
 					email_verified_at: null,
+					encrypted_password: passwordHash,
 				},
 			],
 			rowCount: 1,
@@ -159,23 +162,25 @@ describe('Sign In Route', () => {
 			.post('/auth/sign-in')
 			.send({
 				identifier: 'test',
-				password: 'Test123.',
+				password,
 			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			message('Email not verified.', {}, [
-				{ info: EMAIL_NOT_VERIFIED }
-			]).onTest(),
+			message('Email not verified.', {}, [{ info: EMAIL_NOT_VERIFIED }]).onTest(),
 		);
 	});
 
 	it('should handle sign in initialization with email MFA', async () => {
+		const password = 'Test123.';
+		const passwordHash = await hashPassword(password);
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
 					id: 1,
 					email_verified_at: '2023-08-21T12:34:56Z',
+					encrypted_password: passwordHash,
 					types: ['email'],
 				},
 			],
@@ -186,7 +191,7 @@ describe('Sign In Route', () => {
 			.post('/auth/sign-in')
 			.send({
 				identifier: 'test',
-				password: 'Test123.',
+				password,
 			});
 
 		expect(response.status).toBe(200);
@@ -202,11 +207,15 @@ describe('Sign In Route', () => {
 	});
 
 	it('should handle sign in initialization with totp MFA', async () => {
+		const password = 'Test123.';
+		const passwordHash = await hashPassword(password);
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
 					id: 1,
 					email_verified_at: '2023-08-21T12:34:56Z',
+					encrypted_password: passwordHash,
 					types: ['totp'],
 				},
 			],
@@ -217,7 +226,7 @@ describe('Sign In Route', () => {
 			.post('/auth/sign-in')
 			.send({
 				identifier: 'test',
-				password: 'Test123.',
+				password,
 			});
 
 		expect(response.status).toBe(200);

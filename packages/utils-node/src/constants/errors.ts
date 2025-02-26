@@ -52,7 +52,7 @@ export const IDENTIFIER_REQUIRED = {
 };
 export const INVALID_CREDENTIALS = {
 	code: 'INVALID_CREDENTIALS',
-	messages: ['Invalid credentials. Verify your username/email and password.'],
+	message: 'Invalid credentials. Verify your username/email and password.',
 };
 export const EMAIL_NOT_VERIFIED = {
 	code: 'EMAIL_NOT_VERIFIED',

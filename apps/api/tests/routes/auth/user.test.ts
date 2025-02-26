@@ -29,6 +29,7 @@ import {
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
 import { getTOTPForVerification } from '../../../src/services/totpService';
+import { hashPassword } from '../../../src/services/password';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -279,10 +280,13 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
+		const password = 'Test12345.';
+		const passwordHash = await hashPassword(password);
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					is_current_password: true,
+					encrypted_password: passwordHash,
 				},
 			],
 			rowCount: 1,
@@ -291,7 +295,7 @@ describe('User Routes', () => {
 		const response = await request(server)
 			.post('/auth/user/password')
 			.send({
-				password: 'Test12345.',
+				password,
 				code,
 				type: 'totp',
 			});
@@ -325,10 +329,13 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
+		const passwordHash = await hashPassword('Test12345.');
+		const newPassword = 'NewTest12345.';
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					is_current_password: false,
+					encrypted_password: passwordHash,
 				},
 			],
 			rowCount: 1,
@@ -342,7 +349,7 @@ describe('User Routes', () => {
 		const response = await request(server)
 			.post('/auth/user/password')
 			.send({
-				password: 'Test12345.',
+				password: newPassword,
 				code,
 				type: 'totp',
 			});

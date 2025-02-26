@@ -277,7 +277,6 @@ describe('Refresh Token Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
             const email = 'test@example.com';
-            const password = 'save-password';
             const sessionId = uuidv4();
 
             expect((await createUser(
@@ -285,7 +284,7 @@ describe('Refresh Token Queries', () => {
                 userId,
                 email,
                 { username: 'testuser' },
-                password
+                null
             )).rowCount).toBe(1);
 
             expect((await saveRefreshToken(
@@ -305,14 +304,13 @@ describe('Refresh Token Queries', () => {
         await db.withRollbackTransaction(async (client) => {
             const userId = uuidv4();
             const email = 'test@example.com';
-            const password = 'save-password';
 
             expect((await createUser(
                 client,
                 userId,
                 email,
                 { username: 'testuser' },
-                password
+                null
             )).rowCount).toBe(1);
 
             for (let i = 0; i < 5; i++) {

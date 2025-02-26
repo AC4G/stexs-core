@@ -9,6 +9,7 @@ import {
 	INVALID_REQUEST,
 	INVALID_UUID,
 	NEW_PASSWORD_EQUALS_CURRENT,
+	PASSWORD_CHANGE_FAILED,
 	PASSWORD_REQUIRED,
 	RECOVERY_CONFIRM_WITHOUT_RECOVERY_REQUESTED,
 	RECOVERY_LINK_EXPIRED,
@@ -25,12 +26,13 @@ import { validate } from 'utils-node/middlewares';
 import logger from '../../logger';
 import { isExpired } from 'utils-node';
 import {
-	compareNewPasswordWithOldPasswordByEmail,
+	getUsersEncryptedPassword,
 	confirmRecovery,
 	setRecoveryToken,
 	userExistsByEmail,
 	validateRecoveryToken
 } from '../../repositories/auth/users';
+import { compare } from 'bcrypt';
 
 const router = Router();
 
@@ -300,30 +302,22 @@ router.post(
 		}
 
 		try {
-			const { rowCount, rows } = await compareNewPasswordWithOldPasswordByEmail(email, password);
+			const { rowCount, rows } = await getUsersEncryptedPassword(email);
 
 			if (!rowCount || rowCount === 0) {
-				logger.debug(`Invalid password provided for recovery for email: ${email}`);
+				logger.error(`Password change failed for email: ${email}`);
 				return res
-					.status(400)
+					.status(500)
 					.json(
 						message(
-							'Invalid password provided.',
+							'An unexpected error occurred while changing password.',
 							{},
-							[
-								{
-									info: INVALID_PASSWORD,
-									data: {
-										path: 'password',
-										location: 'body',
-									},
-								},
-							]
+							[{ info: PASSWORD_CHANGE_FAILED }]
 						)
 					);
 			}
 
-			if (rows[0].is_current_password) {
+			if (await compare(password, rows[0].encrypted_password)) {
 				logger.debug(`New password matches the current password for email: ${email}`);
 				return res
 					.status(400)

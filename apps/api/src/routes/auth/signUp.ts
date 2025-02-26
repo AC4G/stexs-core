@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 import logger from '../../logger';
 import { validate } from 'utils-node/middlewares';
 import { signUpUser } from '../../repositories/auth/users';
+import { hashPassword } from '../../services/password';
 
 const router = Router();
 
@@ -91,11 +92,12 @@ router.post(
 			email: string;
 		} = req.body;
 		const token = uuidv4();
+		const passwordHash = await hashPassword(password);
 
 		try {
 			const { rowCount } = await signUpUser(
 				email,
-				password,
+				passwordHash,
 				username,
 				token
 			);
@@ -117,7 +119,7 @@ router.post(
 
 			res
 				.status(201)
-				.json(message('Sign up successful. Check your email for an verification link!'));
+				.json(message('Sign up successful. Check your email for a verification link!'));
 		} catch (e) {
 			const err = e as { hint: string | null };
 

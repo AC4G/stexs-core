@@ -1,4 +1,4 @@
-import { PoolClient } from "pg";
+import type { PoolClient } from "pg";
 import db from "../db";
 
 export function getQuery(client: PoolClient | undefined = undefined) {

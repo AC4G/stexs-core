@@ -40,7 +40,7 @@ import {
 import { validateMFA } from '../../services/mfaService';
 import {
 	changePassword,
-	compareNewPasswordWithOldPasswordByUserId,
+	getUsersEncryptedPassword,
 	finalizeEmailChange,
 	getUserData,
 	initalizeEmailChange,
@@ -48,6 +48,7 @@ import {
 	validateEmailChange
 } from '../../repositories/auth/users';
 import { getActiveUserSessions } from '../../repositories/auth/refreshTokens';
+import { compare } from 'bcrypt';
 
 const router = Router();
 
@@ -205,7 +206,7 @@ router.post(
 		}
 
 		try {
-			const { rowCount, rows } = await compareNewPasswordWithOldPasswordByUserId(userId, password);
+			const { rowCount, rows } = await getUsersEncryptedPassword(userId);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(`Password change failed for user: ${userId}`);
@@ -220,7 +221,7 @@ router.post(
 					);
 			}
 
-			if (rows[0].is_current_password) {
+			if (await compare(password, rows[0].encrypted_password)) {
 				logger.debug(`New password matches the current password for user: ${userId}`);
 				return res
 					.status(400)

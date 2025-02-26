@@ -17,7 +17,6 @@ DROP FUNCTION IF EXISTS auth.create_profile_for_user() CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 DROP FUNCTION IF EXISTS utils.is_url_valid(url TEXT, strict BOOLEAN) CASCADE;
 DROP TABLE IF EXISTS auth.mfa CASCADE;
-DROP FUNCTION IF EXISTS auth.encrypt_password() CASCADE;
 DROP FUNCTION IF EXISTS auth.check_username_and_email() CASCADE;
 DROP FUNCTION IF EXISTS auth.delete_unverified_users() CASCADE;
 DROP FUNCTION IF EXISTS auth.create_mfa_for_user() CASCADE;
