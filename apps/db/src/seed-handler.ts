@@ -5,6 +5,7 @@ import db from './db';
 import { fileURLToPath } from 'url';
 import logger from './logger';
 
+//@ts-ignore
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -29,7 +30,7 @@ const runSQL = async (filepath: string): Promise<boolean> => {
   }
 };
 
-export const runSeeds = async () => {
+export async function runSeeds() {
   const seedsDir = `./${path.relative(process.cwd(), path.join(__dirname, '../seeds'))}`;
   const seedFiles = readdirSync(seedsDir).filter(file => file.endsWith('.sql'));
 

@@ -36,3 +36,4 @@ export const STORAGE_ACCESS_KEY: string = process.env.STORAGE_ACCESS_KEY!;
 export const STORAGE_SECRET_KEY: string = process.env.STORAGE_SECRET_KEY!;
 export const BUCKET: string = process.env.STORAGE_BUCKET!;
 export const REDIS_URL: string = process.env.REDIS_URL!;
+export const LAGO_API_KEY: string = process.env.LAGO_API_KEY!;

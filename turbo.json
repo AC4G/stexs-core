@@ -20,8 +20,6 @@
         "clean": {
             "cache": false
         },
-        "seed": {},
-        "migrate:up": {},
-        "migrate:down": {}
+        "seed": {}
     }
 }

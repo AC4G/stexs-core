@@ -9,7 +9,7 @@ GRANT anon TO authenticator;
 GRANT authenticated TO authenticator;
 GRANT USAGE ON SCHEMA public TO anon;
 
-CREATE SCHEMA extensions;
+CREATE SCHEMA IF NOT EXISTS extensions;
 
 SET search_path TO extensions, public;
 
@@ -23,7 +23,7 @@ GRANT USAGE ON SCHEMA extensions TO authenticated;
 GRANT USAGE ON SCHEMA extensions TO anon;
 
 
-CREATE SCHEMA auth;
+CREATE SCHEMA IF NOT EXISTS auth;
 
 CREATE OR REPLACE FUNCTION auth.jwt()
  RETURNS JSONB

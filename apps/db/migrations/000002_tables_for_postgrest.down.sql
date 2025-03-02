@@ -61,7 +61,7 @@ DROP TRIGGER IF EXISTS project_request_changed_trigger ON public.project_request
 DROP TRIGGER IF EXISTS enforce_project_request_limit_trigger ON public.project_requests;
 DROP TRIGGER IF EXISTS make_project_creator_a_member_trigger ON public.projects;
 
-DROP FUNCTION IF EXISTS public.distinct_projects_from_inventory(UUID);
+DROP FUNCTION IF EXISTS public.get_distinct_projects_from_inventory(UUID, INTEGER, INTEGER, TEXT);
 DROP FUNCTION IF EXISTS public.check_inventory_update();
 DROP FUNCTION IF EXISTS public.check_inventory_delete();
 DROP FUNCTION IF EXISTS public.check_inventory_insert();
