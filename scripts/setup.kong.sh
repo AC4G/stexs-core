@@ -1,6 +1,8 @@
 #!/bin/bash
 
-curl -i -X POST http://localhost:8001/services \
+KONG_ADMIN_URL="${KONG_ADMIN_URL:-http://localhost:8001}"
+
+curl -i -X POST "$KONG_ADMIN_URL/services" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "rest_v1",
@@ -14,7 +16,7 @@ curl -i -X POST http://localhost:8001/services \
         ]
     }'
 
-curl -i -X POST http://localhost:8001/routes \
+curl -i -X POST "$KONG_ADMIN_URL/routes" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "rest_v1",
@@ -42,7 +44,7 @@ curl -i -X POST http://localhost:8001/routes \
     }'
 
 
-curl -i -X POST http://localhost:8001/services \
+curl -i -X POST "$KONG_ADMIN_URL/services" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "auth_v1",
@@ -55,7 +57,7 @@ curl -i -X POST http://localhost:8001/services \
         ]
     }'
 
-curl -i -X POST http://localhost:8001/routes \
+curl -i -X POST "$KONG_ADMIN_URL/routes" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "auth_v1",
@@ -79,7 +81,7 @@ curl -i -X POST http://localhost:8001/routes \
     }'
 
 
-curl -i -X POST http://localhost:8001/services \
+curl -i -X POST "$KONG_ADMIN_URL/services" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "storage_v1",
@@ -92,7 +94,7 @@ curl -i -X POST http://localhost:8001/services \
         ]
     }'
 
-curl -i -X POST http://localhost:8001/routes \
+curl -i -X POST "$KONG_ADMIN_URL/routes" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "storage_v1",
@@ -116,7 +118,7 @@ curl -i -X POST http://localhost:8001/routes \
     }'
 
 
-curl -i -X POST http://localhost:8001/services \
+curl -i -X POST "$KONG_ADMIN_URL/services" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "graphql_v1",
@@ -130,7 +132,7 @@ curl -i -X POST http://localhost:8001/services \
         "path": "/graphql"
     }'
 
-curl -i -X POST http://localhost:8001/routes \
+curl -i -X POST "$KONG_ADMIN_URL/routes" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "graphql_v1",
@@ -152,7 +154,7 @@ curl -i -X POST http://localhost:8001/routes \
         ]
     }'
 
-curl -i -X POST http://localhost:8001/services \
+curl -i -X POST "$KONG_ADMIN_URL/services" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "ws_graphql_v1",
@@ -168,7 +170,7 @@ curl -i -X POST http://localhost:8001/services \
         "path": "/graphql"
     }'
 
-curl -i -X POST http://localhost:8001/routes \
+curl -i -X POST "$KONG_ADMIN_URL/routes" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "ws_graphql_v1",
@@ -190,7 +192,7 @@ curl -i -X POST http://localhost:8001/routes \
         ]
     }'
 
-curl -i -X POST http://localhost:8001/services \
+curl -i -X POST "$KONG_ADMIN_URL/services" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "graphql_v1_gui",
@@ -204,7 +206,7 @@ curl -i -X POST http://localhost:8001/services \
         "path": "/graphiql"
     }'
 
-curl -i -X POST http://localhost:8001/routes \
+curl -i -X POST "$KONG_ADMIN_URL/routes" \
     -H "Content-Type: application/json" \
     -d '{
         "name": "ws_graphql_v1",

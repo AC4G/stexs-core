@@ -6,8 +6,6 @@
   "scripts": {
     "build": "tsx",
     "start": "tsx src/index.ts",
-    "migrate:up": "tsx src/index.ts migrate:up",
-    "migrate:down": "tsx src/index.ts migrate:down",
     "seed": "tsx src/index.ts seed"
   },
   "devDependencies": {

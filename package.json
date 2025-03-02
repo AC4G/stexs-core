@@ -14,16 +14,14 @@
     "clean": "turbo run clean",
     "clean:logs": "turbo run clean:logs",
     "type-check": "turbo run type-check",
-    "test": "dotenv -- turbo run test",
-    "test:coverage": "turbo run test:coverage",
-    "test:watch": "turbo run test:watch",
-    "test:db": "dotenv -- turbo run test:db",
-    "test:unit": "dotenv -- turbo run test:unit",
+    "test": "cross-env ENV=test dotenv -- turbo run test",
+    "test:coverage": "cross-env ENV=test turbo run test:coverage",
+    "test:watch": "cross-env ENV=test turbo run test:watch",
+    "test:db": "cross-env ENV=test dotenv -- turbo run test:db",
+    "test:unit": "cross-env ENV=test dotenv -- turbo run test:unit",
     "format": "prettier --write '{apps,packages}/**/*.{ts,svelte}'",
     "preview": "turbo run preview",
-    "seed": "dotenv -- turbo run seed --filter=db",
-    "migrate:up": "dotenv -- turbo run migrate:up --filter=db",
-    "migrate:down": "dotenv -- turbo run migrate:down --filter=db"
+    "seed": "dotenv -- turbo run seed --filter=db"
   },
   "workspaces": [
     "packages/*",
@@ -40,6 +38,7 @@
   "dependencies": {
     "@turbo/gen": "^1.13.4",
     "autoprefixer": "^10.4.20",
+    "cross-env": "^7.0.3",
     "dotenv-cli": "^7.4.4"
   },
   "engines": {
