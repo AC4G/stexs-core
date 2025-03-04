@@ -14,7 +14,7 @@ export async function insertOrUpdateAuthorizationCodeScopes(
                 WITH scope_ids AS (
                     SELECT id
                     FROM public.scopes
-                    WHERE name = ANY($2::text[])
+                    WHERE scope = ANY($2::text[])
                 ),
                 deleted_scopes AS (
                     DELETE FROM auth.oauth2_authorization_code_scopes

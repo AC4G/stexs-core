@@ -1,5 +1,5 @@
 INSERT INTO
-	public.scopes (id, name, type)
+	public.scopes (id, scope, type)
 VALUES
 	(1, 'item.read', 'client'),
 	(2, 'item.update', 'client'),

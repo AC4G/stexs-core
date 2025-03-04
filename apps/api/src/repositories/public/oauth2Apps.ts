@@ -55,7 +55,7 @@ export async function getRedirectUrlAndScopesByClientId(
                 SELECT 
                     oa.redirect_url,
                     COALESCE(
-                        ARRAY_AGG(s.name) FILTER (WHERE s.type = 'user'),
+                        ARRAY_AGG(s.scope) FILTER (WHERE s.type = 'user'),
                         '{}'
                     ) AS scopes
                 FROM public.oauth2_apps AS oa

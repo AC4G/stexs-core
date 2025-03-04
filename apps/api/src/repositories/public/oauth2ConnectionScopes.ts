@@ -17,7 +17,7 @@ export async function updateConnectionScopes(
                     c.id,
                     s.id
                 FROM public.oauth2_connections AS c
-                JOIN public.scopes AS s ON s.name = ANY($3::text[])
+                JOIN public.scopes AS s ON s.scope = ANY($3::text[])
                 WHERE c.user_id = $1::uuid
                     AND c.client_id = $2::uuid
                 ON CONFLICT (connection_id, scope_id) DO NOTHING;
