@@ -152,7 +152,7 @@ describe('OAuth2 Authorization Codes Queries', () => {
             expect(rowCount4).toBe(1);
             expect(row4.id).toEqual(expect.any(Number));
             expect(row4.user_id).toBe(userId);
-            expect(row4.scopes.length).toBe(0);
+            expect(row4.scope_ids.length).toBe(0);
             expect(row4.organization_id).toBe(organizationId);
             expect(row4.created_at).toBeInstanceOf(Date);
 
@@ -179,7 +179,7 @@ describe('OAuth2 Authorization Codes Queries', () => {
             const row5 = rows5[0];
 
             expect(rowCount5).toBe(1);
-            expect(row5.scopes.length).toBe(4);
+            expect(row5.scope_ids.length).toBe(4);
         });
     });
 

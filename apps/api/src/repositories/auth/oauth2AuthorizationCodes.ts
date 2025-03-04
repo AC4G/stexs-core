@@ -45,7 +45,7 @@ export async function validateAuthorizationCode(
 ): Promise<QueryResult<{
     id: number;
     user_id: string;
-    scopes: number[];
+    scope_ids: number[];
     created_at: string;
     organization_id: number;
 }>> {
@@ -64,7 +64,7 @@ export async function validateAuthorizationCode(
                         FROM auth.oauth2_authorization_code_scopes
                         WHERE code_id = aot.id),
                         '{}'::integer[]
-                    ) AS scopes
+                    ) AS scope_ids
 				FROM auth.oauth2_authorization_codes AS aot
 				JOIN public.oauth2_apps AS oa ON aot.app_id = oa.id
 				WHERE aot.code = $1::uuid

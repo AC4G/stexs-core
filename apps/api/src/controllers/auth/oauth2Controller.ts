@@ -32,7 +32,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 	let userId: string;
 	let organization_id: number;
 	let codeId: number;
-	let scopes: number[];
+	let scope_ids: number[];
 
 	try {
 		const { rowCount, rows } = await validateAuthorizationCode(
@@ -86,7 +86,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 		({
 			id: codeId,
 			user_id: userId,
-			scopes,
+			scope_ids,
 			organization_id
 		} = rows[0]);
 
@@ -148,7 +148,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 		const { rowCount, rows } = await createOAuth2Connection(
 			userId,
 			client_id,
-			scopes
+			scope_ids
 		);
 
 		if (!rowCount || rowCount === 0) {
