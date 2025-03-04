@@ -1,9 +1,33 @@
 import { spawnSync } from 'child_process';
 import logger from './src/logger';
+import path from 'path';
 
-const CONTAINER_NAME = 'db-test';
+const DB_CONTAINER_NAME = 'db-test';
+const MIGRATE_DB_CONTAINER_NAME = 'db-test-migrate';
 const POSTGRES_PORT = 5555;
 const POSTGRES_PASSWORD = 'postgres';
+
+const migrationsPath = path.resolve(__dirname, '../db/migrations');
+
+function removeContainer(containerName: string) {
+    logger.info(`Checking if container ${containerName} exists...`);
+
+    const inspectResult = spawnSync('docker', ['ps', '-a', '-q', '-f', `name=${containerName}`]);
+    const containerId = inspectResult.stdout.toString().trim();
+
+    if (containerId) {
+        logger.info(`Container ${containerName} exists. Removing it...`);
+        logger.info(`Stopping container ${containerName}...`);
+
+        spawnSync('docker', ['stop', containerName], { stdio: 'ignore' });
+
+        logger.info(`Removing container ${containerName}...`);
+
+        spawnSync('docker', ['rm', '-f', containerName], { stdio: 'ignore' });
+
+        logger.info(`Container ${containerName} removed.`);
+    }
+}
 
 export default async function globalSetup() {
     logger.info('Checking if Docker is running...');
@@ -14,12 +38,15 @@ export default async function globalSetup() {
         process.exit(1);
     }
 
+    removeContainer(DB_CONTAINER_NAME);
+    removeContainer(MIGRATE_DB_CONTAINER_NAME);
+
     logger.info('Starting Docker container for PostgreSQL...');
 
     const dockerRun = spawnSync('docker', [
-        'run', 
-        '-d', 
-        '--name', CONTAINER_NAME, 
+        'run',
+        '-d',
+        '--name', DB_CONTAINER_NAME, 
         '-e', `POSTGRES_PASSWORD=${POSTGRES_PASSWORD}`, 
         '-p', `${POSTGRES_PORT}:5432`, 
         'docker.io/postgres:17.2'
@@ -39,7 +66,7 @@ export default async function globalSetup() {
     while (Date.now() - startTime < timeout && !isReady) {
         try {
             const result = spawnSync('docker', [
-                'exec', CONTAINER_NAME, 
+                'exec', DB_CONTAINER_NAME, 
                 'pg_isready', '-U', 'postgres', '-h', 'localhost', '-p', '5432'
             ]);
 
@@ -59,11 +86,18 @@ export default async function globalSetup() {
         }
     }
 
-    const migrationResult = spawnSync('migrate', [
-        '-path', '../db/migrations',
+    logger.info('Running database migrations...');
+
+    const migrationResult = spawnSync('docker', [
+        'run',
+        '--name', MIGRATE_DB_CONTAINER_NAME,
+        '-v', migrationsPath + ':/migrations',
+        '--network', 'host',
+        'migrate/migrate',
+        '-path', '/migrations/',
         '-database', `postgresql://postgres:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/postgres?sslmode=disable`,
         'up'
-    ]);
+    ], { stdio: 'inherit' });
 
     if (migrationResult.error) {
         logger.error('Failed to run migrations:', migrationResult.error);

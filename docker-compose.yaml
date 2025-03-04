@@ -24,7 +24,7 @@ services:
     ports:
       - 3002:3000
     environment:
-      PGRST_DB_URI: postgres://authenticator:authenticator@db:5431/postgres
+      PGRST_DB_URI: postgres://authenticator:authenticator@db:5432/postgres
       PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
       PGRST_DB_ANON_ROLE: anon
       PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS}
@@ -36,6 +36,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
 
 
   mailpit:
@@ -216,7 +218,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      PGRST_DB_URI: "postgres://postgres:postgres@db:5432/postgres?sslmode=disable"
+      PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
     volumes:
       - ./scripts/migrate.db.sh:/data/scripts/migrate.db.sh
       - ./apps/db/migrations:/data/migrations
@@ -236,7 +238,7 @@ services:
       db-migrate:
         condition: service_completed_successfully
     environment:
-      PGRST_DB_URI: "postgres://postgres:postgres@db:5432/postgres?sslmode=disable"
+      PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
     command: ["/bin/sh", "/data/scripts/seed.db.sh"]
     volumes:
       - ./scripts/seed.db.sh:/data/scripts/seed.db.sh
