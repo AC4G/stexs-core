@@ -221,7 +221,7 @@ services:
       PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
     volumes:
       - ./scripts/migrate.db.sh:/data/scripts/migrate.db.sh
-      - ./apps/db/migrations:/data/migrations
+      - ./db/migrations:/data/migrations
     command: ["/bin/sh", "/data/scripts/migrate.db.sh"]
     networks:
       - stexs
@@ -242,7 +242,7 @@ services:
     command: ["/bin/sh", "/data/scripts/seed.db.sh"]
     volumes:
       - ./scripts/seed.db.sh:/data/scripts/seed.db.sh
-      - ./apps/db/seeds:/data/seeds
+      - ./db/seeds:/data/seeds
     networks:
       - stexs
 
