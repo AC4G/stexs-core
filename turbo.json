@@ -19,7 +19,6 @@
         },
         "clean": {
             "cache": false
-        },
-        "seed": {}
+        }
     }
 }

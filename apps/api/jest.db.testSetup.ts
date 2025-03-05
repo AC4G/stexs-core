@@ -4,14 +4,19 @@ import path from 'path';
 
 const DB_CONTAINER_NAME = 'db-test';
 const MIGRATE_DB_CONTAINER_NAME = 'db-test-migrate';
+const SEED_DB_CONTAINER_NAME = 'db-test-seed';
+const SEED_IMAGE_NAME = 'stexs-seed';
+
 const POSTGRES_PORT = 5555;
 const POSTGRES_PASSWORD = 'postgres';
 
 const migrationsPath = path.resolve(__dirname, '../db/migrations');
+const seedScriptsPath = path.resolve(__dirname, '../db/seeds');
+const seedScriptFile = path.resolve(__dirname, '../../scripts/seed.db.sh');
+const seedDockerfilePath = path.resolve(__dirname, '../../docker/seed.Dockerfile');
+const seedBuildContext = path.resolve(__dirname, '../../');
 
-function removeContainer(containerName: string) {
-    logger.info(`Checking if container ${containerName} exists...`);
-
+function checkAndRemoveContainer(containerName: string) {
     const inspectResult = spawnSync('docker', ['ps', '-a', '-q', '-f', `name=${containerName}`]);
     const containerId = inspectResult.stdout.toString().trim();
 
@@ -23,7 +28,7 @@ function removeContainer(containerName: string) {
 
         logger.info(`Removing container ${containerName}...`);
 
-        spawnSync('docker', ['rm', '-f', containerName], { stdio: 'ignore' });
+        spawnSync('docker', ['rm', '-f', '-v', containerName], { stdio: 'ignore' });
 
         logger.info(`Container ${containerName} removed.`);
     }
@@ -38,8 +43,11 @@ export default async function globalSetup() {
         process.exit(1);
     }
 
-    removeContainer(DB_CONTAINER_NAME);
-    removeContainer(MIGRATE_DB_CONTAINER_NAME);
+    logger.info(`Cleaning test containers...`);
+
+    checkAndRemoveContainer(DB_CONTAINER_NAME);
+    checkAndRemoveContainer(MIGRATE_DB_CONTAINER_NAME);
+    checkAndRemoveContainer(SEED_DB_CONTAINER_NAME);
 
     logger.info('Starting Docker container for PostgreSQL...');
 
@@ -106,23 +114,43 @@ export default async function globalSetup() {
 
     logger.info('Database migrations completed.');
 
-    const seedingResult = spawnSync(
-        'cross-env',
-        [
-            'ENV=test',
-            'pnpm',
-            '-w',
-            'run',
-            'seed',
-            '--force'
-        ],
-        {
-            env: process.env,
-        }
-    );
+    logger.info(`Checking if Docker image "${SEED_IMAGE_NAME}" exists...`);
+    
+    const imageCheck = spawnSync('docker', ['images', '-q', SEED_IMAGE_NAME]);
+    if (!imageCheck.stdout.toString().trim()) {
+        logger.info(`Image "${SEED_IMAGE_NAME}" not found. Building it...`);
+        const buildResult = spawnSync('docker', [
+            'build',
+            '-t',
+            SEED_IMAGE_NAME,
+            '-f',
+            seedDockerfilePath,
+            seedBuildContext
+        ], { stdio: 'inherit' });
 
-    if (seedingResult.error) {
-        logger.error('Failed to seed database:', seedingResult.error);
+        if (buildResult.error || buildResult.status !== 0) {
+            logger.error(`Failed to build Docker image "${SEED_IMAGE_NAME}".`);
+            process.exit(1);
+        }
+        logger.info(`Docker image "${SEED_IMAGE_NAME}" built successfully.`);
+    }
+
+    logger.info('Running database seed...');
+
+    const seedResult = spawnSync('docker', [
+        'run',
+        '--name', SEED_DB_CONTAINER_NAME,
+        '-v', `${seedScriptsPath}:/data/seeds`,
+        '-v', `${seedScriptFile}:/data/scripts/seed.db.sh`,
+        '--network', 'host',
+        '-e', `PGRST_DB_URI=postgres://postgres:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/postgres?sslmode=disable`,
+        'stexs-seed',
+        '/bin/sh',
+        '/data/scripts/seed.db.sh'
+    ], { stdio: 'inherit' });
+
+    if (seedResult.error) {
+        logger.error('Failed to seed database:', seedResult.error);
         process.exit(1);
     }
 
