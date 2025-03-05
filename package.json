@@ -28,6 +28,7 @@
   ],
   "devDependencies": {
     "@swc/cli": "^0.3.14",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.4.2",
@@ -37,7 +38,6 @@
   "dependencies": {
     "@turbo/gen": "^1.13.4",
     "autoprefixer": "^10.4.20",
-    "cross-env": "^7.0.3",
     "dotenv-cli": "^7.4.4"
   },
   "engines": {

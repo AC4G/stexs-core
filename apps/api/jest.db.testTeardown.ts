@@ -7,7 +7,7 @@ const MIGRATE_DB_CONTAINER_NAME = 'db-test-migrate';
 const SEED_DB_CONTAINER_NAME = 'db-test-seed';
 
 export default async function globalTeardown() {
-    logger.info('Stopping and removing test containers...');
+    logger.info('Cleaning test environment...');
 
     await db.close();
 
