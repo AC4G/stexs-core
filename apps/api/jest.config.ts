@@ -4,13 +4,16 @@ const config: Config = {
 	preset: 'ts-jest',
 	testEnvironment: 'node',
 	collectCoverage: false,
+	testPathIgnorePatterns: [
+		'<rootDir>/node_modules/',
+		'<rootDir>/dist/',
+		'<rootDir>/logs/',
+		'<rootDir>/.turbo/',
+	],
 	projects: [
 		{
 			displayName: 'unit-tests',
-			testMatch: [
-				'**/*.test.ts',
-				'!**/*.db.test.ts'
-			],
+			testRegex: '^(?!.*\\.db\\.test\\.ts$).*\\.test\\.ts$',
 			testEnvironment: 'node',
 			transform: {
 				'^.+\\.ts$': 'ts-jest',
@@ -18,7 +21,7 @@ const config: Config = {
 		},
 		{
 			displayName: 'db-tests',
-			testMatch: ['**/*.db.test.ts'],
+			testMatch: ['<rootDir>/tests/**/*.db.test.ts'],
 			testEnvironment: 'node',
 			globalSetup: '<rootDir>/jest.db.testSetup.ts',
 			globalTeardown: '<rootDir>/jest.db.testTeardown.ts',

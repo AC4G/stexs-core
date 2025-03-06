@@ -1,26 +1,26 @@
-import { Pool, PoolClient, QueryConfig, QueryResult, QueryResultRow } from 'pg';
-
-interface DbPoolConfig {
-  connectionString: string;
-  max?: number;
-  idleTimeoutMillis?: number;
-  connectionTimeoutMillis?: number;
-}
+import {
+  Pool,
+  PoolClient,
+  type PoolConfig,
+  QueryConfig,
+  QueryResult,
+  QueryResultRow
+} from 'pg';
 
 export class DbPool {
   private pool: Pool;
 
   constructor({
-    connectionString,
     max = 10,
     idleTimeoutMillis = 30000,
     connectionTimeoutMillis = 2000,
-  }: DbPoolConfig) {
+    ...rest
+  }: PoolConfig) {
     this.pool = new Pool({
-      connectionString,
       max,
       idleTimeoutMillis,
       connectionTimeoutMillis,
+      ...rest,
     });
   }
 
