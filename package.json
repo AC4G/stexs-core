@@ -20,7 +20,8 @@
     "test:db": "cross-env ENV=test dotenv -- turbo run test:db",
     "test:unit": "cross-env ENV=test dotenv -- turbo run test:unit",
     "format": "prettier --write '{apps,packages}/**/*.{ts,svelte}'",
-    "preview": "turbo run preview"
+    "preview": "turbo run preview",
+    "docker-compose:down": "docker-compose down && docker rm -f $(docker ps -a -q --filter name=lago)"
   },
   "workspaces": [
     "packages/*",

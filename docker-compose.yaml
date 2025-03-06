@@ -1,12 +1,27 @@
+volumes:
+  db-data:
+  kong-data:
+  minio-data:
+  dragonfly-data:
+
+x-kong-image: &kong-image
+  image: docker.io/kong/kong-gateway:3.4
+
+x-stexs-db-env: &stexs-db-env
+  PGPORT: ${STEXS_DB_PORT:-5431}
+  POSTGRES_PASSWORD: ${STEXS_DB_PWD:-postgres}
+  POSTGRES_DB: ${STEXS_DB_NAME:-postgres}
+  POSTGRES_USER: ${STEXS_DB_USER:-postgres}
+
 services:
   db:
     image: docker.io/postgres:17.2
     container_name: db
     restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      <<: *stexs-db-env
     ports: 
-      - 5431:5432
+      - ${STEXS_DB_PORT:-5431}:${STEXS_DB_PORT:-5431}
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
       interval: 10s
@@ -14,202 +29,9 @@ services:
       retries: 5
     volumes:
       - db-data:/var/lib/postgresql/data
-    networks:
-      - stexs
-
-
-  rest:
-    image: docker.io/postgrest/postgrest:v12.2.3
-    restart: unless-stopped
-    ports:
-      - 3002:3000
-    environment:
-      PGRST_DB_URI: postgres://authenticator:authenticator@db:5432/postgres
-      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
-      PGRST_DB_ANON_ROLE: anon
-      PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS}
-      PGRST_JWT_SECRET: ${ACCESS_TOKEN_SECRET}
-      PGRST_JWT_AUD: ${AUDIENCE}
-    container_name: rest
-    networks:
-      - stexs
-    depends_on:
-      db:
-        condition: service_healthy
-      db-migrate:
-        condition: service_completed_successfully
-
-
-  mailpit:
-    image: docker.io/axllent/mailpit:v1.21.8
-    ports:
-      - 1025:1025
-      - 8025:8025
-    restart: unless-stopped
-    container_name: mailpit
-
-
-  swagger:
-    image: docker.io/swaggerapi/swagger-ui:v5.18.2
-    ports:
-      - 8080:8080
-    restart: unless-stopped
-    container_name: swagger
-    environment:
-      SWAGGER_JSON_URL: http://localhost:8000/rest/v1
-    networks:
-      - stexs
-
-
-  minio:
-    image: quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
-    ports: 
-      - 9002:9000
-      - 9001:9001
-    restart: unless-stopped
-    volumes:
-      - minio-data:/data
-    container_name: minio
-    command: server --console-address ":9001" /data
-    networks:
-      - stexs
-
-
-  dragonfly:
-    image: docker.dragonflydb.io/dragonflydb/dragonfly
-    container_name: dragonfly
-    ports:
-      - 6380:6379
-    healthcheck:
-      test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6379", "PING"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ulimits:
-      memlock: -1
-    deploy:
-      resources:
-        limits:
-          cpus: 1
-    volumes:
-      - dragonfly-data:/data
-    restart: unless-stopped
-    networks:
-      - stexs
-
-
-  kong-db:
-    image: docker.io/postgres:17.2
-    ports:
-      - 5433:5432
-    environment:
-      POSTGRES_USER: kong
-      POSTGRES_DB: kong
-      POSTGRES_PASSWORD: kongpass
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    container_name: kong-db
-    restart: unless-stopped
-    volumes:
-      - kong-data:/var/lib/postgresql/data
-    networks:
-      - stexs
-
-
-  kong-migrate: 
-    image: docker.io/kong/kong-gateway:3.4
-    environment:
-      KONG_DATABASE: postgres
-      POSTGRES_USER: kong
-      KONG_PG_HOST: kong-db
-      KONG_PG_PASSWORD: kongpass
-      KONG_PASSWORD: test
-    command: ["kong", "migrations", "bootstrap"]
-    container_name: kong-migrations
-    networks:
-      - stexs
-    depends_on:
-      kong-db:
-        condition: service_healthy
-
-
-  kong:
-    image: docker.io/kong/kong-gateway:3.4
-    environment:
-      KONG_DATABASE: postgres
-      POSTGRES_USER: kong
-      KONG_PG_HOST: kong-db
-      KONG_PG_PASSWORD: kongpass
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_CASSANDRA_CONTACT_POINTS: db
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
-      KONG_ADMIN_GUI_URL: http://localhost:8002
-    ports:
-      - 8000:8000
-      - 8443:8443
-      - 8001:8001
-      - 8444:8444
-      - 8002:8002
-      - 8445:8445
-      - 8003:8003
-      - 8004:8004
-    container_name: kong
-    depends_on:
-      kong-db:
-        condition: service_healthy
-      kong-migrate:
-        condition: service_completed_successfully
-    healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - stexs
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-
-  kong-setup:
-    build:
-      context: .
-      dockerfile: ./docker/kong.Dockerfile
-    container_name: kong-setup
-    command: ["/bin/sh", "/data/scripts/setup.kong.sh"]
-    depends_on:
-      kong:
-        condition: service_healthy
-      kong-migrate:
-        condition: service_completed_successfully
-    environment:
-      KONG_ADMIN_URL: http://kong:8001
-    volumes:
-      - ./scripts/setup.kong.sh:/data/scripts/setup.kong.sh
-    networks:
-      - stexs
-
-
-  lago-setup:
-    build:
-      context: .
-      dockerfile: ./docker/lago.Dockerfile
-    container_name: lago-setup
-    command: ["/bin/sh", "/data/scripts/setup.lago.sh"]
-    volumes:
-      - ./scripts/setup.lago.sh:/data/scripts/setup.lago.sh
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - stexs
-
 
   db-migrate:
+    image: stexs-db-migrate
     build:
       context: .
       dockerfile: ./docker/migrate.Dockerfile
@@ -218,16 +40,14 @@ services:
       db:
         condition: service_healthy
     environment:
-      PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
+      <<: *stexs-db-env
     volumes:
       - ./scripts/migrate.db.sh:/data/scripts/migrate.db.sh
       - ./db/migrations:/data/migrations
     command: ["/bin/sh", "/data/scripts/migrate.db.sh"]
-    networks:
-      - stexs
 
-    
-  seed:
+  db-seed:
+    image: stexs-db-seed
     build:
       context: .
       dockerfile: ./docker/seed.Dockerfile
@@ -238,21 +58,162 @@ services:
       db-migrate:
         condition: service_completed_successfully
     environment:
-      PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
-    command: ["/bin/sh", "/data/scripts/seed.db.sh"]
+      <<: *stexs-db-env
+      PGHOST: db
     volumes:
       - ./scripts/seed.db.sh:/data/scripts/seed.db.sh
       - ./db/seeds:/data/seeds
-    networks:
-      - stexs
+    command: ["/bin/sh", "/data/scripts/seed.db.sh"]
 
+  rest:
+    image: docker.io/postgrest/postgrest:v12.2.3
+    container_name: rest
+    restart: unless-stopped
+    ports:
+      - ${REST_PORT:-3002}:3000
+    depends_on:
+      db:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      PGRST_DB_URI: postgres://authenticator:authenticator@db:${STEXS_DB_PORT:-5431}/${STEXS_DB_NAME:-postgres}
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:-public}
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS:-1000}
+      PGRST_JWT_SECRET: ${ACCESS_TOKEN_SECRET:-}
+      PGRST_JWT_AUD: ${AUDIENCE:-}
 
-networks:
-  stexs:
-    driver: bridge
+  mailpit:
+    image: docker.io/axllent/mailpit:v1.21.8
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - ${SMTP_PORT:-1025}:1025
+      - ${SMTP_DASHBOARD_PORT:-8025}:8025
 
-volumes:
-  db-data:
-  kong-data:
-  minio-data:
-  dragonfly-data:
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
+    container_name: minio
+    restart: unless-stopped
+    ports: 
+      - ${MINIO_ADMIN_PORT:-9002}:9000
+      - ${STORAGE_PORT:-9001}:9001
+    volumes:
+      - minio-data:/data
+    command: ["server", "--console-address", ":9001", "/data"]
+
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    container_name: dragonfly
+    restart: unless-stopped
+    ports:
+      - ${DRAGONFLY_PORT:-6380}:6379
+    ulimits:
+      memlock: -1
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6379", "PING"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - dragonfly-data:/data
+
+  kong-migrate: 
+    <<: *kong-image
+    container_name: kong-migrate
+    environment:
+      KONG_PG_DATABASE: ${STEXS_DB_NAME:-postgres}
+      KONG_PG_USER: ${STEXS_DB_USER:-postgres}
+      KONG_PG_HOST: db
+      KONG_PG_PORT: ${STEXS_DB_PORT:-5431}
+      KONG_PG_PASSWORD: ${STEXS_DB_PWD:-postgres}
+      KONG_PASSWORD: test
+    command: ["kong", "migrations", "bootstrap"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  kong:
+    <<: *kong-image
+    container_name: kong
+    restart: unless-stopped
+    ports:
+      - ${KONG_GATEWAY_PORT:-8000}:8000
+      - ${KONG_ADMIN_PORT:-8001}:8001
+      - ${KONG_GUI_PORT:-8002}:8002
+    depends_on:
+      db:
+        condition: service_healthy
+      kong-migrate:
+        condition: service_completed_successfully
+    environment:
+      KONG_PG_DATABASE: ${STEXS_DB_NAME:-postgres}
+      KONG_PG_USER: ${STEXS_DB_USER:-postgres}
+      KONG_PG_HOST: db
+      KONG_PG_PORT: ${STEXS_DB_PORT:-5431}
+      KONG_PG_PASSWORD: ${STEXS_DB_PWD:-postgres}
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_CASSANDRA_CONTACT_POINTS: db
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  kong-setup:
+    image: stexs-kong-setup
+    build:
+      context: .
+      dockerfile: ./docker/kong.Dockerfile
+    container_name: kong-setup
+    depends_on:
+      kong:
+        condition: service_healthy
+      kong-migrate:
+        condition: service_completed_successfully
+    environment:
+      KONG_ADMIN_URL: http://kong:8001
+      API_PORT: ${API_PORT:-3001}
+      API_PATH: ${KONG_STEXS_API_PATH:-/api/v1}
+      REST_PORT: ${REST_PORT:-3002}
+      REST_API_PATH: ${KONG_REST_API_PATH:-/rest/v1}
+    volumes:
+      - ./scripts/setup.kong.sh:/data/scripts/setup.kong.sh
+    command: ["/bin/sh", "/data/scripts/setup.kong.sh"]
+
+  swagger-rest:
+    image: docker.io/swaggerapi/swagger-ui:v5.18.2
+    container_name: swagger-rest
+    restart: unless-stopped
+    ports:
+      - ${SWAGGER_PORT:-8080}:8080
+    depends_on:
+      kong:
+        condition: service_healthy
+      kong-setup:
+        condition: service_completed_successfully
+    environment:
+      SWAGGER_JSON_URL: http://kong:8000${KONG_REST_API_PATH:-/rest/v1}
+
+  lago-setup:
+    image: stexs-lago-setup
+    build:
+      context: .
+      dockerfile: ./docker/lago.Dockerfile
+    container_name: lago-setup
+    volumes:
+      - ./scripts/setup.lago.sh:/data/scripts/setup.lago.sh
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["/bin/sh", "/data/scripts/setup.lago.sh"]

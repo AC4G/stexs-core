@@ -1,15 +1,20 @@
-import { spawnSync } from 'child_process';
+import { spawnSync, SpawnSyncReturns } from 'child_process';
 import logger from './src/logger';
 import path from 'path';
+import {
+    TEST_DB_PORT,
+    POSTGRES_DB,
+    POSTGRES_PWD,
+    POSTGRES_USER
+} from './env-config';
 
 const DB_CONTAINER_NAME = 'db-test';
 const MIGRATE_DB_CONTAINER_NAME = 'db-test-migrate';
 const SEED_DB_CONTAINER_NAME = 'db-test-seed';
-const SEED_IMAGE_NAME = 'stexs-seed';
+const SEED_IMAGE_NAME = 'stexs-db-seed';
+const TEST_PG_URL = `postgres://${POSTGRES_USER}:${POSTGRES_PWD}@localhost:${TEST_DB_PORT}/${POSTGRES_DB}?sslmode=disable`;
 
-const POSTGRES_PORT = 5555;
 const POSTGRES_PASSWORD = 'postgres';
-const POSTGRES_URL = `postgres://postgres:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/postgres?sslmode=disable`;
 
 const rootProjectPath = path.resolve(__dirname, '../../');
 const migrationsPath = `${rootProjectPath}/db/migrations`;
@@ -34,7 +39,14 @@ function checkAndRemoveContainer(containerName: string) {
         logger.info(`Container ${containerName} removed!`);
     }
 }
- 
+
+function execDBHealthCheck(): SpawnSyncReturns<Buffer> {
+    return spawnSync('docker', [
+        'exec', DB_CONTAINER_NAME,
+        'pg_isready', '-U', 'postgres', '-h', 'localhost', '-p', '5432'
+    ]);
+}
+
 export default async function globalSetup() {
     logger.info('Preparing test environment...');
     logger.info('Checking if Docker is running...');
@@ -57,8 +69,10 @@ export default async function globalSetup() {
         'run',
         '-d',
         '--name', DB_CONTAINER_NAME, 
-        '-e', `POSTGRES_PASSWORD=${POSTGRES_PASSWORD}`, 
-        '-p', `${POSTGRES_PORT}:5432`, 
+        '-e', `POSTGRES_PASSWORD=${POSTGRES_PASSWORD}`,
+        '-e', `POSTGRES_USER=${POSTGRES_USER}`,
+        '-e', `POSTGRES_DB=${POSTGRES_DB}`,
+        '-p', `${TEST_DB_PORT}:5432`, 
         'docker.io/postgres:17.2'
     ]);
 
@@ -71,21 +85,17 @@ export default async function globalSetup() {
 
     const startTime = Date.now();
     const timeout = 60000;
-    let isReady = false;
 
-    while (Date.now() - startTime < timeout && !isReady) {
+    while (Date.now() - startTime < timeout) {
         try {
-            const result = spawnSync('docker', [
-                'exec', DB_CONTAINER_NAME, 
-                'pg_isready', '-U', 'postgres', '-h', 'localhost', '-p', '5432'
-            ]);
-
-            if (result.error) throw new Error('Postgres not ready');
+            const result = execDBHealthCheck();
 
             if (result.status === 0) {
-                isReady = true;
                 logger.info('PostgreSQL is ready!');
+                break;
             }
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (err) {
             if (Date.now() - startTime >= timeout) {
                 logger.error('PostgreSQL container did not start in time.');
@@ -105,22 +115,34 @@ export default async function globalSetup() {
         '--network', 'host',
         'migrate/migrate',
         '-path', '/migrations/',
-        '-database', POSTGRES_URL,
+        '-database', TEST_PG_URL,
         'up'
     ], { stdio: 'inherit' });
 
-    if (migrationResult.error) {
-        logger.error('Failed to run migrations:', migrationResult.error);
+    if (migrationResult.error || migrationResult.status !== 0) {
+        logger.error(
+          'Failed to run migrations:',
+          migrationResult.error || `Migration exited with status ${migrationResult.status}`
+        );
         process.exit(1);
     }
 
     logger.info('Database migrations completed!');
 
+    const dbHealthResult = execDBHealthCheck();
+
+    if (dbHealthResult.error || dbHealthResult.status !== 0) {
+        logger.error('PostgreSQL is not healthy after migrations.');
+        process.exit(1);
+    }
+
     logger.info(`Checking if Docker image "${SEED_IMAGE_NAME}" exists...`);
     
     const imageCheck = spawnSync('docker', ['images', '-q', SEED_IMAGE_NAME]);
+
     if (!imageCheck.stdout.toString().trim()) {
         logger.info(`Image "${SEED_IMAGE_NAME}" not found. Building it...`);
+
         const buildResult = spawnSync('docker', [
             'build',
             '-t',
@@ -134,6 +156,7 @@ export default async function globalSetup() {
             logger.error(`Failed to build Docker image "${SEED_IMAGE_NAME}".`);
             process.exit(1);
         }
+
         logger.info(`Docker image "${SEED_IMAGE_NAME}" built successfully!`);
     }
 
@@ -145,8 +168,8 @@ export default async function globalSetup() {
         '-v', `${seedScriptsPath}:/data/seeds`,
         '-v', `${seedScriptFile}:/data/scripts/seed.db.sh`,
         '--network', 'host',
-        '-e', `PGRST_DB_URI=${POSTGRES_URL}`,
-        'stexs-seed',
+        '-e', `PGRST_DB_URI=${TEST_PG_URL}`,
+        SEED_IMAGE_NAME,
         '/bin/sh',
         '/data/scripts/seed.db.sh'
     ], { stdio: 'inherit' });
