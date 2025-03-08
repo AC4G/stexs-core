@@ -4,7 +4,17 @@ import { z } from 'zod';
 
 config();
 
+const missingEnvVars: string[] = [];
+
+const checkEnvVarExists = (varName: string) => {
+	if (!(varName in process.env)) {
+		logger.error(`Missing environment variable: ${varName}. Please define it in your .env file.`);
+		missingEnvVars.push(varName);
+	}
+};
+
 const withDefaultString = (schema: z.ZodString, defaultValue: string | undefined, varName: string) => {
+	checkEnvVarExists(varName);
 	const newSchema = schema.transform(value => {
 		if (value.trim() === '') {
 		  logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
@@ -18,14 +28,16 @@ const withDefaultString = (schema: z.ZodString, defaultValue: string | undefined
 	return newSchema.default(defaultValue);
 }
 
-const withDefaultNumber = (schema: z.ZodNumber, defaultValue: number, varName: string) =>
-	schema.transform(value => {
+const withDefaultNumber = (schema: z.ZodNumber, defaultValue: number, varName: string) => {
+	checkEnvVarExists(varName);
+	return schema.transform(value => {
 	  if (value === undefined || value === null || value === 0) {
 		logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
 		return defaultValue;
 	  }
 	  return value;
 	}).default(defaultValue);
+}
 
 const envSchema = z.object({
 	// Strings
@@ -73,6 +85,21 @@ const envSchema = z.object({
 	RECOVERY_URL: withDefaultString(z.string().url(), 'http://localhost:5172/recovery', 'RECOVERY_URL'),
 	LOGGER_URL: withDefaultString(z.string().url(), undefined, 'LOGGER_URL'),
 });
+
+[
+	'STEXS_DB_PWD',
+	'SMTP_PWD',
+	'ACCESS_TOKEN_SECRET',
+	'REFRESH_TOKEN_SECRET',
+	'SIGN_IN_CONFIRM_TOKEN_SECRET',
+	'STORAGE_ACCESS_KEY',
+	'STORAGE_SECRET_KEY',
+	'LAGO_API_KEY',
+].forEach(checkEnvVarExists);
+
+if (missingEnvVars.length > 0) {
+	process.exit(1);
+}
 
 const parsedEnv = envSchema.safeParse(process.env);
 
