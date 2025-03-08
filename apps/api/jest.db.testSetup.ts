@@ -68,11 +68,11 @@ export default async function globalSetup() {
     const dockerRun = spawnSync('docker', [
         'run',
         '-d',
-        '--name', DB_CONTAINER_NAME, 
+        '--name', DB_CONTAINER_NAME,
         '-e', `POSTGRES_PASSWORD=${POSTGRES_PASSWORD}`,
         '-e', `POSTGRES_USER=${POSTGRES_USER}`,
         '-e', `POSTGRES_DB=${POSTGRES_DB}`,
-        '-p', `${TEST_DB_PORT}:5432`, 
+        '-p', `${TEST_DB_PORT}:5432`,
         'docker.io/postgres:17.2'
     ]);
 

@@ -39,7 +39,8 @@
         "utils-node": "workspace:*",
         "uuid": "^9.0.0",
         "winston": "^3.11.0",
-        "winston-loki": "^6.0.7"
+        "winston-loki": "^6.0.7",
+        "zod": "^3.22.4"
     },
     "devDependencies": {
         "@swc/core": "^1.4.0",
