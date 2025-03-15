@@ -28,7 +28,6 @@
     "apps/*"
   ],
   "devDependencies": {
-    "@swc/cli": "^0.3.14",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
