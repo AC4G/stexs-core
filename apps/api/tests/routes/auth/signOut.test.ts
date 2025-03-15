@@ -11,6 +11,7 @@ import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../../src/server';
 import { getTOTPForVerification } from '../../../src/services/totpService';
+import logger from '../../../src/logger';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -99,7 +100,7 @@ describe('Sign Out Routes', () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					totp: true,
+					totp_verified_at: '2023-09-15T12:00:00',
 					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
 				},
 			],

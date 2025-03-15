@@ -35,6 +35,7 @@ import {
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
+	EMAIL_CHANGE_CODE_EXPIRATION,
 	ISSUER
 } from '../../../env-config';
 import { validateMFA } from '../../services/mfaService';
@@ -484,7 +485,7 @@ router.post(
 
 			const emailChangeSentAt = rows[0].email_change_sent_at;
 
-			if (!emailChangeSentAt || isExpired(emailChangeSentAt, 15)) {
+			if (!emailChangeSentAt || isExpired(emailChangeSentAt, EMAIL_CHANGE_CODE_EXPIRATION)) {
 				logger.debug(`Email change code expired for user: ${userId}`);
 				return res
 					.status(403)

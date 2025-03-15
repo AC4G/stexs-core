@@ -40,6 +40,7 @@ import { verify } from 'jsonwebtoken';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
+	AUTHORIZATION_CODE_EXPIRATION,
 	ISSUER,
 	REFRESH_TOKEN_SECRET,
 } from '../../../env-config';
@@ -130,7 +131,9 @@ router.post(
 					);
 			}
 
-			if (rows[0].redirect_url !== redirect_url) {
+			const row = rows[0];
+
+			if (row.redirect_url !== redirect_url) {
 				logger.debug(`Invalid redirect url for client: ${client_id}`);
 				return res
 					.status(400)
@@ -151,7 +154,7 @@ router.post(
 					);
 			}
 
-			const setScopes = rows[0].scopes || [];
+			const setScopes = row.scopes || [];
 			let invalidScopes: string[] = [];
 
 			scopes.forEach((scope) => {
@@ -251,8 +254,10 @@ router.post(
 
 			logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
 
-			codeId = rows[0].id;
-			expires = rows[0].created_at.getTime() + 5 * 60 * 1000;
+			const row = rows[0];
+
+			codeId = row.id;
+			expires = row.created_at.getTime() + AUTHORIZATION_CODE_EXPIRATION * 1000;
 		} catch (e) {
 			logger.error(
 				`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
@@ -289,13 +294,15 @@ router.post(
 				);
 		}
 
-		res.json(message(
-			'Authorization token successfully created.',
-			{
-				code,
-				expires
-			}
-		));
+		res.json(
+			message(
+				'Authorization token successfully created.',
+				{
+					code,
+					expires
+				}
+			)
+		);
 	},
 );
 

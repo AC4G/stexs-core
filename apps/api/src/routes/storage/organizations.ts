@@ -20,6 +20,10 @@ import {
 	AUDIENCE,
 	BUCKET,
 	ISSUER,
+	ORGANIZATION_LOGO_GET_URL_EXPIRATION,
+	ORGANIZATION_LOGO_POST_URL_EXPIRATION,
+	ORGANIZATION_LOGO_SIZE_LIMIT,
+	S3_CACHE_CONTROL_EXPIRATION,
 } from '../../../env-config';
 import db from '../../db';
 import { message } from 'utils-node/messageBuilder';
@@ -42,19 +46,25 @@ router.get(
 	async (req: Request, res: Response) => {
 		const { organizationId } = req.params;
 
-		const time = 60 * 60 * 24; // 1 day
+		const expires = ORGANIZATION_LOGO_GET_URL_EXPIRATION;
 
 		const signedUrl = await s3.getSignedUrl('getObject', {
 			Bucket: BUCKET,
 			Key: `organizations/${organizationId}`,
-			Expires: time,
+			Expires: expires,
 		});
 
 		logger.debug(`Generated new presigned url for organization logo: ${organizationId}`);
 
-		return res.json(message('Presigned url generated successfully.', {
-			url: signedUrl,
-		}));
+		return res.json(
+			message(
+				'Presigned url generated successfully.',
+				{
+					url: signedUrl,
+					expires
+				}
+			)
+		);
 	},
 );
 
@@ -132,29 +142,32 @@ router.post(
 				);
 		}
 
-		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
-
 		const signedPost = await s3.createPresignedPost({
 			Bucket: BUCKET,
 			Fields: {
 				key: 'organizations/' + organizationId,
 				'Content-Type': `image/webp`,
-				'Cache-Control': `private, max-age=${cacheExpires}, must-revalidate`,
+				'Cache-Control': `private, max-age=${S3_CACHE_CONTROL_EXPIRATION}, must-revalidate`,
 				'Content-Disposition': `attachment; filename="organization-${organizationId}.webp"`,
 			},
 			Conditions: [
-				['content-length-range', 0, 1024 * 1024], // 1MB
-				['eq', '$Cache-Control', `private, max-age=${cacheExpires}, must-revalidate`],
+				['content-length-range', 0, ORGANIZATION_LOGO_SIZE_LIMIT],
+				['eq', '$Cache-Control', `private, max-age=${S3_CACHE_CONTROL_EXPIRATION}, must-revalidate`],
 				['eq', '$Content-Type', `image/webp`],
 				['eq', '$key', 'organizations/' + organizationId],
 				['eq', '$Content-Disposition', `attachment; filename="organization-${organizationId}.webp"`]
 			],
-			Expires: 60 * 5, // 5 minutes
+			Expires: ORGANIZATION_LOGO_POST_URL_EXPIRATION,
 		});
 
 		logger.debug(`Created presigned post url for organization logo: ${organizationId}`);
 
-		return res.json(message('Presigned post url generated successfully.', { ...signedPost }));
+		return res.json(
+			message(
+				'Presigned post url generated successfully.',
+				{ ...signedPost }
+			)
+		);
 	},
 );
 

@@ -23,6 +23,7 @@ import {
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
+import logger from '../../../src/logger';
 
 jest.mock('../../../src/db', () => {
 	return {
@@ -160,8 +161,8 @@ describe('Email Verification Routes', () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					id: 1,
-					email_verified_at: 'date',
+					email_verified_at: '2023-09-14T11:00:00',
+					verification_sent_at: '2023-09-14T11:00:00',
 				},
 			],
 			rowCount: 1,
@@ -184,7 +185,6 @@ describe('Email Verification Routes', () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					id: 1,
 					email_verified_at: null,
 					verification_sent_at: '2023-09-14T11:00:00',
 				},
@@ -209,7 +209,6 @@ describe('Email Verification Routes', () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					id: 1,
 					email_verified_at: null,
 					verification_sent_at: '2023-09-15T11:00:00',
 				},

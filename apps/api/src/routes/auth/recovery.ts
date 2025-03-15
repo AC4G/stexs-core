@@ -21,7 +21,7 @@ import {
 } from 'utils-node/messageBuilder';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import sendEmail from '../../services/emailService';
-import { REDIRECT_TO_RECOVERY } from '../../../env-config';
+import { PASSWORD_RECOVERY_CODE_EXPIRATION, REDIRECT_TO_RECOVERY } from '../../../env-config';
 import { validate } from 'utils-node/middlewares';
 import logger from '../../logger';
 import { isExpired } from 'utils-node';
@@ -262,7 +262,7 @@ router.post(
 					);
 			}
 
-			if (isExpired(recoverySentAt, 60)) {
+			if (isExpired(recoverySentAt, PASSWORD_RECOVERY_CODE_EXPIRATION)) {
 				logger.debug(`Password recovery token expired for email: ${email}`);
 				return res
 					.status(403)

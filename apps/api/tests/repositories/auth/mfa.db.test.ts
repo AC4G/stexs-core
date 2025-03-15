@@ -445,6 +445,15 @@ describe('MFA Queries', () => {
             expect(row.email).toBe(email);
             expect(row.totp_verified_at).toBeNull();
 
+            const totp = getTOTPForSettup(email);
+	        const secret = totp.secret.base32; 
+
+            expect((await setTOTPSecret(
+                userId,
+                secret,
+                client
+            )).rowCount).toBe(1);
+
             expect((await verifyTOTPMethod(
                 userId,
                 client

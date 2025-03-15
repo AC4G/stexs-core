@@ -2,7 +2,11 @@ import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
 	BUCKET,
+	S3_CACHE_CONTROL_EXPIRATION,
 	ISSUER,
+	ITEM_THUMBNAIL_GET_URL_EXPIRATION,
+	ITEM_THUMBNAIL_POST_URL_EXPIRATION,
+	ITEM_THUMBNAIL_SIZE_LIMIT,
 } from '../../../env-config';
 import { Router, Response } from 'express';
 import {
@@ -43,19 +47,25 @@ router.get(
 	async (req: Request, res: Response) => {
 		const { itemId } = req.params;
 
-		const time = 60 * 60 * 24; // 1 day
+		const expires = ITEM_THUMBNAIL_GET_URL_EXPIRATION;
 
 		const signedUrl = await s3.getSignedUrl('getObject', {
 			Bucket: BUCKET,
 			Key: `items/thumbnails/${itemId}`,
-			Expires: time,
+			Expires: expires,
 		});
 
 		logger.debug(`Generated new presigned url for item thumbnail: ${itemId}`);
 
-		return res.json(message('Presigned get url generated successfully.', {
-			url: signedUrl,
-		}));
+		return res.json(
+			message(
+				'Presigned get url generated successfully.',
+				{
+					url: signedUrl,
+					expires: expires,
+				}
+			)
+		);
 	},
 );
 
@@ -137,29 +147,32 @@ router.post(
 				);
 		}
 
-		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
-
 		const signedPost = await s3.createPresignedPost({
 			Bucket: BUCKET,
 			Fields: {
 				key: 'items/thumbnails/' + itemId,
-				'Cache-Control': `private, max-age=${cacheExpires}, must-revalidate`,
+				'Cache-Control': `private, max-age=${S3_CACHE_CONTROL_EXPIRATION}, must-revalidate`,
 				'Content-Type': `image/webp`,
 				'Content-Disposition': `attachment; filename="item-${itemId}-thumbnail.webp"`,
 			},
 			Conditions: [
-				['content-length-range', 0, 1024 * 1024], // 1MB
-				['eq', '$Cache-Control', `private, max-age=${cacheExpires}, must-revalidate`],
+				['content-length-range', 0, ITEM_THUMBNAIL_SIZE_LIMIT],
+				['eq', '$Cache-Control', `private, max-age=${S3_CACHE_CONTROL_EXPIRATION}, must-revalidate`],
 				['eq', '$Content-Type', `image/webp`],
 				['eq', '$key', 'items/thumbnails/' + itemId],
 				['eq', '$Content-Disposition', `attachment; filename="item-${itemId}-thumbnail.webp"`]
 			],
-			Expires: 60 * 5, // 5 minutes
+			Expires: ITEM_THUMBNAIL_POST_URL_EXPIRATION,
 		});
 
 		logger.debug(`Created new presigned post url for item thumbnail: ${itemId}`);
 
-		return res.json(message('Presigned post url generated successfully.', { ...signedPost }));
+		return res.json(
+			message(
+				'Presigned post url generated successfully.',
+				{ ...signedPost }
+			)
+		);
 	},
 );
 

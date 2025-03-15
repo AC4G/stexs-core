@@ -5,10 +5,10 @@ import {
 	MFA_EMAIL_DISABLED,
 	TOTP_DISABLED,
 } from 'utils-node/errors';
-import db from '../db';
 import logger from '../logger';
 import { getTOTPForVerification } from './totpService';
 import { isExpired } from 'utils-node';
+import { getEmailInfo, getTOTPStatus } from '../repositories/auth/mfa';
 
 export interface MFAError {
 	status: number;
@@ -26,19 +26,7 @@ export async function validateMFA(
 ): Promise<MFAError | null> {
 	try {
 		if (type === 'totp') {
-			const { rows, rowCount } = await db.query<{
-				totp: boolean;
-				totp_secret: string | null;
-			}>(
-				`
-					SELECT 
-						totp, 
-						totp_secret 
-					FROM auth.mfa
-					WHERE user_id = $1::uuid;
-				`,
-				[userId],
-			);
+			const { rowCount, rows } = await getTOTPStatus(userId);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(
@@ -50,7 +38,9 @@ export async function validateMFA(
 				};
 			}
 
-			if (!rows[0].totp || !rows[0].totp_secret) {
+			const row = rows[0];
+
+			if (!row.totp_verified_at || !row.totp_secret) {
 				logger.debug(`MFA TOTP is disabled for user: ${userId}`);
 				return {
 					status: 400,
@@ -58,7 +48,7 @@ export async function validateMFA(
 				};
 			}
 
-			const totp = getTOTPForVerification(rows[0].totp_secret);
+			const totp = getTOTPForVerification(row.totp_secret!);
 
 			if (totp.validate({ token: code, window: 1 })) {
 				logger.debug(`Invalid code provided for MFA TOTP password change for user: ${userId}`);
@@ -74,21 +64,7 @@ export async function validateMFA(
 		}
 
 		if (type === 'email') {
-			const { rowCount, rows } = await db.query<{
-				email: boolean;
-				email_code: string | null;
-				email_code_sent_at: string | null;
-			}>(
-				`
-					SELECT 
-						email, 
-						email_code, 
-						email_code_sent_at
-					FROM auth.mfa
-					WHERE user_id = $1::uuid;
-				`,
-				[userId],
-			);
+			const { rowCount, rows } = await getEmailInfo(userId);
 
 			if (!rowCount || rowCount === 0) {
 				logger.error(

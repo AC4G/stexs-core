@@ -114,12 +114,6 @@ router.post(
 						)
 					);
 			}
-
-			logger.debug(`Sign up successful for user: ${username}`);
-
-			res
-				.status(201)
-				.json(message('Sign up successful. Check your email for a verification link!'));
 		} catch (e) {
 			const err = e as { hint: string | null };
 
@@ -176,7 +170,13 @@ router.post(
 					ISSUER + '/auth/verify?email=' + email + '&token=' + token
 				}`,
 			);
+
 			logger.debug(`Email verification message sent successfully for user: ${username}`);
+			logger.debug(`Sign up successful for user: ${username}`);
+
+			res
+				.status(201)
+				.json(message('Sign up successful. Check your email for a verification link!'));
 		} catch (e) {
 			logger.error(
 				`Sending verification email failed for email: ${email}. Error: ${
