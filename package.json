@@ -32,13 +32,13 @@
     "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.4.2",
-    "prettier-plugin-svelte": "^3.3.2",
+    "prettier": "^3.5.3",
+    "prettier-plugin-svelte": "^3.3.3",
     "turbo": "^1.13.4"
   },
   "dependencies": {
     "@turbo/gen": "^1.13.4",
-    "autoprefixer": "^10.4.20",
+    "autoprefixer": "^10.4.21",
     "dotenv-cli": "^7.4.4"
   },
   "engines": {
