@@ -15,6 +15,10 @@ import {
 	AUDIENCE,
 	BUCKET,
 	ISSUER,
+	PROJECT_LOGO_GET_URL_EXPIRATION,
+	PROJECT_LOGO_POST_URL_EXPIRATION,
+	PROJECT_LOGO_SIZE_LIMIT,
+	S3_CACHE_CONTROL_EXPIRATION,
 } from '../../../env-config';
 import s3 from '../../s3';
 import {
@@ -43,19 +47,25 @@ router.get(
 	async (req: Request, res: Response) => {
 		const { projectId } = req.params;
 
-		const time = 60 * 60 * 24; // 1 day
+		const expires = PROJECT_LOGO_GET_URL_EXPIRATION;
 
 		const signedUrl = await s3.getSignedUrl('getObject', {
 			Bucket: BUCKET,
 			Key: `projects/${projectId}`,
-			Expires: time,
+			Expires: expires,
 		});
 
 		logger.debug(`Generated new presigned url for project logo: ${projectId}`);
 
-		return res.json(message('Presigned url generated successfully.', {
-			url: signedUrl,
-		}));
+		return res.json(
+			message(
+				'Presigned url generated successfully.',
+				{
+					url: signedUrl,
+					expires
+				}
+			)
+		);
 	},
 );
 
@@ -137,29 +147,32 @@ router.post(
 				);
 		}
 
-		const cacheExpires = 60 * 60 * 24 * 7; // 1 week
-
 		const signedPost = await s3.createPresignedPost({
 			Bucket: BUCKET,
 			Fields: {
 				key: 'projects/' + projectId,
 				'Content-Type': `image/webp`,
-				'Cache-Control': `private, max-age=${cacheExpires}, must-revalidate`,
+				'Cache-Control': `private, max-age=${S3_CACHE_CONTROL_EXPIRATION}, must-revalidate`,
 				'Content-Disposition': `attachment; filename="project-${projectId}.webp"`,
 			},
 			Conditions: [
-				['content-length-range', 0, 1024 * 1024], // 1MB
-				['eq', '$Cache-Control', `private, max-age=${cacheExpires}, must-revalidate`],
+				['content-length-range', 0, PROJECT_LOGO_SIZE_LIMIT],
+				['eq', '$Cache-Control', `private, max-age=${S3_CACHE_CONTROL_EXPIRATION}, must-revalidate`],
 				['eq', '$Content-Type', `image/webp`],
 				['eq', '$key', 'projects/' + projectId],
 				['eq', '$Content-Disposition', `attachment; filename="project-${projectId}.webp"`]
 			],
-			Expires: 60 * 5, // 5 minutes
+			Expires: PROJECT_LOGO_POST_URL_EXPIRATION,
 		});
 
 		logger.debug(`Created signed post url for project logo: ${projectId}`);
 
-		return res.json(message('Presigned url generated successfully.', { ...signedPost }));
+		return res.json(
+			message(
+				'Presigned url generated successfully.',
+				{ ...signedPost }
+			)
+		);
 	},
 );
 

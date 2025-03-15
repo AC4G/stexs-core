@@ -8,7 +8,6 @@ import {
 	INVALID_REFRESH_TOKEN,
 	NO_CLIENT_SCOPES_SELECTED,
 } from 'utils-node/errors';
-import db from '../../db';
 import generateAccessToken from '../../services/jwtService';
 import { Request } from 'express-jwt';
 import logger from '../../logger';
@@ -17,6 +16,7 @@ import { deleteAuthorizationCode, validateAuthorizationCode } from '../../reposi
 import { createOAuth2Connection } from '../../repositories/public/oauth2Connections';
 import { validateClientCredentials } from '../../repositories/public/oauth2Apps';
 import { validateOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
+import { AUTHORIZATION_CODE_EXPIRATION } from '../../../env-config';
 
 export async function authorizationCodeController(req: Request, res: Response) {
 	const {
@@ -62,7 +62,7 @@ export async function authorizationCodeController(req: Request, res: Response) {
 				);
 		}
 
-		if (isExpired(rows[0].created_at, 5)) {
+		if (isExpired(rows[0].created_at, AUTHORIZATION_CODE_EXPIRATION)) {
 			logger.debug(`Authorization code expired for client: ${client_id} and code: ${code}`);
 			return res
 				.status(400)

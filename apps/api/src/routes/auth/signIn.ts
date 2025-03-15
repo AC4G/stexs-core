@@ -93,7 +93,9 @@ router.post(
 					);
 			}
 
-			const isRightPassword = await compare(password, rows[0].encrypted_password);
+			const row = rows[0];
+
+			const isRightPassword = await compare(password, row.encrypted_password);
 
 			if (!isRightPassword) {
 				logger.debug(`Invalid credentials for user: ${identifier}`);
@@ -116,7 +118,7 @@ router.post(
 					);
 			}
 
-			if (rows[0].banned_at) {
+			if (row.banned_at) {
 				logger.debug(`Attempt to sign in into a banned account for user: ${identifier}`);
 				return res
 					.status(400)
@@ -129,7 +131,7 @@ router.post(
 					);
 			}
 
-			if (!rows[0].email_verified_at) {
+			if (!row.email_verified_at) {
 				logger.debug(`Email not verified for user: ${identifier}`);
 				return res
 					.status(400)
@@ -142,9 +144,9 @@ router.post(
 					);
 			}
 
-			let types = rows[0].types;
+			let types = row.types;
 
-			const data = generateSignInConfirmToken(rows[0].id, types);
+			const data = generateSignInConfirmToken(row.id, types);
 
 			logger.debug(`Sign-in initialized for user: ${identifier}`);
 

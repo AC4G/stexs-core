@@ -1,7 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { message } from 'utils-node/messageBuilder';
 import { body, query } from 'express-validator';
-import { ISSUER, REDIRECT_TO_SIGN_IN } from '../../../env-config';
+import {
+	EMAIL_VERIFICATION_CODE_EXPIRATION,
+	ISSUER,
+	REDIRECT_TO_SIGN_IN
+} from '../../../env-config';
 import sendEmail from '../../services/emailService';
 import {
 	EMAIL_ALREADY_VERIFIED,
@@ -71,7 +75,9 @@ router.get(
 				return res.redirect(302, signInURL.toString());
 			}
 
-			if (rows[0].email_verified_at) {
+			const row = rows[0];
+
+			if (row.email_verified_at) {
 				signInURL.searchParams.append('code', 'error');
 				signInURL.searchParams.append(
 					'message',
@@ -83,9 +89,9 @@ router.get(
 				return res.redirect(302, signInURL.toString());
 			}
 
-			const verificationSentAt = rows[0].verification_sent_at;
+			const verificationSentAt = row.verification_sent_at;
 
-			if (!verificationSentAt || isExpired(verificationSentAt, 60 * 24)) {
+			if (!verificationSentAt || isExpired(verificationSentAt, EMAIL_VERIFICATION_CODE_EXPIRATION)) {
 				signInURL.searchParams.append('code', 'error');
 				signInURL.searchParams.append(
 					'message',
@@ -100,7 +106,7 @@ router.get(
 			const { rowCount: count } = await verifyEmail(email as string);
 
 			if (!count || count === 0) {
-				logger.error(`User not found for email: ${email}`);
+				logger.error(`Email verification failed for email: ${email}`);
 				return res
 					.status(500)
 					.json(

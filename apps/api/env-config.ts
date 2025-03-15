@@ -17,8 +17,8 @@ const withDefaultString = (schema: z.ZodString, defaultValue: string | undefined
 	checkEnvVarExists(varName);
 	const newSchema = schema.transform(value => {
 		if (value.trim() === '') {
-		  logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
-		  return defaultValue;
+			logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
+			return defaultValue;
 		}
 		return value;
 	  });
@@ -32,8 +32,8 @@ const withDefaultNumber = (schema: z.ZodNumber, defaultValue: number, varName: s
 	checkEnvVarExists(varName);
 	return schema.transform(value => {
 	  if (value === undefined || value === null || value === 0) {
-		logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
-		return defaultValue;
+			logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
+			return defaultValue;
 	  }
 	  return value;
 	}).default(defaultValue);
@@ -63,8 +63,26 @@ const envSchema = z.object({
 	TOTP_PERIOD: withDefaultNumber(z.coerce.number(), 30, 'TOTP_PERIOD'),
 	JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT: withDefaultNumber(z.coerce.number(), 600, 'JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT'),
 	JWT_EXPIRY_LIMIT: withDefaultNumber(z.coerce.number(), 3600, 'JWT_EXPIRY_LIMIT'),
-	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT: withDefaultNumber(z.coerce.number(), 900, 'JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT'),
+	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT: withDefaultNumber(z.coerce.number(), 86400, 'JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT'),
 	STORAGE_PORT: withDefaultNumber(z.coerce.number(), 9001, 'STORAGE_PORT'),
+	MFA_EMAIL_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 300, 'MFA_EMAIL_CODE_EXPIRATION'),
+	AUTHORIZATION_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 300, 'AUTHORIZATION_CODE_EXPIRATION'),
+	PASSWORD_RECOVERY_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 900, 'PASSWORD_RECOVERY_CODE_EXPIRATION'),
+	EMAIL_CHANGE_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 900, 'EMAIL_CHANGE_CODE_EXPIRATION'),
+	EMAIL_VERIFICATION_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'EMAIL_VERIFICATION_CODE_EXPIRATION'),
+	S3_CACHE_CONTROL_EXPIRATION: withDefaultNumber(z.coerce.number(), 604800, 'S3_CACHE_CONTROL_EXPIRATION'),
+	AVATAR_POST_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 60, 'AVATAR_POST_URL_EXPIRATION'),
+	AVATAR_GET_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'AVATAR_GET_URL_EXPIRATION'),
+	AVATAR_SIZE_LIMIT: withDefaultNumber(z.coerce.number(), 1048576, 'AVATAR_SIZE_LIMIT'),
+	ITEM_THUMBNAIL_GET_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'ITEM_THUMBNAIL_GET_URL_EXPIRATION'),
+	ITEM_THUMBNAIL_POST_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 60, 'ITEM_THUMBNAIL_POST_URL_EXPIRATION'),
+	ITEM_THUMBNAIL_SIZE_LIMIT: withDefaultNumber(z.coerce.number(), 1048576, 'ITEM_THUMBNAIL_SIZE_LIMIT'),
+	ORGANIZATION_LOGO_GET_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'ORGANIZATION_LOGO_GET_URL_EXPIRATION'),
+	ORGANIZATION_LOGO_POST_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 60, 'ORGANIZATION_LOGO_POST_URL_EXPIRATION'),
+	ORGANIZATION_LOGO_SIZE_LIMIT: withDefaultNumber(z.coerce.number(), 1048576, 'ORGANIZATION_LOGO_SIZE_LIMIT'),
+	PROJECT_LOGO_GET_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'PROJECT_LOGO_GET_URL_EXPIRATION'),
+	PROJECT_LOGO_POST_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 60, 'PROJECT_LOGO_POST_URL_EXPIRATION'),
+	PROJECT_LOGO_SIZE_LIMIT: withDefaultNumber(z.coerce.number(), 1048576, 'PROJECT_LOGO_SIZE_LIMIT'),
 	
 	// Passwords (required, must be explicitly set)
 	STEXS_DB_PWD: z.string().min(1, 'STEXS_DB_PWD is required'),
@@ -155,3 +173,22 @@ export const STORAGE_SECRET_KEY = env.STORAGE_SECRET_KEY;
 export const BUCKET = env.STORAGE_BUCKET!;
 
 export const LAGO_API_KEY = env.LAGO_API_KEY;
+
+export const MFA_EMAIL_CODE_EXPIRATION = env.MFA_EMAIL_CODE_EXPIRATION;
+export const AUTHORIZATION_CODE_EXPIRATION = env.AUTHORIZATION_CODE_EXPIRATION;
+export const PASSWORD_RECOVERY_CODE_EXPIRATION = env.PASSWORD_RECOVERY_CODE_EXPIRATION;
+export const EMAIL_CHANGE_CODE_EXPIRATION = env.EMAIL_CHANGE_CODE_EXPIRATION;
+export const EMAIL_VERIFICATION_CODE_EXPIRATION = env.EMAIL_VERIFICATION_CODE_EXPIRATION;
+export const S3_CACHE_CONTROL_EXPIRATION = env.S3_CACHE_CONTROL_EXPIRATION;
+export const AVATAR_POST_URL_EXPIRATION = env.AVATAR_POST_URL_EXPIRATION;
+export const AVATAR_GET_URL_EXPIRATION = env.AVATAR_GET_URL_EXPIRATION;
+export const AVATAR_SIZE_LIMIT = env.AVATAR_SIZE_LIMIT;
+export const ITEM_THUMBNAIL_GET_URL_EXPIRATION = env.ITEM_THUMBNAIL_GET_URL_EXPIRATION;
+export const ITEM_THUMBNAIL_POST_URL_EXPIRATION = env.ITEM_THUMBNAIL_POST_URL_EXPIRATION;
+export const ITEM_THUMBNAIL_SIZE_LIMIT = env.ITEM_THUMBNAIL_SIZE_LIMIT;
+export const ORGANIZATION_LOGO_GET_URL_EXPIRATION = env.ORGANIZATION_LOGO_GET_URL_EXPIRATION;
+export const ORGANIZATION_LOGO_POST_URL_EXPIRATION = env.ORGANIZATION_LOGO_POST_URL_EXPIRATION;
+export const ORGANIZATION_LOGO_SIZE_LIMIT = env.ORGANIZATION_LOGO_SIZE_LIMIT;
+export const PROJECT_LOGO_GET_URL_EXPIRATION = env.PROJECT_LOGO_GET_URL_EXPIRATION;
+export const PROJECT_LOGO_POST_URL_EXPIRATION = env.PROJECT_LOGO_POST_URL_EXPIRATION;
+export const PROJECT_LOGO_SIZE_LIMIT = env.PROJECT_LOGO_SIZE_LIMIT;

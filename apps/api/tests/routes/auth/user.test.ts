@@ -273,7 +273,7 @@ describe('User Routes', () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					totp: true,
+					totp_verified_at: '2023-09-15T12:00:00',
 					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
 				},
 			],
@@ -322,7 +322,7 @@ describe('User Routes', () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					totp: true,
+					totp_verified_at: '2023-09-15T12:00:00',
 					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
 				},
 			],
@@ -439,7 +439,7 @@ describe('User Routes', () => {
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
-					totp: true,
+					totp_verified_at: '2023-09-15T12:00:00',
 					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
 				},
 			],

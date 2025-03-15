@@ -39,7 +39,7 @@ GRANT SELECT ON TABLE public.inventories TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_distinct_projects_from_inventory(
 	user_id_param UUID,
-	pointer INT DEFAULT NULL,
+	last_project_id INT DEFAULT NULL,
 	limit_param INT DEFAULT 10,
 	search_param TEXT DEFAULT NULL
 )
@@ -60,9 +60,9 @@ BEGIN
 	JOIN projects ON items.project_id = projects.id
 	JOIN organizations ON projects.organization_id = organizations.id
 	WHERE inventories.user_id = user_id_param
-		AND (pointer IS NULL OR projects.id > pointer)
+		AND (last_project_id IS NULL OR projects.id > last_project_id)
 		AND (search_param IS NULL OR projects.name ILIKE '%' || search_param || '%')
-	ORDER BY projects.id
+	ORDER BY projects.id ASC
 	LIMIT limit_param;
 END;
 $$ LANGUAGE plpgsql;

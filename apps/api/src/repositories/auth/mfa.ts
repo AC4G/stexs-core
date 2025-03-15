@@ -87,9 +87,9 @@ export async function getEmailInfo(
     return await query(
         {
             text: `
-                SELECT 
-                    email, 
-                    email_code, 
+                SELECT
+                    email,
+                    email_code,
                     email_code_sent_at
                 FROM auth.mfa
                 WHERE user_id = $1::uuid;

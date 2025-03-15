@@ -32,6 +32,7 @@ import {
 	setTOTPSecret,
 	verifyTOTPMethod
 } from '../../repositories/auth/mfa';
+import { MFA_EMAIL_CODE_EXPIRATION } from '../../../env-config';
 
 export async function enableTOTP(req: Request, res: Response) {
 	const userId = req.auth?.sub!;
@@ -67,7 +68,7 @@ export async function enableTOTP(req: Request, res: Response) {
 				);
 		}
 
-		email = rows[0].email;
+		({ email } = rows[0]);
 	} catch (e) {
 		logger.error(
 			`Error while fetching MFA TOTP status for user: ${userId}. Error: ${
@@ -152,7 +153,9 @@ export async function enableEmail(req: Request, res: Response) {
 				);
 		}
 
-		if (rows[0].email) {
+		const row = rows[0];
+
+		if (row.email) {
 			logger.debug(`MFA email is already enabled for user: ${userId}`);
 			return res
 				.status(400)
@@ -165,7 +168,7 @@ export async function enableEmail(req: Request, res: Response) {
 				);
 		}
 
-		if (code !== rows[0].email_code) {
+		if (code !== row.email_code) {
 			logger.debug(`Invalid MFA activation code provided for user: ${userId}`);
 			return res
 				.status(403)
@@ -186,9 +189,9 @@ export async function enableEmail(req: Request, res: Response) {
 				);
 		}
 
-		const emailCodeSentAt = rows[0].email_code_sent_at;
+		const emailCodeSentAt = row.email_code_sent_at;
 
-		if (!emailCodeSentAt || isExpired(emailCodeSentAt, 5)) {
+		if (!emailCodeSentAt || isExpired(emailCodeSentAt, MFA_EMAIL_CODE_EXPIRATION)) {
 			logger.debug(`MFA activation code expired for user: ${userId}`);
 			return res
 				.status(403)
@@ -275,7 +278,9 @@ export async function disableTOTP(req: Request, res: Response) {
 				);
 		}
 
-		if (!rows[0].totp_verified_at) {
+		const row = rows[0];
+
+		if (!row.totp_verified_at) {
 			logger.debug(`MFA TOTP is already disabled for user: ${userId}`);
 			return res
 				.status(400)
@@ -288,7 +293,7 @@ export async function disableTOTP(req: Request, res: Response) {
 				);
 		}
 
-		if (!rows[0].email) {
+		if (!row.email) {
 			logger.debug(`MFA totp cant be disabled because this is the last active MFA method for user: ${userId}`);
 			return res
 				.status(400)
@@ -301,7 +306,7 @@ export async function disableTOTP(req: Request, res: Response) {
 				);
 		}
 
-		secret = rows[0].totp_secret!;
+		secret = row.totp_secret!;
 	} catch (e) {
 		logger.error(
 			`Error while fetching MFA TOTP status and secret for user: ${userId}. Error: ${
@@ -407,7 +412,9 @@ export async function disableEmail(req: Request, res: Response) {
 				);
 		}
 
-		if (!rows[0].email) {
+		const row = rows[0];
+
+		if (!row.email) {
 			logger.debug(`MFA email is already disabled for user: ${userId}`);
 			return res
 				.status(400)
@@ -420,7 +427,7 @@ export async function disableEmail(req: Request, res: Response) {
 				);
 		}
 
-		if (!rows[0].totp_verified_at) {
+		if (!row.totp_verified_at) {
 			logger.debug(`MFA email cant be disabled because this is the last active MFA method for user: ${userId}`);
 			return res
 				.status(400)
@@ -433,7 +440,7 @@ export async function disableEmail(req: Request, res: Response) {
 				);
 		}
 
-		if (code !== rows[0].email_code) {
+		if (code !== row.email_code) {
 			logger.debug(`Invalid MFA code provided for user: ${userId}`);
 			return res
 				.status(403)
@@ -453,10 +460,10 @@ export async function disableEmail(req: Request, res: Response) {
 					)
 				);
 		}
+ 
+		const emailCodeSentAt = row.email_code_sent_at;
 
-		const emailCodeSentAt = rows[0].email_code_sent_at;
-
-		if (!emailCodeSentAt || isExpired(emailCodeSentAt, 5)) {
+		if (!emailCodeSentAt || isExpired(emailCodeSentAt, MFA_EMAIL_CODE_EXPIRATION)) {
 			logger.debug(`MFA code expired for user: ${userId}`);
 			return res
 				.status(403)
@@ -654,7 +661,7 @@ export async function sendEmailCode(req: Request, res: Response) {
 				);
 		}
 
-		email = rows[0].email;
+		({ email } = rows[0]);
 	} catch (e) {
 		logger.error(
 			`Error while updating and fetching MFA code for user: ${userId}. Error: ${
