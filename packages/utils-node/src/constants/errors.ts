@@ -224,20 +224,20 @@ export const INVALID_CODE = {
 	code: 'INVALID_CODE',
 	message: 'Provided code is invalid.',
 };
-export const TOTP_ALREADY_ENABLED = {
-	code: 'TOTP_ALREADY_ENABLED',
+export const MFA_TOTP_ALREADY_ENABLED = {
+	code: 'MFA_TOTP_ALREADY_ENABLED',
 	message: 'TOTP MFA is already enabled.',
 };
-export const TOTP_ALREADY_DISABLED = {
-	code: 'TOTP_ALREADY_DISABLED',
+export const MFA_TOTP_ALREADY_DISABLED = {
+	code: 'MFA_TOTP_ALREADY_DISABLED',
 	message: 'TOTP MFA is already disabled.',
 };
-export const TOTP_ALREADY_VERIFIED = {
-	code: 'TOTP_ALREADY_VERIFIED',
+export const MFA_TOTP_ALREADY_VERIFIED = {
+	code: 'MFA_TOTP_ALREADY_VERIFIED',
 	message: 'TOTP MFA is already verified.',
 };
-export const TOTP_DISABLED = {
-	code: 'TOTP_DISABLED',
+export const MFA_TOTP_DISABLED = {
+	code: 'MFA_TOTP_DISABLED',
 	message: "You can't use the MFA TOTP method because it is disabled.",
 };
 export const MFA_EMAIL_ALREADY_ENABLED = {

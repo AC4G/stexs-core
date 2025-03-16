@@ -3,12 +3,13 @@ import {
 	INTERNAL_ERROR,
 	INVALID_CODE,
 	MFA_EMAIL_DISABLED,
-	TOTP_DISABLED,
+	MFA_TOTP_DISABLED,
 } from 'utils-node/errors';
 import logger from '../logger';
 import { getTOTPForVerification } from './totpService';
 import { isExpired } from 'utils-node';
 import { getEmailInfo, getTOTPStatus } from '../repositories/auth/mfa';
+import { MFA_EMAIL_CODE_EXPIRATION } from '../../env-config';
 
 export interface MFAError {
 	status: number;
@@ -21,7 +22,7 @@ export interface MFAError {
 
 export async function validateMFA(
 	userId: string,
-	type: string,
+	type: 'totp' | 'email',
 	code: string,
 ): Promise<MFAError | null> {
 	try {
@@ -44,13 +45,13 @@ export async function validateMFA(
 				logger.debug(`MFA TOTP is disabled for user: ${userId}`);
 				return {
 					status: 400,
-					info: TOTP_DISABLED,
+					info: MFA_TOTP_DISABLED,
 				};
 			}
 
 			const totp = getTOTPForVerification(row.totp_secret!);
 
-			if (totp.validate({ token: code, window: 1 })) {
+			if (totp.validate({ token: code, window: 1 }) === null) {
 				logger.debug(`Invalid code provided for MFA TOTP password change for user: ${userId}`);
 				return {
 					status: 403,
@@ -98,7 +99,7 @@ export async function validateMFA(
 
 			const emailCodeSentAt = rows[0].email_code_sent_at;
 
-			if (!emailCodeSentAt || isExpired(emailCodeSentAt, 5)) {
+			if (!emailCodeSentAt || isExpired(emailCodeSentAt, MFA_EMAIL_CODE_EXPIRATION)) {
 				logger.debug(`MFA code expired for user: ${userId}`);
 				return {
 					status: 403,

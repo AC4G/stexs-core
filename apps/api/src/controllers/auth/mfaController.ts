@@ -9,9 +9,9 @@ import {
 	MFA_CANNOT_BE_COMPLETELY_DISABLED,
 	MFA_EMAIL_ALREADY_DISABLED,
 	MFA_EMAIL_ALREADY_ENABLED,
-	TOTP_ALREADY_DISABLED,
-	TOTP_ALREADY_ENABLED,
-	TOTP_ALREADY_VERIFIED,
+	MFA_TOTP_ALREADY_DISABLED,
+	MFA_TOTP_ALREADY_ENABLED,
+	MFA_TOTP_ALREADY_VERIFIED,
 } from 'utils-node/errors';
 import {
 	getTOTPForSettup,
@@ -63,7 +63,7 @@ export async function enableTOTP(req: Request, res: Response) {
 					message(
 						'MFA TOTP is already enabled.',
 						{},
-						[{ info: TOTP_ALREADY_ENABLED }]
+						[{ info: MFA_TOTP_ALREADY_ENABLED }]
 					)
 				);
 		}
@@ -288,7 +288,7 @@ export async function disableTOTP(req: Request, res: Response) {
 					message(
 						'MFA TOTP is already disabled.',
 						{},
-						[{ info: TOTP_ALREADY_DISABLED }]
+						[{ info: MFA_TOTP_ALREADY_DISABLED }]
 					)
 				);
 		}
@@ -554,7 +554,7 @@ export async function verifyTOTP(req: Request, res: Response) {
 					message(
 						'MFA TOTP is already verified.',
 						{},
-						[{ info: TOTP_ALREADY_VERIFIED }]
+						[{ info: MFA_TOTP_ALREADY_VERIFIED }]
 					)
 				);
 		}

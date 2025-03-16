@@ -98,7 +98,7 @@ router.post(
 			type
 		}: {
 			code: string;
-			type: string
+			type: 'totp' | 'email';
 		} = req.body;
 
 		let mfaError = await validateMFA(userId, type, code);
