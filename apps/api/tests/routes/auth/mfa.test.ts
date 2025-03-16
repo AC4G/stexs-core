@@ -19,9 +19,9 @@ import {
 	CODE_REQUIRED,
 	INVALID_CODE,
 	INVALID_TYPE,
-	TOTP_ALREADY_DISABLED,
-	TOTP_ALREADY_ENABLED,
-	TOTP_ALREADY_VERIFIED,
+	MFA_TOTP_ALREADY_DISABLED,
+	MFA_TOTP_ALREADY_ENABLED,
+	MFA_TOTP_ALREADY_VERIFIED,
 	MFA_EMAIL_ALREADY_DISABLED,
 	MFA_EMAIL_ALREADY_ENABLED,
 	TYPE_REQUIRED,
@@ -141,7 +141,7 @@ describe('MFA Routes', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			message('MFA TOTP is already enabled.', {}, [{ info: TOTP_ALREADY_ENABLED }]).onTest(),
+			message('MFA TOTP is already enabled.', {}, [{ info: MFA_TOTP_ALREADY_ENABLED }]).onTest(),
 		);
 	});
 
@@ -219,7 +219,7 @@ describe('MFA Routes', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			message('MFA TOTP is already disabled.', {}, [{ info: TOTP_ALREADY_DISABLED }]).onTest(),
+			message('MFA TOTP is already disabled.', {}, [{ info: MFA_TOTP_ALREADY_DISABLED }]).onTest(),
 		);
 	});
 
@@ -690,7 +690,7 @@ describe('MFA Routes', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			message('MFA TOTP is already verified.', {}, [{ info: TOTP_ALREADY_VERIFIED }]).onTest(),
+			message('MFA TOTP is already verified.', {}, [{ info: MFA_TOTP_ALREADY_VERIFIED }]).onTest(),
 		);
 	});
 });

@@ -69,4 +69,8 @@ export class DbPool {
   async close(): Promise<void> {
     await this.pool.end();
   }
+
+  async getClient(): Promise<PoolClient> {
+    return this.pool.connect();
+  }
 }

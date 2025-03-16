@@ -212,7 +212,7 @@ router.post(
 			type,
 			code
 		}: {
-			type: string;
+			type: 'totp' | 'email';
 			code: string
 		} = req.body;
 
