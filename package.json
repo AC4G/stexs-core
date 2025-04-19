@@ -38,7 +38,8 @@
   "dependencies": {
     "@turbo/gen": "^1.13.4",
     "autoprefixer": "^10.4.21",
-    "dotenv-cli": "^7.4.4"
+    "dotenv-cli": "^7.4.4",
+    "tsc-watch": "^6.0.4"
   },
   "engines": {
     "npm": ">=10.1.0",
