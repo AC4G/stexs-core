@@ -9,19 +9,15 @@ import {
 	GRANT_TYPE_REQUIRED,
 	IDENTIFIER_REQUIRED,
 	INVALID_GRANT_TYPE,
-	INVALID_TOKEN,
 	INVALID_TYPE,
-	INVALID_UUID,
 	PASSWORD_REQUIRED,
 	REFRESH_TOKEN_REQUIRED,
 	TOKEN_REQUIRED,
 	TYPE_REQUIRED,
 } from 'utils-node/errors';
-import { verify, decode } from 'jsonwebtoken';
 import logger from '../../logger';
 import { body, query } from 'express-validator';
 import { validate } from 'utils-node/middlewares';
-import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../../env-config';
 import {
 	authorizationCodeController,
 	clientCredentialsController,
@@ -37,6 +33,7 @@ import {
   grantTypesForPassword,
   grantTypesForMFA,
   supportedMFATypes,
+  grantTypesRequiringRefreshToken,
 } from '../../types/auth';
 import { decodeRefreshToken, requireUUIDv4 } from '../../services/validators';
 
@@ -79,7 +76,10 @@ router.post(
 			})
 			.notEmpty().withMessage(CODE_REQUIRED),
 		body('refresh_token')
-			.if((_, { req }) => req.query?.grant_type === 'refresh_token')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesRequiringRefreshToken.includes(grantType);
+			})
 			.notEmpty().withMessage(REFRESH_TOKEN_REQUIRED)
 			.bail()
 			.custom(async (value, { req }) => {
@@ -87,19 +87,21 @@ router.post(
 				return true;
 			}),
 		body('identifier')
-			.if((_, { req }) => req.query?.grant_type === 'password')
-			.notEmpty()
-			.withMessage(IDENTIFIER_REQUIRED)
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesForPassword.includes(grantType);
+			})
+			.notEmpty().withMessage(IDENTIFIER_REQUIRED)
 			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.isString().withMessage(FIELD_MUST_BE_A_STRING),
 		body('password')
-			.if((_, { req }) => req.query?.grant_type === 'password')
-			.notEmpty()
-			.withMessage(PASSWORD_REQUIRED)
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesForPassword.includes(grantType);
+			})
+			.notEmpty().withMessage(PASSWORD_REQUIRED)
 			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.isString().withMessage(FIELD_MUST_BE_A_STRING),
 		body('type')
 			.if((_, { req }) => {
 				const grantType = req.query?.grant_type as GrantTypes | undefined;
@@ -108,9 +110,8 @@ router.post(
 			.notEmpty().withMessage(TYPE_REQUIRED)
 			.bail()
 			.custom((value) => {
-				if (!supportedMFATypes.includes(value)) {
+				if (!supportedMFATypes.includes(value))
 					throw new CustomValidationError(INVALID_TYPE);
-				}
 				
 				return true;
 			}),
@@ -121,8 +122,7 @@ router.post(
 			})
 			.notEmpty().withMessage(TOKEN_REQUIRED)
 			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.isString().withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {

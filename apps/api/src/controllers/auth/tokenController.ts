@@ -9,7 +9,6 @@ import {
 	INVALID_CLIENT_CREDENTIALS,
 	INVALID_CREDENTIALS,
 	INVALID_REFRESH_TOKEN,
-	INVALID_TOKEN,
 	NO_CLIENT_SCOPES_SELECTED,
     USER_NOT_FOUND,
 } from 'utils-node/errors';
@@ -343,14 +342,14 @@ export async function refreshTokenController(req: Request, res: Response) {
             if (!rowCount || rowCount === 0) {
                 logger.debug(`Refresh token invalid or expired for user: ${sub}`);
                 return res
-                    .status(401)
+                    .status(400)
                     .send(
                         message(
                             'Invalid refresh token.',
                             {},
                             [
                                 {
-                                    info: INVALID_TOKEN,
+                                    info: INVALID_REFRESH_TOKEN,
                                     data: {
                                         location: 'body',
                                         path: 'refresh_token',
