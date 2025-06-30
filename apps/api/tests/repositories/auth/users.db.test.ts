@@ -12,7 +12,7 @@ import {
     verifyEmail,
     createUser,
     signUpUser,
-    signInUser,
+    getUserAuth,
     setRecoveryToken,
     confirmRecovery,
     validateRecoveryToken,
@@ -403,7 +403,7 @@ describe('User Queries', () => {
                 passwordHash
             )).rowCount).toBe(1);
 
-            const { rowCount, rows } = await signInUser(email, client);
+            const { rowCount, rows } = await getUserAuth(email, client);
 
             const row = rows[0];
 
@@ -432,7 +432,7 @@ describe('User Queries', () => {
                 passwordHash
             )).rowCount).toBe(1);
 
-            const { rowCount, rows } = await signInUser(username, client);
+            const { rowCount, rows } = await getUserAuth(username, client);
 
             const row = rows[0];
 
@@ -458,7 +458,7 @@ describe('User Queries', () => {
                 null
             )).rowCount).toBe(1);
 
-            const response = await signInUser(email, client);            
+            const response = await getUserAuth(email, client);            
 
             expect(response.rowCount).toBe(1);
             expect(await compare(wrongPassword, response.rows[0].encrypted_password)).toBe(false);

@@ -2,11 +2,11 @@ import jwt from 'jsonwebtoken';
 import {
 	ACCESS_TOKEN_SECRET,
 	REFRESH_TOKEN_SECRET,
-	SIGN_IN_CONFIRM_TOKEN_SECRET,
+	MFA_CHALLENGE_TOKEN_SECRET,
 	ISSUER,
 	AUDIENCE,
 	JWT_EXPIRY_LIMIT,
-	JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT,
+	JWT_EXPIRY_MFA_CHALLENGE_LIMIT,
 	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT,
 } from '../../env-config';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,22 +16,22 @@ import {
 	updateAuthorizationCodeRefreshToken
 } from '../repositories/auth/refreshTokens';
 
-export function generateSignInConfirmToken(sub: string, types: string[]) {
+export function generateMFAChallengeToken(sub: string, types: string[]) {
 	const iat = Math.floor(Date.now() / 1000);
-	const exp = iat + JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT;
+	const exp = iat + JWT_EXPIRY_MFA_CHALLENGE_LIMIT;
 
 	const payload = {
 		iss: ISSUER,
 		aud: AUDIENCE,
 		sub,
 		types,
-		grant_type: 'sign_in_confirm',
+		grant_type: 'mfa_challenge',
 		iat,
 		exp,
 	};
 
 	return {
-		token: jwt.sign(payload, SIGN_IN_CONFIRM_TOKEN_SECRET),
+		token: jwt.sign(payload, MFA_CHALLENGE_TOKEN_SECRET),
 		expires: exp,
 	};
 }

@@ -27,6 +27,14 @@ import { message } from 'utils-node/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 import { hashPassword } from '../../../src/services/password';
 
+jest.mock('../../../src/services/mfaService', () => {
+	return {
+		mfaValidationMiddleware: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+	};
+});
+
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
 
@@ -327,5 +335,31 @@ describe('Sign In Route', () => {
 				},
 			]).onTest(),
 		);
+	});
+
+	it('should handle sign in confirm', async () => {
+		const response = await request(server)
+			.post('/auth/sign-in/confirm')
+			.send({
+				code: 'somecode',
+				type: 'totp',
+				token: 'sometoken',
+			});
+
+		const { data, ...rest } = response.body;
+
+		expect(response.status).toBe(200);
+		expect(rest).toMatchObject({
+			message: 'Sign-in successful.',
+			success: true,
+			errors: expect.any(Array),
+			timestamp: expect.any(String),
+		});
+		expect(data).toMatchObject({
+			access_token: expect.stringMatching(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/),
+			refresh_token: expect.stringMatching(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/),
+			token_type: 'bearer',
+			expires: expect.any(Number),
+		});
 	});
 });

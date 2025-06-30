@@ -3,6 +3,7 @@ import {
 	INTERNAL_ERROR,
 	INVALID_CODE,
 	MFA_EMAIL_DISABLED,
+	MFA_PARAMETER_REQUIRED,
 	MFA_TOTP_DISABLED,
 } from 'utils-node/errors';
 import logger from '../logger';
@@ -10,6 +11,9 @@ import { getTOTPForVerification } from './totpService';
 import { isExpired } from 'utils-node';
 import { getEmailInfo, getTOTPStatus } from '../repositories/auth/mfa';
 import { MFA_EMAIL_CODE_EXPIRATION } from '../../env-config';
+import { NextFunction, Response } from 'express';
+import { Request as JWTRequest } from 'express-jwt';
+import { message } from 'utils-node/messageBuilder';
 
 export interface MFAError {
 	status: number;
@@ -124,4 +128,54 @@ export async function validateMFA(
 	}
 
 	return null;
+}
+export function mfaValidationMiddleware() {
+	return (req: JWTRequest, res: Response, next: NextFunction) => {
+		logger.error('MFA validation middleware called');
+
+		const userId = req.auth?.sub!;
+		const {
+			type,
+			code,
+		}: {
+			type: 'totp' | 'email';
+			code: string;
+		} = req.body;
+
+		if (!userId || !type || !code) {
+			return res.status(400).json(
+				message('Failed to validate MFA.', {}, [
+					{
+						info: MFA_PARAMETER_REQUIRED,
+					},
+				])
+			);
+		}
+
+		validateMFA(userId, type, code)
+			.then((mfaError) => {
+				if (mfaError) {
+					return res.status(mfaError.status).json(
+						message('MFA validation failed.', {}, [
+							{
+								info: mfaError.info,
+								data: mfaError.data,
+							},
+						])
+					);
+				}
+
+				next();
+			})
+			.catch((err) => {
+				logger.error('Unexpected error in MFA validation', err);
+				return res.status(500).json(
+					message('Internal server error during MFA validation.', {}, [
+						{
+							info: INTERNAL_ERROR,
+						}
+					])
+				);
+			});
+	};
 }

@@ -61,7 +61,7 @@ const envSchema = z.object({
 	TEST_DB_PORT: withDefaultNumber(z.coerce.number(), 5555, 'TEST_DB_PORT'),
 	TOTP_DIGITS: withDefaultNumber(z.coerce.number(), 6, 'TOTP_DIGITS'),
 	TOTP_PERIOD: withDefaultNumber(z.coerce.number(), 30, 'TOTP_PERIOD'),
-	JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT: withDefaultNumber(z.coerce.number(), 600, 'JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT'),
+	JWT_EXPIRY_MFA_CHALLENGE_LIMIT: withDefaultNumber(z.coerce.number(), 600, 'JWT_EXPIRY_MFA_CHALLENGE_LIMIT'),
 	JWT_EXPIRY_LIMIT: withDefaultNumber(z.coerce.number(), 3600, 'JWT_EXPIRY_LIMIT'),
 	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT: withDefaultNumber(z.coerce.number(), 86400, 'JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT'),
 	STORAGE_PORT: withDefaultNumber(z.coerce.number(), 9001, 'STORAGE_PORT'),
@@ -91,7 +91,7 @@ const envSchema = z.object({
 	// Secure strings (required)
 	ACCESS_TOKEN_SECRET: z.string().min(1, 'ACCESS_TOKEN_SECRET is required'),
 	REFRESH_TOKEN_SECRET: z.string().min(1, 'REFRESH_TOKEN_SECRET is required'),
-	SIGN_IN_CONFIRM_TOKEN_SECRET: z.string().min(1, 'SIGN_IN_CONFIRM_TOKEN_SECRET is required'),
+	MFA_CHALLENGE_TOKEN_SECRET: z.string().min(1, 'MFA_CHALLENGE_TOKEN_SECRET is required'),
 	STORAGE_ACCESS_KEY: z.string().min(1, 'STORAGE_ACCESS_KEY is required'),
 	STORAGE_SECRET_KEY: z.string().min(1, 'STORAGE_SECRET_KEY is required'),
 	LAGO_API_KEY: z.string().min(1, 'LAGO_API_KEY is required'),
@@ -109,7 +109,7 @@ const envSchema = z.object({
 	'SMTP_PWD',
 	'ACCESS_TOKEN_SECRET',
 	'REFRESH_TOKEN_SECRET',
-	'SIGN_IN_CONFIRM_TOKEN_SECRET',
+	'MFA_CHALLENGE_TOKEN_SECRET',
 	'STORAGE_ACCESS_KEY',
 	'STORAGE_SECRET_KEY',
 	'LAGO_API_KEY',
@@ -146,13 +146,13 @@ export const SMTP_EMAIL = env.SMTP_EMAIL!;
 
 export const ACCESS_TOKEN_SECRET = env.ACCESS_TOKEN_SECRET;
 export const REFRESH_TOKEN_SECRET = env.REFRESH_TOKEN_SECRET;
-export const SIGN_IN_CONFIRM_TOKEN_SECRET = env.SIGN_IN_CONFIRM_TOKEN_SECRET;
+export const MFA_CHALLENGE_TOKEN_SECRET = env.MFA_CHALLENGE_TOKEN_SECRET;
 
 export const ISSUER = env.ISSUER!;
 export const AUDIENCE = env.AUDIENCE!;
 export const JWT_EXPIRY_LIMIT = env.JWT_EXPIRY_LIMIT;
 export const JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT = env.JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT;
-export const JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT = env.JWT_EXPIRY_SIGN_IN_CONFIRM_LIMIT;
+export const JWT_EXPIRY_MFA_CHALLENGE_LIMIT = env.JWT_EXPIRY_MFA_CHALLENGE_LIMIT;
 
 export const REDIRECT_TO_SIGN_IN = env.SIGN_IN_URL!;
 export const REDIRECT_TO_RECOVERY = env.RECOVERY_URL!;

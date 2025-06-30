@@ -9,20 +9,15 @@ import {
 	ARRAY_REQUIRED,
 	CLIENT_ID_REQUIRED,
 	CLIENT_NOT_FOUND,
-	CLIENT_SECRET_REQUIRED,
-	CODE_REQUIRED,
 	CONNECTION_ALREADY_REVOKED,
 	CONNECTION_ID_NOT_NUMERIC,
 	CONNECTION_ID_REQUIRED,
 	CONNECTION_NOT_FOUND,
 	EMPTY_ARRAY,
 	FIELD_MUST_BE_A_STRING,
-	GRANT_TYPE_REQUIRED,
 	INTERNAL_ERROR,
-	INVALID_GRANT_TYPE,
 	INVALID_REDIRECT_URL,
 	INVALID_SCOPES,
-	INVALID_TOKEN,
 	INVALID_URL,
 	INVALID_UUID,
 	REDIRECT_URL_REQUIRED,
@@ -30,13 +25,7 @@ import {
 	SCOPES_REQUIRED,
 } from 'utils-node/errors';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
-import {
-	authorizationCodeController,
-	clientCredentialsController,
-	refreshTokenController,
-} from '../../controllers/auth/oauth2Controller';
 import logger from '../../logger';
-import { verify } from 'jsonwebtoken';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
@@ -303,135 +292,6 @@ router.post(
 				}
 			)
 		);
-	},
-);
-
-const possibleGrantTypes = [
-	'client_credentials',
-	'authorization_code',
-	'refresh_token',
-];
-
-router.post(
-	'/token',
-	[
-		body('grant_type')
-			.notEmpty()
-			.withMessage(GRANT_TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				if (!possibleGrantTypes.includes(value))
-					throw new CustomValidationError({
-						code: INVALID_GRANT_TYPE.code,
-						message: INVALID_GRANT_TYPE.messages[1],
-					});
-
-				return true;
-			}),
-		body('client_id')
-			.custom((value, { req }) => {
-				if (
-					!possibleGrantTypes.includes(req.body?.grant_type) ||
-					req.body?.grant_type === 'refresh_token' ||
-					req.body?.grant_type === undefined
-				)
-					return true;
-
-				if (value === undefined || value.length === 0)
-					throw new CustomValidationError(CLIENT_ID_REQUIRED);
-
-				if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
-
-				return true;
-			}),
-		body('client_secret')
-			.custom((value, { req }) => {
-				if (
-					!possibleGrantTypes.includes(req.body?.grant_type) ||
-					req.body?.grant_type === 'refresh_token' ||
-					req.body?.grant_type === undefined
-				)
-					return true;
-
-				if (value === undefined || value.length === 0)
-					throw new CustomValidationError(CLIENT_SECRET_REQUIRED);
-
-				return true;
-			}),
-		body('code')
-			.custom((value, { req }) => {
-				if (
-					req.body?.grant_type !== 'authorization_code' ||
-					req.body?.grant_type === undefined
-				)
-					return true;
-
-				if (value === undefined || value.length === 0)
-					throw new CustomValidationError(CODE_REQUIRED);
-
-				return true;
-			}),
-		body('refresh_token')
-			.custom((value, { req }) => {
-				if (
-					req.body?.grant_type !== 'refresh_token' ||
-					req.body?.grant_type === undefined
-				)
-					return true;
-
-				if (value === undefined || value.length === 0)
-					throw new CustomValidationError(REFRESH_TOKEN_REQUIRED);
-
-				if (req.body?.grant_type === 'refresh_token') {
-					const token = req.body.refresh_token;
-
-					verify(
-						token,
-						REFRESH_TOKEN_SECRET,
-						{
-							audience: AUDIENCE,
-							issuer: ISSUER,
-							algorithms: ['HS256'],
-						},
-						(e, decoded) => {
-							if (e) throw new CustomValidationError(INVALID_TOKEN);
-
-							if (typeof decoded === 'object' && 'grant_type' in decoded) {
-								if (decoded?.grant_type !== 'authorization_code')
-									throw new CustomValidationError({
-										message: INVALID_GRANT_TYPE.messages[0],
-										code: INVALID_GRANT_TYPE.code,
-									});
-							}
-
-							req.auth = decoded;
-						},
-					);
-				}
-
-				return true;
-			}),
-		validate(logger),
-	],
-	async (req: Request, res: Response) => {
-		const {
-			grant_type
-		}: {
-			grant_type: string
-		} = req.body;
-
-		logger.debug(`OAuth2 Token Endpoint accessed with grant type: ${grant_type}`);
-
-		switch (grant_type) {
-			case 'authorization_code':
-				authorizationCodeController(req, res);
-				break;
-			case 'client_credentials':
-				clientCredentialsController(req, res);
-				break;
-			case 'refresh_token':
-				refreshTokenController(req, res);
-		}
 	},
 );
 

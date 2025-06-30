@@ -34,7 +34,7 @@ import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
 	ISSUER,
-	SIGN_IN_CONFIRM_TOKEN_SECRET,
+	MFA_CHALLENGE_TOKEN_SECRET,
 } from '../../../env-config';
 import { getMFAStatus } from '../../repositories/auth/mfa';
 
@@ -241,7 +241,7 @@ router.post(
 		validate(logger),
 		validateSignInConfirmOrAccessToken(
 			ACCESS_TOKEN_SECRET,
-			SIGN_IN_CONFIRM_TOKEN_SECRET,
+			MFA_CHALLENGE_TOKEN_SECRET,
 			AUDIENCE,
 			ISSUER,
 		),

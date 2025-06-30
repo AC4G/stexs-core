@@ -38,7 +38,7 @@ import {
 	EMAIL_CHANGE_CODE_EXPIRATION,
 	ISSUER
 } from '../../../env-config';
-import { validateMFA } from '../../services/mfaService';
+import { mfaValidationMiddleware } from '../../services/mfaService';
 import {
 	changePassword,
 	getUsersEncryptedPassword,
@@ -174,37 +174,11 @@ router.post(
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
+		mfaValidationMiddleware(),
 	],
 	async (req: Request, res: Response) => {
 		const userId = req.auth?.sub!;
-		const {
-			password,
-			code,
-			type
-		}: {
-			password: string;
-			code: string;
-			type: 'totp' | 'email';
-		} = req.body;
-
-		let mfaError = await validateMFA(userId, type, code);
-
-		if (mfaError) {
-			return res
-				.status(mfaError.status)
-				.json(
-					message(
-						'MFA validation failed.',
-						{},
-						[
-							{
-								info: mfaError.info,
-								data: mfaError.data,
-							},
-						]
-					)
-				);
-		}
+		const password: string = req.body.password;
 
 		try {
 			const { rowCount, rows } = await getUsersEncryptedPassword(userId);
@@ -313,37 +287,11 @@ router.post(
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
+		mfaValidationMiddleware(),
 	],
 	async (req: Request, res: Response) => {
 		const userId = req.auth?.sub!;
-		const {
-			email: newEmail,
-			code,
-			type
-		}: {
-			email: string;
-			code: string;
-			type: 'totp' | 'email';
-		} = req.body;
-
-		let mfaError = await validateMFA(userId, type, code);
-
-		if (mfaError) {
-			return res
-				.status(mfaError.status)
-				.json(
-					message(
-						'MFA validation failed.',
-						{},
-						[
-							{
-								info: mfaError.info,
-								data: mfaError.data,
-							},
-						]
-					)
-				);
-		}
+		const newEmail: string = req.body.email;
 
 		try {
 			const { rowCount } = await userExistsByEmail(newEmail);
