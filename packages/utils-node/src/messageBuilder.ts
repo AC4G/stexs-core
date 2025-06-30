@@ -31,9 +31,7 @@ export function message(
 		success: errors.length === 0,
 		message,
 		timestamp: new Date().toISOString(),
-		data: {
-			...data,
-		},
+		data,
 		errors: errors.length > 0 ? errorMessages(errors) : [],
 	};
 
