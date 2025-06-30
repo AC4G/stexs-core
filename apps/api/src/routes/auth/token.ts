@@ -1,104 +1,151 @@
 import { Router, Response } from 'express';
-import { message } from 'utils-node/messageBuilder';
-import generateAccessToken from '../../services/jwtService';
+import { CustomValidationError } from 'utils-node/messageBuilder';
 import { Request } from 'express-jwt';
 import {
+	CLIENT_ID_REQUIRED,
+	CLIENT_SECRET_REQUIRED,
+	CODE_REQUIRED,
 	FIELD_MUST_BE_A_STRING,
-	INTERNAL_ERROR,
-	INVALID_TOKEN,
+	GRANT_TYPE_REQUIRED,
+	IDENTIFIER_REQUIRED,
+	INVALID_GRANT_TYPE,
+	INVALID_TYPE,
+	PASSWORD_REQUIRED,
 	REFRESH_TOKEN_REQUIRED,
+	TOKEN_REQUIRED,
+	TYPE_REQUIRED,
 } from 'utils-node/errors';
 import logger from '../../logger';
-import { body } from 'express-validator';
+import { body, query } from 'express-validator';
+import { validate } from 'utils-node/middlewares';
 import {
-	validate,
-	validateRefreshToken,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-} from 'utils-node/middlewares';
-import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../../env-config';
-import { deleteRefreshToken } from '../../repositories/auth/refreshTokens';
+	authorizationCodeController,
+	clientCredentialsController,
+	mfaChallengeController,
+	passwordController,
+	refreshTokenController
+} from '../../controllers/auth/tokenController';
+import {
+  possibleGrantTypes,
+  GrantTypes,
+  grantTypesRequiringClientCreds,
+  grantTypesRequiringCode,
+  grantTypesForPassword,
+  grantTypesForMFA,
+  supportedMFATypes,
+  grantTypesRequiringRefreshToken,
+} from '../../types/auth';
+import { decodeRefreshToken, requireUUIDv4 } from '../../services/validators';
 
 const router = Router();
 
 router.post(
 	'/',
 	[
-		body('refresh_token')
-			.notEmpty()
-			.withMessage(REFRESH_TOKEN_REQUIRED)
+		query('grant_type')
+			.notEmpty().withMessage(GRANT_TYPE_REQUIRED)
 			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.custom((value) => {
+				if (!possibleGrantTypes.includes(value as GrantTypes)) {
+					throw new CustomValidationError({
+						code: INVALID_GRANT_TYPE.code,
+						message: INVALID_GRANT_TYPE.messages[1],
+					});
+				}
+
+				return true;
+			}),
+		body('client_id')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesRequiringClientCreds.includes(grantType);
+			})
+			.notEmpty().withMessage(CLIENT_ID_REQUIRED)
+			.bail()
+			.custom(requireUUIDv4),
+		body('client_secret')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesRequiringClientCreds.includes(grantType);
+			})
+			.notEmpty().withMessage(CLIENT_SECRET_REQUIRED),
+		body('code')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesRequiringCode.includes(grantType);
+			})
+			.notEmpty().withMessage(CODE_REQUIRED),
+		body('refresh_token')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesRequiringRefreshToken.includes(grantType);
+			})
+			.notEmpty().withMessage(REFRESH_TOKEN_REQUIRED)
+			.bail()
+			.custom(async (value, { req }) => {
+				await decodeRefreshToken(value, req);
+				return true;
+			}),
+		body('identifier')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesForPassword.includes(grantType);
+			})
+			.notEmpty().withMessage(IDENTIFIER_REQUIRED)
+			.bail()
+			.isString().withMessage(FIELD_MUST_BE_A_STRING),
+		body('password')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesForPassword.includes(grantType);
+			})
+			.notEmpty().withMessage(PASSWORD_REQUIRED)
+			.bail()
+			.isString().withMessage(FIELD_MUST_BE_A_STRING),
+		body('type')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesForMFA.includes(grantType);
+			})
+			.notEmpty().withMessage(TYPE_REQUIRED)
+			.bail()
+			.custom((value) => {
+				if (!supportedMFATypes.includes(value))
+					throw new CustomValidationError(INVALID_TYPE);
+				
+				return true;
+			}),
+		body('token')
+			.if((_, { req }) => {
+				const grantType = req.query?.grant_type as GrantTypes | undefined;
+				return grantType && grantTypesForMFA.includes(grantType);
+			})
+			.notEmpty().withMessage(TOKEN_REQUIRED)
+			.bail()
+			.isString().withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
-		validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
-		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
 	],
 	async (req: Request, res: Response) => {
-		const auth = req.auth;
+		const grantType = req.query.grant_type as GrantTypes;
 
-		try {
-			const { rowCount } = await deleteRefreshToken(auth?.sub!, auth?.jti!, auth?.session_id!);
+		logger.debug(`Token Endpoint accessed with grant type: ${grantType}`);
 
-			if (!rowCount || rowCount === 0) {
-				logger.debug(`Refresh token invalid or expired for user: ${auth?.sub}`);
-				return res
-					.status(401)
-					.send(
-						message(
-							'Invalid refresh token.',
-							{},
-							[
-								{
-									info: INVALID_TOKEN,
-									data: {
-										location: 'body',
-										path: 'refresh_token',
-									},
-								},
-							]
-						)
-					);
-			}
-
-			logger.debug(`Refresh token successfully processed for user: ${auth?.sub} (Revoked)`);
-		} catch (e) {
-			logger.error(
-				`Error while processing refresh token for user: ${auth?.sub}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while processing refresh token.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		try {
-			const data = await generateAccessToken({
-				sub: auth?.sub,
-				session_id: auth?.session_id,
-			});
-
-			logger.debug(`A new access token generated for user: ${auth?.sub}`);
-
-			res.json(message('Access token successfully generated.', { ...data }));
-		} catch (e) {
-			res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while generating new access token.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+		switch (grantType) {
+			case 'mfa_challenge':
+				mfaChallengeController(req, res);
+				break;
+			case 'password':
+				passwordController(req, res);
+				break;
+			case 'client_credentials':
+				clientCredentialsController(req, res);
+				break;
+			case 'authorization_code':
+				authorizationCodeController(req, res);
+				break;
+			case 'refresh_token':
+				refreshTokenController(req, res);
+				break;
 		}
 	},
 );

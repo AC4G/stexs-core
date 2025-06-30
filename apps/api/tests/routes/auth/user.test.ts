@@ -31,6 +31,14 @@ import { message } from 'utils-node/messageBuilder';
 import { getTOTPForVerification } from '../../../src/services/totpService';
 import { hashPassword } from '../../../src/services/password';
 
+jest.mock('../../../src/services/mfaService', () => {
+	return {
+		mfaValidationMiddleware: jest.fn(
+			() => (req: Request, res: Response, next: NextFunction) => next(),
+		),
+	};
+});
+
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
 
@@ -270,16 +278,6 @@ describe('User Routes', () => {
 			'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
 		).generate();
 
-		mockQuery.mockResolvedValueOnce({
-			rows: [
-				{
-					totp_verified_at: '2023-09-15T12:00:00',
-					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
-				},
-			],
-			rowCount: 1,
-		} as never);
-
 		const password = 'Test12345.';
 		const passwordHash = await hashPassword(password);
 
@@ -318,16 +316,6 @@ describe('User Routes', () => {
 		const code = getTOTPForVerification(
 			'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
 		).generate();
-
-		mockQuery.mockResolvedValueOnce({
-			rows: [
-				{
-					totp_verified_at: '2023-09-15T12:00:00',
-					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
-				},
-			],
-			rowCount: 1,
-		} as never);
 
 		const passwordHash = await hashPassword('Test12345.');
 		const newPassword = 'NewTest12345.';
@@ -435,16 +423,6 @@ describe('User Routes', () => {
 		const code = getTOTPForVerification(
 			'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
 		).generate();
-
-		mockQuery.mockResolvedValueOnce({
-			rows: [
-				{
-					totp_verified_at: '2023-09-15T12:00:00',
-					totp_secret: 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ',
-				},
-			],
-			rowCount: 1,
-		} as never);
 
 		mockQuery.mockResolvedValueOnce({
 			rows: [],

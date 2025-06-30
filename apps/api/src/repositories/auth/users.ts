@@ -182,7 +182,7 @@ export async function signUpUser(
     );
 }
 
-export async function signInUser(
+export async function getUserAuth(
     identifier: string,
     client: PoolClient | undefined = undefined
 ): Promise<QueryResult<{
@@ -209,11 +209,9 @@ export async function signInUser(
                 FROM auth.users AS u
                 LEFT JOIN public.profiles AS p ON u.id = p.user_id
                 LEFT JOIN auth.mfa ON u.id = mfa.user_id
-                    AND (
-                        (CASE WHEN $1::text ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' THEN u.email ELSE p.username END) ILIKE $1::text
-                    );
+                WHERE u.email = $1::citext OR p.username = $1::citext;
             `,
-            name: 'auth-sign-in-user'
+            name: 'auth-user-auth'
         },
         [identifier],
     );

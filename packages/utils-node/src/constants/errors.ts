@@ -322,3 +322,8 @@ export const FIELD_MUST_BE_A_STRING = {
 	code: 'FIELD_MUST_BE_A_STRING',
 	message: 'Please provide a valid string value for this field.',
 };
+
+export const MFA_PARAMETER_REQUIRED = {
+	code: 'MFA_PARAMETER_REQUIRED',
+	message: 'Please provide a MFA parameter.',
+};

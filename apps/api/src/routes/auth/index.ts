@@ -1,6 +1,5 @@
 import { Router } from "express";
 import signUpRouter from './signUp';
-import signInRouter from './signIn';
 import signOutRouter from './signOut';
 import tokenRouter from './token';
 import oauth2Router from './oauth2';
@@ -12,7 +11,6 @@ import mfaRouter from './mfa';
 const authRouter = Router();
 
 authRouter.use('/sign-up', signUpRouter);
-authRouter.use('/sign-in', signInRouter);
 authRouter.use('/sign-out', signOutRouter);
 authRouter.use('/token', tokenRouter);
 authRouter.use('/oauth2', oauth2Router);

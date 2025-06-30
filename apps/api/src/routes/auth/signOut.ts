@@ -20,7 +20,7 @@ import {
 	transformJwtErrorMessages,
 } from 'utils-node/middlewares';
 import { body } from 'express-validator';
-import { validateMFA } from '../../services/mfaService';
+import { mfaValidationMiddleware } from '../../services/mfaService';
 import { signOutFromAllSessions, signOutFromSession } from '../../repositories/auth/refreshTokens';
 
 const router = Router();
@@ -90,35 +90,10 @@ router.post(
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
+		mfaValidationMiddleware(),
 	],
 	async (req: Request, res: Response) => {
 		const userId = req.auth?.sub!;
-		const {
-			code,
-			type
-		}: {
-			code: string;
-			type: 'totp' | 'email';
-		} = req.body;
-
-		let mfaError = await validateMFA(userId, type, code);
-
-		if (mfaError) {
-			return res
-				.status(mfaError.status)
-				.json(
-					message(
-						'MFA validation failed.',
-						{},
-						[
-							{
-								info: mfaError.info,
-								data: mfaError.data,
-							},
-						]
-					)
-				);
-		}
 
 		try {
 			const { rowCount } = await signOutFromAllSessions(userId);
