@@ -3,8 +3,8 @@ import type {
 	ErrorResponse,
 	TokenResponse,
 	Session,
-	SignInInit,
-	SignInInitResponse,
+	MFAChallenge,
+	MFAChallengeResponse,
 	UserResponse,
 	RequestOptions,
 	SignUpResponse,
@@ -14,7 +14,7 @@ import { ApiResponse } from './lib/apiResponse';
 
 export enum AuthEvents {
 	SIGNED_IN = 'SIGNED_IN',
-	SIGN_IN_INIT = 'SIGN_IN_INIT',
+	MFA_CHALLENGE = 'MFA_CHALLENGE',
 	SIGNED_OUT = 'SIGNED_OUT',
 	TOKEN_REFRESHED = 'TOKEN_REFRESHED',
 	USER_UPDATED = 'USER_UPDATED',
@@ -22,10 +22,9 @@ export enum AuthEvents {
 }
 
 export enum ApiAuthRoutes {
-	SIGN_IN = '/auth/sign-in',
-	SIGN_IN_CONFIRM = '/auth/sign-in/confirm',
-
 	SIGN_UP = '/auth/sign-up',
+	SIGN_IN = '/auth/token?grant_type=password',
+	MFA_CHALLENGE = '/auth/token?grant_type=mfa_challenge',
 
 	SIGN_OUT = '/auth/sign-out',
 	SIGN_OUT_ALL_SESSIONS = '/auth/sign-out/all-sessions',
@@ -48,7 +47,6 @@ export enum ApiAuthRoutes {
 	MFA_DISABLE = '/auth/mfa/disable',
 
 	OAUTH2_AUTHORIZE = '/auth/oauth2/authorize',
-	OAUTH2_TOKEN = '/auth/oauth2/token',
 	OAUTH2_CONNECTIONS = '/auth/oauth2/connections',
 
 	RECOVERY = '/auth/recovery',
@@ -100,14 +98,14 @@ export class StexsAuthClient {
 		}
 
 		const session: Session = this._getSession();
-		const signInInit: SignInInit = this._getSignInInit();
+		const mfaChallenge: MFAChallenge = this._getMFAChallenge();
 
 		if (session && session.access_token) {
 			this._setAccessTokenToAuthHeaders(session.access_token);
 		}
 
-		if (signInInit && new Date(signInInit.expires * 1000) < new Date()) {
-			localStorage.removeItem('sign_in_init');
+		if (mfaChallenge && new Date(mfaChallenge.expires * 1000) < new Date()) {
+			localStorage.removeItem('mfa_challenge');
 		}
 
 		document.addEventListener('visibilitychange', async () => {
@@ -148,8 +146,8 @@ export class StexsAuthClient {
 		identifier: string,
 		password: string,
 		continuousAutoRefresh: boolean = false,
-	): Promise<ApiResponse<SignInInitResponse>> {
-		const response = await this._request<SignInInitResponse>({
+	): Promise<ApiResponse<MFAChallengeResponse>> {
+		const response = await this._request<MFAChallengeResponse>({
 			path: ApiAuthRoutes.SIGN_IN,
 			body: {
 				identifier,
@@ -164,7 +162,7 @@ export class StexsAuthClient {
 		const body = await response.clone().getSuccessBody();
 
 		localStorage.setItem(
-			'sign_in_init',
+			'mfa_challenge',
 			JSON.stringify({
 				...body,
 				continuousAutoRefresh,
@@ -176,7 +174,7 @@ export class StexsAuthClient {
 			await this._requestCode();
 		}
 
-		this.triggerEvent(AuthEvents.SIGN_IN_INIT);
+		this.triggerEvent(AuthEvents.MFA_CHALLENGE);
 
 		return response;
 	}
@@ -184,27 +182,27 @@ export class StexsAuthClient {
 	/**
 	 * Confirms the user's Multi-Factor Authentication (MFA) sign-in with the provided type and MFA code.
 	 */
-	async signInConfirm(type: string, code: string): Promise<ApiResponse<TokenResponse>> {
-		const signInInitData: SignInInit = JSON.parse(
-			localStorage.getItem('sign_in_init') as string,
-		) as SignInInit;
+	async mfaChallenge(type: string, code: string): Promise<ApiResponse<TokenResponse>> {
+		const mfaChallengeData: MFAChallenge = JSON.parse(
+			localStorage.getItem('mfa_challenge') as string,
+		) as MFAChallenge;
 
-		if (!signInInitData) {
-			throw new Error('Sign in initialization data not found.');
+		if (!mfaChallengeData) {
+			throw new Error('MFA challenge initialization data not found.');
 		}
 
-		const { token, expires, continuousAutoRefresh } = signInInitData;
+		const { token, expires, continuousAutoRefresh } = mfaChallengeData;
 
 		if (!token) {
-			throw new Error('Sign in token was not found.');
+			throw new Error('MFA challenge token was not found.');
 		}
 
 		if (Number(expires) < Date.now() / 1000) {
-			throw new Error('Sign in token has expired.');
+			throw new Error('MFA challenge token has expired.');
 		}
 
 		const response = await this._request<TokenResponse>({
-			path: ApiAuthRoutes.SIGN_IN_CONFIRM,
+			path: ApiAuthRoutes.MFA_CHALLENGE,
 			body: {
 				code,
 				type,
@@ -216,7 +214,7 @@ export class StexsAuthClient {
 			return response;
 		}
 
-		localStorage.removeItem('sign_in_init');
+		localStorage.removeItem('mfa_challenge');
 
 		const tokenBody = await response.clone().getSuccessBody();
 
@@ -246,10 +244,10 @@ export class StexsAuthClient {
 	}
 
 	/**
-	 *  Deletes the sign in init session from localStorage
+	 *  Deletes the MFA challenge session from localStorage
 	 */
-	cancelSignInConfirm() {
-		localStorage.removeItem('sign_in_init');
+	cancelMFAChallengeConfirm() {
+		localStorage.removeItem('mfa_challenge');
 	}
 
 	/**
@@ -490,16 +488,16 @@ export class StexsAuthClient {
 	 * Requests a new Multi-Factor Authentication (MFA) email verification code for authenticated and users in sign confirm process.
 	 */
 	private async _requestCode(type: string = 'email'): Promise<Response> {
-		const signInInitData: SignInInit = JSON.parse(
-			localStorage.getItem('sign_in_init') as string,
+		const mfaChallengeData: MFAChallenge = JSON.parse(
+			localStorage.getItem('mfa_challenge') as string,
 		);
 
 		const body = {
 			type
 		};
 
-		if (signInInitData && signInInitData.token) {
-			body['token'] = signInInitData.token;
+		if (mfaChallengeData && mfaChallengeData.token) {
+			body['token'] = mfaChallengeData.token;
 		}
 
 		return await this._request({
@@ -576,8 +574,8 @@ export class StexsAuthClient {
 	/**
 	 * Retrieves the sign in init session from local storage.
 	 */
-	getSignInInit(): SignInInit {
-		return this._getSignInInit();
+	getMFAChallenge(): MFAChallenge {
+		return this._getMFAChallenge();
 	}
 
 	onAuthStateChange(callback: (event: AuthEvents) => void) {
@@ -585,8 +583,8 @@ export class StexsAuthClient {
 			callback(AuthEvents.SIGNED_IN);
 		});
 
-		this.eventEmitter.on(AuthEvents.SIGN_IN_INIT, () => {
-			callback(AuthEvents.SIGN_IN_INIT);
+		this.eventEmitter.on(AuthEvents.MFA_CHALLENGE, () => {
+			callback(AuthEvents.MFA_CHALLENGE);
 		});
 
 		this.eventEmitter.on(AuthEvents.SIGNED_OUT, () => {
@@ -724,10 +722,10 @@ export class StexsAuthClient {
 		return JSON.parse(localStorage.getItem('session') as string) as Session;
 	}
 
-	private _getSignInInit(): SignInInit {
+	private _getMFAChallenge(): MFAChallenge {
 		return JSON.parse(
-			localStorage.getItem('sign_in_init') as string,
-		) as SignInInit;
+			localStorage.getItem('mfa_challenge') as string,
+		) as MFAChallenge;
 	}
 
 	private async _request<TSuccess, TError = ErrorResponse>(

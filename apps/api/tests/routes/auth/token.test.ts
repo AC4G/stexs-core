@@ -13,12 +13,30 @@ const mockQuery = jest.fn();
 import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../../src/server';
-import { CLIENT_ID_REQUIRED, CLIENT_SECRET_REQUIRED, CODE_EXPIRED, CODE_REQUIRED, EMAIL_NOT_VERIFIED, GRANT_TYPE_REQUIRED, IDENTIFIER_REQUIRED, INVALID_AUTHORIZATION_CODE, INVALID_CLIENT_CREDENTIALS, INVALID_GRANT_TYPE, INVALID_REFRESH_TOKEN, INVALID_TOKEN, INVALID_TYPE, INVALID_UUID, NO_CLIENT_SCOPES_SELECTED, PASSWORD_REQUIRED, REFRESH_TOKEN_REQUIRED, TOKEN_REQUIRED, TYPE_REQUIRED, USER_NOT_FOUND } from 'utils-node/errors';
+import {
+	CLIENT_ID_REQUIRED,
+	CLIENT_SECRET_REQUIRED,
+	CODE_EXPIRED, CODE_REQUIRED,
+	EMAIL_NOT_VERIFIED,
+	GRANT_TYPE_REQUIRED,
+	IDENTIFIER_REQUIRED,
+	INVALID_AUTHORIZATION_CODE,
+	INVALID_CLIENT_CREDENTIALS,
+	INVALID_GRANT_TYPE,
+	INVALID_REFRESH_TOKEN,
+	INVALID_TYPE,
+	INVALID_UUID,
+	NO_CLIENT_SCOPES_SELECTED,
+	PASSWORD_REQUIRED,
+	REFRESH_TOKEN_REQUIRED,
+	TOKEN_REQUIRED,
+	TYPE_REQUIRED,
+	USER_NOT_FOUND
+} from 'utils-node/errors';
 import { message } from 'utils-node/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 import { sign } from 'jsonwebtoken';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../../env-config';
-import logger from '../../../src/logger';
 import { hashPassword } from '../../../src/services/password';
 
 jest.mock('utils-node/middlewares', () => {

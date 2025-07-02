@@ -75,7 +75,7 @@ export type RequestOptions = {
     headers?: Record<string, string>;
 };
 
-export interface SignInInit {
+export interface MFAChallenge {
 	continuousAutoRefresh: boolean;
 	expires: number;
 	token: string;
@@ -87,7 +87,7 @@ export interface SignedUrl {
 	expires: number;
 }
 
-export interface SignInInitResponse {
+export interface MFAChallengeResponse {
 	token: string;
 	types: string[];
 	expires: number;
