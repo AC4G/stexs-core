@@ -10,6 +10,7 @@ import {
 	IDENTIFIER_REQUIRED,
 	INVALID_GRANT_TYPE,
 	INVALID_TYPE,
+	INVALID_UUID,
 	PASSWORD_REQUIRED,
 	REFRESH_TOKEN_REQUIRED,
 	TOKEN_REQUIRED,
@@ -35,7 +36,7 @@ import {
   supportedMFATypes,
   grantTypesRequiringRefreshToken,
 } from '../../types/auth';
-import { decodeRefreshToken, requireUUIDv4 } from '../../services/validators';
+import { decodeRefreshToken } from '../../services/validators';
 
 const router = Router();
 
@@ -62,7 +63,7 @@ router.post(
 			})
 			.notEmpty().withMessage(CLIENT_ID_REQUIRED)
 			.bail()
-			.custom(requireUUIDv4),
+			.isUUID('4').withMessage(INVALID_UUID),
 		body('client_secret')
 			.if((_, { req }) => {
 				const grantType = req.query?.grant_type as GrantTypes | undefined;

@@ -10,8 +10,6 @@
 **/logs
 
 docker/**/data
-docker/haproxy/certs
-
 
 **/.cache
 **/.turbo

@@ -1,88 +1,72 @@
 import { config } from 'dotenv';
 import logger from './src/logger';
 import { z } from 'zod';
+import { EnvValidator } from 'utils-node';
 
 config();
 
-const missingEnvVars: string[] = [];
+const requiredVars = [
+    'STEXS_DB_PWD',
+	'ACCESS_TOKEN_SECRET',
+	'REFRESH_TOKEN_SECRET',
+	'MFA_CHALLENGE_TOKEN_SECRET',
+	'STORAGE_ACCESS_KEY',
+	'STORAGE_SECRET_KEY',
+	'LAGO_API_KEY',
+];
 
-const checkEnvVarExists = (varName: string) => {
-	if (!(varName in process.env)) {
-		logger.error(`Missing environment variable: ${varName}. Please define it in your .env file.`);
-		missingEnvVars.push(varName);
-	}
-};
+const envValidator: EnvValidator = new EnvValidator(logger);
 
-const withDefaultString = (schema: z.ZodString, defaultValue: string | undefined, varName: string) => {
-	checkEnvVarExists(varName);
-	const newSchema = schema.transform(value => {
-		if (value.trim() === '') {
-			logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
-			return defaultValue;
-		}
-		return value;
-	  });
+requiredVars.forEach(envValidator.checkEnvVarExists.bind(envValidator));
 
-	if (defaultValue === undefined) return newSchema;
+const envSchema: any = z.object({
+    // Strings
+	ENV: envValidator.withDefaultString(z.string(), 'dev', 'ENV'),
 
-	return newSchema.default(defaultValue);
-}
+	LOGGER: envValidator.withDefaultString(z.enum(['console', 'loki']), 'console', 'LOGGER'),
+	LOG_LEVEL: envValidator.withDefaultString(z.string(), 'info', 'LOG_LEVEL'),
 
-const withDefaultNumber = (schema: z.ZodNumber, defaultValue: number, varName: string) => {
-	checkEnvVarExists(varName);
-	return schema.transform(value => {
-	  if (value === undefined || value === null || value === 0) {
-			logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
-			return defaultValue;
-	  }
-	  return value;
-	}).default(defaultValue);
-}
-
-const envSchema = z.object({
-	// Strings
-	ENV: withDefaultString(z.string(), 'dev', 'ENV'),
-	SERVICE_NAME: withDefaultString(z.string(), 'STEXS', 'SERVICE_NAME'),
-	SMTP_HOST: withDefaultString(z.string(), 'localhost', 'SMTP_HOST'),
-	SMTP_USER: withDefaultString(z.string(), 'admin', 'SMTP_USER'),
-	SMTP_EMAIL: withDefaultString(z.string().email(), 'service@example.com', 'SMTP_EMAIL'),
-	STEXS_DB_HOST: withDefaultString(z.string(), 'localhost', 'STEXS_DB_HOST'),
-	STEXS_DB_USER: withDefaultString(z.string(), 'postgres', 'STEXS_DB_USER'),
-	STEXS_DB_NAME: withDefaultString(z.string(), 'postgres', 'STEXS_DB_NAME'),
-	STORAGE_PROTOCOL: withDefaultString(z.string(), 'http', 'STORAGE_PROTOCOL'),
-	STORAGE_HOST: withDefaultString(z.string(), 'localhost', 'STORAGE_HOST'),
-	STORAGE_BUCKET: withDefaultString(z.string(), 'stexs', 'STORAGE_BUCKET'),
-	TOTP_ALGORITHM: withDefaultString(z.string(), 'SHA256', 'TOTP_ALGORITHM'),
+	SERVICE_NAME: envValidator.withDefaultString(z.string(), 'STEXS', 'SERVICE_NAME'),
+	SMTP_HOST: envValidator.withDefaultString(z.string(), 'localhost', 'SMTP_HOST'),
+	SMTP_USER: envValidator.withDefaultString(z.string(), 'admin', 'SMTP_USER'),
+	SMTP_EMAIL: envValidator.withDefaultString(z.string().email(), 'service@example.com', 'SMTP_EMAIL'),
+	STEXS_DB_HOST: envValidator.withDefaultString(z.string(), 'localhost', 'STEXS_DB_HOST'),
+	STEXS_DB_USER: envValidator.withDefaultString(z.string(), 'postgres', 'STEXS_DB_USER'),
+	STEXS_DB_NAME: envValidator.withDefaultString(z.string(), 'postgres', 'STEXS_DB_NAME'),
+	STORAGE_PROTOCOL: envValidator.withDefaultString(z.string(), 'http', 'STORAGE_PROTOCOL'),
+	STORAGE_HOST: envValidator.withDefaultString(z.string(), 'localhost', 'STORAGE_HOST'),
+	STORAGE_BUCKET: envValidator.withDefaultString(z.string(), 'stexs', 'STORAGE_BUCKET'),
+	TOTP_ALGORITHM: envValidator.withDefaultString(z.string(), 'SHA256', 'TOTP_ALGORITHM'),
 	
 	// Numbers
-	STEXS_API_PORT: withDefaultNumber(z.coerce.number(), 3001, 'STEXS_API_PORT'),
-	SMTP_PORT: withDefaultNumber(z.coerce.number(), 1025, 'SMTP_PORT'),
-	STEXS_DB_PORT: withDefaultNumber(z.coerce.number(), 5431, 'STEXS_DB_PORT'),
-	TEST_DB_PORT: withDefaultNumber(z.coerce.number(), 5555, 'TEST_DB_PORT'),
-	TOTP_DIGITS: withDefaultNumber(z.coerce.number(), 6, 'TOTP_DIGITS'),
-	TOTP_PERIOD: withDefaultNumber(z.coerce.number(), 30, 'TOTP_PERIOD'),
-	JWT_EXPIRY_MFA_CHALLENGE_LIMIT: withDefaultNumber(z.coerce.number(), 600, 'JWT_EXPIRY_MFA_CHALLENGE_LIMIT'),
-	JWT_EXPIRY_LIMIT: withDefaultNumber(z.coerce.number(), 3600, 'JWT_EXPIRY_LIMIT'),
-	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT: withDefaultNumber(z.coerce.number(), 86400, 'JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT'),
-	STORAGE_PORT: withDefaultNumber(z.coerce.number(), 9001, 'STORAGE_PORT'),
-	MFA_EMAIL_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 300, 'MFA_EMAIL_CODE_EXPIRATION'),
-	AUTHORIZATION_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 300, 'AUTHORIZATION_CODE_EXPIRATION'),
-	PASSWORD_RECOVERY_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 900, 'PASSWORD_RECOVERY_CODE_EXPIRATION'),
-	EMAIL_CHANGE_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 900, 'EMAIL_CHANGE_CODE_EXPIRATION'),
-	EMAIL_VERIFICATION_CODE_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'EMAIL_VERIFICATION_CODE_EXPIRATION'),
-	S3_CACHE_CONTROL_EXPIRATION: withDefaultNumber(z.coerce.number(), 604800, 'S3_CACHE_CONTROL_EXPIRATION'),
-	AVATAR_POST_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 60, 'AVATAR_POST_URL_EXPIRATION'),
-	AVATAR_GET_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'AVATAR_GET_URL_EXPIRATION'),
-	AVATAR_SIZE_LIMIT: withDefaultNumber(z.coerce.number(), 1048576, 'AVATAR_SIZE_LIMIT'),
-	ITEM_THUMBNAIL_GET_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'ITEM_THUMBNAIL_GET_URL_EXPIRATION'),
-	ITEM_THUMBNAIL_POST_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 60, 'ITEM_THUMBNAIL_POST_URL_EXPIRATION'),
-	ITEM_THUMBNAIL_SIZE_LIMIT: withDefaultNumber(z.coerce.number(), 1048576, 'ITEM_THUMBNAIL_SIZE_LIMIT'),
-	ORGANIZATION_LOGO_GET_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'ORGANIZATION_LOGO_GET_URL_EXPIRATION'),
-	ORGANIZATION_LOGO_POST_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 60, 'ORGANIZATION_LOGO_POST_URL_EXPIRATION'),
-	ORGANIZATION_LOGO_SIZE_LIMIT: withDefaultNumber(z.coerce.number(), 1048576, 'ORGANIZATION_LOGO_SIZE_LIMIT'),
-	PROJECT_LOGO_GET_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 86400, 'PROJECT_LOGO_GET_URL_EXPIRATION'),
-	PROJECT_LOGO_POST_URL_EXPIRATION: withDefaultNumber(z.coerce.number(), 60, 'PROJECT_LOGO_POST_URL_EXPIRATION'),
-	PROJECT_LOGO_SIZE_LIMIT: withDefaultNumber(z.coerce.number(), 1048576, 'PROJECT_LOGO_SIZE_LIMIT'),
+	STEXS_API_PORT: envValidator.withDefaultNumber(z.coerce.number(), 3001, 'STEXS_API_PORT'),
+	SMTP_PORT: envValidator.withDefaultNumber(z.coerce.number(), 1025, 'SMTP_PORT'),
+	STEXS_DB_PORT: envValidator.withDefaultNumber(z.coerce.number(), 5431, 'STEXS_DB_PORT'),
+	TEST_DB_PORT: envValidator.withDefaultNumber(z.coerce.number(), 5555, 'TEST_DB_PORT'),
+	TOTP_DIGITS: envValidator.withDefaultNumber(z.coerce.number(), 6, 'TOTP_DIGITS'),
+	TOTP_PERIOD: envValidator.withDefaultNumber(z.coerce.number(), 30, 'TOTP_PERIOD'),
+	JWT_EXPIRY_MFA_CHALLENGE_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 600, 'JWT_EXPIRY_MFA_CHALLENGE_LIMIT'),
+	JWT_EXPIRY_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 3600, 'JWT_EXPIRY_LIMIT'),
+	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 86400, 'JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT'),
+	STORAGE_PORT: envValidator.withDefaultNumber(z.coerce.number(), 9001, 'STORAGE_PORT'),
+	MFA_EMAIL_CODE_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 300, 'MFA_EMAIL_CODE_EXPIRATION'),
+	AUTHORIZATION_CODE_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 300, 'AUTHORIZATION_CODE_EXPIRATION'),
+	PASSWORD_RECOVERY_CODE_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 900, 'PASSWORD_RECOVERY_CODE_EXPIRATION'),
+	EMAIL_CHANGE_CODE_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 900, 'EMAIL_CHANGE_CODE_EXPIRATION'),
+	EMAIL_VERIFICATION_CODE_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 86400, 'EMAIL_VERIFICATION_CODE_EXPIRATION'),
+	S3_CACHE_CONTROL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 604800, 'S3_CACHE_CONTROL_EXPIRATION'),
+	AVATAR_POST_URL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 60, 'AVATAR_POST_URL_EXPIRATION'),
+	AVATAR_GET_URL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 86400, 'AVATAR_GET_URL_EXPIRATION'),
+	AVATAR_SIZE_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 1048576, 'AVATAR_SIZE_LIMIT'),
+	ITEM_THUMBNAIL_GET_URL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 86400, 'ITEM_THUMBNAIL_GET_URL_EXPIRATION'),
+	ITEM_THUMBNAIL_POST_URL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 60, 'ITEM_THUMBNAIL_POST_URL_EXPIRATION'),
+	ITEM_THUMBNAIL_SIZE_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 1048576, 'ITEM_THUMBNAIL_SIZE_LIMIT'),
+	ORGANIZATION_LOGO_GET_URL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 86400, 'ORGANIZATION_LOGO_GET_URL_EXPIRATION'),
+	ORGANIZATION_LOGO_POST_URL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 60, 'ORGANIZATION_LOGO_POST_URL_EXPIRATION'),
+	ORGANIZATION_LOGO_SIZE_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 1048576, 'ORGANIZATION_LOGO_SIZE_LIMIT'),
+	PROJECT_LOGO_GET_URL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 86400, 'PROJECT_LOGO_GET_URL_EXPIRATION'),
+	PROJECT_LOGO_POST_URL_EXPIRATION: envValidator.withDefaultNumber(z.coerce.number(), 60, 'PROJECT_LOGO_POST_URL_EXPIRATION'),
+	PROJECT_LOGO_SIZE_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 1048576, 'PROJECT_LOGO_SIZE_LIMIT'),
 	
 	// Passwords (required, must be explicitly set)
 	STEXS_DB_PWD: z.string().min(1, 'STEXS_DB_PWD is required'),
@@ -97,38 +81,31 @@ const envSchema = z.object({
 	LAGO_API_KEY: z.string().min(1, 'LAGO_API_KEY is required'),
 	
 	// URLs
-	ISSUER: withDefaultString(z.string().url(), 'http://localhost:3001', 'ISSUER'),
-	AUDIENCE: withDefaultString(z.string().url(), 'http://localhost:3000', 'AUDIENCE'),
-	SIGN_IN_URL: withDefaultString(z.string().url(), 'http://localhost:5172/sign-in', 'SIGN_IN_URL'),
-	RECOVERY_URL: withDefaultString(z.string().url(), 'http://localhost:5172/recovery', 'RECOVERY_URL'),
-	LOGGER_URL: withDefaultString(z.string().url(), undefined, 'LOGGER_URL'),
+	ISSUER: envValidator.withDefaultString(z.string().url(), 'http://localhost:3001', 'ISSUER'),
+	AUDIENCE: envValidator.withDefaultString(z.string().url(), 'http://localhost:3000', 'AUDIENCE'),
+	SIGN_IN_URL: envValidator.withDefaultString(z.string().url(), 'http://localhost:5172/sign-in', 'SIGN_IN_URL'),
+	RECOVERY_URL: envValidator.withDefaultString(z.string().url(), 'http://localhost:5172/recovery', 'RECOVERY_URL'),
+	LOGGER_URL: envValidator.withDefaultString(z.string().url(), undefined, 'LOGGER_URL'),
 });
 
-[
-	'STEXS_DB_PWD',
-	'SMTP_PWD',
-	'ACCESS_TOKEN_SECRET',
-	'REFRESH_TOKEN_SECRET',
-	'MFA_CHALLENGE_TOKEN_SECRET',
-	'STORAGE_ACCESS_KEY',
-	'STORAGE_SECRET_KEY',
-	'LAGO_API_KEY',
-].forEach(checkEnvVarExists);
-
-if (missingEnvVars.length > 0) {
+if (envValidator.getMissingEnvVars().length > 0) {
 	process.exit(1);
 }
 
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-	logger.error('Invalid environment variables:', parsedEnv.error);
+	logger.error('Invalid environment variables:', parsedEnv.error.format());
 	process.exit(1);
 }
 
 const env = parsedEnv.data;
 
 export const ENV = env.ENV!;
+
+export const LOGGER = env.LOGGER!;
+export const LOG_LEVEL = env.LOG_LEVEL!;
+
 export const SERVER_PORT = env.STEXS_API_PORT;
 
 export const POSTGRES_HOST = env.STEXS_DB_HOST!;

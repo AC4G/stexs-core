@@ -5,19 +5,19 @@ import {
 	Logger
 } from 'winston';
 
-/*************  ✨ Codeium Command ⭐  *************/
-/******  efe8f6ee-fd15-44a7-8862-b9ef5dc6eb1a  *******/
-export function createDevLogger(): Logger {
+export function createConsoleLogger(service: string, LOG_LEVEL: string): Logger {
 	return createLogger({
-		level: 'debug',
+		level: LOG_LEVEL,
 		defaultMeta: {
-			service: 'api',
+			service,
 		},
 		format: format.combine(
 			format.colorize(),
 			format.timestamp(),
-			format.printf(({ level, message, timestamp }) => {
-				return `${timestamp} [${level}]: ${message}`;
+			format.printf(({ level, message, timestamp, ...meta }) => {
+				const baseMsg = typeof message === 'string' ? message : JSON.stringify(message);
+				const metaMsg = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+				return `${timestamp} [${level}]: ${baseMsg}${metaMsg}`;
 			}),
 		),
 		transports: [
