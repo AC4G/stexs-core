@@ -1,11 +1,15 @@
 import { createLogger, format, Logger } from 'winston';
 import LokiTransport from 'winston-loki';
 
-export function createProdLogger(LOGGER_URL: string): Logger {
+export function createLokiLogger(
+	service: string,
+	LOGGER_URL: string,
+	LOG_LEVEL: string
+): Logger {
 	return createLogger({
-		level: 'info',
+		level: LOG_LEVEL,
 		defaultMeta: {
-			service: 'api',
+			service,
 		},
 		format: format.json(),
 		transports: [

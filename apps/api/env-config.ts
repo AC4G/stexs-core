@@ -13,20 +13,27 @@ const checkEnvVarExists = (varName: string) => {
 	}
 };
 
-const withDefaultString = (schema: z.ZodString, defaultValue: string | undefined, varName: string) => {
-	checkEnvVarExists(varName);
-	const newSchema = schema.transform(value => {
-		if (value.trim() === '') {
-			logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
-			return defaultValue;
-		}
-		return value;
-	  });
+type StringOrEnum = z.ZodString | z.ZodEnum<any>;
 
-	if (defaultValue === undefined) return newSchema;
+const withDefaultString = <T extends StringOrEnum>(
+  schema: T,
+  defaultValue: string | undefined,
+  varName: string
+): T => {
+  checkEnvVarExists(varName);
+  
+  const newSchema = schema.transform((value: unknown) => {
+    if (typeof value === 'string' && value.trim() === '') {
+      logger.warn(`${varName} is empty or invalid. Applying default value: "${defaultValue}"`);
+      return defaultValue!;
+    }
+    return value;
+  }) as unknown as T;
 
-	return newSchema.default(defaultValue);
-}
+  if (defaultValue === undefined) return newSchema;
+
+  return newSchema.default(defaultValue) as unknown as T;
+};
 
 const withDefaultNumber = (schema: z.ZodNumber, defaultValue: number, varName: string) => {
 	checkEnvVarExists(varName);
@@ -42,6 +49,10 @@ const withDefaultNumber = (schema: z.ZodNumber, defaultValue: number, varName: s
 const envSchema = z.object({
 	// Strings
 	ENV: withDefaultString(z.string(), 'dev', 'ENV'),
+
+	LOGGER: withDefaultString(z.enum(['console', 'loki']), 'console', 'LOGGER'),
+	LOG_LEVEL: withDefaultString(z.string(), 'info', 'LOG_LEVEL'),
+
 	SERVICE_NAME: withDefaultString(z.string(), 'STEXS', 'SERVICE_NAME'),
 	SMTP_HOST: withDefaultString(z.string(), 'localhost', 'SMTP_HOST'),
 	SMTP_USER: withDefaultString(z.string(), 'admin', 'SMTP_USER'),
@@ -129,6 +140,10 @@ if (!parsedEnv.success) {
 const env = parsedEnv.data;
 
 export const ENV = env.ENV!;
+
+export const LOGGER = env.LOGGER!;
+export const LOG_LEVEL = env.LOG_LEVEL!;
+
 export const SERVER_PORT = env.STEXS_API_PORT;
 
 export const POSTGRES_HOST = env.STEXS_DB_HOST!;

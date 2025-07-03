@@ -1,0 +1,18 @@
+{
+  "name": "queue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/server.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc-watch --onSuccess \"node ./dist/src/server.js\"",
+    "clean": "rm -rf dist",
+    "clean:logs": "rm -f logs/*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pulsar-client": "^1.14.0"
+  }
+}

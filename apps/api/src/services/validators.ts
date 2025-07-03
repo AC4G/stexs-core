@@ -19,13 +19,6 @@ import {
 export const isGrantType = (value: any): boolean =>
   possibleGrantTypes.includes(value);
 
-export const requireUUIDv4 = (value: string) => {
-  if (!validateUUID(value) || uuidVersion(value) !== 4)
-    throw new CustomValidationError(INVALID_UUID);
-
-  return true;
-};
-
 export const decodeRefreshToken = async (token: string, req: any) => {
   const decoded = decode(token, { json: true }) as { grant_type?: string };
 
