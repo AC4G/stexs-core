@@ -86,6 +86,10 @@ const envSchema: any = z.object({
 	SIGN_IN_URL: envValidator.withDefaultString(z.string().url(), 'http://localhost:5172/sign-in', 'SIGN_IN_URL'),
 	RECOVERY_URL: envValidator.withDefaultString(z.string().url(), 'http://localhost:5172/recovery', 'RECOVERY_URL'),
 	LOGGER_URL: envValidator.withDefaultString(z.string().url(), undefined, 'LOGGER_URL'),
+
+	PULSAR_URL: envValidator.withDefaultString(z.string(), 'pulsar://localhost:6650', 'PULSAR_URL'),
+    PULSAR_CERT_PATH: envValidator.withDefaultString(z.string(), undefined, 'PULSAR_CERT_PATH'),
+    PULSAR_PRIVATE_KEY_PATH: envValidator.withDefaultString(z.string(), undefined, 'PULSAR_PRIVATE_KEY_PATH'),
 });
 
 if (envValidator.getMissingEnvVars().length > 0) {
@@ -169,3 +173,7 @@ export const ORGANIZATION_LOGO_SIZE_LIMIT = env.ORGANIZATION_LOGO_SIZE_LIMIT;
 export const PROJECT_LOGO_GET_URL_EXPIRATION = env.PROJECT_LOGO_GET_URL_EXPIRATION;
 export const PROJECT_LOGO_POST_URL_EXPIRATION = env.PROJECT_LOGO_POST_URL_EXPIRATION;
 export const PROJECT_LOGO_SIZE_LIMIT = env.PROJECT_LOGO_SIZE_LIMIT;
+
+export const PULSAR_URL = env.PULSAR_URL!;
+export const PULSAR_CERT_PATH = env.PULSAR_CERT_PATH;
+export const PULSAR_PRIVATE_KEY_PATH = env.PULSAR_PRIVATE_KEY_PATH;

@@ -35,6 +35,7 @@
     "jsonwebtoken": "^9.0.2",
     "otpauth": "^9.1.4",
     "pg": "^8.11.2",
+    "pulsar-client": "^1.14.0",
     "winston": "^3.11.0",
     "winston-loki": "^6.0.7",
     "zod": "^3.22.4"

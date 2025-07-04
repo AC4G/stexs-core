@@ -306,6 +306,9 @@ importers:
       pg:
         specifier: ^8.11.2
         version: 8.14.0
+      pulsar-client:
+        specifier: ^1.14.0
+        version: 1.14.0
       winston:
         specifier: ^3.11.0
         version: 3.17.0
