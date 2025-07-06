@@ -270,7 +270,7 @@ services:
   bookie:
     image: apachepulsar/pulsar:latest
     container_name: bookie
-    restart: on-failure
+    restart: unless-stopped
     networks:
       - pulsar
     environment:
@@ -292,7 +292,7 @@ services:
     image: apachepulsar/pulsar:latest
     container_name: broker
     hostname: broker
-    restart: on-failure
+    restart: unless-stopped
     networks:
       - pulsar
     environment:

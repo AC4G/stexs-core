@@ -26,6 +26,8 @@ import logger from '../../logger';
 import { validate } from 'utils-node/middlewares';
 import { signUpUser } from '../../repositories/auth/users';
 import { hashPassword } from '../../services/password';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import db from '../../db';
 
 const router = Router();
 
@@ -95,39 +97,36 @@ router.post(
 		const passwordHash = await hashPassword(password);
 
 		try {
-			const { rowCount } = await signUpUser(
-				email,
-				passwordHash,
-				username,
-				token
-			);
-
-			if (!rowCount || rowCount === 0) {
-				logger.error('Sign up: Database insertion failed.');
-				return res
-					.status(500)
-					.json(
-						message(
-							'Failed to sign up. Please try again.',
-							{},
-							[{ info: INTERNAL_ERROR }]
-						)
+			await db.withTransaction(async (client) => {
+				try {
+					const { rowCount } = await signUpUser(
+						email,
+						passwordHash,
+						username,
+						token,
+						client
 					);
-			}
-		} catch (e) {
-			const err = e as { hint: string | null };
 
-			if (err.hint) {
-				const path = err.hint.split(' ').pop()!;
+					if (!rowCount || rowCount === 0) {
+						logger.error('Sign up: Database insertion failed.');
 
-				logger.debug(`Sign up validation failed for user: ${username}, path: ${path}`);
+						throw new AppError(
+							500,
+							'Failed to sign up. Please try again.',
+							[{ info: INTERNAL_ERROR }]
+						);
+					}
+				} catch (e) {
+					const err = e as { hint: string | null };
 
-				return res
-					.status(400)
-					.json(
-						message(
+					if (err.hint) {
+						const path = err.hint.split(' ').pop()!;
+
+						logger.debug(`Sign up validation failed for user: ${username}, path: ${path}`);
+
+						throw new AppError(
+							400,
 							'Failed to sign up because of invalid input.',
-							{},
 							[
 								{
 									info: {
@@ -137,60 +136,69 @@ router.post(
 									data: {
 										path,
 										location: 'body',
-									},
-								},
+									}
+								}
 							]
 						)
+					}
+
+					logger.error(
+						`Error during sign up: ${
+							e instanceof Error ? e.message : e
+						}`,
 					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while signing up.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				try {
+					await sendEmailMessage({
+						to: email,
+						subject: 'Email Verification',
+						content: `Please verify your email. ${
+							ISSUER + '/auth/verify?email=' + email + '&token=' + token
+						}`,
+					});
+
+					logger.debug(`Sign up successful for user: ${username}`);
+
+					res
+						.status(201)
+						.json(message('Sign up successful. Check your email for a verification link!'));
+				} catch (e) {
+					logger.error(
+						`Sending verification email failed for email: ${email}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while sending verification email.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+			});
+		} catch (e) {
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
 			}
 
-			logger.error(
-				`Error during sign up: ${
-					e instanceof Error ? e.message : e
-				}`,
+			logger.error(`Error initializing sign up: ${e instanceof Error ? e.message : e}`);
+			
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while initializing sign up.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
 			);
-
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while signing up.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		try {
-			await sendEmailMessage({
-				to: email,
-				subject: 'Email Verification',
-				content: `Please verify your email. ${
-					ISSUER + '/auth/verify?email=' + email + '&token=' + token
-				}`,
-			});
-
-			logger.debug(`Email verification message sent successfully for user: ${username}`);
-			logger.debug(`Sign up successful for user: ${username}`);
-
-			res
-				.status(201)
-				.json(message('Sign up successful. Check your email for a verification link!'));
-		} catch (e) {
-			logger.error(
-				`Sending verification email failed for email: ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while sending verification email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
 		}
 	},
 );

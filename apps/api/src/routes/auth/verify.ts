@@ -26,6 +26,8 @@ import {
 	updateEmailVerificationToken,
 	verifyEmail
 } from '../../repositories/auth/users';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 
 const router = Router();
 
@@ -205,68 +207,83 @@ router.post(
 				);
 		}
 
-		const token = uuidv4();
-
 		try {
-			const { rowCount } = await updateEmailVerificationToken(email, token);
+			await db.withTransaction(async (client) => {
+				const token = uuidv4();
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(`Verification token update failed during resend for email: ${email}`);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while updating verification token.',
-							{},
-							[{ info: INTERNAL_ERROR }]
-						)
+				try {
+					const { rowCount } = await updateEmailVerificationToken(
+						email,
+						token,
+						client
 					);
-			}
-		} catch (e) {
-			logger.error(
-				`Verification token update failed during resend for email: ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while updating verification token.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
 
-		try {
-			await sendEmailMessage({
-				to: email,
-				subject: 'Email Verification',
-				content: `Please verify your email. ${
-					ISSUER + '/auth/verify?email=' + email + '&token=' + token
-				}`,
+					if (!rowCount || rowCount === 0) {
+						logger.error(`Verification token update failed during resend for email: ${email}`);
+
+						throw new AppError(
+							500,
+							'An unexpected error occurred while updating verification token.',
+							[{ info: INTERNAL_ERROR }]
+						);
+					}
+				} catch (e) {
+					logger.error(
+						`Verification token update failed during resend for email: ${email}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while updating verification token.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				try {
+					await sendEmailMessage({
+						to: email,
+						subject: 'Email Verification',
+						content: `Please verify your email. ${
+							ISSUER + '/auth/verify?email=' + email + '&token=' + token
+						}`,
+					});
+				} catch (e) {
+					logger.error(
+						`Error sending verification email to ${email}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while sending verification email.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				logger.debug(`Verification email resent successful for email: ${email}`);
+
+				res.json(message(`New verification email has been sent to ${email}`));
 			});
 		} catch (e) {
-			logger.error(
-				`Error sending verification email to ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
+			}
+
+			logger.error(`Error resending verification email: ${e instanceof Error ? e.message : e}`);
+			
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while resending verification email.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while sending verification email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
 		}
-
-		logger.debug(`Verification email resent successful for email: ${email}`);
-
-		res.json(message(`New verification email has been sent to ${email}`));
 	},
 );
 

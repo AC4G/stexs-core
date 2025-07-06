@@ -46,6 +46,8 @@ import { setAuthorizationCode } from '../../repositories/auth/oauth2Authorizatio
 import { insertOrUpdateAuthorizationCodeScopes } from '../../repositories/auth/oauth2AuthorizationCodeScopes';
 import { updateConnectionScopes } from '../../repositories/public/oauth2ConnectionScopes';
 import { deleteOAuth2Connection, revokeOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 
 const router = Router();
 
@@ -191,107 +193,131 @@ router.post(
 		}
 
 		try {
-			const { rowCount } = await connectionExistsByUserIdAndClientId(userId, client_id);
-
-			if (rowCount && rowCount > 0) {
-				await updateConnectionScopes(userId, client_id, scopes);
-
-				return res.sendStatus(204);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while checking client connection for user or inserting new scopes to an existing connection: ${userId} and client: ${client_id}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking client connection or adding new scopes.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		const code = uuidv4();
-		let codeId: number;
-		let expires: number;
-
-		try {
-			const { rowCount, rows } = await setAuthorizationCode(
-				code,
-				userId,
-				client_id
-			);
-
-			if (!rowCount || rowCount === 0) {
-				logger.error(
-					`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`,
-				);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while saving authorization token.',
-							{},
-							[{ info: INTERNAL_ERROR }]
-						)
+			await db.withTransaction(async (client) => {
+				try {
+					const { rowCount } = await connectionExistsByUserIdAndClientId(
+						userId,
+						client_id,
+						client
 					);
+
+					if (rowCount && rowCount > 0) {
+						await updateConnectionScopes(
+							userId,
+							client_id,
+							scopes,
+							client
+						);
+
+						res.sendStatus(204);
+
+						return;
+					}
+				} catch (e) {
+					logger.error(
+						`Error while checking client connection for user or inserting new scopes to an existing connection: ${userId} and client: ${client_id}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while checking client connection or adding new scopes.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				const code = uuidv4();
+				let codeId: number;
+				let expires: number;
+
+				try {
+					const { rowCount, rows } = await setAuthorizationCode(
+						code,
+						userId,
+						client_id,
+						client
+					);
+
+					if (!rowCount || rowCount === 0) {
+						logger.error(
+							`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`,
+						);
+
+						throw new AppError(
+							500,
+							'An unexpected error occurred while saving authorization token.',
+							[{ info: INTERNAL_ERROR }]
+						);
+					}
+
+					logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
+
+					const row = rows[0];
+
+					codeId = row.id;
+					expires = row.created_at.getTime() + AUTHORIZATION_CODE_EXPIRATION * 1000;
+				} catch (e) {
+					logger.error(
+						`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while saving authorization token.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				try {
+					await insertOrUpdateAuthorizationCodeScopes(
+						codeId,
+						scopes,
+						client
+					);
+				} catch (e) {
+					logger.error(
+						`Error while inserting/updating authorization token scopes for token: ${codeId}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while saving authorization token scopes.',
+						[{ info: INTERNAL_ERROR }]
+					)
+				}
+
+				res.json(
+					message(
+						'Authorization token successfully created.',
+						{
+							code,
+							expires
+						}
+					)
+				);
+			});
+		} catch (e) {
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
 			}
 
-			logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
-
-			const row = rows[0];
-
-			codeId = row.id;
-			expires = row.created_at.getTime() + AUTHORIZATION_CODE_EXPIRATION * 1000;
-		} catch (e) {
-			logger.error(
-				`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			logger.error(`Authorization failed: ${e instanceof Error ? e.message : e}`);
+			
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while authorizing.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while saving authorization token.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
 		}
-
-		try {
-			await insertOrUpdateAuthorizationCodeScopes(codeId, scopes);
-		} catch (e) {
-			logger.error(
-				`Error while inserting/updating authorization token scopes for token: ${codeId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while saving authorization token scopes.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		res.json(
-			message(
-				'Authorization token successfully created.',
-				{
-					code,
-					expires
-				}
-			)
-		);
 	},
 );
 

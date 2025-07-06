@@ -50,6 +50,8 @@ import {
 } from '../../repositories/auth/users';
 import { getActiveUserSessions } from '../../repositories/auth/refreshTokens';
 import { compare } from 'bcrypt';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 
 const router = Router();
 
@@ -326,69 +328,84 @@ router.post(
 				);
 		}
 
-		const confirmationCode = generateCode(8);
-
 		try {
-			const { rowCount } = await initalizeEmailChange(userId, newEmail, confirmationCode);
+			await db.withTransaction(async (client) => {
+				const confirmationCode = generateCode(8);
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(`Email change failed for user: ${userId}`);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while changing email.',
-							{},
-							[{ info: INTERNAL_ERROR }]
-						)
+				try {
+					const { rowCount } = await initalizeEmailChange(
+						userId,
+						newEmail,
+						confirmationCode,
+						client
 					);
-			}
 
-			logger.debug(`Email change initiated for user: ${userId}`);
-		} catch (e) {
-			logger.error(
-				`Error during email change initiation for user: ${userId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
+					if (!rowCount || rowCount === 0) {
+						logger.error(`Email change failed for user: ${userId}`);
 
-			return res
-				.status(500)
-				.json(
-					message(
+						throw new AppError(
+							500,
+							'An unexpected error occurred while changing email.',
+							[{ info: INTERNAL_ERROR }]
+						);
+					}
+
+					logger.debug(`Email change initiated for user: ${userId}`);
+				} catch (e) {
+					logger.error(
+						`Error during email change initiation for user: ${userId}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
 						'An unexpected error occurred while changing email.',
-						{},
 						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
+					);
+				}
 
-		try {
-			await sendEmailMessage({
-				to: newEmail,
-				subject: 'Email Change Verification',
-				content: `Please verify your email change by using the following code: ${confirmationCode}`,
+				try {
+					await sendEmailMessage({
+						to: newEmail,
+						subject: 'Email Change Verification',
+						content: `Please verify your email change by using the following code: ${confirmationCode}`,
+					});
+				} catch (e) {
+					logger.error(
+						`Error sending email change verification link to email: ${newEmail}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while sending email change verification link.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				logger.debug(`Email change verification link sent to ${newEmail}`);
+
+				res.json(message('Email change verification link has been sent to the new email address.'));
 			});
 		} catch (e) {
-			logger.error(
-				`Error sending email change verification link to email: ${newEmail}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
+			}
+
+			logger.error(`Error sending email change verification link: ${e instanceof Error ? e.message : e}`);
+		
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while sending email.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while sending email change verification link.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
 		}
-
-		logger.debug(`Email change verification link sent to ${newEmail}`);
-
-		res.json(message('Email change verification link has been sent to the new email address.'));
 	},
 );
 

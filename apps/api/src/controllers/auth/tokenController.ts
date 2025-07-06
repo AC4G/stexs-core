@@ -23,6 +23,8 @@ import { deleteRefreshToken, validateOAuth2RefreshToken } from '../../repositori
 import { AUTHORIZATION_CODE_EXPIRATION } from '../../../env-config';
 import { getUserAuth } from '../../repositories/auth/users';
 import { compare } from 'bcrypt';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 
 export async function authorizationCodeController(req: Request, res: Response) {
 	const {
@@ -115,112 +117,122 @@ export async function authorizationCodeController(req: Request, res: Response) {
 	}
 
 	try {
-		const { rowCount } = await deleteAuthorizationCode(codeId);
+		await db.withTransaction(async (client) => {
+			try {
+				const { rowCount } = await deleteAuthorizationCode(codeId, client);
 
-		if (!rowCount || rowCount === 0) {
-			logger.error(
-				`Failed to delete authorization code for user: ${userId} and client: ${client_id}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
+				if (!rowCount || rowCount === 0) {
+					logger.error(
+						`Failed to delete authorization code for user: ${userId} and client: ${client_id}`,
+					);
+
+					throw new AppError(
+						500,
 						'An unexpected error occurred while preparing for the access token generation stage.',
-						{},
 						[{ info: INTERNAL_ERROR }]
-					)
+					);
+				}
+			} catch (e) {
+				logger.error(
+					`Error while deleting authorization code for user: ${userId} and client: ${client_id}. Error: ${
+						e instanceof Error ? e.message : e
+					}`,
 				);
-		}
-	} catch (e) {
-		logger.error(
-			`Error while deleting authorization code for user: ${userId} and client: ${client_id}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
+
+				throw new AppError(
+					500,
 					'An unexpected error occurred while preparing for the access token generation stage.',
-					{},
 					[{ info: INTERNAL_ERROR }]
-				)
-			);
-	}
-
-	let connectionId: number;
-
-	try {
-		const { rowCount, rows } = await createOAuth2Connection(
-			userId,
-			client_id,
-			scope_ids
-		);
-
-		if (!rowCount || rowCount === 0) {
-			logger.error(
-				`Failed to insert connection for user: ${userId} and client: ${client_id}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while creating connection.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
 				);
+			}
+
+			let connectionId: number;
+
+			try {
+				const { rowCount, rows } = await createOAuth2Connection(
+					userId,
+					client_id,
+					scope_ids,
+					client
+				);
+
+				if (!rowCount || rowCount === 0) {
+					logger.error(
+						`Failed to insert connection for user: ${userId} and client: ${client_id}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occured while creating connection.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				connectionId = rows[0].id;
+			} catch (e) {
+				logger.error(
+					`Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${
+						e instanceof Error ? e.message : e
+					}`,
+				);
+
+				throw new AppError(
+					500,
+					'An unexpected error occured while creating connection.',
+					[{ info: INTERNAL_ERROR }]
+				);
+			}
+
+			logger.debug(`Connection successfully created for user: ${userId} and client: ${client_id}`);
+
+			try {
+				const data = await generateAccessToken({
+					additionalPayload: {
+						sub: userId,
+						client_id,
+						organization_id,
+					},
+					grantType: 'authorization_code',
+					connectionId,
+					client
+				});
+
+				logger.debug(`Access token generated successfully for user: ${userId} and client: ${client_id}`);
+
+				res.json(message('Connection successfully created.', { ...data }));
+			} catch (e) {
+				logger.error(
+					`Error while generating access token for user: ${userId} and client: ${client_id}. Error: ${
+						e instanceof Error ? e.message : e
+					}`,
+				)
+				res
+					.status(500)
+					.json(
+						message(
+							'An unexpected error occurred while generating access token.',
+							{},
+							[{ info: INTERNAL_ERROR }]
+						)
+					);
+			}
+		});
+	} catch (e) {
+		if (e instanceof AppError) {
+			transformAppErrorToResponse(e, res);
+
+			return;
 		}
 
-		connectionId = rows[0].id;
-	} catch (e) {
-		logger.error(
-			`Error while inserting connection for user: ${userId} and client: ${client_id}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
+		logger.error(`Authorization failed: ${e instanceof Error ? e.message : e}`);
+		
+		res.status(500).json(
+			message(
+				'Unexpected error occurred while authorizing.',
+				{},
+				[{ info: INTERNAL_ERROR }]
+			)
 		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while creating connection.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
-	}
-
-	logger.debug(`Connection successfully created for user: ${userId} and client: ${client_id}`);
-
-	try {
-		const data = await generateAccessToken(
-			{
-				sub: userId,
-				client_id,
-				organization_id,
-			},
-			'authorization_code',
-			connectionId,
-		);
-
-		logger.debug(`Access token generated successfully for user: ${userId} and client: ${client_id}`);
-
-		res.json(message('Connection successfully created.', { ...data }));
-	} catch (e) {
-		logger.error(
-			`Error while generating access token for user: ${userId} and client: ${client_id}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		)
-		res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occurred while generating access token.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
 	}
 }
 
@@ -294,13 +306,13 @@ export async function clientCredentialsController(req: Request, res: Response) {
 	}
 
 	try {
-		const data = await generateAccessToken(
-			{
+		const data = await generateAccessToken({
+			additionalPayload: {
 				client_id,
 				organization_id,
 			},
-			'client_credentials',
-		);
+			grantType: 'client_credentials',
+		});
 
 		logger.debug(`Access token generated successfully for client: ${client_id}`);
 
@@ -336,70 +348,88 @@ export async function refreshTokenController(req: Request, res: Response) {
 	};
 
     if (grant_type === 'password') {
-        try {
-            const { rowCount } = await deleteRefreshToken(sub!, jti!, session_id!);
+		try {
+			await db.withTransaction(async (client) => {
+				try {
+					const { rowCount } = await deleteRefreshToken(
+						sub,
+						jti,
+						session_id!,
+						client
+					);
 
-            if (!rowCount || rowCount === 0) {
-                logger.debug(`Refresh token invalid or expired for user: ${sub}`);
-                return res
-                    .status(400)
-                    .send(
-                        message(
-                            'Invalid refresh token.',
-                            {},
-                            [
-                                {
-                                    info: INVALID_REFRESH_TOKEN,
-                                    data: {
-                                        location: 'body',
-                                        path: 'refresh_token',
-                                    },
-                                },
-                            ]
-                        )
-                    );
-            }
+					if (!rowCount || rowCount === 0) {
+						logger.debug(`Refresh token invalid or expired for user: ${sub}`);
 
-            logger.debug(`Refresh token successfully processed for user: ${sub} (Revoked)`);
-        } catch (e) {
-            logger.error(
-                `Error while processing refresh token for user: ${sub}. Error: ${
-                    e instanceof Error ? e.message : e
-                }`,
-            );
-            return res
-                .status(500)
-                .json(
-                    message(
-                        'An unexpected error occurred while processing refresh token.',
-                        {},
-                        [{ info: INTERNAL_ERROR }]
-                    )
-                );
-        }
+						throw new AppError(
+							400,
+							'Invalid refresh token.',
+							[
+								{
+									info: INVALID_REFRESH_TOKEN,
+									data: {
+										location: 'body',
+										path: 'refresh_token',
+									},
+								}
+							]
+						)
+					}
 
-        try {
-            const data = await generateAccessToken({
-                sub,
-                session_id,
-            });
+					logger.debug(`Refresh token successfully processed for user: ${sub} (Revoked)`);
+				} catch (e) {
+					logger.error(
+						`Error while processing refresh token for user: ${sub}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
 
-            logger.debug(`A new access token generated for user: ${sub}`);
+					throw new AppError(
+						500,
+						'An unexpected error occurred while processing refresh token.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
 
-            res.json(message('Access token successfully generated.', { ...data }));
-        } catch (e) {
-            res
-                .status(500)
-                .json(
-                    message(
-                        'An unexpected error occurred while generating new access token.',
-                        {},
-                        [{ info: INTERNAL_ERROR }]
-                    )
-                );
-        }
+				try {
+					const data = await generateAccessToken({
+						additionalPayload: {
+							sub,
+							session_id,
+						},
+						client,
+					});
 
-        return;
+					logger.debug(`A new access token generated for user: ${sub}`);
+
+					res.json(message('Access token successfully generated.', { ...data }));
+				} catch (e) {
+					throw new AppError(
+						500,
+						'An unexpected error occurred while generating new access token.',
+						[{ info: INTERNAL_ERROR }]
+					)
+				}
+			});
+
+			return;
+		} catch (e) {
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
+			}
+
+			logger.error(`Failed to generate new access token: ${e instanceof Error ? e.message : e}`);
+			
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while generating new access token.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
+			);
+		}
     }
 
 	try {
@@ -445,17 +475,17 @@ export async function refreshTokenController(req: Request, res: Response) {
 	}
 
 	try {
-		const data = await generateAccessToken(
-			{
+		const data = await generateAccessToken({
+			additionalPayload: {
 				sub,
 				client_id,
 				organization_id,
 			},
-			'authorization_code',
-			null,
-			null,
-			jti,
-		);
+			grantType: 'authorization_code',
+			connectionId: null,
+			refreshToken: null,
+			oldRefreshToken: jti,
+		});
 
 		logger.debug(`Access token retrieved successfully for user: ${sub} and client: ${client_id}`);
 
@@ -592,8 +622,8 @@ export async function mfaChallengeController(req: Request, res: Response) {
 
     try {
         const data = await generateAccessToken({
-            sub: userId,
-        });
+			additionalPayload: { sub: userId }
+		});
 
         logger.debug(`Sign-in successful for user: ${userId}`);
 

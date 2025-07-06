@@ -33,6 +33,8 @@ import {
 	verifyTOTPMethod
 } from '../../repositories/auth/mfa';
 import { MFA_EMAIL_CODE_EXPIRATION } from '../../../env-config';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 
 export async function enableTOTP(req: Request, res: Response) {
 	const userId = req.auth?.sub!;
@@ -643,66 +645,81 @@ export async function sendEmailCode(req: Request, res: Response) {
 	const userId = req.auth?.sub!;
 	const code = generateCode(8);
 
-	let email: string;
-
 	try {
-		const { rowCount, rows } = await setEmailCode(userId, code);
-
-		if (!rowCount || rowCount === 0) {
-			logger.error(`User not found for MFA code update for user: ${userId}`);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while creating MFA code.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
+		await db.withTransaction(async (client) => {
+			let email: string;
+			
+			try {
+				const { rowCount, rows } = await setEmailCode(
+					userId,
+					code,
+					client
 				);
-		}
 
-		({ email } = rows[0]);
-	} catch (e) {
-		logger.error(
-			`Error while updating and fetching MFA code for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
+				if (!rowCount || rowCount === 0) {
+					logger.error(`User not found for MFA code update for user: ${userId}`);
+
+					throw new AppError(
+						500,
+						'An unexpected error occured while creating MFA code.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				({ email } = rows[0]);
+			} catch (e) {
+				logger.error(
+					`Error while updating and fetching MFA code for user: ${userId}. Error: ${
+						e instanceof Error ? e.message : e
+					}`,
+				);
+
+				throw new AppError(
+					500,
 					'An unexpected error occured while creating MFA code.',
-					{},
 					[{ info: INTERNAL_ERROR }]
-				)
-			);
-	}
+				);
+			}
 
-	try {
-		await sendEmailMessage({
-			to: email,
-			subject: 'MFA Code',
-			content: `Your MFA code: ${code}`,
+			try {
+				await sendEmailMessage({
+					to: email,
+					subject: 'MFA Code',
+					content: `Your MFA code: ${code}`,
+				});
+			} catch (e) {
+				logger.error(
+					`Error while sending MFA code to ${email}. Error: ${
+						e instanceof Error ? e.message : e
+					}`,
+				);
+
+				throw new AppError(
+					500,
+					'An unexpected error occurred while sending MFA code.',
+					[{ info: INTERNAL_ERROR }]
+				);
+			}
+
+			logger.debug(`MFA code successfully sent to email: ${email}`);
+
+			res.json(message('MFA code successfully send to users email.'));
 		});
 	} catch (e) {
-		logger.error(
-			`Error while sending MFA code to ${email}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
+		if (e instanceof AppError) {
+			transformAppErrorToResponse(e, res);
+
+			return;
+		}
+
+		logger.error(`Sending email failed: ${e instanceof Error ? e.message : e}`);
+		
+		res.status(500).json(
+			message(
+				'Unexpected error occurred while sending email.',
+				{},
+				[{ info: INTERNAL_ERROR }]
+			)
 		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occurred while sending MFA code.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
 	}
-
-	logger.debug(`MFA code successfully sent to email: ${email}`);
-
-	res.json(message('MFA code successfully send to users email.'));
 }

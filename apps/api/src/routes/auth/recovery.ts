@@ -33,6 +33,8 @@ import {
 	validateRecoveryToken
 } from '../../repositories/auth/users';
 import { compare } from 'bcrypt';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 
 const router = Router();
 
@@ -102,70 +104,85 @@ router.post(
 				);
 		}
 
-		const token = uuidv4();
-
 		try {
-			const { rowCount } = await setRecoveryToken(email, token);
+			await db.withTransaction(async (client) => {
+				const token = uuidv4();
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(`Failed to update recovery token for email: ${email}`);
-				return res
-					.status(500)
-					.json(
-						message(
+				try {
+					const { rowCount } = await setRecoveryToken(
+						email,
+						token,
+						client
+					);
+
+					if (!rowCount || rowCount === 0) {
+						logger.error(`Failed to update recovery token for email: ${email}`);
+
+						throw new AppError(
+							500,
 							'An unexpected error occurred while updating recovery token.',
-							{},
 							[{ info: INTERNAL_ERROR }]
 						)
+					}
+
+					logger.debug(`Recovery token successfully updated for email: ${email}`);
+				} catch (e) {
+					logger.error(
+						`Error while updating recovery token for email: ${email}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
 					);
-			}
 
-			logger.debug(`Recovery token successfully updated for email: ${email}`);
-		} catch (e) {
-			logger.error(
-				`Error while updating recovery token for email: ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
+					throw new AppError(
+						500,
 						'An unexpected error occurred while updating recovery token.',
-						{},
 						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
+					);
+				}
 
-		try {
-			await sendEmailMessage({
-				to: email,
-				subject: 'Password Recovery',
-				content: `You can change your password by following the link: ${
-					REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
-				}`,
+				try {
+					await sendEmailMessage({
+						to: email,
+						subject: 'Password Recovery',
+						content: `You can change your password by following the link: ${
+							REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
+						}`,
+					});
+				} catch (e) {
+					logger.error(
+						`Error while sending recovery email to ${email}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while sending recovery email.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				logger.debug(`Recovery email sent to: ${email}`);
+
+				res.json(message('Recovery email was been send to the email provided.'));
 			});
 		} catch (e) {
-			logger.error(
-				`Error while sending recovery email to ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
+			}
+
+			logger.error(`Error initializing password recovery: ${e instanceof Error ? e.message : e}`);
+			
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while initializing password recovery.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while sending recovery email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
 		}
-
-		logger.debug(`Recovery email sent to: ${email}`);
-
-		res.json(message('Recovery email was been send to the email provided.'));
 	},
 );
 
