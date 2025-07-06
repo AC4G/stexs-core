@@ -18,7 +18,7 @@ import {
 	getTOTPForVerification,
 } from '../../services/totpService';
 import { generateCode, isExpired } from 'utils-node';
-import sendEmail from '../../services/emailService';
+import { sendEmailMessage } from '../../producers/emailProducer';
 import {
 	disableEmailMethod,
 	disableTOTPMethod,
@@ -680,12 +680,11 @@ export async function sendEmailCode(req: Request, res: Response) {
 	}
 
 	try {
-		await sendEmail(
-			email,
-			`MFA code ${code}`,
-			undefined,
-			`Your MFA code: ${code}`,
-		);
+		await sendEmailMessage({
+			to: email,
+			subject: 'MFA Code',
+			content: `Your MFA code: ${code}`,
+		});
 	} catch (e) {
 		logger.error(
 			`Error while sending MFA code to ${email}. Error: ${

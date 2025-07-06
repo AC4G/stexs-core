@@ -1,6 +1,6 @@
-import { setupEmailConsumers } from "./emailConsumer";
+import { setupEmailConsumer } from "./emailConsumer";
 import { shutdownController as controller } from "../shutdown";
 
 export async function setupConsumers() {
-    await setupEmailConsumers(controller);
+    await setupEmailConsumer(controller);
 }

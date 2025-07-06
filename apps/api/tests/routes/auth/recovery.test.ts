@@ -6,7 +6,6 @@ import {
 	beforeAll,
 	afterAll,
 	it,
-	beforeEach,
 } from '@jest/globals';
 
 const mockQuery = jest.fn();
@@ -29,6 +28,17 @@ import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
 import { hashPassword } from '../../../src/services/password';
 
+jest.mock('../../../src/producers/emailProducer', () => {
+  const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(
+    '../../../src/producers/emailProducer'
+  );
+
+  return {
+    ...actual,
+    sendEmailMessage: jest.fn(),
+  };
+});
+
 jest.mock('../../../src/db', () => {
 	return {
 		__esModule: true,
@@ -38,18 +48,7 @@ jest.mock('../../../src/db', () => {
 	};
 });
 
-jest.mock('nodemailer');
-
-const sendMailMock = jest.fn();
-
-const nodemailer = require('nodemailer');
-nodemailer.createTransport.mockReturnValue({ sendMail: sendMailMock });
-
 describe('Recovery Routes', () => {
-	beforeEach(() => {
-		sendMailMock.mockClear();
-		nodemailer.createTransport.mockClear();
-	});
 
 	afterEach(() => {
 		jest.clearAllMocks();

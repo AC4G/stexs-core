@@ -23,7 +23,7 @@ import {
 	CustomValidationError,
 	message,
 } from 'utils-node/messageBuilder';
-import sendEmail from '../../services/emailService';
+import { sendEmailMessage } from '../../producers/emailProducer';
 import logger from '../../logger';
 import { generateCode, isExpired } from 'utils-node';
 import {
@@ -364,12 +364,11 @@ router.post(
 		}
 
 		try {
-			await sendEmail(
-				newEmail,
-				'Email Change Verification',
-				undefined,
-				`Please verify your email change by using the following code: ${confirmationCode}`,
-			);
+			await sendEmailMessage({
+				to: newEmail,
+				subject: 'Email Change Verification',
+				content: `Please verify your email change by using the following code: ${confirmationCode}`,
+			});
 		} catch (e) {
 			logger.error(
 				`Error sending email change verification link to email: ${newEmail}. Error: ${

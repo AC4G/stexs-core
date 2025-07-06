@@ -20,7 +20,7 @@ import {
 	message,
 } from 'utils-node/messageBuilder';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
-import sendEmail from '../../services/emailService';
+import { sendEmailMessage } from '../../producers/emailProducer';
 import { PASSWORD_RECOVERY_CODE_EXPIRATION, REDIRECT_TO_RECOVERY } from '../../../env-config';
 import { validate } from 'utils-node/middlewares';
 import logger from '../../logger';
@@ -139,14 +139,13 @@ router.post(
 		}
 
 		try {
-			await sendEmail(
-				email,
-				'Password Recovery',
-				undefined,
-				`You can change your password by following the link: ${
+			await sendEmailMessage({
+				to: email,
+				subject: 'Password Recovery',
+				content: `You can change your password by following the link: ${
 					REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
 				}`,
-			);
+			});
 		} catch (e) {
 			logger.error(
 				`Error while sending recovery email to ${email}. Error: ${

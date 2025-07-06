@@ -6,7 +6,6 @@ import {
 	beforeAll,
 	afterAll,
 	it,
-	beforeEach,
 } from '@jest/globals';
 
 const mockQuery = jest.fn();
@@ -35,6 +34,17 @@ import {
 import { getTOTPForVerification } from '../../../src/services/totpService';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
+
+jest.mock('../../../src/producers/emailProducer', () => {
+  const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(
+    '../../../src/producers/emailProducer'
+  );
+
+  return {
+    ...actual,
+    sendEmailMessage: jest.fn(),
+  };
+});
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -74,19 +84,7 @@ jest.mock('../../../src/db', () => {
 	};
 });
 
-jest.mock('nodemailer');
-
-const sendMailMock = jest.fn();
-
-const nodemailer = require('nodemailer');
-nodemailer.createTransport.mockReturnValue({ sendMail: sendMailMock });
-
 describe('MFA Routes', () => {
-	beforeEach(() => {
-		sendMailMock.mockClear();
-		nodemailer.createTransport.mockClear();
-	});
-
 	afterEach(() => {
 		jest.clearAllMocks();
 	});

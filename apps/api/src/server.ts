@@ -11,11 +11,24 @@ import { ROUTE_NOT_FOUND } from 'utils-node/errors';
 import cors from 'cors';
 import db from './db';
 import { Server } from 'http';
+import { initEmailProducer } from './producers/emailProducer';
+import { extractError } from 'utils-node/logger';
 
 process.on('uncaughtException', (err) => {
 	logger.error(`Uncaught Exception: ${err.message}`);
 	process.exit(1);
 });
+
+(async () => {
+	logger.info('Initializing pulsar producers...')
+
+	try {
+		await initEmailProducer();
+	} catch (err) {
+		logger.error('Failed to initialize email producer', { error: extractError(err) });
+		process.exit(1);
+	}
+})();
 
 const app = express();
 

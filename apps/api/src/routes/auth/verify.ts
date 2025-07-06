@@ -6,7 +6,7 @@ import {
 	ISSUER,
 	REDIRECT_TO_SIGN_IN
 } from '../../../env-config';
-import sendEmail from '../../services/emailService';
+import { sendEmailMessage } from '../../producers/emailProducer';
 import {
 	EMAIL_ALREADY_VERIFIED,
 	EMAIL_NOT_FOUND,
@@ -240,14 +240,13 @@ router.post(
 		}
 
 		try {
-			await sendEmail(
-				email,
-				'Verification Email',
-				undefined,
-				`Please verify your email. ${
+			await sendEmailMessage({
+				to: email,
+				subject: 'Email Verification',
+				content: `Please verify your email. ${
 					ISSUER + '/auth/verify?email=' + email + '&token=' + token
 				}`,
-			);
+			});
 		} catch (e) {
 			logger.error(
 				`Error sending verification email to ${email}. Error: ${

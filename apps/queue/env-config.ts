@@ -28,7 +28,7 @@ const envSchema: any = z.object({
     SMTP_PWD: z.string().min(1, 'SMTP_PWD is required'),
 	SMTP_EMAIL: z.string().email('SMTP_EMAIL is invalid').min(1, 'SMTP_EMAIL is required'),
     SMTP_SENDER_NAME: envValidator.withDefaultString(z.string(), 'STEXS', 'SMTP_SENDER_NAME'),
-    SMTP_SECURE: envValidator.withDefaultBoolean(z.coerce.boolean(), false, 'SMTP_SECURE'),
+    SMTP_SECURE: envValidator.withDefaultBoolean(false, 'SMTP_SECURE'),
 
     PULSAR_URL: envValidator.withDefaultString(z.string(), 'pulsar://localhost:6650', 'PULSAR_URL'),
     PULSAR_CERT_PATH: envValidator.withDefaultString(z.string(), undefined, 'PULSAR_CERT_PATH'),

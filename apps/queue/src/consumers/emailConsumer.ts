@@ -11,9 +11,8 @@ import { ShutdownController } from 'shutdown';
 const EMAIL_TOPIC = 'emails';
 const EMAIL_SUBSCRIPTION = 'email-sender';
 const EMAIL_DLQ_TOPIC = 'emails-dlq';
-const EMAIL_DLQ_SUBSCRIPTION = 'email-dlq-processor';
 
-export function buildEmailConsumerLoop(loop: Omit<ConsumerLoop, 'loopPromise'>): Promise<void> {
+function buildEmailConsumerLoop(loop: Omit<ConsumerLoop, 'loopPromise'>): Promise<void> {
   const { consumer, controller, topic, subscription } = loop;
 
   return (async () => {
@@ -50,28 +49,18 @@ export function buildEmailConsumerLoop(loop: Omit<ConsumerLoop, 'loopPromise'>):
   })();
 }
 
-export async function setupEmailConsumers(controller: ShutdownController) {
-  logger.info('Initializing Pulsar consumers...');
-
+export async function setupEmailConsumer(controller: ShutdownController) {
   const emailConsumer = await pulsarClient.subscribe({
     topic: EMAIL_TOPIC,
     subscription: EMAIL_SUBSCRIPTION,
     subscriptionType: 'Shared',
     deadLetterPolicy: {
-      maxRedeliverCount: 3,
+      maxRedeliverCount: 2,
       deadLetterTopic: EMAIL_DLQ_TOPIC,
     },
   });
 
   logger.info('Email consumer initialized.');
-
-  const dlqConsumer = await pulsarClient.subscribe({
-    topic: EMAIL_DLQ_TOPIC,
-    subscription: EMAIL_DLQ_SUBSCRIPTION,
-    subscriptionType: 'Shared',
-  });
-
-  logger.info('DLQ consumer initialized.');
 
   const emailLoop = {
     consumer: emailConsumer,
@@ -82,16 +71,5 @@ export async function setupEmailConsumers(controller: ShutdownController) {
   registerConsumer({
     ...emailLoop,
     loopPromise: buildEmailConsumerLoop(emailLoop)
-  });
-
-  const dlqLoop = {
-    consumer: dlqConsumer,
-    controller,
-    topic: EMAIL_DLQ_TOPIC,
-    subscription: EMAIL_DLQ_SUBSCRIPTION
-  };
-  registerConsumer({
-    ...dlqLoop,
-    loopPromise: buildEmailConsumerLoop(dlqLoop)
   });
 }

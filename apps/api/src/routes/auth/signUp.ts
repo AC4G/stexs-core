@@ -3,7 +3,7 @@ import {
 	Request,
 	Response
 } from 'express';
-import sendEmail from '../../services/emailService';
+import { sendEmailMessage } from '../../producers/emailProducer';
 import {
 	message,
 	CustomValidationError,
@@ -162,14 +162,13 @@ router.post(
 		}
 
 		try {
-			await sendEmail(
-				email,
-				'Verification Email',
-				undefined,
-				`Please verify your email. ${
+			await sendEmailMessage({
+				to: email,
+				subject: 'Email Verification',
+				content: `Please verify your email. ${
 					ISSUER + '/auth/verify?email=' + email + '&token=' + token
 				}`,
-			);
+			});
 
 			logger.debug(`Email verification message sent successfully for user: ${username}`);
 			logger.debug(`Sign up successful for user: ${username}`);

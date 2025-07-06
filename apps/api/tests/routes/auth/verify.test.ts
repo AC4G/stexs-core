@@ -23,7 +23,6 @@ import {
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
-import logger from '../../../src/logger';
 
 jest.mock('../../../src/db', () => {
 	return {
@@ -34,19 +33,18 @@ jest.mock('../../../src/db', () => {
 	};
 });
 
-jest.mock('nodemailer');
+jest.mock('../../../src/producers/emailProducer', () => {
+  const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(
+    '../../../src/producers/emailProducer'
+  );
 
-const sendMailMock = jest.fn();
-
-const nodemailer = require('nodemailer');
-nodemailer.createTransport.mockReturnValue({ sendMail: sendMailMock });
+  return {
+    ...actual,
+    sendEmailMessage: jest.fn(),
+  };
+});
 
 describe('Email Verification Routes', () => {
-	beforeEach(() => {
-		sendMailMock.mockClear();
-		nodemailer.createTransport.mockClear();
-	});
-
 	afterEach(() => {
 		jest.clearAllMocks();
 	});
