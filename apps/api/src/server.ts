@@ -1,8 +1,8 @@
 import ip from 'ip';
 import express from 'express';
 import bodyParser from 'body-parser';
-import authRouter from './routes/auth';
-import storageRouter from './routes/storage';
+import authRouter from './routes/auth/router';
+import storageRouter from './routes/storage/router';
 import { ENV, SERVER_PORT } from '../env-config';
 import logger from './logger';
 import responseTime from 'response-time';
