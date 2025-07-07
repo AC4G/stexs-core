@@ -25,11 +25,10 @@ export enum ApiAuthRoutes {
 	SIGN_UP = '/auth/sign-up',
 	SIGN_IN = '/auth/token?grant_type=password',
 	MFA_CHALLENGE = '/auth/token?grant_type=mfa_challenge',
+	REFRESH_TOKEN = '/auth/token?grant_type=refresh_token',
 
 	SIGN_OUT = '/auth/sign-out',
 	SIGN_OUT_ALL_SESSIONS = '/auth/sign-out/all-sessions',
-
-	TOKEN = '/auth/token',
 
 	USER = '/auth/user',
 	USER_SESSIONS = '/auth/user/sessions',
@@ -37,7 +36,6 @@ export enum ApiAuthRoutes {
 	USER_EMAIL = '/auth/user/email',
 	USER_EMAIL_VERIFY = '/auth/user/email/verify',
 	
-	VERIFY = '/auth/verify',
 	VERIFY_RESEND = '/auth/verify/resend',
 
 	MFA_STATUS = '/auth/mfa',
@@ -76,7 +74,9 @@ export class StexsAuthClient {
 	};
 
 	private refreshTimeoutId: number | null = null;
-	private refreshThreshhold = 2 * 60 * 1000; // 120s
+	private refreshThreshhold = 2 * 60 * 1000; // 2min
+	private refreshRetryCount = 0;
+	private refreshRetryDelay = 1000; // 10s
 
 	constructor(
 		fetch: {
@@ -258,7 +258,7 @@ export class StexsAuthClient {
 		email: string,
 		password: string,
 	): Promise<ApiResponse<SignUpResponse>> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.SIGN_UP,
 			method: 'POST',
 			body: {
@@ -273,7 +273,7 @@ export class StexsAuthClient {
 	 * Gets the number of active sessions for the current user.
 	 */
 	async getActiveSessionsAmount(): Promise<ApiResponse<ActiveSessionsResponse>> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.USER_SESSIONS,
 			method: 'GET',
 		});
@@ -293,7 +293,7 @@ export class StexsAuthClient {
 		code: string,
 		type: 'totp' | 'email',
 	): Promise<Response> {
-		return await this._baseSignOut(ApiAuthRoutes.SIGN_OUT_ALL_SESSIONS, {
+		return this._baseSignOut(ApiAuthRoutes.SIGN_OUT_ALL_SESSIONS, {
 			code,
 			type,
 		});
@@ -306,13 +306,22 @@ export class StexsAuthClient {
 		path: string,
 		body: Record<string, any> | undefined = undefined,
 	): Promise<Response> {
-		const response = this._request({
+		if (this.refreshTimeoutId) {
+			clearTimeout(this.refreshTimeoutId);
+			this.refreshTimeoutId = null;
+		}
+
+		const response = await this._request({
 			path,
 			method: 'POST',
 			body,
 		});
 
-		localStorage.clear();
+		this.refreshRetryCount = 0;
+		this.refreshRetryDelay = 1000;
+
+		localStorage.removeItem('session');
+		localStorage.removeItem('mfa_challenge');
 
 		if (this.authHeaders?.Authorization) {
 			delete this.authHeaders['Authorization'];
@@ -327,7 +336,7 @@ export class StexsAuthClient {
 	 * Resends the email verification link to the provided email address.
 	 */
 	async verifyResend(email: string): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.VERIFY_RESEND,
 			method: 'POST',
 			body: { email },
@@ -359,7 +368,7 @@ export class StexsAuthClient {
 		token: string,
 		password: string,
 	): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.RECOVERY_CONFIRM,
 			method: 'POST',
 			body: {
@@ -374,7 +383,7 @@ export class StexsAuthClient {
 	 * Retrieves data from the authenticated user.
 	 */
 	async getUser(): Promise<ApiResponse<UserResponse>> {
-		return await this._request<UserResponse>({ path: ApiAuthRoutes.USER });
+		return this._request<UserResponse>({ path: ApiAuthRoutes.USER });
 	}
 
 	/**
@@ -385,7 +394,7 @@ export class StexsAuthClient {
 		code: string,
 		type: 'totp' | 'email',
 	): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.USER_PASSWORD,
 			method: 'POST',
 			body: {
@@ -404,7 +413,7 @@ export class StexsAuthClient {
 		code: string,
 		type: 'totp' | 'email',
 	): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.USER_EMAIL,
 			method: 'POST',
 			body: {
@@ -419,7 +428,7 @@ export class StexsAuthClient {
 	 * Verifies the requested email change for the authenticated user.
 	 */
 	async verifyEmailChange(code: string): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.USER_EMAIL_VERIFY,
 			method: 'POST',
 			body: { code },
@@ -430,7 +439,7 @@ export class StexsAuthClient {
 	 * Retrieves the Multi-Factor Authentication (MFA) status for the authenticated user.
 	 */
 	private async _factorStatus(): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.MFA_STATUS,
 		});
 	}
@@ -439,7 +448,7 @@ export class StexsAuthClient {
 	 * Enables Multi-Factor Authentication (MFA) for the authenticated user.
 	 */
 	private async _enable(type: 'totp' | 'email', code: string | null = null): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.MFA_ENABLE,
 			method: 'POST',
 			body: {
@@ -456,7 +465,7 @@ export class StexsAuthClient {
 		type: 'totp' | 'email',
 		code: string,
 	): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.MFA_DISABLE,
 			method: 'POST',
 			body: {
@@ -474,7 +483,7 @@ export class StexsAuthClient {
 	 * Note: As new MFA methods may be implemented in the future, the required parameters for this function may change.
 	 */
 	private async _verify(type: 'totp', code: string): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.MFA_VERIFY,
 			method: 'POST',
 			body: {
@@ -500,7 +509,7 @@ export class StexsAuthClient {
 			body['token'] = mfaChallengeData.token;
 		}
 
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.MFA_SEND_CODE,
 			method: 'POST',
 			body,
@@ -515,7 +524,7 @@ export class StexsAuthClient {
 		redirect_url: string,
 		scopes: string[],
 	): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.OAUTH2_AUTHORIZE,
 			method: 'POST',
 			body: {
@@ -530,7 +539,7 @@ export class StexsAuthClient {
 	 * Deletes the connection with the provided connection id.
 	 */
 	private async _deleteConnection(connectionId: string): Promise<Response> {
-		return await this._request({
+		return this._request({
 			path: ApiAuthRoutes.OAUTH2_CONNECTIONS + `/${connectionId}`,
 			method: 'DELETE',
 		});
@@ -617,6 +626,7 @@ export class StexsAuthClient {
 
 				if (this.refreshTimeoutId !== null) {
 					clearTimeout(this.refreshTimeoutId);
+					this.refreshTimeoutId = null;
 				}
 
 				if (expiresInMs <= this.refreshThreshhold) {
@@ -635,7 +645,7 @@ export class StexsAuthClient {
 				}
 			}
 
-			await new Promise((resolve) => setTimeout(resolve, 55 * 60 * 1000));
+			await new Promise((resolve) => setTimeout(resolve, 25 * 60 * 1000)); // 25min
 		}
 	}
 
@@ -643,14 +653,12 @@ export class StexsAuthClient {
 		const isLocked = localStorage.getItem('refresh_lock') === 'true';
 		const currentTabId = Date.now();
 
-		if (isLocked) {
-			return false;
-		}
+		if (isLocked) return false;
 
 		localStorage.setItem('refresh_lock', 'true');
 		localStorage.setItem('priority_tab', currentTabId.toString());
 
-		await new Promise((resolve) => setTimeout(resolve, 1));
+		await new Promise((r) => setTimeout(r, 1));
 
 		const priorityTabId = localStorage.getItem('priority_tab');
 		if (priorityTabId !== currentTabId.toString()) {
@@ -666,10 +674,7 @@ export class StexsAuthClient {
 
 		try {
 			const session: Session = this._getSession();
-
-			if (!session || !session.refresh_token) {
-				return false;
-			}
+			if (!session) return false;
 
 			if (session.refresh.count === 24) {
 				this.signOut();
@@ -677,26 +682,19 @@ export class StexsAuthClient {
 			}
 
 			const response = await this._request<TokenResponse>({
-				path: ApiAuthRoutes.TOKEN,
+				path: ApiAuthRoutes.REFRESH_TOKEN,
 				method: 'POST',
-				body: {
-					refresh_token: session.refresh_token,
-				},
+				credentials: 'include',
 			});
 
-			if (!response.ok) {
-				this.signOut();
-				return false;
-			}
+			if (!response.ok) throw new Error('Failed to refresh token');
 
 			const body = await response.getSuccessBody();
 			const refresh = { ...session.refresh };
 
 			this._setAccessTokenToAuthHeaders(body.access_token);
 
-			if (refresh.enabled === false) {
-				refresh.count++;
-			}
+			if (refresh.enabled === false) refresh.count++;
 
 			localStorage.setItem(
 				'session',
@@ -708,9 +706,24 @@ export class StexsAuthClient {
 			);
 
 			this.triggerEvent(AuthEvents.TOKEN_REFRESHED);
+
+			this.refreshRetryCount = 0;
+			this.refreshRetryDelay = 1000;
+
 			return true;
 		} catch (error) {
 			console.error('Error refreshing access token:', error);
+
+			this.refreshRetryCount = (this.refreshRetryCount ?? 0) + 1;
+
+			if (this.refreshRetryCount <= 5) {
+				setTimeout(() => this._refreshAccessToken(), this.refreshRetryDelay);
+				this.refreshRetryDelay = this.refreshRetryDelay * 2;
+			} else {
+				console.warn('Max refresh retries reached. Signing out.');
+				this.signOut();
+			}
+
 			return false;
 		} finally {
 			localStorage.removeItem('refresh_lock');
@@ -736,6 +749,7 @@ export class StexsAuthClient {
 			method = 'GET',
 			body,
 			headers,
+			credentials,
 		} = options;
 		const requestInit: RequestInit = {
 			method,
@@ -744,6 +758,7 @@ export class StexsAuthClient {
 				...this.authHeaders,
 				...headers,
 			},
+			credentials,
 		};
 
 		if (method !== 'GET' && body !== null) {

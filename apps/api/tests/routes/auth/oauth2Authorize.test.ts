@@ -15,10 +15,9 @@ import server from '../../../src/server';
 import { NextFunction } from 'express';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
-	ARRAY_REQUIRED,
+	ARRAY_MIN_ONE_REQUIRED,
 	CLIENT_ID_REQUIRED,
 	CLIENT_NOT_FOUND,
-	EMPTY_ARRAY,
 	INVALID_URL,
 	INVALID_UUID,
 	REDIRECT_URL_REQUIRED,
@@ -60,6 +59,17 @@ jest.mock('../../../src/db', () => {
 		__esModule: true,
 		default: {
 			query: mockQuery,
+			withTransaction: async (callback: any) => {
+				const mockClient = {
+					query: mockQuery,
+				};
+
+				try {
+					return await callback(mockClient);
+				} catch (e) {
+					throw e;
+				}
+			},
 		},
 	};
 });
@@ -85,15 +95,21 @@ describe('OAuth2 Authorize', () => {
 				scopes: ['inventory.read'],
 			});
 
+		const data = {
+			location: 'body',
+			path: 'client_id',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: CLIENT_ID_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'client_id',
-					},
+					data,
+				},
+				{
+					info: INVALID_UUID,
+					data,
 				},
 			]).onTest(),
 		);
@@ -129,16 +145,22 @@ describe('OAuth2 Authorize', () => {
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
 				scopes: ['inventory.read'],
 			});
+		
+		const data = {
+			location: 'body',
+			path: 'redirect_url',
+		}
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: REDIRECT_URL_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'redirect_url',
-					},
+					data,
+				},
+				{
+					info: INVALID_URL,
+					data,
 				},
 			]).onTest(),
 		);
@@ -175,15 +197,21 @@ describe('OAuth2 Authorize', () => {
 				redirect_url: 'https://example.com',
 			});
 
+		const data = {
+			location: 'body',
+			path: 'scopes',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: SCOPES_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'scopes',
-					},
+					data,
+				},
+				{
+					info: ARRAY_MIN_ONE_REQUIRED,
+					data,
 				},
 			]).onTest(),
 		);
@@ -202,7 +230,7 @@ describe('OAuth2 Authorize', () => {
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
-					info: ARRAY_REQUIRED,
+					info: ARRAY_MIN_ONE_REQUIRED,
 					data: {
 						location: 'body',
 						path: 'scopes',
@@ -225,7 +253,7 @@ describe('OAuth2 Authorize', () => {
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
-					info: EMPTY_ARRAY,
+					info: ARRAY_MIN_ONE_REQUIRED,
 					data: {
 						location: 'body',
 						path: 'scopes',

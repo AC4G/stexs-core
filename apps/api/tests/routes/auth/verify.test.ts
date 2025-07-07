@@ -6,7 +6,6 @@ import {
 	beforeAll,
 	afterAll,
 	it,
-	beforeEach,
 } from '@jest/globals';
 
 const mockQuery = jest.fn();
@@ -19,34 +18,45 @@ import {
 	EMAIL_NOT_FOUND,
 	EMAIL_REQUIRED,
 	INVALID_EMAIL,
+	INVALID_UUID,
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
-import logger from '../../../src/logger';
+import { v4 as uuidv4 } from 'uuid';
 
 jest.mock('../../../src/db', () => {
 	return {
 		__esModule: true,
 		default: {
 			query: mockQuery,
+			withTransaction: async (callback: any) => {
+				const mockClient = {
+					query: mockQuery,
+				};
+
+				try {
+					return await callback(mockClient);
+				} catch (e) {
+					throw e;
+				}
+			},
 		},
 	};
 });
 
-jest.mock('nodemailer');
+jest.mock('../../../src/producers/emailProducer', () => {
+  const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(
+    '../../../src/producers/emailProducer'
+  );
 
-const sendMailMock = jest.fn();
-
-const nodemailer = require('nodemailer');
-nodemailer.createTransport.mockReturnValue({ sendMail: sendMailMock });
+  return {
+    ...actual,
+    sendEmailMessage: jest.fn(),
+  };
+});
 
 describe('Email Verification Routes', () => {
-	beforeEach(() => {
-		sendMailMock.mockClear();
-		nodemailer.createTransport.mockClear();
-	});
-
 	afterEach(() => {
 		jest.clearAllMocks();
 	});
@@ -62,17 +72,26 @@ describe('Email Verification Routes', () => {
 	it('should handle email verification with missing email', async () => {
 		const response = await request(server)
 			.get('/auth/verify')
-			.query({ token: 'valid-token' });
+			.query({ token: uuidv4() });
+
+		const dataEmail = {
+			location: 'query',
+			path: 'email',
+		};
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
-					data: {
-						location: 'query',
-						path: 'email',
+					data: dataEmail,
+				},
+				{
+					info: {
+						code: INVALID_EMAIL.code,
+						message: INVALID_EMAIL.messages[0],
 					},
+					data: dataEmail,
 				},
 			]).onTest(),
 		);
@@ -81,7 +100,10 @@ describe('Email Verification Routes', () => {
 	it('should handle email verification with invalid email', async () => {
 		const response = await request(server)
 			.get('/auth/verify')
-			.query({ token: 'valid-token', email: 'test' });
+			.query({
+				token: uuidv4(),
+				email: 'test'
+			});
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -105,15 +127,21 @@ describe('Email Verification Routes', () => {
 			.get('/auth/verify')
 			.query({ email: 'test@example.com' });
 
+		const data = {
+			location: 'query',
+			path: 'token',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: TOKEN_REQUIRED,
-					data: {
-						location: 'query',
-						path: 'token',
-					},
+					data,
+				},
+				{
+					info: INVALID_UUID,
+					data,
 				},
 			]).onTest(),
 		);
@@ -129,7 +157,7 @@ describe('Email Verification Routes', () => {
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
-				token: 'invalid-token'
+				token: uuidv4()
 			});
 
 		expect(response.status).toBe(302);
@@ -148,7 +176,7 @@ describe('Email Verification Routes', () => {
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
-				token: 'token'
+				token: uuidv4()
 			});
 
 		expect(response.status).toBe(302);
@@ -172,7 +200,7 @@ describe('Email Verification Routes', () => {
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
-				token: 'valid-token'
+				token: uuidv4()
 			});
 
 		expect(response.status).toBe(302);
@@ -196,7 +224,7 @@ describe('Email Verification Routes', () => {
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
-				token: 'valid-token'
+				token: uuidv4()
 			});
 
 		expect(response.status).toBe(302);
@@ -225,7 +253,7 @@ describe('Email Verification Routes', () => {
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
-				token: 'valid-token'
+				token: uuidv4()
 			});
 
 		expect(response.status).toBe(302);
@@ -238,15 +266,24 @@ describe('Email Verification Routes', () => {
 		const response = await request(server)
 			.post('/auth/verify/resend');
 
+		const data = {
+			location: 'body',
+			path: 'email',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'email',
+					data,
+				},
+				{
+					info: {
+						code: INVALID_EMAIL.code,
+						message: INVALID_EMAIL.messages[0],
 					},
+					data,
 				},
 			]).onTest(),
 		);

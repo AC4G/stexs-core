@@ -15,6 +15,7 @@ import {
 	saveRefreshToken,
 	updateAuthorizationCodeRefreshToken
 } from '../repositories/auth/refreshTokens';
+import { PoolClient } from 'pg';
 
 export function generateMFAChallengeToken(sub: string, types: string[]) {
 	const iat = Math.floor(Date.now() / 1000);
@@ -36,16 +37,21 @@ export function generateMFAChallengeToken(sub: string, types: string[]) {
 	};
 }
 
-export default async function generateAccessToken(
-	additionalPayload: Record<string, any>,
-	grantType:
-		| 'password'
-		| 'client_credentials'
-		| 'authorization_code' = 'password',
-	connectionId: number | null = null,
-	refreshToken: string | null = null,
-	oldRefreshToken: string | null = null,
-) {
+export default async function generateAccessToken({
+	additionalPayload,
+	grantType = 'password',
+	connectionId = null,
+	refreshToken = null,
+	oldRefreshToken = null,
+	client = undefined,
+}: {
+	additionalPayload: Record<string, any>;
+	grantType?: 'password' | 'client_credentials' | 'authorization_code';
+	connectionId?: number | null;
+	refreshToken?: string | null;
+	oldRefreshToken?: string | null;
+	client?: PoolClient;
+}) {
 	const iat = Math.floor(Date.now() / 1000);
 	const EXP_LIMIT =
 		grantType === 'authorization_code'
@@ -95,7 +101,8 @@ export default async function generateAccessToken(
 				jti,
 				oldRefreshToken,
 				additionalPayload.sub,
-				connectionId!
+				connectionId!,
+				client
 			);
 		} else {
 			await saveRefreshToken(
@@ -103,7 +110,8 @@ export default async function generateAccessToken(
 				additionalPayload.sub,
 				grantType,
 				additionalPayload.session_id,
-				connectionId
+				connectionId,
+				client
 			);
 		}
 	} catch (e) {

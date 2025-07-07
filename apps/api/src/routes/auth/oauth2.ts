@@ -1,19 +1,15 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import {
-	CustomValidationError,
-	message,
-} from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import { body, param } from 'express-validator';
 import {
-	ARRAY_REQUIRED,
+	ARRAY_MIN_ONE_REQUIRED,
 	CLIENT_ID_REQUIRED,
 	CLIENT_NOT_FOUND,
 	CONNECTION_ALREADY_REVOKED,
 	CONNECTION_ID_NOT_NUMERIC,
 	CONNECTION_ID_REQUIRED,
 	CONNECTION_NOT_FOUND,
-	EMPTY_ARRAY,
 	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_REDIRECT_URL,
@@ -24,7 +20,7 @@ import {
 	REFRESH_TOKEN_REQUIRED,
 	SCOPES_REQUIRED,
 } from 'utils-node/errors';
-import { v4 as uuidv4, validate as validateUUID } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import logger from '../../logger';
 import {
 	ACCESS_TOKEN_SECRET,
@@ -46,6 +42,8 @@ import { setAuthorizationCode } from '../../repositories/auth/oauth2Authorizatio
 import { insertOrUpdateAuthorizationCodeScopes } from '../../repositories/auth/oauth2AuthorizationCodeScopes';
 import { updateConnectionScopes } from '../../repositories/public/oauth2ConnectionScopes';
 import { deleteOAuth2Connection, revokeOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 
 const router = Router();
 
@@ -53,32 +51,14 @@ router.post(
 	'/authorize',
 	[
 		body('client_id')
-			.notEmpty()
-			.withMessage(CLIENT_ID_REQUIRED)
-			.bail()
-			.custom((value) => {
-				if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
-
-				return true;
-			}),
+			.exists().withMessage(CLIENT_ID_REQUIRED)
+			.isUUID('4').withMessage(INVALID_UUID),
 		body('redirect_url')
-			.notEmpty()
-			.withMessage(REDIRECT_URL_REQUIRED)
-			.bail()
-			.isURL()
-			.withMessage(INVALID_URL),
+			.notEmpty().withMessage(REDIRECT_URL_REQUIRED)
+			.isURL().withMessage(INVALID_URL),
 		body('scopes')
-			.notEmpty()
-			.withMessage(SCOPES_REQUIRED)
-			.bail()
-			.isArray()
-			.withMessage(ARRAY_REQUIRED)
-			.bail()
-			.custom((value) => {
-				if (value.length === 0) throw new CustomValidationError(EMPTY_ARRAY);
-
-				return true;
-			}),
+			.exists().withMessage(SCOPES_REQUIRED)
+			.isArray({ min: 1 }).withMessage(ARRAY_MIN_ONE_REQUIRED),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -191,107 +171,131 @@ router.post(
 		}
 
 		try {
-			const { rowCount } = await connectionExistsByUserIdAndClientId(userId, client_id);
-
-			if (rowCount && rowCount > 0) {
-				await updateConnectionScopes(userId, client_id, scopes);
-
-				return res.sendStatus(204);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while checking client connection for user or inserting new scopes to an existing connection: ${userId} and client: ${client_id}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking client connection or adding new scopes.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		const code = uuidv4();
-		let codeId: number;
-		let expires: number;
-
-		try {
-			const { rowCount, rows } = await setAuthorizationCode(
-				code,
-				userId,
-				client_id
-			);
-
-			if (!rowCount || rowCount === 0) {
-				logger.error(
-					`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`,
-				);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while saving authorization token.',
-							{},
-							[{ info: INTERNAL_ERROR }]
-						)
+			await db.withTransaction(async (client) => {
+				try {
+					const { rowCount } = await connectionExistsByUserIdAndClientId(
+						userId,
+						client_id,
+						client
 					);
+
+					if (rowCount && rowCount > 0) {
+						await updateConnectionScopes(
+							userId,
+							client_id,
+							scopes,
+							client
+						);
+
+						res.sendStatus(204);
+
+						return;
+					}
+				} catch (e) {
+					logger.error(
+						`Error while checking client connection for user or inserting new scopes to an existing connection: ${userId} and client: ${client_id}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while checking client connection or adding new scopes.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				const code = uuidv4();
+				let codeId: number;
+				let expires: number;
+
+				try {
+					const { rowCount, rows } = await setAuthorizationCode(
+						code,
+						userId,
+						client_id,
+						client
+					);
+
+					if (!rowCount || rowCount === 0) {
+						logger.error(
+							`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`,
+						);
+
+						throw new AppError(
+							500,
+							'An unexpected error occurred while saving authorization token.',
+							[{ info: INTERNAL_ERROR }]
+						);
+					}
+
+					logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
+
+					const row = rows[0];
+
+					codeId = row.id;
+					expires = row.created_at.getTime() + AUTHORIZATION_CODE_EXPIRATION * 1000;
+				} catch (e) {
+					logger.error(
+						`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while saving authorization token.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				try {
+					await insertOrUpdateAuthorizationCodeScopes(
+						codeId,
+						scopes,
+						client
+					);
+				} catch (e) {
+					logger.error(
+						`Error while inserting/updating authorization token scopes for token: ${codeId}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while saving authorization token scopes.',
+						[{ info: INTERNAL_ERROR }]
+					)
+				}
+
+				res.json(
+					message(
+						'Authorization token successfully created.',
+						{
+							code,
+							expires
+						}
+					)
+				);
+			});
+		} catch (e) {
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
 			}
 
-			logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
-
-			const row = rows[0];
-
-			codeId = row.id;
-			expires = row.created_at.getTime() + AUTHORIZATION_CODE_EXPIRATION * 1000;
-		} catch (e) {
-			logger.error(
-				`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			logger.error(`Authorization failed: ${e instanceof Error ? e.message : e}`);
+			
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while authorizing.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while saving authorization token.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
 		}
-
-		try {
-			await insertOrUpdateAuthorizationCodeScopes(codeId, scopes);
-		} catch (e) {
-			logger.error(
-				`Error while inserting/updating authorization token scopes for token: ${codeId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while saving authorization token scopes.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		res.json(
-			message(
-				'Authorization token successfully created.',
-				{
-					code,
-					expires
-				}
-			)
-		);
 	},
 );
 
@@ -299,11 +303,8 @@ router.delete(
 	'/connections/:connectionId',
 	[
 		param('connectionId')
-			.notEmpty()
-			.withMessage(CONNECTION_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(CONNECTION_ID_NOT_NUMERIC),
+			.exists().withMessage(CONNECTION_ID_REQUIRED)
+			.isNumeric().withMessage(CONNECTION_ID_NOT_NUMERIC),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -355,11 +356,8 @@ router.delete(
 	'/revoke',
 	[
 		body('refresh_token')
-			.notEmpty()
-			.withMessage(REFRESH_TOKEN_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.exists().withMessage(REFRESH_TOKEN_REQUIRED)
+			.isString().withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 		validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['authorization_code']),

@@ -3,6 +3,9 @@ import { Request } from 'express-jwt';
 import { body } from 'express-validator';
 import {
 	CODE_EXPIRED,
+	CODE_FORMAT_INVALID_EMAIL,
+	CODE_FORMAT_INVALID_TOTP,
+	CODE_LENGTH_MISMATCH,
 	CODE_REQUIRED,
 	EMAIL_NOT_AVAILABLE,
 	EMAIL_REQUIRED,
@@ -17,13 +20,14 @@ import {
 	PASSWORD_CHANGE_FAILED,
 	PASSWORD_REQUIRED,
 	TYPE_REQUIRED,
+	UNSUPPORTED_TYPE,
 	USER_NOT_FOUND,
 } from 'utils-node/errors';
 import {
 	CustomValidationError,
 	message,
 } from 'utils-node/messageBuilder';
-import sendEmail from '../../services/emailService';
+import { sendEmailMessage } from '../../producers/emailProducer';
 import logger from '../../logger';
 import { generateCode, isExpired } from 'utils-node';
 import {
@@ -38,7 +42,7 @@ import {
 	EMAIL_CHANGE_CODE_EXPIRATION,
 	ISSUER
 } from '../../../env-config';
-import { mfaValidationMiddleware } from '../../services/mfaService';
+import { mfaValidationMiddleware } from '../../utils/mfa';
 import {
 	changePassword,
 	getUsersEncryptedPassword,
@@ -49,7 +53,16 @@ import {
 	validateEmailChange
 } from '../../repositories/auth/users';
 import { getActiveUserSessions } from '../../repositories/auth/refreshTokens';
-import { compare } from 'bcrypt';
+import { verifyPassword } from '../../utils/password';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import {
+	alphaNumericRegex,
+	eightAlphaNumericRegex,
+	passwordRegex,
+	sixDigitCodeRegex
+} from '../../utils/regex';
+import { MFATypes, supportedMFAMethods } from '../../types/auth';
 
 const router = Router();
 
@@ -142,31 +155,24 @@ router.post(
 	'/password',
 	[
 		body('password')
-			.notEmpty()
-			.withMessage(PASSWORD_REQUIRED)
-			.bail()
-			.matches(
-				/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,?'";:\]{}=+\-_)(*^%$#@!~`])/,
-			)
-			.withMessage(INVALID_PASSWORD)
-			.bail()
-			.isLength({ min: 10 })
-			.withMessage(INVALID_PASSWORD_LENGTH),
-		body('code')
-			.notEmpty()
-			.withMessage(CODE_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.exists().withMessage(PASSWORD_REQUIRED)
+			.matches(passwordRegex).withMessage(INVALID_PASSWORD)
+			.isLength({ min: 10, max: 72 }).withMessage(INVALID_PASSWORD_LENGTH),
 		body('type')
-			.notEmpty()
-			.withMessage(TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				const supportedTypes = ['totp', 'email'];
+			.exists().withMessage(TYPE_REQUIRED)
+			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
+		body('code')
+			.exists().withMessage(CODE_REQUIRED)
+			.custom((value, { req }) => {
+				const type = req.body.type as MFATypes;
 
-				if (!supportedTypes.includes(value))
-					throw new CustomValidationError(INVALID_TYPE);
+				if (!type || type.length === 0) return true;
+
+				if (type === 'totp' && !sixDigitCodeRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
+
+				if (type === 'email' && !eightAlphaNumericRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
 
 				return true;
 			}),
@@ -196,7 +202,7 @@ router.post(
 					);
 			}
 
-			if (await compare(password, rows[0].encrypted_password)) {
+			if (await verifyPassword(password, rows[0].encrypted_password)) {
 				logger.debug(`New password matches the current password for user: ${userId}`);
 				return res
 					.status(400)
@@ -257,29 +263,26 @@ router.post(
 	'/email',
 	[
 		body('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
-		body('code')
-			.notEmpty()
-			.withMessage(CODE_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
 		body('type')
-			.notEmpty()
-			.withMessage(TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				const supportedTypes = ['totp', 'email'];
+			.exists().withMessage(TYPE_REQUIRED)
+			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
+		body('code')
+			.exists().withMessage(CODE_REQUIRED)
+			.custom((value, { req }) => {
+				const type = req.body.type as MFATypes;
 
-				if (!supportedTypes.includes(value))
-					throw new CustomValidationError(INVALID_TYPE);
+				if (!type || type.length === 0) return true;
+
+				if (type === 'totp' && !sixDigitCodeRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
+
+				if (type === 'email' && !eightAlphaNumericRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
 
 				return true;
 			}),
@@ -326,70 +329,84 @@ router.post(
 				);
 		}
 
-		const confirmationCode = generateCode(8);
-
 		try {
-			const { rowCount } = await initalizeEmailChange(userId, newEmail, confirmationCode);
+			await db.withTransaction(async (client) => {
+				const confirmationCode = generateCode(8);
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(`Email change failed for user: ${userId}`);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while changing email.',
-							{},
-							[{ info: INTERNAL_ERROR }]
-						)
+				try {
+					const { rowCount } = await initalizeEmailChange(
+						userId,
+						newEmail,
+						confirmationCode,
+						client
 					);
+
+					if (!rowCount || rowCount === 0) {
+						logger.error(`Email change failed for user: ${userId}`);
+
+						throw new AppError(
+							500,
+							'An unexpected error occurred while changing email.',
+							[{ info: INTERNAL_ERROR }]
+						);
+					}
+
+					logger.debug(`Email change initiated for user: ${userId}`);
+				} catch (e) {
+					logger.error(
+						`Error during email change initiation for user: ${userId}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while changing email.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				try {
+					await sendEmailMessage({
+						to: newEmail,
+						subject: 'Email Change Verification',
+						content: `Please verify your email change by using the following code: ${confirmationCode}`,
+					});
+				} catch (e) {
+					logger.error(
+						`Error sending email change verification link to email: ${newEmail}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while sending email change verification link.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				logger.debug(`Email change verification link sent to ${newEmail}`);
+
+				res.json(message('Email change verification link has been sent to the new email address.'));
+			});
+		} catch (e) {
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
 			}
 
-			logger.debug(`Email change initiated for user: ${userId}`);
-		} catch (e) {
-			logger.error(
-				`Error during email change initiation for user: ${userId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			logger.error(`Error sending email change verification link: ${e instanceof Error ? e.message : e}`);
+		
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while sending email.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
 			);
-
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while changing email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
 		}
-
-		try {
-			await sendEmail(
-				newEmail,
-				'Email Change Verification',
-				undefined,
-				`Please verify your email change by using the following code: ${confirmationCode}`,
-			);
-		} catch (e) {
-			logger.error(
-				`Error sending email change verification link to email: ${newEmail}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while sending email change verification link.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		logger.debug(`Email change verification link sent to ${newEmail}`);
-
-		res.json(message('Email change verification link has been sent to the new email address.'));
 	},
 );
 
@@ -397,11 +414,9 @@ router.post(
 	'/email/verify',
 	[
 		body('code')
-			.notEmpty()
-			.withMessage(CODE_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.exists().withMessage(CODE_REQUIRED)
+			.isLength({ min: 8, max: 8 }).withMessage(CODE_LENGTH_MISMATCH)
+			.matches(alphaNumericRegex).withMessage(CODE_FORMAT_INVALID_EMAIL),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),

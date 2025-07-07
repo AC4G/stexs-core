@@ -1,7 +1,7 @@
 import type { PoolClient, QueryResult } from 'pg';
 import { getQuery } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
-import { hashPassword } from '../../services/password';
+import { hashPassword } from '../../utils/password';
 
 export async function createUser(
     client: PoolClient,

@@ -16,13 +16,17 @@ import server from '../../../src/server';
 import {
 	CLIENT_ID_REQUIRED,
 	CLIENT_SECRET_REQUIRED,
-	CODE_EXPIRED, CODE_REQUIRED,
+	CODE_EXPIRED,
+	CODE_FORMAT_INVALID_TOTP,
+	CODE_REQUIRED,
 	EMAIL_NOT_VERIFIED,
+	FIELD_MUST_BE_A_STRING,
 	GRANT_TYPE_REQUIRED,
 	IDENTIFIER_REQUIRED,
 	INVALID_AUTHORIZATION_CODE,
 	INVALID_CLIENT_CREDENTIALS,
 	INVALID_GRANT_TYPE,
+	INVALID_MFA_CHALLENGE_TOKEN,
 	INVALID_REFRESH_TOKEN,
 	INVALID_TYPE,
 	INVALID_UUID,
@@ -36,8 +40,15 @@ import {
 import { message } from 'utils-node/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 import { sign } from 'jsonwebtoken';
-import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../../env-config';
-import { hashPassword } from '../../../src/services/password';
+import {
+	ACCESS_TOKEN_SECRET,
+	AUDIENCE,
+	ISSUER,
+	MFA_CHALLENGE_TOKEN_SECRET,
+	REFRESH_TOKEN_SECRET
+} from '../../../env-config';
+import { hashPassword } from '../../../src/utils/password';
+import { v4 as uuidv4 } from 'uuid';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -73,6 +84,17 @@ jest.mock('../../../src/db', () => {
 		__esModule: true,
 		default: {
 			query: mockQuery,
+			withTransaction: async (callback: any) => {
+				const mockClient = {
+					query: mockQuery,
+				};
+
+				try {
+					return await callback(mockClient);
+				} catch (e) {
+					throw e;
+				}
+			},
 		},
 	};
 });
@@ -108,7 +130,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({ refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -116,7 +139,7 @@ describe('Token Route', () => {
 				{
 					info: INVALID_REFRESH_TOKEN,
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -128,15 +151,24 @@ describe('Token Route', () => {
 		const response = await request(server)
 			.post('/auth/token');
 
+		const data = {
+			location: 'query',
+			path: 'grant_type',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: GRANT_TYPE_REQUIRED,
-					data: {
-						location: 'query',
-						path: 'grant_type',
+					data,
+				},
+				{
+					info: {
+						code: INVALID_GRANT_TYPE.code,
+						message: INVALID_GRANT_TYPE.messages[1],
 					},
+					data,
 				},
 			]).onTest(),
 		);
@@ -169,15 +201,25 @@ describe('Token Route', () => {
 			.post('/auth/token?grant_type=authorization_code')
 			.send();
 
+		const dataClientID = {
+			location: 'body',
+			path: 'client_id',
+		};
+		const dataCode = {
+			location: 'body',
+			path: 'code',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: CLIENT_ID_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'client_id',
-					},
+					data: dataClientID,
+				},
+				{
+					info: INVALID_UUID,
+					data: dataClientID,	
 				},
 				{
 					info: CLIENT_SECRET_REQUIRED,
@@ -188,10 +230,11 @@ describe('Token Route', () => {
 				},
 				{
 					info: CODE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'code',
-					},
+					data: dataCode,
+				},
+				{
+					info: INVALID_UUID,
+					data: dataCode,
 				},
 			]).onTest(),
 		);
@@ -216,6 +259,13 @@ describe('Token Route', () => {
 						path: 'client_id',
 					},
 				},
+				{
+					info: INVALID_UUID,
+					data: {
+						location: 'body',
+						path: 'code',
+					},
+				},
 			]).onTest(),
 		);
 	});
@@ -229,8 +279,8 @@ describe('Token Route', () => {
 		const response = await request(server)
 			.post('/auth/token?grant_type=authorization_code')
 			.send({
-				code: 'code',
-				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				code: uuidv4(),
+				client_id: uuidv4(),
 				client_secret: 'secret',
 			});
 
@@ -249,11 +299,13 @@ describe('Token Route', () => {
 	});
 
 	it('should handle token route with authorization code with expired authorization code', async () => {
+		const userID = uuidv4();
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
 					id: 1,
-					user_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d99',
+					user_id: userID,
 					created_at: '2023-09-15T11:54:00',
 					scopes: ['inventory.read'],
 				},
@@ -264,8 +316,8 @@ describe('Token Route', () => {
 		const response = await request(server)
 			.post('/auth/token?grant_type=authorization_code')
 			.send({
-				code: 'code',
-				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				code: uuidv4(),
+				client_id: userID,
 				client_secret: 'secret',
 			});
 
@@ -284,11 +336,13 @@ describe('Token Route', () => {
 	});
 
 	it('should handle token route with authorization code', async () => {
+		const userID = uuidv4();
+
 		mockQuery.mockResolvedValueOnce({
 			rows: [
 				{
 					id: 1,
-					user_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d99',
+					user_id: userID,
 					created_at: '2023-09-15T12:00:00',
 					scopes: ['inventory.read'],
 				},
@@ -318,8 +372,8 @@ describe('Token Route', () => {
 		const response = await request(server)
 			.post('/auth/token?grant_type=authorization_code')
 			.send({
-				code: 'code',
-				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
+				code: uuidv4(),
+				client_id: userID,
 				client_secret: 'secret',
 			});
 
@@ -343,15 +397,21 @@ describe('Token Route', () => {
 			.post('/auth/token?grant_type=client_credentials')
 			.send();
 
+		const dataClientID = {
+			location: 'body',
+			path: 'client_id',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: CLIENT_ID_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'client_id',
-					},
+					data: dataClientID,
+				},
+				{
+					info: INVALID_UUID,
+					data: dataClientID,
 				},
 				{
 					info: CLIENT_SECRET_REQUIRED,
@@ -467,7 +527,7 @@ describe('Token Route', () => {
 				{
 					info: REFRESH_TOKEN_REQUIRED,
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -488,7 +548,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({ refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -496,7 +557,7 @@ describe('Token Route', () => {
 				{
 					info: INVALID_REFRESH_TOKEN,
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -513,7 +574,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({	refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -524,7 +586,7 @@ describe('Token Route', () => {
 						message: INVALID_GRANT_TYPE.messages[0],
 					},
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -555,7 +617,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({	refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -585,7 +648,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({ refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -593,7 +657,7 @@ describe('Token Route', () => {
 				{
 					info: INVALID_REFRESH_TOKEN,
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -623,7 +687,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({ refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(200);
 		expect(response.body).toMatchObject(
@@ -645,15 +710,21 @@ describe('Token Route', () => {
 			.post('/auth/token?grant_type=password')
 			.send({ password: 'Test123.' });
 
+		const data = {
+			location: 'body',
+			path: 'identifier',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: IDENTIFIER_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'identifier',
-					},
+					data,
+				},
+				{
+					info: FIELD_MUST_BE_A_STRING,
+					data,
 				},
 			]).onTest(),
 		);
@@ -664,15 +735,21 @@ describe('Token Route', () => {
 			.post('/auth/token?grant_type=password')
 			.send({ identifier: 'test' });
 
+		const data = {
+			location: 'body',
+			path: 'password',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'password',
-					},
+					data,
+				},
+				{
+					info: FIELD_MUST_BE_A_STRING,
+					data,
 				},
 			]).onTest(),
 		);
@@ -690,8 +767,6 @@ describe('Token Route', () => {
 				identifier: 'test',
 				password: 'Test123.',
 			});
-
-		console.log(JSON.stringify(response.body));
 
 		expect(response.status).toBe(404);
 		expect(response.body).toEqual(
@@ -805,44 +880,76 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in mfa challenge without code', async () => {
+		const token = sign(
+			{ grant_type: 'mfa_challenge' },
+			MFA_CHALLENGE_TOKEN_SECRET,
+			{
+				audience: AUDIENCE,
+				issuer: ISSUER,
+				algorithm: 'HS256',
+			},
+		);
+
 		const response = await request(server)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				type: 'totp',
-				token: 'token',
+				token,
 			});
+
+		const data = {
+			location: 'body',
+			path: 'code',
+		};
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: CODE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'code',
-					},
+					data,
+				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
+					data,
 				},
 			]).onTest(),
 		);
 	});
 
 	it('should handle sign in mfa challenge without type', async () => {
+		const token = sign(
+			{ grant_type: 'mfa_challenge' },
+			MFA_CHALLENGE_TOKEN_SECRET,
+			{
+				audience: AUDIENCE,
+				issuer: ISSUER,
+				algorithm: 'HS256',
+			},
+		);
+
 		const response = await request(server)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				code: 'code',
-				token: 'token',
+				token,
 			});
+
+		const data = {
+			location: 'body',
+			path: 'type',
+		};
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: TYPE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'type',
-					},
+					data,
+				},
+				{
+					info: INVALID_TYPE,
+					data
 				},
 			]).onTest(),
 		);
@@ -860,6 +967,13 @@ describe('Token Route', () => {
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
+					info: CODE_FORMAT_INVALID_TOTP,
+					data: {
+						location: 'body',
+						path: 'code',
+					}
+				},
+				{
 					info: TOKEN_REQUIRED,
 					data: {
 						location: 'body',
@@ -871,12 +985,22 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in mfa challenge with unsupported type', async () => {
+		const token = sign(
+			{ grant_type: 'mfa_challenge' },
+			MFA_CHALLENGE_TOKEN_SECRET,
+			{
+				audience: AUDIENCE,
+				issuer: ISSUER,
+				algorithm: 'HS256',
+			},
+		);
+
 		const response = await request(server)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				code: 'code',
 				type: 'sms',
-				token: 'token',
+				token,
 			});
 
 		expect(response.status).toBe(400);
@@ -893,13 +1017,92 @@ describe('Token Route', () => {
 		);
 	});
 
-	it('should handle sign in mfa challenge', async () => {
+	it('should handle sign in mfa challenge with invalid token', async () => {
+		const token = sign(
+			{ grant_type: 'password' },
+			ACCESS_TOKEN_SECRET,
+			{
+				audience: AUDIENCE,
+				issuer: ISSUER,
+				algorithm: 'HS256',
+			},
+		);
+
 		const response = await request(server)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
-				code: 'somecode',
+				code: 234567,
 				type: 'totp',
-				token: 'sometoken',
+				token,
+			});
+
+		expect(response.status).toBe(400);
+		expect(response.body).toEqual(
+			message('Validation of request data failed.', {}, [
+				{
+					info: INVALID_MFA_CHALLENGE_TOKEN,
+					data: {
+						location: 'body',
+						path: 'token',
+					},
+				},
+			]).onTest(),
+		);
+	});
+
+	it('should handle sign in mfa challenge with invalid token grant type', async () => {
+		const token = sign(
+			{ grant_type: 'password' },
+			MFA_CHALLENGE_TOKEN_SECRET,
+			{
+				audience: AUDIENCE,
+				issuer: ISSUER,
+				algorithm: 'HS256',
+			},
+		);
+
+		const response = await request(server)
+			.post('/auth/token?grant_type=mfa_challenge')
+			.send({
+				code: 234567,
+				type: 'totp',
+				token,
+			});
+
+		expect(response.status).toBe(400);
+		expect(response.body).toEqual(
+			message('Validation of request data failed.', {}, [
+				{
+					info: {
+						code: INVALID_GRANT_TYPE.code,
+						message: INVALID_GRANT_TYPE.messages[0],
+					},
+					data: {
+						location: 'body',
+						path: 'token',
+					},
+				},
+			]).onTest(),
+		);
+	});
+
+	it('should handle sign in mfa challenge', async () => {
+		const token = sign(
+			{ grant_type: 'mfa_challenge' },
+			MFA_CHALLENGE_TOKEN_SECRET,
+			{
+				audience: AUDIENCE,
+				issuer: ISSUER,
+				algorithm: 'HS256',
+			},
+		);
+
+		const response = await request(server)
+			.post('/auth/token?grant_type=mfa_challenge')
+			.send({
+				code: 345678,
+				type: 'totp',
+				token,
 			});
 
 		const { data, ...rest } = response.body;
@@ -913,9 +1116,19 @@ describe('Token Route', () => {
 		});
 		expect(data).toMatchObject({
 			access_token: expect.stringMatching(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/),
-			refresh_token: expect.stringMatching(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/),
 			token_type: 'bearer',
 			expires: expect.any(Number),
 		});
+
+		const cookies = response.headers['set-cookie'];
+		expect(cookies).toBeDefined();
+
+		const cookiesArray = Array.isArray(cookies) ? cookies : [cookies];
+
+		const refreshTokenCookie = cookiesArray.find(cookie => cookie.startsWith('refresh_token='));
+		expect(refreshTokenCookie).toBeDefined();
+
+		const refreshTokenValue = refreshTokenCookie!.split(';')[0].split('=')[1];
+		expect(refreshTokenValue).toEqual(expect.stringMatching(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/));
 	});
 });

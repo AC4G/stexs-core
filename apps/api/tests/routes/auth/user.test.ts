@@ -6,7 +6,6 @@ import {
 	beforeAll,
 	afterAll,
 	it,
-	beforeEach,
 } from '@jest/globals';
 
 const mockQuery = jest.fn();
@@ -16,6 +15,9 @@ import request from 'supertest';
 import server from '../../../src/server';
 import {
 	CODE_EXPIRED,
+	CODE_FORMAT_INVALID_EMAIL,
+	CODE_FORMAT_INVALID_TOTP,
+	CODE_LENGTH_MISMATCH,
 	CODE_REQUIRED,
 	EMAIL_REQUIRED,
 	INVALID_CODE,
@@ -25,13 +27,14 @@ import {
 	NEW_PASSWORD_EQUALS_CURRENT,
 	PASSWORD_REQUIRED,
 	TYPE_REQUIRED,
+	UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
-import { getTOTPForVerification } from '../../../src/services/totpService';
-import { hashPassword } from '../../../src/services/password';
+import { getTOTPForVerification } from '../../../src/utils/totp';
+import { hashPassword } from '../../../src/utils/password';
 
-jest.mock('../../../src/services/mfaService', () => {
+jest.mock('../../../src/utils/mfa', () => {
 	return {
 		mfaValidationMiddleware: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
@@ -73,23 +76,33 @@ jest.mock('../../../src/db', () => {
 		__esModule: true,
 		default: {
 			query: mockQuery,
+			withTransaction: async (callback: any) => {
+				const mockClient = {
+					query: mockQuery,
+				};
+
+				try {
+					return await callback(mockClient);
+				} catch (e) {
+					throw e;
+				}
+			},
 		},
 	};
 });
 
-jest.mock('nodemailer');
+jest.mock('../../../src/producers/emailProducer', () => {
+  const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(
+    '../../../src/producers/emailProducer'
+  );
 
-const sendMailMock = jest.fn();
-
-const nodemailer = require('nodemailer');
-nodemailer.createTransport.mockReturnValue({ sendMail: sendMailMock });
+  return {
+    ...actual,
+    sendEmailMessage: jest.fn(),
+  };
+});
 
 describe('User Routes', () => {
-	beforeEach(() => {
-		sendMailMock.mockClear();
-		nodemailer.createTransport.mockClear();
-	});
-
 	afterEach(() => {
 		jest.clearAllMocks();
 	});
@@ -114,7 +127,7 @@ describe('User Routes', () => {
 
 		const response = await request(server)
 			.post('/auth/user/email/verify')
-			.send({ code: 'code' });
+			.send({ code: 'FGSLKJ23' });
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
@@ -132,7 +145,7 @@ describe('User Routes', () => {
 
 		const response = await request(server)
 			.post('/auth/user/email/verify')
-			.send({ code: 'code' });
+			.send({ code: 'FGSLKJ23' });
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -154,7 +167,7 @@ describe('User Routes', () => {
 
 		const response = await request(server)
 			.post('/auth/user/email/verify')
-			.send({ code: 'expired-code' });
+			.send({ code: 'FGSLKJ23' });
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
@@ -181,7 +194,7 @@ describe('User Routes', () => {
 
 		const response = await request(server)
 			.post('/auth/user/email/verify')
-			.send({ code: 'code' });
+			.send({ code: 'FGSLKJ23' });
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -222,28 +235,43 @@ describe('User Routes', () => {
 		const response = await request(server)
 			.post('/auth/user/password');
 
+		const dataPassword = {
+			location: 'body',
+			path: 'password',
+		};
+		const dataType = {
+			location: 'body',
+			path: 'type',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'password',
-					},
+					data: dataPassword,
+				},
+				{
+					info: INVALID_PASSWORD,
+					data: dataPassword,
+				},
+				{
+					info: INVALID_PASSWORD_LENGTH,
+					data: dataPassword,
+				},
+				{
+					info: TYPE_REQUIRED,
+					data: dataType,
+				},
+				{
+					info: UNSUPPORTED_TYPE,
+					data: dataType,
 				},
 				{
 					info: CODE_REQUIRED,
 					data: {
 						location: 'body',
 						path: 'code',
-					},
-				},
-				{
-					info: TYPE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'type',
 					},
 				},
 			]).onTest(),
@@ -268,6 +296,13 @@ describe('User Routes', () => {
 						location: 'body',
 						path: 'password',
 					},
+				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
+					data: {
+						location: 'body',
+						path: 'code',
+					}
 				},
 			]).onTest(),
 		);
@@ -367,6 +402,13 @@ describe('User Routes', () => {
 						path: 'password',
 					},
 				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
+					data: {
+						location: 'body',
+						path: 'code',
+					}
+				},
 			]).onTest(),
 		);
 	});
@@ -379,15 +421,31 @@ describe('User Routes', () => {
 				type: 'totp',
 			});
 
+		const dataEmail = {
+			location: 'body',
+			path: 'email',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
+					data: dataEmail,
+				},
+				{
+					info: {
+						code: INVALID_EMAIL.code,
+						message: INVALID_EMAIL.messages[0],
+					},
+					data: dataEmail,
+				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
 					data: {
 						location: 'body',
-						path: 'email',
-					},
+						path: 'code',
+					}
 				},
 			]).onTest(),
 		);
@@ -414,6 +472,13 @@ describe('User Routes', () => {
 						location: 'body',
 						path: 'email',
 					},
+				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
+					data: {
+						location: 'body',
+						path: 'code',
+					}
 				},
 			]).onTest(),
 		);
@@ -452,15 +517,25 @@ describe('User Routes', () => {
 		const response = await request(server)
 			.post('/auth/user/email/verify');
 
+		const data = {
+			location: 'body',
+			path: 'code',
+		}
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: CODE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'code',
-					},
+					data,
+				},
+				{
+					info: CODE_LENGTH_MISMATCH,
+					data,
+				},
+				{
+					info: CODE_FORMAT_INVALID_EMAIL,
+					data
 				},
 			]).onTest(),
 		);

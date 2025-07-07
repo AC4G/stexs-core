@@ -18,6 +18,7 @@ const transporter = nodemailer.createTransport({
     user: SMTP_USER,
     pass: SMTP_PWD,
   },
+  sender: SMTP_EMAIL
 });
 
 export async function sendEmail({ to, subject, content }: { to: string; subject: string; content: string; }) {
@@ -31,6 +32,4 @@ export async function sendEmail({ to, subject, content }: { to: string; subject:
     subject,
     text: content,
   });
-
-  logger.info('Email sent successfully', { to, subject });
 }

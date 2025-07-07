@@ -11,7 +11,6 @@ export interface ApiErrorResponse {
 	code: string;
 	message: string;
 	data?: Record<string, any>;
-	timestamp: string;
 }
 
 export interface ApiResponse {
@@ -53,7 +52,6 @@ function errorMessages(errors: ApiError[]): ApiErrorResponse[]{
 	return errors.map((error) => ({
 		code: error.info.code,
 		message: error.info.message,
-		timestamp: new Date().toISOString(),
 		data: {
 			...error.data,
 		},

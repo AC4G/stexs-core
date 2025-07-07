@@ -1,8 +1,8 @@
 import ip from 'ip';
 import express from 'express';
 import bodyParser from 'body-parser';
-import authRouter from './routes/auth';
-import storageRouter from './routes/storage';
+import authRouter from './routes/auth/router';
+import storageRouter from './routes/storage/router';
 import { ENV, SERVER_PORT } from '../env-config';
 import logger from './logger';
 import responseTime from 'response-time';
@@ -11,16 +11,31 @@ import { ROUTE_NOT_FOUND } from 'utils-node/errors';
 import cors from 'cors';
 import db from './db';
 import { Server } from 'http';
+import { initEmailProducer } from './producers/emailProducer';
+import { extractError } from 'utils-node/logger';
+import cookieParser from 'cookie-parser';
 
 process.on('uncaughtException', (err) => {
 	logger.error(`Uncaught Exception: ${err.message}`);
 	process.exit(1);
 });
 
+(async () => {
+	logger.info('Initializing pulsar producers...')
+
+	try {
+		await initEmailProducer();
+	} catch (err) {
+		logger.error('Failed to initialize email producer', { error: extractError(err) });
+		process.exit(1);
+	}
+})();
+
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(cors());
 app.use(responseTime());
 

@@ -4,7 +4,6 @@ import {
 	describe,
 	afterEach,
 	it,
-	beforeEach,
 	beforeAll,
 	afterAll,
 } from '@jest/globals';
@@ -31,23 +30,33 @@ jest.mock('../../../src/db', () => {
 		__esModule: true,
 		default: {
 			query: mockQuery,
+			withTransaction: async (callback: any) => {
+				const mockClient = {
+					query: mockQuery,
+				};
+
+				try {
+					return await callback(mockClient);
+				} catch (e) {
+					throw e;
+				}
+			},
 		},
 	};
 });
 
-jest.mock('nodemailer');
+jest.mock('../../../src/producers/emailProducer', () => {
+  const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(
+    '../../../src/producers/emailProducer'
+  );
 
-const sendMailMock = jest.fn();
-
-const nodemailer = require('nodemailer');
-nodemailer.createTransport.mockReturnValue({ sendMail: sendMailMock });
+  return {
+    ...actual,
+    sendEmailMessage: jest.fn(),
+  };
+});
 
 describe('Sign Up', () => {
-	beforeEach(() => {
-		sendMailMock.mockClear();
-		nodemailer.createTransport.mockClear();
-	});
-
 	afterEach(() => {
 		jest.clearAllMocks();
 	});
@@ -68,15 +77,31 @@ describe('Sign Up', () => {
 				password: 'Test12345.',
 			});
 
+		const data = {
+			location: 'body',
+			path: 'username',
+		}
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: USERNAME_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'username',
+					data,
+				},
+				{
+					info: {
+						code: INVALID_USERNAME.code,
+						message: INVALID_USERNAME.messages[0],
 					},
+					data,
+				},
+				{
+					info: {
+						code: INVALID_USERNAME.code,
+						message: INVALID_USERNAME.messages[2],
+					},
+					data,
 				},
 			]).onTest(),
 		);
@@ -117,28 +142,27 @@ describe('Sign Up', () => {
 				password: 'Test12345.',
 			});
 
+		const data = {
+			location: 'body',
+			path: 'username',
+		}
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: {
 						code: INVALID_USERNAME.code,
-						message: INVALID_USERNAME.messages[2],
+						message: INVALID_USERNAME.messages[1],
 					},
-					data: {
-						location: 'body',
-						path: 'username',
-					},
+					data,
 				},
 				{
 					info: {
 						code: INVALID_USERNAME.code,
-						message: INVALID_USERNAME.messages[1],
+						message: INVALID_USERNAME.messages[2],
 					},
-					data: {
-						location: 'body',
-						path: 'username',
-					},
+					data,
 				},
 			]).onTest(),
 		);
@@ -178,15 +202,24 @@ describe('Sign Up', () => {
 				password: 'Test12345.',
 			});
 
+		const data = {
+			location: 'body',
+			path: 'email',
+		}
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'email',
+					data,
+				},
+				{
+					info: {
+						code: INVALID_EMAIL.code,
+						message: INVALID_EMAIL.messages[0],
 					},
+					data,
 				},
 			]).onTest(),
 		);
@@ -226,15 +259,25 @@ describe('Sign Up', () => {
 				email: 'test@example.com',
 			});
 
+		const data = {
+			location: 'body',
+			path: 'password',
+		}
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'password',
-					},
+					data,
+				},
+				{
+					info: INVALID_PASSWORD,
+					data,
+				},
+				{
+					info: INVALID_PASSWORD_LENGTH,
+					data,
 				},
 			]).onTest(),
 		);

@@ -100,7 +100,7 @@ GRANT USAGE ON SCHEMA utils TO anon;
 CREATE TABLE auth.users (
 	id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
 	email CITEXT NOT NULL UNIQUE,
-	encrypted_password VARCHAR(60) NOT NULL,
+	encrypted_password VARCHAR(255) NOT NULL,
 	email_verified_at TIMESTAMPTZ,
 	verification_token UUID,
 	verification_sent_at TIMESTAMPTZ,

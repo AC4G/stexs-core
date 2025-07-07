@@ -1,4 +1,8 @@
-import { Router, Request, Response } from 'express';
+import {
+	Router,
+	Request,
+	Response
+} from 'express';
 import { body } from 'express-validator';
 import {
 	EMAIL_REQUIRED,
@@ -15,12 +19,9 @@ import {
 	RECOVERY_LINK_EXPIRED,
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
-import {
-	CustomValidationError,
-	message,
-} from 'utils-node/messageBuilder';
-import { v4 as uuidv4, validate as validateUUID } from 'uuid';
-import sendEmail from '../../services/emailService';
+import { message } from 'utils-node/messageBuilder';
+import { v4 as uuidv4 } from 'uuid';
+import { sendEmailMessage } from '../../producers/emailProducer';
 import { PASSWORD_RECOVERY_CODE_EXPIRATION, REDIRECT_TO_RECOVERY } from '../../../env-config';
 import { validate } from 'utils-node/middlewares';
 import logger from '../../logger';
@@ -32,7 +33,10 @@ import {
 	userExistsByEmail,
 	validateRecoveryToken
 } from '../../repositories/auth/users';
-import { compare } from 'bcrypt';
+import db from '../../db';
+import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import { verifyPassword } from '../../utils/password';
+import { passwordRegex } from '../../utils/regex';
 
 const router = Router();
 
@@ -40,11 +44,8 @@ router.post(
 	'/',
 	[
 		body('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
@@ -102,71 +103,85 @@ router.post(
 				);
 		}
 
-		const token = uuidv4();
-
 		try {
-			const { rowCount } = await setRecoveryToken(email, token);
+			await db.withTransaction(async (client) => {
+				const token = uuidv4();
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(`Failed to update recovery token for email: ${email}`);
-				return res
-					.status(500)
-					.json(
-						message(
+				try {
+					const { rowCount } = await setRecoveryToken(
+						email,
+						token,
+						client
+					);
+
+					if (!rowCount || rowCount === 0) {
+						logger.error(`Failed to update recovery token for email: ${email}`);
+
+						throw new AppError(
+							500,
 							'An unexpected error occurred while updating recovery token.',
-							{},
 							[{ info: INTERNAL_ERROR }]
 						)
+					}
+
+					logger.debug(`Recovery token successfully updated for email: ${email}`);
+				} catch (e) {
+					logger.error(
+						`Error while updating recovery token for email: ${email}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
 					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while updating recovery token.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				try {
+					await sendEmailMessage({
+						to: email,
+						subject: 'Password Recovery',
+						content: `You can change your password by following the link: ${
+							REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
+						}`,
+					});
+				} catch (e) {
+					logger.error(
+						`Error while sending recovery email to ${email}. Error: ${
+							e instanceof Error ? e.message : e
+						}`,
+					);
+
+					throw new AppError(
+						500,
+						'An unexpected error occurred while sending recovery email.',
+						[{ info: INTERNAL_ERROR }]
+					);
+				}
+
+				logger.debug(`Recovery email sent to: ${email}`);
+
+				res.json(message('Recovery email was been send to the email provided.'));
+			});
+		} catch (e) {
+			if (e instanceof AppError) {
+				transformAppErrorToResponse(e, res);
+
+				return;
 			}
 
-			logger.debug(`Recovery token successfully updated for email: ${email}`);
-		} catch (e) {
-			logger.error(
-				`Error while updating recovery token for email: ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			logger.error(`Error initializing password recovery: ${e instanceof Error ? e.message : e}`);
+			
+			res.status(500).json(
+				message(
+					'Unexpected error occurred while initializing password recovery.',
+					{},
+					[{ info: INTERNAL_ERROR }]
+				)
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while updating recovery token.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
 		}
-
-		try {
-			await sendEmail(
-				email,
-				'Password Recovery',
-				undefined,
-				`You can change your password by following the link: ${
-					REDIRECT_TO_RECOVERY + '?email=' + email + '&token=' + token
-				}`,
-			);
-		} catch (e) {
-			logger.error(
-				`Error while sending recovery email to ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while sending recovery email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		logger.debug(`Recovery email sent to: ${email}`);
-
-		res.json(message('Recovery email was been send to the email provided.'));
 	},
 );
 
@@ -174,34 +189,18 @@ router.post(
 	'/confirm',
 	[
 		body('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
 		body('token')
-			.notEmpty()
-			.withMessage(TOKEN_REQUIRED)
-			.bail()
-			.custom((value) => {
-				if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
-
-				return true;
-			}),
+			.exists().withMessage(TOKEN_REQUIRED)
+			.isUUID('4').withMessage(INVALID_UUID),
 		body('password')
-			.notEmpty()
-			.withMessage(PASSWORD_REQUIRED)
-			.bail()
-			.matches(
-				/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,?'";:\]{}=+\-_)(*^%$#@!~`])/,
-			)
-			.withMessage(INVALID_PASSWORD)
-			.bail()
-			.isLength({ min: 10 })
-			.withMessage(INVALID_PASSWORD_LENGTH),
+			.exists().withMessage(PASSWORD_REQUIRED)
+			.matches(passwordRegex).withMessage(INVALID_PASSWORD)
+			.isLength({ min: 10, max: 72 }).withMessage(INVALID_PASSWORD_LENGTH),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
@@ -317,7 +316,9 @@ router.post(
 					);
 			}
 
-			if (await compare(password, rows[0].encrypted_password)) {
+			const oldPasswordMatches = await verifyPassword(password, rows[0].encrypted_password);
+
+			if (oldPasswordMatches) {
 				logger.debug(`New password matches the current password for email: ${email}`);
 				return res
 					.status(400)

@@ -97,7 +97,7 @@ export function validateSignInConfirmOrAccessToken(
 				if (e) return;
 
 				if (typeof decoded === 'object' && 'grant_type' in decoded) {
-					if (decoded?.grant_type !== 'sign_in_confirm')
+					if (decoded?.grant_type !== 'mfa_challenge')
 						throw new MiddlewareError(
 							{
 								message: INVALID_GRANT_TYPE.messages[0],
@@ -108,7 +108,7 @@ export function validateSignInConfirmOrAccessToken(
 				}
 
 				req.auth = decoded;
-				grantType = 'sign_in_confirm';
+				grantType = 'mfa_challenge';
 			},
 		);
 
