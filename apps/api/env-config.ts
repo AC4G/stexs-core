@@ -90,6 +90,8 @@ const envSchema: any = z.object({
 	PULSAR_URL: envValidator.withDefaultString(z.string(), 'pulsar://localhost:6650', 'PULSAR_URL'),
     PULSAR_CERT_PATH: envValidator.withDefaultString(z.string(), undefined, 'PULSAR_CERT_PATH'),
     PULSAR_PRIVATE_KEY_PATH: envValidator.withDefaultString(z.string(), undefined, 'PULSAR_PRIVATE_KEY_PATH'),
+
+	KONG_STEXS_API_PATH: envValidator.withDefaultString(z.string(), '/api/v1', 'KONG_STEXS_API_PATH'),
 });
 
 if (envValidator.getMissingEnvVars().length > 0) {
@@ -177,3 +179,5 @@ export const PROJECT_LOGO_SIZE_LIMIT = env.PROJECT_LOGO_SIZE_LIMIT;
 export const PULSAR_URL = env.PULSAR_URL!;
 export const PULSAR_CERT_PATH = env.PULSAR_CERT_PATH;
 export const PULSAR_PRIVATE_KEY_PATH = env.PULSAR_PRIVATE_KEY_PATH;
+
+export const KONG_STEXS_API_PATH = env.KONG_STEXS_API_PATH;

@@ -12,7 +12,7 @@ import {
 	NO_CLIENT_SCOPES_SELECTED,
     USER_NOT_FOUND,
 } from 'utils-node/errors';
-import generateAccessToken, { generateMFAChallengeToken } from '../../services/jwtService';
+import generateAccessToken, { generateMFAChallengeToken } from '../../utils/jwt';
 import { Request } from 'express-jwt';
 import logger from '../../logger';
 import { isExpired } from 'utils-node';
@@ -20,11 +20,11 @@ import { deleteAuthorizationCode, validateAuthorizationCode } from '../../reposi
 import { createOAuth2Connection } from '../../repositories/public/oauth2Connections';
 import { validateClientCredentials } from '../../repositories/public/oauth2Apps';
 import { deleteRefreshToken, validateOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
-import { AUTHORIZATION_CODE_EXPIRATION } from '../../../env-config';
+import { AUTHORIZATION_CODE_EXPIRATION, KONG_STEXS_API_PATH } from '../../../env-config';
 import { getUserAuth } from '../../repositories/auth/users';
-import { compare } from 'bcrypt';
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import { verifyPassword } from '../../utils/password';
 
 export async function authorizationCodeController(req: Request, res: Response) {
 	const {
@@ -368,7 +368,7 @@ export async function refreshTokenController(req: Request, res: Response) {
 								{
 									info: INVALID_REFRESH_TOKEN,
 									data: {
-										location: 'body',
+										location: 'cookies',
 										path: 'refresh_token',
 									},
 								}
@@ -447,7 +447,7 @@ export async function refreshTokenController(req: Request, res: Response) {
 							{
 								info: INVALID_REFRESH_TOKEN,
 								data: {
-									location: 'body',
+									location: 'cookies',
 									path: 'refresh_token',
 								},
 							},
@@ -540,7 +540,7 @@ export async function passwordController(req: Request, res: Response) {
 
         const row = rows[0];
 
-        const isRightPassword = await compare(password, row.encrypted_password);
+        const isRightPassword = await verifyPassword(password, row.encrypted_password);
 
         if (!isRightPassword) {
             logger.debug(`Invalid credentials for user: ${identifier}`);
@@ -621,11 +621,18 @@ export async function mfaChallengeController(req: Request, res: Response) {
     const userId = req.auth?.sub!;
 
     try {
-        const data = await generateAccessToken({
+        const { refresh_token, ...data } = await generateAccessToken({
 			additionalPayload: { sub: userId }
 		});
 
         logger.debug(`Sign-in successful for user: ${userId}`);
+
+		res.cookie('refresh_token', refresh_token, {
+			httpOnly: true,
+			secure: true,
+			sameSite: 'strict',
+			path: `${KONG_STEXS_API_PATH}/auth/token?grant_type=refresh_token`,
+		});
 
         res.json(message('Sign-in successful.', { ...data }));
     } catch (e) {

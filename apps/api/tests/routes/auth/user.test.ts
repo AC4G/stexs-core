@@ -27,10 +27,10 @@ import {
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
-import { getTOTPForVerification } from '../../../src/services/totpService';
-import { hashPassword } from '../../../src/services/password';
+import { getTOTPForVerification } from '../../../src/utils/totp';
+import { hashPassword } from '../../../src/utils/password';
 
-jest.mock('../../../src/services/mfaService', () => {
+jest.mock('../../../src/utils/mfa', () => {
 	return {
 		mfaValidationMiddleware: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),

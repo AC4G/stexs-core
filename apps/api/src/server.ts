@@ -13,6 +13,7 @@ import db from './db';
 import { Server } from 'http';
 import { initEmailProducer } from './producers/emailProducer';
 import { extractError } from 'utils-node/logger';
+import cookieParser from 'cookie-parser';
 
 process.on('uncaughtException', (err) => {
 	logger.error(`Uncaught Exception: ${err.message}`);
@@ -34,6 +35,7 @@ const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(cors());
 app.use(responseTime());
 

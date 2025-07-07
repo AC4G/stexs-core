@@ -20,7 +20,7 @@ import {
 	transformJwtErrorMessages,
 } from 'utils-node/middlewares';
 import { body } from 'express-validator';
-import { mfaValidationMiddleware } from '../../services/mfaService';
+import { mfaValidationMiddleware } from '../../utils/mfa';
 import { signOutFromAllSessions, signOutFromSession } from '../../repositories/auth/refreshTokens';
 
 const router = Router();

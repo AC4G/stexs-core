@@ -17,7 +17,7 @@ import {
 	TYPE_REQUIRED,
 } from 'utils-node/errors';
 import logger from '../../logger';
-import { body, query } from 'express-validator';
+import { body, cookie, query } from 'express-validator';
 import { validate } from 'utils-node/middlewares';
 import {
 	authorizationCodeController,
@@ -36,7 +36,7 @@ import {
   supportedMFATypes,
   grantTypesRequiringRefreshToken,
 } from '../../types/auth';
-import { decodeRefreshToken } from '../../services/validators';
+import { decodeRefreshToken } from '../../utils/validators';
 
 const router = Router();
 
@@ -76,7 +76,7 @@ router.post(
 				return grantType && grantTypesRequiringCode.includes(grantType);
 			})
 			.notEmpty().withMessage(CODE_REQUIRED),
-		body('refresh_token')
+		cookie('refresh_token')
 			.if((_, { req }) => {
 				const grantType = req.query?.grant_type as GrantTypes | undefined;
 				return grantType && grantTypesRequiringRefreshToken.includes(grantType);

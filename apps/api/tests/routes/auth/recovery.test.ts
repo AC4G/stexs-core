@@ -26,7 +26,7 @@ import {
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
-import { hashPassword } from '../../../src/services/password';
+import { hashPassword } from '../../../src/utils/password';
 
 jest.mock('../../../src/producers/emailProducer', () => {
   const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(

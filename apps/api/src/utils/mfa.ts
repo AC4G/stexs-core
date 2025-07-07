@@ -7,7 +7,7 @@ import {
 	MFA_TOTP_DISABLED,
 } from 'utils-node/errors';
 import logger from '../logger';
-import { getTOTPForVerification } from './totpService';
+import { getTOTPForVerification } from './totp';
 import { isExpired } from 'utils-node';
 import { getEmailInfo, getTOTPStatus } from '../repositories/auth/mfa';
 import { MFA_EMAIL_CODE_EXPIRATION } from '../../env-config';

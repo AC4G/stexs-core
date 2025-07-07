@@ -1,14 +1,7 @@
 import { CustomValidationError } from "utils-node/messageBuilder";
 import { grantTypesInRefreshToken, possibleGrantTypes } from "../types/auth";
-import {
-	version as uuidVersion,
-	validate as validateUUID
-} from 'uuid';
-import {
-  INVALID_GRANT_TYPE,
-  INVALID_REFRESH_TOKEN,
-  INVALID_UUID
-} from "utils-node/errors";
+import { INVALID_GRANT_TYPE,
+  INVALID_REFRESH_TOKEN } from "utils-node/errors";
 import { decode, verify } from "jsonwebtoken";
 import {
   AUDIENCE,

@@ -37,7 +37,7 @@ import { message } from 'utils-node/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 import { sign } from 'jsonwebtoken';
 import { AUDIENCE, ISSUER, REFRESH_TOKEN_SECRET } from '../../../env-config';
-import { hashPassword } from '../../../src/services/password';
+import { hashPassword } from '../../../src/utils/password';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -119,7 +119,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({ refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -127,7 +128,7 @@ describe('Token Route', () => {
 				{
 					info: INVALID_REFRESH_TOKEN,
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -478,7 +479,7 @@ describe('Token Route', () => {
 				{
 					info: REFRESH_TOKEN_REQUIRED,
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -499,7 +500,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({ refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -507,7 +509,7 @@ describe('Token Route', () => {
 				{
 					info: INVALID_REFRESH_TOKEN,
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -524,7 +526,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({	refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -535,7 +538,7 @@ describe('Token Route', () => {
 						message: INVALID_GRANT_TYPE.messages[0],
 					},
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -566,7 +569,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({	refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -596,7 +600,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({ refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -604,7 +609,7 @@ describe('Token Route', () => {
 				{
 					info: INVALID_REFRESH_TOKEN,
 					data: {
-						location: 'body',
+						location: 'cookies',
 						path: 'refresh_token',
 					},
 				},
@@ -634,7 +639,8 @@ describe('Token Route', () => {
 
 		const response = await request(server)
 			.post('/auth/token?grant_type=refresh_token')
-			.send({ refresh_token: refreshToken });
+			.set('Cookie', [`refresh_token=${refreshToken}`])
+			.send();
 
 		expect(response.status).toBe(200);
 		expect(response.body).toMatchObject(
@@ -701,8 +707,6 @@ describe('Token Route', () => {
 				identifier: 'test',
 				password: 'Test123.',
 			});
-
-		console.log(JSON.stringify(response.body));
 
 		expect(response.status).toBe(404);
 		expect(response.body).toEqual(
@@ -913,6 +917,8 @@ describe('Token Route', () => {
 				token: 'sometoken',
 			});
 
+		console.log(JSON.stringify(response.headers));
+
 		const { data, ...rest } = response.body;
 
 		expect(response.status).toBe(200);
@@ -924,9 +930,19 @@ describe('Token Route', () => {
 		});
 		expect(data).toMatchObject({
 			access_token: expect.stringMatching(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/),
-			refresh_token: expect.stringMatching(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/),
 			token_type: 'bearer',
 			expires: expect.any(Number),
 		});
+
+		const cookies = response.headers['set-cookie'];
+		expect(cookies).toBeDefined();
+
+		const cookiesArray = Array.isArray(cookies) ? cookies : [cookies];
+
+		const refreshTokenCookie = cookiesArray.find(cookie => cookie.startsWith('refresh_token='));
+		expect(refreshTokenCookie).toBeDefined();
+
+		const refreshTokenValue = refreshTokenCookie!.split(';')[0].split('=')[1];
+		expect(refreshTokenValue).toEqual(expect.stringMatching(/^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/));
 	});
 });

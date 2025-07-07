@@ -10,9 +10,9 @@ const mockQuery = jest.fn();
 import { NextFunction } from 'express';
 import request from 'supertest';
 import server from '../../../src/server';
-import { getTOTPForVerification } from '../../../src/services/totpService';
+import { getTOTPForVerification } from '../../../src/utils/totp';
 
-jest.mock('../../../src/services/mfaService', () => {
+jest.mock('../../../src/utils/mfa', () => {
 	return {
 		mfaValidationMiddleware: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),

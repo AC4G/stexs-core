@@ -38,7 +38,7 @@ import {
 	EMAIL_CHANGE_CODE_EXPIRATION,
 	ISSUER
 } from '../../../env-config';
-import { mfaValidationMiddleware } from '../../services/mfaService';
+import { mfaValidationMiddleware } from '../../utils/mfa';
 import {
 	changePassword,
 	getUsersEncryptedPassword,
@@ -49,7 +49,7 @@ import {
 	validateEmailChange
 } from '../../repositories/auth/users';
 import { getActiveUserSessions } from '../../repositories/auth/refreshTokens';
-import { compare } from 'bcrypt';
+import { verifyPassword } from '../../utils/password';
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 
@@ -198,7 +198,7 @@ router.post(
 					);
 			}
 
-			if (await compare(password, rows[0].encrypted_password)) {
+			if (await verifyPassword(password, rows[0].encrypted_password)) {
 				logger.debug(`New password matches the current password for user: ${userId}`);
 				return res
 					.status(400)

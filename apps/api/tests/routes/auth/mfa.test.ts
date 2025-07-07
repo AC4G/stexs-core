@@ -31,7 +31,7 @@ import {
 	TOTP_DIGITS,
 	TOTP_PERIOD,
 } from '../../../env-config';
-import { getTOTPForVerification } from '../../../src/services/totpService';
+import { getTOTPForVerification } from '../../../src/utils/totp';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
 

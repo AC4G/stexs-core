@@ -25,7 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 import logger from '../../logger';
 import { validate } from 'utils-node/middlewares';
 import { signUpUser } from '../../repositories/auth/users';
-import { hashPassword } from '../../services/password';
+import { hashPassword } from '../../utils/password';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 import db from '../../db';
 

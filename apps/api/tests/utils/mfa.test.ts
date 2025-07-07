@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const mockQuery = jest.fn();
 
-import { validateMFA } from '../../src/services/mfaService';
+import { validateMFA } from '../../src/utils/mfa';
 import {
     INTERNAL_ERROR,
     INVALID_CODE,
@@ -19,7 +19,7 @@ import {
     MFA_TOTP_DISABLED
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { getTOTPForVerification } from '../../src/services/totpService';
+import { getTOTPForVerification } from '../../src/utils/totp';
 
 jest.mock('../../src/db', () => {
     return {

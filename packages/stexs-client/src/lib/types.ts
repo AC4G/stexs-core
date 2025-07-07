@@ -12,7 +12,6 @@ export interface User {
 export type Session =
 	| {
 		access_token: string;
-		refresh_token: string;
 		expires: number;
 		refresh: {
 			enabled: boolean;
@@ -30,7 +29,6 @@ export type Session = {
   users: {
     [userId: string]: {
       access_token: string;
-      refresh_token: string;
       expires: number;
       refresh: {
         enabled: boolean;
@@ -73,6 +71,7 @@ export type RequestOptions = {
     method?: 'GET' | 'POST' | 'DELETE' | 'PUT';
     body?: Record<string, any>;
     headers?: Record<string, string>;
+	credentials?: 'include' | 'omit' | 'same-origin';
 };
 
 export interface MFAChallenge {

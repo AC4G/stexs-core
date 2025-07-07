@@ -32,9 +32,9 @@ import {
 	userExistsByEmail,
 	validateRecoveryToken
 } from '../../repositories/auth/users';
-import { compare } from 'bcrypt';
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import { verifyPassword } from '../../utils/password';
 
 const router = Router();
 
@@ -333,7 +333,7 @@ router.post(
 					);
 			}
 
-			if (await compare(password, rows[0].encrypted_password)) {
+			if (await verifyPassword(password, rows[0].encrypted_password)) {
 				logger.debug(`New password matches the current password for email: ${email}`);
 				return res
 					.status(400)

@@ -16,7 +16,7 @@ import {
 import {
 	getTOTPForSettup,
 	getTOTPForVerification,
-} from '../../services/totpService';
+} from '../../utils/totp';
 import { generateCode, isExpired } from 'utils-node';
 import { sendEmailMessage } from '../../producers/emailProducer';
 import {
