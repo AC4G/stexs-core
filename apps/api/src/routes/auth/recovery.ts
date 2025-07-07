@@ -1,4 +1,8 @@
-import { Router, Request, Response } from 'express';
+import {
+	Router,
+	Request,
+	Response
+} from 'express';
 import { body } from 'express-validator';
 import {
 	EMAIL_REQUIRED,
@@ -15,11 +19,8 @@ import {
 	RECOVERY_LINK_EXPIRED,
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
-import {
-	CustomValidationError,
-	message,
-} from 'utils-node/messageBuilder';
-import { v4 as uuidv4, validate as validateUUID } from 'uuid';
+import { message } from 'utils-node/messageBuilder';
+import { v4 as uuidv4 } from 'uuid';
 import { sendEmailMessage } from '../../producers/emailProducer';
 import { PASSWORD_RECOVERY_CODE_EXPIRATION, REDIRECT_TO_RECOVERY } from '../../../env-config';
 import { validate } from 'utils-node/middlewares';
@@ -35,6 +36,7 @@ import {
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 import { verifyPassword } from '../../utils/password';
+import { passwordRegex } from '../../utils/regex';
 
 const router = Router();
 
@@ -42,11 +44,8 @@ router.post(
 	'/',
 	[
 		body('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
@@ -190,34 +189,18 @@ router.post(
 	'/confirm',
 	[
 		body('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
 		body('token')
-			.notEmpty()
-			.withMessage(TOKEN_REQUIRED)
-			.bail()
-			.custom((value) => {
-				if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
-
-				return true;
-			}),
+			.exists().withMessage(TOKEN_REQUIRED)
+			.isUUID('4').withMessage(INVALID_UUID),
 		body('password')
-			.notEmpty()
-			.withMessage(PASSWORD_REQUIRED)
-			.bail()
-			.matches(
-				/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,?'";:\]{}=+\-_)(*^%$#@!~`])/,
-			)
-			.withMessage(INVALID_PASSWORD)
-			.bail()
-			.isLength({ min: 10 })
-			.withMessage(INVALID_PASSWORD_LENGTH),
+			.exists().withMessage(PASSWORD_REQUIRED)
+			.matches(passwordRegex).withMessage(INVALID_PASSWORD)
+			.isLength({ min: 10, max: 72 }).withMessage(INVALID_PASSWORD_LENGTH),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
@@ -333,7 +316,9 @@ router.post(
 					);
 			}
 
-			if (await verifyPassword(password, rows[0].encrypted_password)) {
+			const oldPasswordMatches = await verifyPassword(password, rows[0].encrypted_password);
+
+			if (oldPasswordMatches) {
 				logger.debug(`New password matches the current password for email: ${email}`);
 				return res
 					.status(400)

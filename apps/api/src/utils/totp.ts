@@ -1,15 +1,10 @@
 import { TOTP } from 'otpauth';
-import {
-	SERVICE_NAME,
-	TOTP_ALGORITHM,
-	TOTP_DIGITS,
-	TOTP_PERIOD,
-} from '../../env-config';
+import { SERVICE_NAME } from '../../env-config';
 
 const totpSettings = {
-	algorithm: TOTP_ALGORITHM,
-	digits: TOTP_DIGITS,
-	period: TOTP_PERIOD,
+	algorithm: 'SHA256',
+	digits: 6,
+	period: 30,
 };
 
 export function getTOTPForSettup(label: string): TOTP {

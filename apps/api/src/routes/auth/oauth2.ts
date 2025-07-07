@@ -1,19 +1,15 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import {
-	CustomValidationError,
-	message,
-} from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import { body, param } from 'express-validator';
 import {
-	ARRAY_REQUIRED,
+	ARRAY_MIN_ONE_REQUIRED,
 	CLIENT_ID_REQUIRED,
 	CLIENT_NOT_FOUND,
 	CONNECTION_ALREADY_REVOKED,
 	CONNECTION_ID_NOT_NUMERIC,
 	CONNECTION_ID_REQUIRED,
 	CONNECTION_NOT_FOUND,
-	EMPTY_ARRAY,
 	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_REDIRECT_URL,
@@ -24,7 +20,7 @@ import {
 	REFRESH_TOKEN_REQUIRED,
 	SCOPES_REQUIRED,
 } from 'utils-node/errors';
-import { v4 as uuidv4, validate as validateUUID } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import logger from '../../logger';
 import {
 	ACCESS_TOKEN_SECRET,
@@ -55,32 +51,14 @@ router.post(
 	'/authorize',
 	[
 		body('client_id')
-			.notEmpty()
-			.withMessage(CLIENT_ID_REQUIRED)
-			.bail()
-			.custom((value) => {
-				if (!validateUUID(value)) throw new CustomValidationError(INVALID_UUID);
-
-				return true;
-			}),
+			.exists().withMessage(CLIENT_ID_REQUIRED)
+			.isUUID('4').withMessage(INVALID_UUID),
 		body('redirect_url')
-			.notEmpty()
-			.withMessage(REDIRECT_URL_REQUIRED)
-			.bail()
-			.isURL()
-			.withMessage(INVALID_URL),
+			.notEmpty().withMessage(REDIRECT_URL_REQUIRED)
+			.isURL().withMessage(INVALID_URL),
 		body('scopes')
-			.notEmpty()
-			.withMessage(SCOPES_REQUIRED)
-			.bail()
-			.isArray()
-			.withMessage(ARRAY_REQUIRED)
-			.bail()
-			.custom((value) => {
-				if (value.length === 0) throw new CustomValidationError(EMPTY_ARRAY);
-
-				return true;
-			}),
+			.exists().withMessage(SCOPES_REQUIRED)
+			.isArray({ min: 1 }).withMessage(ARRAY_MIN_ONE_REQUIRED),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -325,11 +303,8 @@ router.delete(
 	'/connections/:connectionId',
 	[
 		param('connectionId')
-			.notEmpty()
-			.withMessage(CONNECTION_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(CONNECTION_ID_NOT_NUMERIC),
+			.exists().withMessage(CONNECTION_ID_REQUIRED)
+			.isNumeric().withMessage(CONNECTION_ID_NOT_NUMERIC),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -381,11 +356,8 @@ router.delete(
 	'/revoke',
 	[
 		body('refresh_token')
-			.notEmpty()
-			.withMessage(REFRESH_TOKEN_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.exists().withMessage(REFRESH_TOKEN_REQUIRED)
+			.isString().withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 		validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['authorization_code']),

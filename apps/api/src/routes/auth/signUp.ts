@@ -4,10 +4,7 @@ import {
 	Response
 } from 'express';
 import { sendEmailMessage } from '../../producers/emailProducer';
-import {
-	message,
-	CustomValidationError,
-} from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import { body } from 'express-validator';
 import { ISSUER } from '../../../env-config';
 import {
@@ -28,6 +25,7 @@ import { signUpUser } from '../../repositories/auth/users';
 import { hashPassword } from '../../utils/password';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 import db from '../../db';
+import { passwordRegex, usernameRegex } from '../../utils/regex';
 
 const router = Router();
 
@@ -35,52 +33,30 @@ router.post(
 	'/',
 	[
 		body('username')
-			.notEmpty()
-			.withMessage(USERNAME_REQUIRED)
-			.bail()
+			.exists().withMessage(USERNAME_REQUIRED)
 			.isLength({ min: 1, max: 20 })
 			.withMessage({
 				code: INVALID_USERNAME.code,
 				message: INVALID_USERNAME.messages[0],
 			})
-			.custom((value: string) => {
-				if (!/^[A-Za-z0-9._]+$/.test(value))
-					throw new CustomValidationError({
-						code: INVALID_USERNAME.code,
-						message: INVALID_USERNAME.messages[2],
-					});
-
-				return true;
+			.not().isEmail().withMessage({
+				code: INVALID_USERNAME.code,
+				message: INVALID_USERNAME.messages[1],
 			})
-			.custom((value: string) => {
-				if (/^\w+([-]?\w+)*@\w+([-]?\w+)*(\.\w{2,3})+$/.test(value))
-					throw new CustomValidationError({
-						code: INVALID_USERNAME.code,
-						message: INVALID_USERNAME.messages[1],
-					});
-
-				return true;
+			.matches(usernameRegex).withMessage({
+				code: INVALID_USERNAME.code,
+				message: INVALID_USERNAME.messages[2],
 			}),
 		body('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
 		body('password')
-			.notEmpty()
-			.withMessage(PASSWORD_REQUIRED)
-			.bail()
-			.matches(
-				/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,?'";:\]{}=+\-_)(*^%$#@!~`])/,
-			)
-			.withMessage(INVALID_PASSWORD)
-			.bail()
-			.isLength({ min: 10 })
-			.withMessage(INVALID_PASSWORD_LENGTH),
+			.exists().withMessage(PASSWORD_REQUIRED)
+			.matches(passwordRegex).withMessage(INVALID_PASSWORD)
+			.isLength({ min: 10, max: 72 }).withMessage(INVALID_PASSWORD_LENGTH),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {

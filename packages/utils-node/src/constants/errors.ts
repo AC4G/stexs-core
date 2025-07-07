@@ -25,6 +25,7 @@ export const INVALID_EMAIL = {
 		'Please choose a different email address.',
 	],
 };
+
 export const PASSWORD_REQUIRED = {
 	code: 'PASSWORD_REQUIRED',
 	message: 'Please provide an password.',
@@ -36,7 +37,7 @@ export const INVALID_PASSWORD = {
 };
 export const INVALID_PASSWORD_LENGTH = {
 	code: 'INVALID_PASSWORD_LENGTH',
-	message: 'Please choose a password that is at least 10 characters long.',
+	message: 'Please choose a password that is at least 10 characters long and at most 72 characters.',
 };
 export const INVALID_INPUT_DATA = {
 	code: 'INVALID_INPUT_DATA',
@@ -326,4 +327,34 @@ export const FIELD_MUST_BE_A_STRING = {
 export const MFA_PARAMETER_REQUIRED = {
 	code: 'MFA_PARAMETER_REQUIRED',
 	message: 'Please provide a MFA parameter.',
+};
+
+export const CODE_LENGTH_MISMATCH = {
+	code: 'CODE_LENGTH_MISMATCH',
+	message: 'Code minimum and maximum length mismatch.',
+};
+
+export const CODE_NOT_NUMERIC = {
+	code: 'CODE_NOT_NUMERIC',
+	message: 'Code must contain only numbers.',
+};
+
+export const CODE_FORMAT_INVALID_TOTP = {
+  code: 'CODE_FORMAT_INVALID_TOTP',
+  message: 'TOTP code must be exactly 6 digits.',
+};
+
+export const CODE_FORMAT_INVALID_EMAIL = {
+  code: 'CODE_FORMAT_INVALID_EMAIL',
+  message: 'Email MFA code must be 8 alphanumeric characters.',
+};
+
+export const ARRAY_MIN_ONE_REQUIRED = {
+	code: 'ARRAY_MIN_ONE_REQUIRED',
+	message: 'Array must contain at least one item.',
+};
+
+export const INVALID_MFA_CHALLENGE_TOKEN = {
+	code: 'INVALID_MFA_CHALLENGE_TOKEN',
+	message: 'Please provide a valid MFA challenge token.',
 };

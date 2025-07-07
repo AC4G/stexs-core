@@ -17,6 +17,7 @@ import {
 	CONNECTION_ALREADY_REVOKED,
 	CONNECTION_ID_NOT_NUMERIC,
 	CONNECTION_NOT_FOUND,
+	FIELD_MUST_BE_A_STRING,
 	REFRESH_TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { message } from 'utils-node/messageBuilder';
@@ -127,15 +128,21 @@ describe('OAuth2 Routes', () => {
 		const response = await request(server)
 			.delete('/auth/oauth2/revoke');
 
+		const data = {
+			location: 'body',
+			path: 'refresh_token',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: REFRESH_TOKEN_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'refresh_token',
-					},
+					data,
+				},
+				{
+					info: FIELD_MUST_BE_A_STRING,
+					data,
 				},
 			]).onTest(),
 		);

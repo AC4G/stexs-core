@@ -16,7 +16,7 @@ import {
     setTOTPSecret,
     verifyTOTPMethod
 } from '../../../src/repositories/auth/mfa';
-import { getTOTPForSettup } from '../../../src/services/totpService';
+import { getTOTPForSettup } from '../../../src/utils/totp';
 import { generateCode } from 'utils-node';
 
 describe('MFA Queries', () => {

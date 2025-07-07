@@ -1,15 +1,13 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
 import logger from '../../logger';
+import { CustomValidationError, message } from 'utils-node/messageBuilder';
 import {
-	CustomValidationError,
-	message,
-} from 'utils-node/messageBuilder';
-import {
+	CODE_FORMAT_INVALID_EMAIL,
+	CODE_FORMAT_INVALID_TOTP,
+	CODE_LENGTH_MISMATCH,
 	CODE_REQUIRED,
-	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
-	INVALID_TYPE,
 	MFA_FLOWS_NOT_FOUND,
 	TYPE_REQUIRED,
 	UNSUPPORTED_TYPE,
@@ -37,6 +35,17 @@ import {
 	MFA_CHALLENGE_TOKEN_SECRET,
 } from '../../../env-config';
 import { getMFAStatus } from '../../repositories/auth/mfa';
+import {
+	MFATypes,
+	sendCodeMFAMethod,
+	supportedMFAMethods,
+	verifyMFAMethod
+} from '../../types/auth';
+import {
+	alphaNumericRegex,
+	eightAlphaNumericRegex,
+	sixDigitCodeRegex
+} from '../../utils/regex';
 
 const router = Router();
 
@@ -90,30 +99,17 @@ router.post(
 	'/enable',
 	[
 		body('type')
-			.notEmpty()
-			.withMessage(TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				const supportedTypes = ['email', 'totp'];
-
-				if (!supportedTypes.includes(value)) {
-					throw new CustomValidationError(UNSUPPORTED_TYPE);
-				}
-
-				return true;
-			}),
+			.exists().withMessage(TYPE_REQUIRED)
+			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
 		body('code')
-			.custom((value, { req }) => {
-				if (req.body?.type !== 'email') {
-					return true;
-				}
+			.if((_, { req }) => {
+				const type = req.body.type as MFATypes;
 
-				if (value === undefined || value.length === 0) {
-					throw new CustomValidationError(CODE_REQUIRED);
-				}
-
-				return true;
-			}),
+				return type === 'email';
+			})
+			.exists().withMessage(CODE_REQUIRED)
+			.isLength({ min: 8, max: 8 }).withMessage(CODE_LENGTH_MISMATCH)
+			.matches(alphaNumericRegex).withMessage(CODE_FORMAT_INVALID_EMAIL),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -123,7 +119,7 @@ router.post(
 		const {
 			type
 		}: {
-			type: 'email' | 'totp';
+			type: MFATypes;
 		} = req.body;
 
 		switch (type) {
@@ -140,24 +136,23 @@ router.post(
 	'/disable',
 	[
 		body('type')
-			.notEmpty()
-			.withMessage(TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				const supportedTypes = ['email', 'totp'];
+			.exists().withMessage(TYPE_REQUIRED)
+			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
+		body('code')
+			.exists().withMessage(CODE_REQUIRED)
+			.custom((value, { req }) => {
+				const type = req.body.type as MFATypes;
 
-				if (!supportedTypes.includes(value)) {
-					throw new CustomValidationError(UNSUPPORTED_TYPE);
-				}
+				if (!type || type.length === 0) return true;
+
+				if (type === 'totp' && !sixDigitCodeRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
+
+				if (type === 'email' && !eightAlphaNumericRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
 
 				return true;
 			}),
-		body('code')
-			.notEmpty()
-			.withMessage(CODE_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -167,7 +162,7 @@ router.post(
 		const {
 			type
 		}: {
-			type: 'email' | 'totp';
+			type: MFATypes;
 		} = req.body;
 
 		switch (type) {
@@ -185,23 +180,20 @@ router.post(
 	'/verify',
 	[
 		body('type')
-			.notEmpty()
-			.withMessage(TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				const supportedTypes = ['totp'];
+			.exists().withMessage(TYPE_REQUIRED)
+			.isIn(verifyMFAMethod).withMessage(UNSUPPORTED_TYPE),
+		body('code')
+			.exists().withMessage(CODE_REQUIRED)
+			.custom((value, { req }) => {
+				const type = req.body.type as Extract<MFATypes, 'totp'>;
 
-				if (!supportedTypes.includes(value))
-					throw new CustomValidationError(INVALID_TYPE);
+				if (!type || type.length === 0) return true;
+
+				if (type === 'totp' && !sixDigitCodeRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
 
 				return true;
 			}),
-		body('code')
-			.notEmpty()
-			.withMessage(CODE_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -211,7 +203,7 @@ router.post(
 		const {
 			type
 		}: {
-			type: 'totp';
+			type: Extract<MFATypes, 'totp'>;
 		} = req.body;
 
 		switch (type) {
@@ -226,18 +218,8 @@ router.post(
 	'/send-code',
 	[
 		body('type')
-			.notEmpty()
-			.withMessage(TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				const supportedTypes = ['email'];
-
-				if (!supportedTypes.includes(value)) {
-					throw new CustomValidationError(UNSUPPORTED_TYPE);
-				}
-
-				return true;
-			}),
+			.exists().withMessage(TYPE_REQUIRED)
+			.isIn(sendCodeMFAMethod).withMessage(UNSUPPORTED_TYPE),
 		validate(logger),
 		validateSignInConfirmOrAccessToken(
 			ACCESS_TOKEN_SECRET,
@@ -251,7 +233,7 @@ router.post(
 		const {
 			type
 		}: {
-			type: 'email';
+			type: Extract<MFATypes, 'email'>;
 		} = req.body;
 
 		switch (type) {

@@ -36,15 +36,12 @@ const envSchema: any = z.object({
 	STORAGE_PROTOCOL: envValidator.withDefaultString(z.string(), 'http', 'STORAGE_PROTOCOL'),
 	STORAGE_HOST: envValidator.withDefaultString(z.string(), 'localhost', 'STORAGE_HOST'),
 	STORAGE_BUCKET: envValidator.withDefaultString(z.string(), 'stexs', 'STORAGE_BUCKET'),
-	TOTP_ALGORITHM: envValidator.withDefaultString(z.string(), 'SHA256', 'TOTP_ALGORITHM'),
 	
 	// Numbers
 	STEXS_API_PORT: envValidator.withDefaultNumber(z.coerce.number(), 3001, 'STEXS_API_PORT'),
 	SMTP_PORT: envValidator.withDefaultNumber(z.coerce.number(), 1025, 'SMTP_PORT'),
 	STEXS_DB_PORT: envValidator.withDefaultNumber(z.coerce.number(), 5431, 'STEXS_DB_PORT'),
 	TEST_DB_PORT: envValidator.withDefaultNumber(z.coerce.number(), 5555, 'TEST_DB_PORT'),
-	TOTP_DIGITS: envValidator.withDefaultNumber(z.coerce.number(), 6, 'TOTP_DIGITS'),
-	TOTP_PERIOD: envValidator.withDefaultNumber(z.coerce.number(), 30, 'TOTP_PERIOD'),
 	JWT_EXPIRY_MFA_CHALLENGE_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 600, 'JWT_EXPIRY_MFA_CHALLENGE_LIMIT'),
 	JWT_EXPIRY_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 3600, 'JWT_EXPIRY_LIMIT'),
 	JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT: envValidator.withDefaultNumber(z.coerce.number(), 86400, 'JWT_AUTHORIZATION_CODE_EXPIRY_LIMIT'),
@@ -143,10 +140,6 @@ export const REDIRECT_TO_RECOVERY = env.RECOVERY_URL!;
 export const LOGGER_URL = env.LOGGER_URL;
 
 export const SERVICE_NAME = env.SERVICE_NAME!;
-
-export const TOTP_ALGORITHM = env.TOTP_ALGORITHM!;
-export const TOTP_DIGITS = env.TOTP_DIGITS;
-export const TOTP_PERIOD = env.TOTP_PERIOD;
 
 export const STORAGE_PROTOCOL = env.STORAGE_PROTOCOL!;
 export const STORAGE_PORT = env.STORAGE_PORT;

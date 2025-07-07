@@ -15,6 +15,9 @@ import request from 'supertest';
 import server from '../../../src/server';
 import {
 	CODE_EXPIRED,
+	CODE_FORMAT_INVALID_EMAIL,
+	CODE_FORMAT_INVALID_TOTP,
+	CODE_LENGTH_MISMATCH,
 	CODE_REQUIRED,
 	EMAIL_REQUIRED,
 	INVALID_CODE,
@@ -24,6 +27,7 @@ import {
 	NEW_PASSWORD_EQUALS_CURRENT,
 	PASSWORD_REQUIRED,
 	TYPE_REQUIRED,
+	UNSUPPORTED_TYPE,
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
 import { message } from 'utils-node/messageBuilder';
@@ -123,7 +127,7 @@ describe('User Routes', () => {
 
 		const response = await request(server)
 			.post('/auth/user/email/verify')
-			.send({ code: 'code' });
+			.send({ code: 'FGSLKJ23' });
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
@@ -141,7 +145,7 @@ describe('User Routes', () => {
 
 		const response = await request(server)
 			.post('/auth/user/email/verify')
-			.send({ code: 'code' });
+			.send({ code: 'FGSLKJ23' });
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -163,7 +167,7 @@ describe('User Routes', () => {
 
 		const response = await request(server)
 			.post('/auth/user/email/verify')
-			.send({ code: 'expired-code' });
+			.send({ code: 'FGSLKJ23' });
 
 		expect(response.status).toBe(403);
 		expect(response.body).toEqual(
@@ -190,7 +194,7 @@ describe('User Routes', () => {
 
 		const response = await request(server)
 			.post('/auth/user/email/verify')
-			.send({ code: 'code' });
+			.send({ code: 'FGSLKJ23' });
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
@@ -231,28 +235,43 @@ describe('User Routes', () => {
 		const response = await request(server)
 			.post('/auth/user/password');
 
+		const dataPassword = {
+			location: 'body',
+			path: 'password',
+		};
+		const dataType = {
+			location: 'body',
+			path: 'type',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'password',
-					},
+					data: dataPassword,
+				},
+				{
+					info: INVALID_PASSWORD,
+					data: dataPassword,
+				},
+				{
+					info: INVALID_PASSWORD_LENGTH,
+					data: dataPassword,
+				},
+				{
+					info: TYPE_REQUIRED,
+					data: dataType,
+				},
+				{
+					info: UNSUPPORTED_TYPE,
+					data: dataType,
 				},
 				{
 					info: CODE_REQUIRED,
 					data: {
 						location: 'body',
 						path: 'code',
-					},
-				},
-				{
-					info: TYPE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'type',
 					},
 				},
 			]).onTest(),
@@ -277,6 +296,13 @@ describe('User Routes', () => {
 						location: 'body',
 						path: 'password',
 					},
+				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
+					data: {
+						location: 'body',
+						path: 'code',
+					}
 				},
 			]).onTest(),
 		);
@@ -376,6 +402,13 @@ describe('User Routes', () => {
 						path: 'password',
 					},
 				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
+					data: {
+						location: 'body',
+						path: 'code',
+					}
+				},
 			]).onTest(),
 		);
 	});
@@ -388,15 +421,31 @@ describe('User Routes', () => {
 				type: 'totp',
 			});
 
+		const dataEmail = {
+			location: 'body',
+			path: 'email',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
+					data: dataEmail,
+				},
+				{
+					info: {
+						code: INVALID_EMAIL.code,
+						message: INVALID_EMAIL.messages[0],
+					},
+					data: dataEmail,
+				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
 					data: {
 						location: 'body',
-						path: 'email',
-					},
+						path: 'code',
+					}
 				},
 			]).onTest(),
 		);
@@ -423,6 +472,13 @@ describe('User Routes', () => {
 						location: 'body',
 						path: 'email',
 					},
+				},
+				{
+					info: CODE_FORMAT_INVALID_TOTP,
+					data: {
+						location: 'body',
+						path: 'code',
+					}
 				},
 			]).onTest(),
 		);
@@ -461,15 +517,25 @@ describe('User Routes', () => {
 		const response = await request(server)
 			.post('/auth/user/email/verify');
 
+		const data = {
+			location: 'body',
+			path: 'code',
+		}
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: CODE_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'code',
-					},
+					data,
+				},
+				{
+					info: CODE_LENGTH_MISMATCH,
+					data,
+				},
+				{
+					info: CODE_FORMAT_INVALID_EMAIL,
+					data
 				},
 			]).onTest(),
 		);

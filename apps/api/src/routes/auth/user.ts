@@ -3,6 +3,9 @@ import { Request } from 'express-jwt';
 import { body } from 'express-validator';
 import {
 	CODE_EXPIRED,
+	CODE_FORMAT_INVALID_EMAIL,
+	CODE_FORMAT_INVALID_TOTP,
+	CODE_LENGTH_MISMATCH,
 	CODE_REQUIRED,
 	EMAIL_NOT_AVAILABLE,
 	EMAIL_REQUIRED,
@@ -17,6 +20,7 @@ import {
 	PASSWORD_CHANGE_FAILED,
 	PASSWORD_REQUIRED,
 	TYPE_REQUIRED,
+	UNSUPPORTED_TYPE,
 	USER_NOT_FOUND,
 } from 'utils-node/errors';
 import {
@@ -52,6 +56,13 @@ import { getActiveUserSessions } from '../../repositories/auth/refreshTokens';
 import { verifyPassword } from '../../utils/password';
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import {
+	alphaNumericRegex,
+	eightAlphaNumericRegex,
+	passwordRegex,
+	sixDigitCodeRegex
+} from '../../utils/regex';
+import { MFATypes, supportedMFAMethods } from '../../types/auth';
 
 const router = Router();
 
@@ -144,31 +155,24 @@ router.post(
 	'/password',
 	[
 		body('password')
-			.notEmpty()
-			.withMessage(PASSWORD_REQUIRED)
-			.bail()
-			.matches(
-				/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.><,?'";:\]{}=+\-_)(*^%$#@!~`])/,
-			)
-			.withMessage(INVALID_PASSWORD)
-			.bail()
-			.isLength({ min: 10 })
-			.withMessage(INVALID_PASSWORD_LENGTH),
-		body('code')
-			.notEmpty()
-			.withMessage(CODE_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.exists().withMessage(PASSWORD_REQUIRED)
+			.matches(passwordRegex).withMessage(INVALID_PASSWORD)
+			.isLength({ min: 10, max: 72 }).withMessage(INVALID_PASSWORD_LENGTH),
 		body('type')
-			.notEmpty()
-			.withMessage(TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				const supportedTypes = ['totp', 'email'];
+			.exists().withMessage(TYPE_REQUIRED)
+			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
+		body('code')
+			.exists().withMessage(CODE_REQUIRED)
+			.custom((value, { req }) => {
+				const type = req.body.type as MFATypes;
 
-				if (!supportedTypes.includes(value))
-					throw new CustomValidationError(INVALID_TYPE);
+				if (!type || type.length === 0) return true;
+
+				if (type === 'totp' && !sixDigitCodeRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
+
+				if (type === 'email' && !eightAlphaNumericRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
 
 				return true;
 			}),
@@ -259,29 +263,26 @@ router.post(
 	'/email',
 	[
 		body('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
-		body('code')
-			.notEmpty()
-			.withMessage(CODE_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
 		body('type')
-			.notEmpty()
-			.withMessage(TYPE_REQUIRED)
-			.bail()
-			.custom((value) => {
-				const supportedTypes = ['totp', 'email'];
+			.exists().withMessage(TYPE_REQUIRED)
+			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
+		body('code')
+			.exists().withMessage(CODE_REQUIRED)
+			.custom((value, { req }) => {
+				const type = req.body.type as MFATypes;
 
-				if (!supportedTypes.includes(value))
-					throw new CustomValidationError(INVALID_TYPE);
+				if (!type || type.length === 0) return true;
+
+				if (type === 'totp' && !sixDigitCodeRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
+
+				if (type === 'email' && !eightAlphaNumericRegex.test(value))
+					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
 
 				return true;
 			}),
@@ -413,11 +414,9 @@ router.post(
 	'/email/verify',
 	[
 		body('code')
-			.notEmpty()
-			.withMessage(CODE_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.exists().withMessage(CODE_REQUIRED)
+			.isLength({ min: 8, max: 8 }).withMessage(CODE_LENGTH_MISMATCH)
+			.matches(alphaNumericRegex).withMessage(CODE_FORMAT_INVALID_EMAIL),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),

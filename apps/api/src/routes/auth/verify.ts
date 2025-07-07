@@ -14,6 +14,7 @@ import {
 	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_EMAIL,
+	INVALID_UUID,
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
@@ -35,20 +36,14 @@ router.get(
 	'/',
 	[
 		query('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),
 		query('token')
-			.notEmpty()
-			.withMessage(TOKEN_REQUIRED)
-			.bail()
-			.isString()
-			.withMessage(FIELD_MUST_BE_A_STRING),
+			.exists().withMessage(TOKEN_REQUIRED)
+			.isUUID('4').withMessage(INVALID_UUID),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
@@ -149,11 +144,8 @@ router.post(
 	'/resend',
 	[
 		body('email')
-			.notEmpty()
-			.withMessage(EMAIL_REQUIRED)
-			.bail()
-			.isEmail()
-			.withMessage({
+			.exists().withMessage(EMAIL_REQUIRED)
+			.isEmail().withMessage({
 				code: INVALID_EMAIL.code,
 				message: INVALID_EMAIL.messages[0],
 			}),

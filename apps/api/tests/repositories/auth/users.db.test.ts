@@ -25,7 +25,7 @@ import {
 } from '../../../src/repositories/auth/users';
 import { generateCode } from 'utils-node';
 import { compare } from 'bcrypt';
-import { hashPassword } from '../../../src/services/password';
+import { hashPassword } from '../../../src/utils/password';
 
 describe('User Queries', () => {
     it('should handle initializing email change', async () => {

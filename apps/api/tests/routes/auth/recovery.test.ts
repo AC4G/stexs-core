@@ -77,15 +77,24 @@ describe('Recovery Routes', () => {
 		const response = await request(server)
 			.post('/auth/recovery');
 
+		const data = {
+			location: 'body',
+			path: 'email',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'email',
+					data,
+				},
+				{
+					info: {
+						code: INVALID_EMAIL.code,
+						message: INVALID_EMAIL.messages[0],
 					},
+					data
 				},
 			]).onTest(),
 		);
@@ -171,15 +180,24 @@ describe('Recovery Routes', () => {
 			password: 'Test12345.',
 		});
 
+		const data = {
+			location: 'body',
+			path: 'email',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: EMAIL_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'email',
+					data,
+				},
+				{
+					info: {
+						code: INVALID_EMAIL.code,
+						message: INVALID_EMAIL.messages[0],
 					},
+					data
 				},
 			]).onTest(),
 		);
@@ -219,15 +237,21 @@ describe('Recovery Routes', () => {
 				password: 'Test12345.',
 			});
 
+		const data = {
+			location: 'body',
+			path: 'token',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: TOKEN_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'token',
-					},
+					data,
+				},
+				{
+					info: INVALID_UUID,
+					data
 				},
 			]).onTest(),
 		);
@@ -264,15 +288,25 @@ describe('Recovery Routes', () => {
 				token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			});
 
+		const data = {
+			location: 'body',
+			path: 'password',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: PASSWORD_REQUIRED,
-					data: {
-						location: 'body',
-						path: 'password',
-					},
+					data,
+				},
+				{
+					info: INVALID_PASSWORD,
+					data,
+				},
+				{
+					info: INVALID_PASSWORD_LENGTH,
+					data,
 				},
 			]).onTest(),
 		);
@@ -287,15 +321,21 @@ describe('Recovery Routes', () => {
 				password: 'test123',
 			});
 
+		const data = {
+			location: 'body',
+			path: 'password',
+		};
+
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
 					info: INVALID_PASSWORD,
-					data: {
-						location: 'body',
-						path: 'password',
-					},
+					data,
+				},
+				{
+					info: INVALID_PASSWORD_LENGTH,
+					data,
 				},
 			]).onTest(),
 		);
