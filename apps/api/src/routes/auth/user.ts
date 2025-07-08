@@ -4,29 +4,16 @@ import { body } from 'express-validator';
 import {
 	CODE_EXPIRED,
 	CODE_FORMAT_INVALID_EMAIL,
-	CODE_FORMAT_INVALID_TOTP,
 	CODE_LENGTH_MISMATCH,
 	CODE_REQUIRED,
 	EMAIL_NOT_AVAILABLE,
-	EMAIL_REQUIRED,
-	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_CODE,
-	INVALID_EMAIL,
-	INVALID_PASSWORD,
-	INVALID_PASSWORD_LENGTH,
-	INVALID_TYPE,
 	NEW_PASSWORD_EQUALS_CURRENT,
 	PASSWORD_CHANGE_FAILED,
-	PASSWORD_REQUIRED,
-	TYPE_REQUIRED,
-	UNSUPPORTED_TYPE,
 	USER_NOT_FOUND,
 } from 'utils-node/errors';
-import {
-	CustomValidationError,
-	message,
-} from 'utils-node/messageBuilder';
+import { message } from 'utils-node/messageBuilder';
 import { sendEmailMessage } from '../../producers/emailProducer';
 import logger from '../../logger';
 import { generateCode, isExpired } from 'utils-node';
@@ -56,13 +43,13 @@ import { getActiveUserSessions } from '../../repositories/auth/refreshTokens';
 import { verifyPassword } from '../../utils/password';
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import { alphaNumericRegex } from '../../utils/regex';
 import {
-	alphaNumericRegex,
-	eightAlphaNumericRegex,
-	passwordRegex,
-	sixDigitCodeRegex
-} from '../../utils/regex';
-import { MFATypes, supportedMFAMethods } from '../../types/auth';
+	codeSupportedMFABodyValidator,
+	emailBodyValidator,
+	passwordBodyValidator,
+	typeSupportedMFABodyValidator
+} from '../../utils/validators';
 
 const router = Router();
 
@@ -154,28 +141,9 @@ router.get(
 router.post(
 	'/password',
 	[
-		body('password')
-			.exists().withMessage(PASSWORD_REQUIRED)
-			.matches(passwordRegex).withMessage(INVALID_PASSWORD)
-			.isLength({ min: 10, max: 72 }).withMessage(INVALID_PASSWORD_LENGTH),
-		body('type')
-			.exists().withMessage(TYPE_REQUIRED)
-			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
-		body('code')
-			.exists().withMessage(CODE_REQUIRED)
-			.custom((value, { req }) => {
-				const type = req.body.type as MFATypes;
-
-				if (!type || type.length === 0) return true;
-
-				if (type === 'totp' && !sixDigitCodeRegex.test(value))
-					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
-
-				if (type === 'email' && !eightAlphaNumericRegex.test(value))
-					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
-
-				return true;
-			}),
+		passwordBodyValidator(),
+		typeSupportedMFABodyValidator(),
+		codeSupportedMFABodyValidator(),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
@@ -262,30 +230,9 @@ router.post(
 router.post(
 	'/email',
 	[
-		body('email')
-			.exists().withMessage(EMAIL_REQUIRED)
-			.isEmail().withMessage({
-				code: INVALID_EMAIL.code,
-				message: INVALID_EMAIL.messages[0],
-			}),
-		body('type')
-			.exists().withMessage(TYPE_REQUIRED)
-			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
-		body('code')
-			.exists().withMessage(CODE_REQUIRED)
-			.custom((value, { req }) => {
-				const type = req.body.type as MFATypes;
-
-				if (!type || type.length === 0) return true;
-
-				if (type === 'totp' && !sixDigitCodeRegex.test(value))
-					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
-
-				if (type === 'email' && !eightAlphaNumericRegex.test(value))
-					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
-
-				return true;
-			}),
+		emailBodyValidator(),
+		typeSupportedMFABodyValidator(),
+		codeSupportedMFABodyValidator(),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),

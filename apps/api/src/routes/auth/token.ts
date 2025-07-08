@@ -1,8 +1,7 @@
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { CustomValidationError } from 'utils-node/messageBuilder';
 import { Request } from 'express-jwt';
 import {
-	CLIENT_ID_REQUIRED,
 	CLIENT_SECRET_REQUIRED,
 	CODE_FORMAT_INVALID_EMAIL,
 	CODE_FORMAT_INVALID_TOTP,
@@ -11,12 +10,9 @@ import {
 	GRANT_TYPE_REQUIRED,
 	IDENTIFIER_REQUIRED,
 	INVALID_GRANT_TYPE,
-	INVALID_TYPE,
 	INVALID_UUID,
-	PASSWORD_REQUIRED,
 	REFRESH_TOKEN_REQUIRED,
 	TOKEN_REQUIRED,
-	TYPE_REQUIRED,
 } from 'utils-node/errors';
 import logger from '../../logger';
 import { body, cookie, query } from 'express-validator';
@@ -39,10 +35,17 @@ import {
   grantTypesRequiringRefreshToken,
   MFATypes,
 } from '../../types/auth';
-import { decodeMFAChallengeToken, decodeRefreshToken } from '../../utils/validators';
+import {
+	clientIdBodyValidator,
+	decodeMFAChallengeToken,
+	decodeRefreshToken,
+	passwordBodyValidator,
+	typeSupportedMFABodyValidator
+} from '../../utils/validators';
 import { isGrantType } from '../../utils/grantType';
 import { validateUUIDV4 } from '../../utils/uuid';
 import { eightAlphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
+import { mfaValidationMiddleware } from '../../utils/mfa';
 
 const router = Router();
 
@@ -55,16 +58,13 @@ router.post(
 				code: INVALID_GRANT_TYPE.code,
 				message: INVALID_GRANT_TYPE.messages[1],
 			}),
-		body('client_id')
-			.if((_, { req }) => {
-				const grantType = req.query?.grant_type;
+		clientIdBodyValidator((_, { req }) => {
+			const grantType = req.query?.grant_type;
 
-				if (!isGrantType(grantType)) return false;
+			if (!isGrantType(grantType)) return false;
 
-				return grantTypesRequiringClientCreds.includes(grantType as typeof grantTypesRequiringClientCreds[number]);
-			})
-			.exists().withMessage(CLIENT_ID_REQUIRED)
-			.isUUID('4').withMessage(INVALID_UUID),
+			return grantTypesRequiringClientCreds.includes(grantType as typeof grantTypesRequiringClientCreds[number]);
+		}),
 		body('client_secret')
 			.if((_, { req }) => {
 				const grantType = req.query?.grant_type;
@@ -100,26 +100,20 @@ router.post(
 			.exists().withMessage(IDENTIFIER_REQUIRED)
 			.isString().withMessage(FIELD_MUST_BE_A_STRING)
 			.escape(),
-		body('password')
-			.if((_, { req }) => {
-				const grantType = req.query?.grant_type;
+		passwordBodyValidator((_, { req }) => {
+			const grantType = req.query?.grant_type;
 
-				if (!isGrantType(grantType)) return false;
+			if (!isGrantType(grantType)) return false;
 
-				return grantTypesForPassword.includes(grantType as typeof grantTypesForPassword[number]);
-			})
-			.exists().withMessage(PASSWORD_REQUIRED)
-			.isString().withMessage(FIELD_MUST_BE_A_STRING),
-		body('type')
-			.if((_, { req }) => {
-				const grantType = req.query?.grant_type;
+			return grantTypesForPassword.includes(grantType as typeof grantTypesForPassword[number]);
+		}),
+		typeSupportedMFABodyValidator((_, { req }) => {
+			const grantType = req.query?.grant_type;
 
-				if (!isGrantType(grantType)) return false;
+			if (!isGrantType(grantType)) return false;
 
-				return grantTypesForMFA.includes(grantType as typeof grantTypesForMFA[number]);
-			})
-			.exists().withMessage(TYPE_REQUIRED)
-			.isIn(supportedMFATypes).withMessage(INVALID_TYPE),
+			return grantTypesForMFA.includes(grantType as typeof grantTypesForMFA[number]);
+		}),
 		body('code')
 			.if((_, { req }) => {
 				const grantType = req.query?.grant_type;
@@ -170,6 +164,29 @@ router.post(
 				return true;
 			}),
 		validate(logger),
+		(req: Request, res: Response, next: NextFunction) => {
+			const grantType = req.query?.grant_type;
+
+			if (!isGrantType(grantType)) return next();
+
+			if (!grantTypesForMFA.includes(grantType as typeof grantTypesForMFA[number])) return next();
+
+			const type = req.body.type as MFATypes | undefined;
+
+			if (!type || type.length === 0) return true;
+
+			if (!supportedMFATypes.includes(type)) return true;
+
+			const code = req.body.code as string | undefined;
+
+			if (!code) return next();
+
+			if (type === 'totp' && !sixDigitCodeRegex.test(code)) return next();
+
+			if (type === 'email' && !eightAlphaNumericRegex.test(code)) return next();
+
+			return mfaValidationMiddleware()(req, res, next);
+		},
 	],
 	async (req: Request, res: Response) => {
 		const grantType = req.query.grant_type as GrantTypes;

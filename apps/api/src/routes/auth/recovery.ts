@@ -5,16 +5,12 @@ import {
 } from 'express';
 import { body } from 'express-validator';
 import {
-	EMAIL_REQUIRED,
 	INTERNAL_ERROR,
 	INVALID_EMAIL,
-	INVALID_PASSWORD,
-	INVALID_PASSWORD_LENGTH,
 	INVALID_REQUEST,
 	INVALID_UUID,
 	NEW_PASSWORD_EQUALS_CURRENT,
 	PASSWORD_CHANGE_FAILED,
-	PASSWORD_REQUIRED,
 	RECOVERY_CONFIRM_WITHOUT_RECOVERY_REQUESTED,
 	RECOVERY_LINK_EXPIRED,
 	TOKEN_REQUIRED,
@@ -36,19 +32,14 @@ import {
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 import { verifyPassword } from '../../utils/password';
-import { passwordRegex } from '../../utils/regex';
+import { emailBodyValidator, passwordBodyValidator } from '../../utils/validators';
 
 const router = Router();
 
 router.post(
 	'/',
 	[
-		body('email')
-			.exists().withMessage(EMAIL_REQUIRED)
-			.isEmail().withMessage({
-				code: INVALID_EMAIL.code,
-				message: INVALID_EMAIL.messages[0],
-			}),
+		emailBodyValidator(),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
@@ -188,19 +179,11 @@ router.post(
 router.post(
 	'/confirm',
 	[
-		body('email')
-			.exists().withMessage(EMAIL_REQUIRED)
-			.isEmail().withMessage({
-				code: INVALID_EMAIL.code,
-				message: INVALID_EMAIL.messages[0],
-			}),
+		emailBodyValidator(),
 		body('token')
 			.exists().withMessage(TOKEN_REQUIRED)
 			.isUUID('4').withMessage(INVALID_UUID),
-		body('password')
-			.exists().withMessage(PASSWORD_REQUIRED)
-			.matches(passwordRegex).withMessage(INVALID_PASSWORD)
-			.isLength({ min: 10, max: 72 }).withMessage(INVALID_PASSWORD_LENGTH),
+		passwordBodyValidator(),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {

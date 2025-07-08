@@ -27,14 +27,16 @@ import {
 	INVALID_CLIENT_CREDENTIALS,
 	INVALID_GRANT_TYPE,
 	INVALID_MFA_CHALLENGE_TOKEN,
+	INVALID_PASSWORD,
+	INVALID_PASSWORD_LENGTH,
 	INVALID_REFRESH_TOKEN,
-	INVALID_TYPE,
 	INVALID_UUID,
 	NO_CLIENT_SCOPES_SELECTED,
 	PASSWORD_REQUIRED,
 	REFRESH_TOKEN_REQUIRED,
 	TOKEN_REQUIRED,
 	TYPE_REQUIRED,
+	UNSUPPORTED_TYPE,
 	USER_NOT_FOUND
 } from 'utils-node/errors';
 import { message } from 'utils-node/messageBuilder';
@@ -49,6 +51,7 @@ import {
 } from '../../../env-config';
 import { hashPassword } from '../../../src/utils/password';
 import { v4 as uuidv4 } from 'uuid';
+import { getTOTPForVerification } from '../../../src/utils/totp';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -708,7 +711,7 @@ describe('Token Route', () => {
 	it('should handle sign in without identifier', async () => {
 		const response = await request(server)
 			.post('/auth/token?grant_type=password')
-			.send({ password: 'Test123.' });
+			.send({ password: 'Test123324.' });
 
 		const data = {
 			location: 'body',
@@ -748,9 +751,13 @@ describe('Token Route', () => {
 					data,
 				},
 				{
-					info: FIELD_MUST_BE_A_STRING,
+					info: INVALID_PASSWORD,
 					data,
 				},
+				{
+					info: INVALID_PASSWORD_LENGTH,
+					data,
+				}
 			]).onTest(),
 		);
 	});
@@ -765,7 +772,7 @@ describe('Token Route', () => {
 			.post('/auth/token?grant_type=password')
 			.send({
 				identifier: 'test',
-				password: 'Test123.',
+				password: 'Test123324.',
 			});
 
 		expect(response.status).toBe(404);
@@ -783,7 +790,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in without verified email', async () => {
-		const password = 'Test123.';
+		const password = 'Test123324.';
 		const passwordHash = await hashPassword(password);
 
 		mockQuery.mockResolvedValueOnce({
@@ -810,7 +817,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in initialization with email MFA', async () => {
-		const password = 'Test123.';
+		const password = 'Test123324.';
 		const passwordHash = await hashPassword(password);
 
 		mockQuery.mockResolvedValueOnce({
@@ -845,7 +852,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in initialization with totp MFA', async () => {
-		const password = 'Test123.';
+		const password = 'Test123324.';
 		const passwordHash = await hashPassword(password);
 
 		mockQuery.mockResolvedValueOnce({
@@ -948,7 +955,7 @@ describe('Token Route', () => {
 					data,
 				},
 				{
-					info: INVALID_TYPE,
+					info: UNSUPPORTED_TYPE,
 					data
 				},
 			]).onTest(),
@@ -1007,7 +1014,7 @@ describe('Token Route', () => {
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
-					info: INVALID_TYPE,
+					info: UNSUPPORTED_TYPE,
 					data: {
 						location: 'body',
 						path: 'type',
@@ -1087,8 +1094,15 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in mfa challenge', async () => {
+		const totpSecret = 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ';
+
+		const code = getTOTPForVerification(totpSecret).generate();
+		
 		const token = sign(
-			{ grant_type: 'mfa_challenge' },
+			{
+				sub: uuidv4(),
+				grant_type: 'mfa_challenge'
+			},
 			MFA_CHALLENGE_TOKEN_SECRET,
 			{
 				audience: AUDIENCE,
@@ -1097,10 +1111,20 @@ describe('Token Route', () => {
 			},
 		);
 
+		mockQuery.mockResolvedValueOnce({
+			rows: [
+				{
+					totp_secret: totpSecret,
+					totp_verified_at: '2023-09-15T12:00:00',
+				}
+			],
+			rowCount: 1,
+		} as never);
+
 		const response = await request(server)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
-				code: 345678,
+				code,
 				type: 'totp',
 				token,
 			});

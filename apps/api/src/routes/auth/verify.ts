@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { message } from 'utils-node/messageBuilder';
-import { body, query } from 'express-validator';
+import { query } from 'express-validator';
 import {
 	EMAIL_VERIFICATION_CODE_EXPIRATION,
 	ISSUER,
@@ -11,7 +11,6 @@ import {
 	EMAIL_ALREADY_VERIFIED,
 	EMAIL_NOT_FOUND,
 	EMAIL_REQUIRED,
-	FIELD_MUST_BE_A_STRING,
 	INTERNAL_ERROR,
 	INVALID_EMAIL,
 	INVALID_UUID,
@@ -29,6 +28,7 @@ import {
 } from '../../repositories/auth/users';
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import { emailBodyValidator } from '../../utils/validators';
 
 const router = Router();
 
@@ -143,12 +143,7 @@ router.get(
 router.post(
 	'/resend',
 	[
-		body('email')
-			.exists().withMessage(EMAIL_REQUIRED)
-			.isEmail().withMessage({
-				code: INVALID_EMAIL.code,
-				message: INVALID_EMAIL.messages[0],
-			}),
+		emailBodyValidator(),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {

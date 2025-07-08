@@ -1,17 +1,7 @@
 import { Router, Response } from 'express';
 import { Request } from 'express-jwt';
-import {
-	CustomValidationError,
-	message,
-} from 'utils-node/messageBuilder';
-import {
-	CODE_FORMAT_INVALID_EMAIL,
-	CODE_FORMAT_INVALID_TOTP,
-	CODE_REQUIRED,
-	INTERNAL_ERROR,
-	TYPE_REQUIRED,
-	UNSUPPORTED_TYPE,
-} from 'utils-node/errors';
+import { message } from 'utils-node/messageBuilder';
+import { INTERNAL_ERROR } from 'utils-node/errors';
 import logger from '../../logger';
 import {
 	ACCESS_TOKEN_SECRET,
@@ -24,11 +14,9 @@ import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 } from 'utils-node/middlewares';
-import { body } from 'express-validator';
 import { mfaValidationMiddleware } from '../../utils/mfa';
 import { signOutFromAllSessions, signOutFromSession } from '../../repositories/auth/refreshTokens';
-import { supportedMFAMethods } from '../../types/auth';
-import { eightAlphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
+import { codeSupportedMFABodyValidator, typeSupportedMFABodyValidator } from '../../utils/validators';
 
 const router = Router();
 
@@ -75,24 +63,8 @@ router.post(
 router.post(
 	'/all-sessions',
 	[
-		body('type')
-			.exists().withMessage(TYPE_REQUIRED)
-			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
-		body('code')
-			.exists().withMessage(CODE_REQUIRED)
-			.custom((value, { req }) => {
-				const type = req.body.type;
-
-				if (!type || type.length === 0) return true;
-
-				if (type === 'totp' && !sixDigitCodeRegex.test(value))
-					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
-
-				if (type === 'email' && !eightAlphaNumericRegex.test(value))
-					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
-
-				return true;
-			}),
+		typeSupportedMFABodyValidator(),
+		codeSupportedMFABodyValidator(),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),

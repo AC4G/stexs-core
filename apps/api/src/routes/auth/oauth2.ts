@@ -4,7 +4,6 @@ import { message } from 'utils-node/messageBuilder';
 import { body, param } from 'express-validator';
 import {
 	ARRAY_MIN_ONE_REQUIRED,
-	CLIENT_ID_REQUIRED,
 	CLIENT_NOT_FOUND,
 	CONNECTION_ALREADY_REVOKED,
 	CONNECTION_ID_NOT_NUMERIC,
@@ -15,7 +14,6 @@ import {
 	INVALID_REDIRECT_URL,
 	INVALID_SCOPES,
 	INVALID_URL,
-	INVALID_UUID,
 	REDIRECT_URL_REQUIRED,
 	REFRESH_TOKEN_REQUIRED,
 	SCOPES_REQUIRED,
@@ -44,15 +42,14 @@ import { updateConnectionScopes } from '../../repositories/public/oauth2Connecti
 import { deleteOAuth2Connection, revokeOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
 import db from '../../db';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import { clientIdBodyValidator } from '../../utils/validators';
 
 const router = Router();
 
 router.post(
 	'/authorize',
 	[
-		body('client_id')
-			.exists().withMessage(CLIENT_ID_REQUIRED)
-			.isUUID('4').withMessage(INVALID_UUID),
+		clientIdBodyValidator(),
 		body('redirect_url')
 			.notEmpty().withMessage(REDIRECT_URL_REQUIRED)
 			.isURL().withMessage(INVALID_URL),
