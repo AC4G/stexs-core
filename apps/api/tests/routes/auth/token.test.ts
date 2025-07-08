@@ -51,6 +51,7 @@ import {
 } from '../../../env-config';
 import { hashPassword } from '../../../src/utils/password';
 import { v4 as uuidv4 } from 'uuid';
+import { getTOTPForVerification } from '../../../src/utils/totp';
 
 jest.mock('utils-node/middlewares', () => {
 	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
@@ -1093,8 +1094,15 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in mfa challenge', async () => {
+		const totpSecret = 'VGQZ4UCUUEC22H4QRRRHK64NKMQC4WBZ';
+
+		const code = getTOTPForVerification(totpSecret).generate();
+		
 		const token = sign(
-			{ grant_type: 'mfa_challenge' },
+			{
+				sub: uuidv4(),
+				grant_type: 'mfa_challenge'
+			},
 			MFA_CHALLENGE_TOKEN_SECRET,
 			{
 				audience: AUDIENCE,
@@ -1103,10 +1111,20 @@ describe('Token Route', () => {
 			},
 		);
 
+		mockQuery.mockResolvedValueOnce({
+			rows: [
+				{
+					totp_secret: totpSecret,
+					totp_verified_at: '2023-09-15T12:00:00',
+				}
+			],
+			rowCount: 1,
+		} as never);
+
 		const response = await request(server)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
-				code: 345678,
+				code,
 				type: 'totp',
 				token,
 			});

@@ -131,8 +131,6 @@ export async function validateMFA(
 }
 export function mfaValidationMiddleware() {
 	return (req: JWTRequest, res: Response, next: NextFunction) => {
-		logger.error('MFA validation middleware called');
-
 		const userId = req.auth?.sub!;
 		const {
 			type,

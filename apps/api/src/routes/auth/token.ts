@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { CustomValidationError } from 'utils-node/messageBuilder';
 import { Request } from 'express-jwt';
 import {
@@ -45,6 +45,7 @@ import {
 import { isGrantType } from '../../utils/grantType';
 import { validateUUIDV4 } from '../../utils/uuid';
 import { eightAlphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
+import { mfaValidationMiddleware } from '../../utils/mfa';
 
 const router = Router();
 
@@ -163,6 +164,29 @@ router.post(
 				return true;
 			}),
 		validate(logger),
+		(req: Request, res: Response, next: NextFunction) => {
+			const grantType = req.query?.grant_type;
+
+			if (!isGrantType(grantType)) return next();
+
+			if (!grantTypesForMFA.includes(grantType as typeof grantTypesForMFA[number])) return next();
+
+			const type = req.body.type as MFATypes | undefined;
+
+			if (!type || type.length === 0) return true;
+
+			if (!supportedMFATypes.includes(type)) return true;
+
+			const code = req.body.code as string | undefined;
+
+			if (!code) return next();
+
+			if (type === 'totp' && !sixDigitCodeRegex.test(code)) return next();
+
+			if (type === 'email' && !eightAlphaNumericRegex.test(code)) return next();
+
+			return mfaValidationMiddleware()(req, res, next);
+		},
 	],
 	async (req: Request, res: Response) => {
 		const grantType = req.query.grant_type as GrantTypes;
