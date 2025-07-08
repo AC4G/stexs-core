@@ -1,9 +1,9 @@
 import ip from 'ip';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import authRouter from './routes/auth/router';
 import storageRouter from './routes/storage/router';
-import { ENV, SERVER_PORT } from '../env-config';
+import { ENV, LOG_LEVEL, SERVER_PORT } from '../env-config';
 import logger from './logger';
 import responseTime from 'response-time';
 import { message } from 'utils-node/messageBuilder';
@@ -14,11 +14,6 @@ import { Server } from 'http';
 import { initEmailProducer } from './producers/emailProducer';
 import { extractError } from 'utils-node/logger';
 import cookieParser from 'cookie-parser';
-
-process.on('uncaughtException', (err) => {
-	logger.error(`Uncaught Exception: ${err.message}`);
-	process.exit(1);
-});
 
 (async () => {
 	logger.info('Initializing pulsar producers...')
@@ -89,15 +84,25 @@ app.use((req, res, next) => {
 	next();
 });
 
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+	logger.error(`Internal Server Error. Error:  ${err.message}`, {
+		error: extractError(err)
+	});
+
+	res.status(500).json(message('Internal Server Error', {}));
+
+	next();
+})
+
 let server: Server;
 
 if (ENV !== 'test') {
 	server = app.listen(SERVER_PORT, () => {
-		logger.info(`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`);
+		logger.info(`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`, { LOG_LEVEL });
 	});
 }
 
-const closeServer = async () => {
+const closeServer = async (exitCode: number = 0) => {
 	try {
 		await db.close();
 		
@@ -109,6 +114,16 @@ const closeServer = async () => {
 	logger.info('Server shutted down.');
 	process.exit(0);
 }
+
+process.on('uncaughtException', (err) => {
+	logger.error(`Uncaught Exception: ${err.message}`, { error: extractError(err) });
+	closeServer(1);
+});
+
+process.on('unhandledRejection', (err) => {
+	logger.error(`Unhandled Rejection: ${err instanceof Error ? err.message : err}`, { error: extractError(err) });
+	closeServer(1);
+});
 
 process.on('SIGINT', async () => {
 	logger.info('Received SIGINT. Shutting down gracefully...');

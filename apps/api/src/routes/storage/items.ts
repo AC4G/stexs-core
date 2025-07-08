@@ -20,28 +20,18 @@ import logger from '../../logger';
 import { Request } from 'express-jwt';
 import db from '../../db';
 import { message } from 'utils-node/messageBuilder';
-import {
-	INTERNAL_ERROR,
-	ITEM_ID_NOT_NUMERIC,
-	ITEM_ID_REQUIRED,
-	UNAUTHORIZED_ACCESS,
-} from 'utils-node/errors';
+import { INTERNAL_ERROR, UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import s3 from '../../s3';
-import { param } from 'express-validator';
 import { isUserAdminOrOwnerOfProjectByItemId } from '../../repositories/public/projectMembers';
 import { isClientAllowedToAccessProjectByItemId } from '../../repositories/public/items';
+import { itemIdQueryValidator } from '../../utils/validators';
 
 const router = Router();
 
 router.get(
 	'/thumbnail/:itemId',
 	[
-		param('itemId')
-			.notEmpty()
-			.withMessage(ITEM_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(ITEM_ID_NOT_NUMERIC),
+		itemIdQueryValidator,
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
@@ -72,12 +62,7 @@ router.get(
 router.post(
 	'/thumbnail/:itemId',
 	[
-		param('itemId')
-			.notEmpty()
-			.withMessage(ITEM_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(ITEM_ID_NOT_NUMERIC),
+		itemIdQueryValidator,
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),

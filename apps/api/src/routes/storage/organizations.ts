@@ -1,13 +1,7 @@
 import { Router, Response } from 'express';
 import logger from '../../logger';
 import { Request } from 'express-jwt';
-import { param } from 'express-validator';
-import {
-	INTERNAL_ERROR,
-	ORGANIZATION_ID_NOT_NUMERIC,
-	ORGANIZATION_ID_REQUIRED,
-	UNAUTHORIZED_ACCESS,
-} from 'utils-node/errors';
+import { INTERNAL_ERROR, UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import {
 	validate,
 	checkScopes,
@@ -29,18 +23,14 @@ import db from '../../db';
 import { message } from 'utils-node/messageBuilder';
 import s3 from '../../s3';
 import { isUserAdminOrOwnerOfOrganization } from '../../repositories/public/organizationMembers';
+import { organizationIdQueryValidator } from '../../utils/validators';
 
 const router = Router();
 
 router.get(
 	'/:organizationId',
 	[
-		param('organizationId')
-			.notEmpty()
-			.withMessage(ORGANIZATION_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(ORGANIZATION_ID_NOT_NUMERIC),
+		organizationIdQueryValidator,
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
@@ -71,12 +61,7 @@ router.get(
 router.post(
 	'/:organizationId',
 	[
-		param('organizationId')
-			.notEmpty()
-			.withMessage(ORGANIZATION_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(ORGANIZATION_ID_NOT_NUMERIC),
+		organizationIdQueryValidator,
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
@@ -174,12 +159,7 @@ router.post(
 router.delete(
 	'/:organizationId',
 	[
-		param('organizationId')
-			.notEmpty()
-			.withMessage(ORGANIZATION_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(ORGANIZATION_ID_NOT_NUMERIC),
+		organizationIdQueryValidator,
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),

@@ -1,13 +1,7 @@
 import { Router, Response } from 'express';
 import logger from '../../logger';
 import { Request } from 'express-jwt';
-import { param } from 'express-validator';
-import {
-	INTERNAL_ERROR,
-	PROJECT_ID_NOT_NUMERIC,
-	PROJECT_ID_REQUIRED,
-	UNAUTHORIZED_ACCESS,
-} from 'utils-node/errors';
+import { INTERNAL_ERROR, UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import db from '../../db';
 import { message } from 'utils-node/messageBuilder';
 import {
@@ -30,18 +24,14 @@ import {
 } from 'utils-node/middlewares';
 import { isUserAdminOrOwnerOfProject } from '../../repositories/public/projectMembers';
 import { isClientAllowedToAccessProject } from '../../repositories/public/projects';
+import { projectIdQueryValidator } from '../../utils/validators';
 
 const router = Router();
 
 router.get(
 	'/:projectId',
 	[
-		param('projectId')
-			.notEmpty()
-			.withMessage(PROJECT_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(PROJECT_ID_NOT_NUMERIC),
+		projectIdQueryValidator,
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {
@@ -72,12 +62,7 @@ router.get(
 router.post(
 	'/:projectId',
 	[
-		param('projectId')
-			.notEmpty()
-			.withMessage(PROJECT_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(PROJECT_ID_NOT_NUMERIC),
+		projectIdQueryValidator,
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
@@ -179,12 +164,7 @@ router.post(
 router.delete(
 	'/:projectId',
 	[
-		param('projectId')
-			.notEmpty()
-			.withMessage(PROJECT_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(PROJECT_ID_NOT_NUMERIC),
+		projectIdQueryValidator,
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),

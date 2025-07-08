@@ -629,8 +629,8 @@ export async function mfaChallengeController(req: Request, res: Response) {
 
 		res.cookie('refresh_token', refresh_token, {
 			httpOnly: true,
-			secure: true,
-			sameSite: 'strict',
+			secure: false,
+			sameSite: 'lax',
 			path: `${KONG_STEXS_API_PATH}/auth/token?grant_type=refresh_token`,
 		});
 

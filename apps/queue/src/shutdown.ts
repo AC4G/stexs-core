@@ -57,4 +57,8 @@ export function registerShutdownHooks(pulsarClient: pulsar.Client) {
     logger.error(`Uncaught Exception: ${err.message}`);
     cleanupAndExit(1);
   });
+  process.on('unhandledRejection', (err) => {
+    logger.error(`Unhandled Rejection: ${err instanceof Error ? err.message : err}`, { error: extractError(err) });
+    cleanupAndExit(1);
+  });
 }

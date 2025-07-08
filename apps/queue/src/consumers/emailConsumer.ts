@@ -49,6 +49,8 @@ function buildEmailConsumerLoop(loop: Omit<ConsumerLoop, 'loopPromise'>): Promis
   })();
 }
 
+// create consumer for dlq to add atomacy
+
 export async function setupEmailConsumer(controller: ShutdownController) {
   const emailConsumer = await pulsarClient.subscribe({
     topic: EMAIL_TOPIC,

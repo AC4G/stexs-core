@@ -1,11 +1,11 @@
 {
     "name": "api",
     "version": "1.0.0",
-    "main": "./src/server.ts",
+    "main": "./src/index.ts",
     "type": "commonjs",
     "scripts": {
         "build": "tsc",
-        "dev": "wait-on ../../packages/utils-node/dist/index.js && tsc-watch --onSuccess \"node ./dist/src/server.js\"",
+        "dev": "wait-on ../../packages/utils-node/dist/index.js && tsc-watch --onSuccess \"node ./dist/src/index.js\"",
         "test:unit": "jest --verbose --silent=false --selectProjects unit-tests",
         "test:db": "jest --verbose --runInBand --silent=false --selectProjects db-tests",
         "test": "npm run test:unit && npm run test:db",
