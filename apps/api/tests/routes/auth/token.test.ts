@@ -27,14 +27,16 @@ import {
 	INVALID_CLIENT_CREDENTIALS,
 	INVALID_GRANT_TYPE,
 	INVALID_MFA_CHALLENGE_TOKEN,
+	INVALID_PASSWORD,
+	INVALID_PASSWORD_LENGTH,
 	INVALID_REFRESH_TOKEN,
-	INVALID_TYPE,
 	INVALID_UUID,
 	NO_CLIENT_SCOPES_SELECTED,
 	PASSWORD_REQUIRED,
 	REFRESH_TOKEN_REQUIRED,
 	TOKEN_REQUIRED,
 	TYPE_REQUIRED,
+	UNSUPPORTED_TYPE,
 	USER_NOT_FOUND
 } from 'utils-node/errors';
 import { message } from 'utils-node/messageBuilder';
@@ -708,7 +710,7 @@ describe('Token Route', () => {
 	it('should handle sign in without identifier', async () => {
 		const response = await request(server)
 			.post('/auth/token?grant_type=password')
-			.send({ password: 'Test123.' });
+			.send({ password: 'Test123324.' });
 
 		const data = {
 			location: 'body',
@@ -748,9 +750,13 @@ describe('Token Route', () => {
 					data,
 				},
 				{
-					info: FIELD_MUST_BE_A_STRING,
+					info: INVALID_PASSWORD,
 					data,
 				},
+				{
+					info: INVALID_PASSWORD_LENGTH,
+					data,
+				}
 			]).onTest(),
 		);
 	});
@@ -765,7 +771,7 @@ describe('Token Route', () => {
 			.post('/auth/token?grant_type=password')
 			.send({
 				identifier: 'test',
-				password: 'Test123.',
+				password: 'Test123324.',
 			});
 
 		expect(response.status).toBe(404);
@@ -783,7 +789,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in without verified email', async () => {
-		const password = 'Test123.';
+		const password = 'Test123324.';
 		const passwordHash = await hashPassword(password);
 
 		mockQuery.mockResolvedValueOnce({
@@ -810,7 +816,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in initialization with email MFA', async () => {
-		const password = 'Test123.';
+		const password = 'Test123324.';
 		const passwordHash = await hashPassword(password);
 
 		mockQuery.mockResolvedValueOnce({
@@ -845,7 +851,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in initialization with totp MFA', async () => {
-		const password = 'Test123.';
+		const password = 'Test123324.';
 		const passwordHash = await hashPassword(password);
 
 		mockQuery.mockResolvedValueOnce({
@@ -948,7 +954,7 @@ describe('Token Route', () => {
 					data,
 				},
 				{
-					info: INVALID_TYPE,
+					info: UNSUPPORTED_TYPE,
 					data
 				},
 			]).onTest(),
@@ -1007,7 +1013,7 @@ describe('Token Route', () => {
 		expect(response.body).toEqual(
 			message('Validation of request data failed.', {}, [
 				{
-					info: INVALID_TYPE,
+					info: UNSUPPORTED_TYPE,
 					data: {
 						location: 'body',
 						path: 'type',

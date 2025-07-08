@@ -8,14 +8,9 @@ import { message } from 'utils-node/messageBuilder';
 import { body } from 'express-validator';
 import { ISSUER } from '../../../env-config';
 import {
-	EMAIL_REQUIRED,
 	INTERNAL_ERROR,
-	INVALID_EMAIL,
 	INVALID_INPUT_DATA,
-	INVALID_PASSWORD,
-	INVALID_PASSWORD_LENGTH,
 	INVALID_USERNAME,
-	PASSWORD_REQUIRED,
 	USERNAME_REQUIRED,
 } from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,7 +20,8 @@ import { signUpUser } from '../../repositories/auth/users';
 import { hashPassword } from '../../utils/password';
 import AppError, { transformAppErrorToResponse } from '../../utils/appError';
 import db from '../../db';
-import { passwordRegex, usernameRegex } from '../../utils/regex';
+import { usernameRegex } from '../../utils/regex';
+import { emailBodyValidator, passwordBodyValidator } from '../../utils/validators';
 
 const router = Router();
 
@@ -47,16 +43,8 @@ router.post(
 				code: INVALID_USERNAME.code,
 				message: INVALID_USERNAME.messages[2],
 			}),
-		body('email')
-			.exists().withMessage(EMAIL_REQUIRED)
-			.isEmail().withMessage({
-				code: INVALID_EMAIL.code,
-				message: INVALID_EMAIL.messages[0],
-			}),
-		body('password')
-			.exists().withMessage(PASSWORD_REQUIRED)
-			.matches(passwordRegex).withMessage(INVALID_PASSWORD)
-			.isLength({ min: 10, max: 72 }).withMessage(INVALID_PASSWORD_LENGTH),
+		emailBodyValidator(),
+		passwordBodyValidator(),
 		validate(logger),
 	],
 	async (req: Request, res: Response) => {

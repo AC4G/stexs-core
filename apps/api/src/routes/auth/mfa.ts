@@ -38,14 +38,10 @@ import { getMFAStatus } from '../../repositories/auth/mfa';
 import {
 	MFATypes,
 	sendCodeMFAMethod,
-	supportedMFAMethods,
 	verifyMFAMethod
 } from '../../types/auth';
-import {
-	alphaNumericRegex,
-	eightAlphaNumericRegex,
-	sixDigitCodeRegex
-} from '../../utils/regex';
+import { alphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
+import { codeSupportedMFABodyValidator, typeSupportedMFABodyValidator } from '../../utils/validators';
 
 const router = Router();
 
@@ -98,9 +94,7 @@ router.get(
 router.post(
 	'/enable',
 	[
-		body('type')
-			.exists().withMessage(TYPE_REQUIRED)
-			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
+		typeSupportedMFABodyValidator(),
 		body('code')
 			.if((_, { req }) => {
 				const type = req.body.type as MFATypes;
@@ -135,24 +129,8 @@ router.post(
 router.post(
 	'/disable',
 	[
-		body('type')
-			.exists().withMessage(TYPE_REQUIRED)
-			.isIn(supportedMFAMethods).withMessage(UNSUPPORTED_TYPE),
-		body('code')
-			.exists().withMessage(CODE_REQUIRED)
-			.custom((value, { req }) => {
-				const type = req.body.type as MFATypes;
-
-				if (!type || type.length === 0) return true;
-
-				if (type === 'totp' && !sixDigitCodeRegex.test(value))
-					throw new CustomValidationError(CODE_FORMAT_INVALID_TOTP);
-
-				if (type === 'email' && !eightAlphaNumericRegex.test(value))
-					throw new CustomValidationError(CODE_FORMAT_INVALID_EMAIL);
-
-				return true;
-			}),
+		typeSupportedMFABodyValidator(),
+		codeSupportedMFABodyValidator(),
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
