@@ -321,6 +321,8 @@ describe('Email Verification Routes', () => {
 			.post('/auth/verify/resend')
 			.send({ email: 'test@example.com' });
 
+		console.log(JSON.stringify(response.body));
+
 		expect(response.status).toBe(404);
 		expect(response.body).toEqual(
 			message('Email not found.', {}, [
@@ -376,7 +378,7 @@ describe('Email Verification Routes', () => {
 
 		expect(response.status).toBe(200);
 		expect(response.body).toEqual(
-			message(`New verification email has been sent to ${email}`).onTest(),
+			message('New verification email has been sent').onTest(),
 		);
 	});
 });

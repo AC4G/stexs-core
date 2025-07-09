@@ -5,19 +5,17 @@ import {
 	Logger
 } from 'winston';
 
-export function createConsoleLogger(service: string, LOG_LEVEL: string): Logger {
+export function createConsoleLogger(service: string, LOG_LEVEL: string, ENV: string): Logger {
 	return createLogger({
 		level: LOG_LEVEL,
-		defaultMeta: {
-			service,
-		},
+		defaultMeta: { service },
 		format: format.combine(
 			format.colorize(),
 			format.timestamp(),
 			format.printf(({ level, message, timestamp, ...meta }) => {
 				const baseMsg = typeof message === 'string' ? message : JSON.stringify(message);
-				const metaMsg = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
-				return `${timestamp} [${level}]: ${baseMsg}${metaMsg}`;
+				const metaMsg = Object.keys(meta).length ? JSON.stringify(meta, null, ENV === 'prod' || ENV === 'test' ? 0 : 2) : '';
+				return `${timestamp} [${level}]: ${baseMsg}${metaMsg ? ` ${metaMsg}` : ''}`;
 			}),
 		),
 		transports: [

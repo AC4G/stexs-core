@@ -344,7 +344,7 @@ describe('Sign Up', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			message('Failed to sign up because of invalid input.', {}, [
+			message('Invalid input data.', {}, [
 				{
 					info: {
 						code: INVALID_INPUT_DATA.code,
@@ -374,7 +374,7 @@ describe('Sign Up', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
-			message('Failed to sign up because of invalid input.', {}, [
+			message('Invalid input data.', {}, [
 				{
 					info: {
 						code: INVALID_INPUT_DATA.code,

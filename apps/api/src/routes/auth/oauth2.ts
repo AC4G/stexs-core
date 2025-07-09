@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { Request } from 'express-jwt';
 import { message } from 'utils-node/messageBuilder';
 import { body, param } from 'express-validator';
@@ -41,8 +41,9 @@ import { insertOrUpdateAuthorizationCodeScopes } from '../../repositories/auth/o
 import { updateConnectionScopes } from '../../repositories/public/oauth2ConnectionScopes';
 import { deleteOAuth2Connection, revokeOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
 import db from '../../db';
-import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import AppError from '../../utils/appError';
 import { clientIdBodyValidator } from '../../utils/validators';
+import asyncHandler from '../../utils/asyncHandler';
 
 const router = Router();
 
@@ -61,7 +62,7 @@ router.post(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
 		const { 
 			client_id, 
@@ -73,227 +74,168 @@ router.post(
 			scopes: string[] 
 		} = req.body;
 
-		try {
-			const { rowCount, rows } = await getRedirectUrlAndScopesByClientId(client_id);
+		const { rowCount, rows } = await getRedirectUrlAndScopesByClientId(client_id);
 
-			if (!rowCount || rowCount === 0) {
-				logger.debug(`Client not found for client id: ${client_id}`);
-				return res
-					.status(404)
-					.json(
-						message(
-							'Client not found.',
-							{},
-							[
-								{ 
-									info: CLIENT_NOT_FOUND, 
-									data: { 
-										location: 'body',
-										paths: ['client_id']
-									} 
-								}
-							]
-						)
-					);
+		if (!rowCount) {
+			throw new AppError({
+				status: 404,
+				message: 'Client not found.',
+				errors: [
+					{ 
+						info: CLIENT_NOT_FOUND, 
+						data: { 
+							location: 'body',
+							paths: ['client_id']
+						} 
+					}
+				],
+				log: {
+					level: 'debug',
+					message: 'Client not found',
+					meta: { client_id }
+				}
+			});
+		}
+
+		const row = rows[0];
+
+		if (row.redirect_url !== redirect_url) {
+			throw new AppError({
+				status: 400,
+				message: 'Invalid redirect url.',
+				errors: [
+					{ 
+						info: INVALID_REDIRECT_URL, 
+						data: { 
+							location: 'body',
+							paths: ['redirect_url']
+						} 
+					}
+				],
+				log: {
+					level: 'debug',
+					message: 'Invalid redirect url',
+					meta: { client_id }
+				}
+			});
+		}
+
+		const setScopes = row.scopes || [];
+		let invalidScopes: string[] = [];
+
+		scopes.forEach((scope) => {
+			if (!setScopes.includes(scope)) {
+				invalidScopes.push(scope);
 			}
+		});
+
+		if (invalidScopes.length > 0) {
+			throw new AppError({
+				status: 400,
+				message: 'Invalid scopes provided.',
+				errors: [
+					{ 
+						info: INVALID_SCOPES, 
+						data: { 
+							location: 'body',
+							paths: ['scopes'],
+							scopes: invalidScopes
+						} 
+					}
+				],
+				log: {
+					level: 'debug',
+					message: 'Invalid scopes provided',
+					meta: { client_id }
+				}
+			});
+		}
+
+		return db.withTransaction(async (client) => {
+			const { rowCount } = await connectionExistsByUserIdAndClientId(
+				userId,
+				client_id,
+				client
+			);
+
+			if (rowCount && rowCount > 0) {
+				await updateConnectionScopes(
+					userId,
+					client_id,
+					scopes,
+					client
+				);
+
+				return 204;
+			}
+
+			const code = uuidv4();
+
+			const { rowCount: rowCount2, rows } = await setAuthorizationCode(
+				code,
+				userId,
+				client_id,
+				client
+			);
+
+			if (!rowCount2) {
+				throw new AppError({
+					status: 500,
+					message: 'An unexpected error occurred while saving authorization token.',
+					errors: [{ info: INTERNAL_ERROR }],
+					log: {
+						level: 'error',
+						message: 'Error while inserting/updating authorization token',
+						meta: {
+							userId,
+							client_id
+						},
+					}
+				});
+			}
+
+			logger.debug('Authorization code successfully created', {
+				userId,
+				client_id
+			});
 
 			const row = rows[0];
 
-			if (row.redirect_url !== redirect_url) {
-				logger.debug(`Invalid redirect url for client: ${client_id}`);
-				return res
-					.status(400)
-					.json(
-						message(
-							'Invalid redirect url.',
-							{},
-							[
-								{ 
-									info: INVALID_REDIRECT_URL, 
-									data: { 
-										location: 'body',
-										paths: ['redirect_url']
-									} 
-								}
-							]
-						)
-					);
-			}
+			const codeId = row.id;
+			const expires = row.created_at.getTime() + AUTHORIZATION_CODE_EXPIRATION * 1000;
 
-			const setScopes = row.scopes || [];
-			let invalidScopes: string[] = [];
-
-			scopes.forEach((scope) => {
-				if (!setScopes.includes(scope)) {
-					invalidScopes.push(scope);
-				}
-			});
-
-			if (invalidScopes.length > 0) {
-				logger.debug(`Invalid scope for client: ${client_id}`);
-				return res
-					.status(400)
-					.json(
-						message(
-							'Invalid scopes provided.',
-							{},
-							[
-								{ 
-									info: INVALID_SCOPES, 
-									data: { 
-										location: 'body',
-										paths: ['scopes'],
-										scopes: invalidScopes
-									}
-								}
-							]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while fetching redirect url and scopes for client: ${client_id}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			const { rowCount: rowCount3 } = await insertOrUpdateAuthorizationCodeScopes(
+				codeId,
+				scopes,
+				client
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while validating redirect url and scopes.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
 
-		try {
-			await db.withTransaction(async (client) => {
-				try {
-					const { rowCount } = await connectionExistsByUserIdAndClientId(
-						userId,
-						client_id,
-						client
-					);
-
-					if (rowCount && rowCount > 0) {
-						await updateConnectionScopes(
+			if (!rowCount3) {
+				throw new AppError({
+					status: 500,
+					message: 'An unexpected error occurred while saving authorization token scopes.',
+					errors: [{ info: INTERNAL_ERROR }],
+					log: {
+						level: 'error',
+						message: 'Error while inserting/updating authorization token scopes',
+						meta: {
 							userId,
 							client_id,
-							scopes,
-							client
-						);
-
-						res.sendStatus(204);
-
-						return;
+							scopes
+						},
 					}
-				} catch (e) {
-					logger.error(
-						`Error while checking client connection for user or inserting new scopes to an existing connection: ${userId} and client: ${client_id}. Error: ${
-							e instanceof Error ? e.message : e
-						}`,
-					);
-
-					throw new AppError(
-						500,
-						'An unexpected error occurred while checking client connection or adding new scopes.',
-						[{ info: INTERNAL_ERROR }]
-					);
-				}
-
-				const code = uuidv4();
-				let codeId: number;
-				let expires: number;
-
-				try {
-					const { rowCount, rows } = await setAuthorizationCode(
-						code,
-						userId,
-						client_id,
-						client
-					);
-
-					if (!rowCount || rowCount === 0) {
-						logger.error(
-							`Failed to insert/update authorization token for user: ${userId} and client: ${client_id}`,
-						);
-
-						throw new AppError(
-							500,
-							'An unexpected error occurred while saving authorization token.',
-							[{ info: INTERNAL_ERROR }]
-						);
-					}
-
-					logger.debug(`Authorization token inserted/updated successfully for user: ${userId} and client: ${client_id}`);
-
-					const row = rows[0];
-
-					codeId = row.id;
-					expires = row.created_at.getTime() + AUTHORIZATION_CODE_EXPIRATION * 1000;
-				} catch (e) {
-					logger.error(
-						`Error while inserting/updating authorization token for user: ${userId} and client: ${client_id}. Error: ${
-							e instanceof Error ? e.message : e
-						}`,
-					);
-
-					throw new AppError(
-						500,
-						'An unexpected error occurred while saving authorization token.',
-						[{ info: INTERNAL_ERROR }]
-					);
-				}
-
-				try {
-					await insertOrUpdateAuthorizationCodeScopes(
-						codeId,
-						scopes,
-						client
-					);
-				} catch (e) {
-					logger.error(
-						`Error while inserting/updating authorization token scopes for token: ${codeId}. Error: ${
-							e instanceof Error ? e.message : e
-						}`,
-					);
-
-					throw new AppError(
-						500,
-						'An unexpected error occurred while saving authorization token scopes.',
-						[{ info: INTERNAL_ERROR }]
-					)
-				}
-
-				res.json(
-					message(
-						'Authorization token successfully created.',
-						{
-							code,
-							expires
-						}
-					)
-				);
-			});
-		} catch (e) {
-			if (e instanceof AppError) {
-				transformAppErrorToResponse(e, res);
-
-				return;
+				});
 			}
 
-			logger.error(`Authorization failed: ${e instanceof Error ? e.message : e}`);
-			
-			res.status(500).json(
-				message(
-					'Unexpected error occurred while authorizing.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
+			return message(
+				'Authorization token successfully created.',
+				{
+					code,
+					expires
+				}
 			);
-		}
-	},
+		});
+	}),
 );
 
 router.delete(
@@ -307,46 +249,35 @@ router.delete(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const { connectionId } = req.params;
 		const userId = req.auth?.sub!;
 
-		try {
-			const { rowCount } = await deleteOAuth2Connection(Number(connectionId), userId);
+		const { rowCount } = await deleteOAuth2Connection(Number(connectionId), userId);
 
-			if (!rowCount || rowCount === 0) {
-				logger.debug(`No connection found for deletion for user: ${userId} and connection: ${connectionId}`);
-				return res
-					.status(404)
-					.json(
-						message(
-							'Connection not found.',
-							{},
-							[{ info: CONNECTION_NOT_FOUND }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while deleting connection for user: ${userId} and connection: ${connectionId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while deleting the connection.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+		if (!rowCount) {
+			throw new AppError({
+				status: 404,
+				message: 'Connection not found.',
+				errors: [{ info: CONNECTION_NOT_FOUND }],
+				log: {
+					level: 'debug',
+					message: 'Connection not found for deletion',
+					meta: {
+						userId,
+						connectionId
+					},
+				}
+			});
 		}
 
-		logger.debug(`Connection deleted successfully for user: ${userId} and connection: ${connectionId}`);
+		logger.debug('Connection successfully deleted', {
+			userId,
+			connectionId
+		});
 
-		res.send(message('Connection successfully deleted.'));
-	},
+		return message('Connection successfully deleted.');
+	}),
 );
 
 router.delete(
@@ -360,45 +291,30 @@ router.delete(
 		checkTokenGrantType(['authorization_code']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const auth = req.auth;
+		const userId = auth?.sub!;
+		const refreshToken: string = req.body.jti!;
 
-		try {
-			const { rowCount } = await revokeOAuth2RefreshToken(auth?.sub!, auth?.jti!);
+		const { rowCount } = await revokeOAuth2RefreshToken(userId, refreshToken);
 
-			if (!rowCount || rowCount === 0) {
-				logger.debug(`No connection found for revocation for user: ${auth?.sub}`);
-				return res
-					.status(404)
-					.json(
-						message(
-							'Connection not found.',
-							{},
-							[{ info: CONNECTION_ALREADY_REVOKED }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while revoking connection for user: ${auth?.sub}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while revoking the connection.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+		if (!rowCount) {
+			throw new AppError({
+				status: 404,
+				message: 'Connection not found.',
+				errors: [{ info: CONNECTION_ALREADY_REVOKED }],
+				log: {
+					level: 'debug',
+					message: 'No Connection not found for revocation',
+					meta: { userId },
+				}
+			});
 		}
 
-		logger.debug(`Connection revoked successfully for user: ${auth?.sub}`);
+		logger.debug('Connection successfully revoked', { userId });
 
-		res.json(message('Connection successfully revoked.'));
-	},
+		return message('Connection successfully revoked.');
+	}),
 );
 
 export default router;

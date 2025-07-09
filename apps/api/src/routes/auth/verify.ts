@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request } from 'express';
 import { message } from 'utils-node/messageBuilder';
 import { query } from 'express-validator';
 import {
@@ -27,8 +27,9 @@ import {
 	verifyEmail
 } from '../../repositories/auth/users';
 import db from '../../db';
-import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import AppError from '../../utils/appError';
 import { emailBodyValidator } from '../../utils/validators';
+import asyncHandler from '../../utils/asyncHandler';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ router.get(
 			.isUUID('4').withMessage(INVALID_UUID),
 		validate(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const {
 			email,
 			token
@@ -57,78 +58,70 @@ router.get(
 
 		signInURL.searchParams.set('source', source);
 
-		try {
-			const { rowCount, rows } = await getEmailVerificationState(email as string, token as string);
+		const { rowCount, rows } = await getEmailVerificationState(email as string, token as string);
 
-			if (!rowCount || rowCount === 0) {
-				signInURL.searchParams.append('code', 'error');
-				signInURL.searchParams.append(
-					'message',
-					'Provided verification link is invalid.',
-				);
-
-				logger.debug(`Invalid verification link for email: ${email}`);
-
-				return res.redirect(302, signInURL.toString());
-			}
-
-			const row = rows[0];
-
-			if (row.email_verified_at) {
-				signInURL.searchParams.append('code', 'error');
-				signInURL.searchParams.append(
-					'message',
-					'Your email has been already verified.',
-				);
-
-				logger.debug(`Email already verified for email: ${email}`);
-
-				return res.redirect(302, signInURL.toString());
-			}
-
-			const verificationSentAt = row.verification_sent_at;
-
-			if (!verificationSentAt || isExpired(verificationSentAt, EMAIL_VERIFICATION_CODE_EXPIRATION)) {
-				signInURL.searchParams.append('code', 'error');
-				signInURL.searchParams.append(
-					'message',
-					'Verification link expired. Please request a new verification link.',
-				);
-
-				logger.debug(`Verification token expired for email: ${email}`);
-
-				return res.redirect(302, signInURL.toString());
-			}
-
-			const { rowCount: count } = await verifyEmail(email as string);
-
-			if (!count || count === 0) {
-				logger.error(`Email verification failed for email: ${email}`);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while verifying email.',
-							{},
-							[{ info: INTERNAL_ERROR }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while email verification for email: ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+		if (!rowCount) {
+			signInURL.searchParams.append('code', 'error');
+			signInURL.searchParams.append(
+				'message',
+				'Provided verification link is invalid.',
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while verifying email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+
+			logger.debug('Invalid verification link provided', {
+				email,
+				token
+			});
+
+			return { redirect: signInURL.toString() };
+		}
+
+		const row = rows[0];
+
+		if (row.email_verified_at) {
+			signInURL.searchParams.append('code', 'error');
+			signInURL.searchParams.append(
+				'message',
+				'Your email has been already verified.',
+			);
+
+			logger.debug('Email already verified', {
+				email,
+				token
+			});
+
+			return { redirect: signInURL.toString() };
+		}
+
+		const verificationSentAt = row.verification_sent_at;
+
+		if (!verificationSentAt || isExpired(verificationSentAt, EMAIL_VERIFICATION_CODE_EXPIRATION)) {
+			signInURL.searchParams.append('code', 'error');
+			signInURL.searchParams.append(
+				'message',
+				'Verification link expired. Please request a new verification link.',
+			);
+
+			logger.debug('Verification link expired', {
+				email,
+				token
+			});
+
+			return { redirect: signInURL.toString() };
+		}
+
+		const { rowCount: count } = await verifyEmail(email as string);
+
+		if (!count) {
+			throw new AppError({
+				status: 500,
+				message: 'An unexpected error occurred while verifying email.',
+				errors: [{ info: INTERNAL_ERROR }],
+				log: {
+					level: 'error',
+					message: 'Verifying email failed',
+					meta: { email },
+				}
+			});
 		}
 
 		logger.debug(`Email successfully verified for email: ${email}`);
@@ -136,8 +129,8 @@ router.get(
 		signInURL.searchParams.append('code', 'success');
 		signInURL.searchParams.append('message', 'Email successfully verified.');
 
-		res.redirect(302, signInURL.toString());
-	},
+		return { redirect: signInURL.toString() };
+	}),
 );
 
 router.post(
@@ -146,132 +139,75 @@ router.post(
 		emailBodyValidator(),
 		validate(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const email: string = req.body.email;
 
-		try {
-			const { rowCount, rows } = await getEmailVerifiedStatus(email);
+		const { rowCount, rows } = await getEmailVerifiedStatus(email);
 
-			if (!rowCount || rowCount === 0) {
-				logger.debug(`Email not found for resend: ${email}`);
-				return res
-					.status(404)
-					.json(
-						message(
-							'Email not found.',
-							{},
-							[{ info: EMAIL_NOT_FOUND }]
-						)
-					);
-			}
+		if (!rowCount) {
+			logger.debug('Email not found for resend', { email });
 
-			if (rows[0].email_verified_at) {
-				logger.debug(`Email already verified for resend: ${email}`);
-				return res
-					.status(400)
-					.json(
-						message(
-							'Email already verified.',
-							{},
-							[{ info: EMAIL_ALREADY_VERIFIED }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error during email lookup for resend with email: ${email}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		try {
-			await db.withTransaction(async (client) => {
-				const token = uuidv4();
-
-				try {
-					const { rowCount } = await updateEmailVerificationToken(
-						email,
-						token,
-						client
-					);
-
-					if (!rowCount || rowCount === 0) {
-						logger.error(`Verification token update failed during resend for email: ${email}`);
-
-						throw new AppError(
-							500,
-							'An unexpected error occurred while updating verification token.',
-							[{ info: INTERNAL_ERROR }]
-						);
-					}
-				} catch (e) {
-					logger.error(
-						`Verification token update failed during resend for email: ${email}. Error: ${
-							e instanceof Error ? e.message : e
-						}`,
-					);
-
-					throw new AppError(
-						500,
-						'An unexpected error occurred while updating verification token.',
-						[{ info: INTERNAL_ERROR }]
-					);
-				}
-
-				try {
-					await sendEmailMessage({
-						to: email,
-						subject: 'Email Verification',
-						content: `Please verify your email. ${
-							ISSUER + '/auth/verify?email=' + email + '&token=' + token
-						}`,
-					});
-				} catch (e) {
-					logger.error(
-						`Error sending verification email to ${email}. Error: ${
-							e instanceof Error ? e.message : e
-						}`,
-					);
-
-					throw new AppError(
-						500,
-						'An unexpected error occurred while sending verification email.',
-						[{ info: INTERNAL_ERROR }]
-					);
-				}
-
-				logger.debug(`Verification email resent successful for email: ${email}`);
-
-				res.json(message(`New verification email has been sent to ${email}`));
-			});
-		} catch (e) {
-			if (e instanceof AppError) {
-				transformAppErrorToResponse(e, res);
-
-				return;
-			}
-
-			logger.error(`Error resending verification email: ${e instanceof Error ? e.message : e}`);
-			
-			res.status(500).json(
+			return [
+				404,
 				message(
-					'Unexpected error occurred while resending verification email.',
+					'Email not found.',
 					{},
-					[{ info: INTERNAL_ERROR }]
+					[{ info: EMAIL_NOT_FOUND }]
 				)
-			);
+			];
 		}
-	},
+
+		if (rows[0].email_verified_at) {
+			logger.debug('Email already verified for resend', { email });
+
+			return [
+				400,
+				message(
+					'Email already verified.',
+					{},
+					[{ info: EMAIL_ALREADY_VERIFIED }]
+				)
+			];
+		}
+
+		return db.withTransaction(async (client) => {
+			const token = uuidv4();
+
+			const { rowCount } = await updateEmailVerificationToken(
+				email,
+				token,
+				client
+			);
+
+			if (!rowCount) {
+				throw new AppError({
+					status: 500,
+					message: 'An unexpected error occurred while updating verification token.',
+					errors: [{ info: INTERNAL_ERROR }],
+					log: {
+						level: 'error',
+						message: 'Verification token update failed',
+						meta: {
+							email,
+							token
+						}
+					},
+				});
+			}
+
+			await sendEmailMessage({
+				to: email,
+				subject: 'Email Verification',
+				content: `Please verify your email. ${
+					ISSUER + '/auth/verify?email=' + email + '&token=' + token
+				}`,
+			});
+
+			logger.debug('Verification email successfully sent', { email });
+
+			return message('New verification email has been sent');
+		});
+	}),
 );
 
 export default router;

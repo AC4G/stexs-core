@@ -5,6 +5,7 @@ import MiddlewareError from './jwt';
 import { QueryConfig } from 'pg';
 import { DbPool } from '../db';
 import { Logger } from 'winston';
+import { extractError } from '../loggers/utils';
 
 export function checkScopes(
 	requiredScopes: string[],
@@ -65,12 +66,8 @@ export function checkScopes(
 					scopes: requiredScopes,
 				});
 			})
-			.catch((e) => {
-				logger.error(
-					`Error while checking client for scopes. Error: ${
-						e instanceof Error ? e.message : e
-					}`,
-				);
+			.catch((err) => {
+				logger.error('Error while checking client for scopes', { error: extractError(err) });
 				throw new MiddlewareError(INTERNAL_ERROR, 500);
 			});
 	};

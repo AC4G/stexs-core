@@ -10,7 +10,11 @@ export class EnvValidator {
 	logger: Logger;
 
 	constructor(serviceName: string) {
-		this.logger = createConsoleLogger(serviceName, 'warn');
+		this.logger = createConsoleLogger(
+			serviceName,
+			'warn',
+			'prod'
+		);
 	}
 
 	checkEnvVarExists(varName: string): void {

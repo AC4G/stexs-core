@@ -3,8 +3,28 @@ import { createConsoleLogger } from './consoleLogger';
 import { createLokiLogger } from './lokiLogger';
 
 
-export function createLogger(service: string, LOGGER: 'console' | 'loki', LOG_LEVEL: string, LOGGER_URL: string | undefined): Logger {
-    return LOGGER === 'loki' && LOGGER_URL ? createLokiLogger(service, LOGGER_URL, LOG_LEVEL) : createConsoleLogger(service, LOG_LEVEL);
+type LoggerOptions = {
+  service: string;
+  logger: 'console' | 'loki';
+  logLevel: string;
+  loggerUrl?: string;
+  env: string;
+};
+
+export function createLogger(options: LoggerOptions): Logger {
+    const {
+        service,
+        logger,
+        logLevel,
+        loggerUrl,
+        env
+    } = options;
+
+    if (logger === 'loki' && loggerUrl) {
+        return createLokiLogger(service, loggerUrl, logLevel);
+    }
+
+    return createConsoleLogger(service, logLevel, env);
 }
 
 export * from './utils';

@@ -1,7 +1,7 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import logger from '../../logger';
 import { Request } from 'express-jwt';
-import { INTERNAL_ERROR, UNAUTHORIZED_ACCESS } from 'utils-node/errors';
+import { UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import {
 	validate,
 	checkScopes,
@@ -24,6 +24,8 @@ import { message } from 'utils-node/messageBuilder';
 import s3 from '../../s3';
 import { isUserAdminOrOwnerOfOrganization } from '../../repositories/public/organizationMembers';
 import { organizationIdQueryValidator } from '../../utils/validators';
+import asyncHandler from '../../utils/asyncHandler';
+import AppError from '../../utils/appError';
 
 const router = Router();
 
@@ -33,7 +35,7 @@ router.get(
 		organizationIdQueryValidator,
 		validate(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const { organizationId } = req.params;
 
 		const expires = ORGANIZATION_LOGO_GET_URL_EXPIRATION;
@@ -44,18 +46,16 @@ router.get(
 			Expires: expires,
 		});
 
-		logger.debug(`Generated new presigned url for organization logo: ${organizationId}`);
+		logger.debug('Generated new presigned url for organization logo', { organizationId });
 
-		return res.json(
-			message(
-				'Presigned url generated successfully.',
-				{
-					url: signedUrl,
-					expires
-				}
-			)
+		return message(
+			'Presigned url generated successfully.',
+			{
+				url: signedUrl,
+				expires
+			}
 		);
-	},
+	}),
 );
 
 router.post(
@@ -68,7 +68,7 @@ router.post(
 		checkScopes(['organization.logo.write'], db, logger),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;
 		const organizationId = parseInt(req.params.organizationId);
 		const {
@@ -81,50 +81,32 @@ router.post(
 			organization_id: number;
 		};
 
-		try {
-			let isAllowed = false;
+		let isAllowed = false;
 
-			if (grantType === 'password') {
-				const { rowCount } = await isUserAdminOrOwnerOfOrganization(sub, organizationId);
+		if (grantType === 'password') {
+			const { rowCount } = await isUserAdminOrOwnerOfOrganization(sub, organizationId);
 
-				if (rowCount === 1) isAllowed = true;
-			} 
-			
-			if (organizationId === organizationIdFromToken) {
-				isAllowed = true;
-			}
+			if (rowCount === 1) isAllowed = true;
+		} 
+		
+		if (organizationId === organizationIdFromToken) {
+			isAllowed = true;
+		}
 
-			if (!isAllowed) {
-				const consumer = grantType === 'password' ? 'User' : 'Client';
-				const consumerId = grantType === 'password' ? sub : clientId;
+		if (!isAllowed) {
+			const consumer = grantType === 'password' ? 'User' : 'Client';
+			const consumerId = grantType === 'password' ? sub : clientId;
 
-				logger.debug(`${consumer} is not authorized to upload/update the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`);
-
-				return res
-					.status(401)
-					.json(
-						message(
-							'Unauthorized access to upload/update the logo of the given organization.',
-							{},
-							[{ info: UNAUTHORIZED_ACCESS }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while checking the current user if authorized for uploading/updating organization logo. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking authorization.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+			throw new AppError({
+				status: 401,
+				message: 'Unauthorized access to upload/update the logo of the given organization.',
+				errors: [{ info: UNAUTHORIZED_ACCESS }],
+				log: {
+					level: 'debug',
+					message: 'Unauthorized access to upload/update the logo of the given organization.',
+					meta: { consumer, consumerId, organizationId },
+				}
+			});
 		}
 
 		const signedPost = await s3.createPresignedPost({
@@ -145,15 +127,13 @@ router.post(
 			Expires: ORGANIZATION_LOGO_POST_URL_EXPIRATION,
 		});
 
-		logger.debug(`Created presigned post url for organization logo: ${organizationId}`);
+		logger.debug('Created presigned post url for organization logo', { organizationId });
 
-		return res.json(
-			message(
-				'Presigned post url generated successfully.',
-				{ ...signedPost }
-			)
+		return message(
+			'Presigned post url generated successfully.',
+			{ ...signedPost }
 		);
-	},
+	}),
 );
 
 router.delete(
@@ -166,7 +146,7 @@ router.delete(
 		checkScopes(['organization.logo.delete'], db, logger),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;
 		const organizationId = parseInt(req.params.organizationId);
 		const {
@@ -179,79 +159,49 @@ router.delete(
 			organization_id: number;
 		};
 
-		try {
-			let isAllowed = false;
+		let isAllowed = false;
 
-			if (grantType === 'password') {
-				const { rowCount } = await isUserAdminOrOwnerOfOrganization(sub, organizationId);
+		if (grantType === 'password') {
+			const { rowCount } = await isUserAdminOrOwnerOfOrganization(sub, organizationId);
 
-				if (rowCount) isAllowed = true;
-			}
-			
-			if (organizationId === organizationIdFromToken) isAllowed = true;
-
-			if (!isAllowed) {
-				const consumer = grantType === 'password' ? 'User' : 'Client';
-				const consumerId = grantType === 'password' ? sub : clientId;
-
-				logger.debug(`${consumer} is not authorized to delete the logo of the given organization: ${organizationId}. ${consumer}: ${consumerId}`);
-				return res
-					.status(401)
-					.json(
-						message(
-							'Unauthorized access to delete the logo of the given organization.',
-							{},
-							[{ info: UNAUTHORIZED_ACCESS }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while checking the current user if authorized for deleting organization logo. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking authorization.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+			if (rowCount) isAllowed = true;
 		}
+		
+		if (organizationId === organizationIdFromToken) isAllowed = true;
 
-		try {
-			await s3
-				.deleteObjects({
-					Bucket: BUCKET,
-					Delete: {
-						Objects: [{ Key: 'organizations/' + organizationId }],
+		if (!isAllowed) {
+			const consumer = grantType === 'password' ? 'User' : 'Client';
+			const consumerId = grantType === 'password' ? sub : clientId;
+
+			throw new AppError({
+				status: 401,
+				message: 'Unauthorized access to delete the logo of the given organization.',
+				errors: [{ info: UNAUTHORIZED_ACCESS }],
+				log: {
+					level: 'debug',
+					message: 'Unauthorized access to delete the logo of the given organization.',
+					meta: {
+						consumer,
+						consumerId,
+						organizationId
 					},
-				})
-				.promise();
-
-			logger.debug(`Deleted logo from organization: ${organizationId}`);
-
-			res.sendStatus(204);
-		} catch (e) {
-			logger.error(
-				`Error while deleting organization logo. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while deleting organization logo.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+				}
+			});
 		}
-	},
+
+		await s3
+			.deleteObjects({
+				Bucket: BUCKET,
+				Delete: {
+					Objects: [{ Key: 'organizations/' + organizationId }],
+				},
+			})
+			.promise();
+
+		logger.debug('Deleted logo from organization', { organizationId });
+
+		return 204;
+	}),
 );
 
 export default router;

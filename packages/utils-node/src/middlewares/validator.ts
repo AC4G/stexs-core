@@ -1,6 +1,10 @@
 import { Result, validationResult } from 'express-validator';
 import { ValidatorError, errorMessagesFromValidator } from '../messageBuilder';
-import { NextFunction, Request, Response } from 'express';
+import {
+	NextFunction,
+	Request,
+	Response
+} from 'express';
 import { Logger } from 'winston';
 
 export function validate(logger: Logger): (req: any, res: Response, next: NextFunction) => void {
@@ -14,9 +18,8 @@ export function validate(logger: Logger): (req: any, res: Response, next: NextFu
 					const msg =
 						typeof error.msg === 'string' ? JSON.parse(error.msg) : error.msg;
 					return msg.code;
-				})
-				.join(', ');
-			logger.debug(`Validation errors - Codes: ${errorCodes}`);
+				});
+			logger.debug('Request validation errors', { errorCodes: errorCodes});
 
 			return res.status(400).json(errorMessagesFromValidator(errors));
 		}

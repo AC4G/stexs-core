@@ -14,6 +14,7 @@ import { MFA_EMAIL_CODE_EXPIRATION } from '../../env-config';
 import { NextFunction, Response } from 'express';
 import { Request as JWTRequest } from 'express-jwt';
 import { message } from 'utils-node/messageBuilder';
+import { extractError } from 'utils-node/logger';
 
 export interface MFAError {
 	status: number;
@@ -33,10 +34,8 @@ export async function validateMFA(
 		if (type === 'totp') {
 			const { rowCount, rows } = await getTOTPStatus(userId);
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(
-					`Failed to fetch MFA totp code and totp_secret for user: ${userId}`,
-				);
+			if (!rowCount) {
+				logger.error('Failed to fetch MFA totp code and totp_secret', { userId });
 				return {
 					status: 500,
 					info: INTERNAL_ERROR,
@@ -46,7 +45,7 @@ export async function validateMFA(
 			const row = rows[0];
 
 			if (!row.totp_verified_at || !row.totp_secret) {
-				logger.debug(`MFA TOTP is disabled for user: ${userId}`);
+				logger.debug('MFA TOTP is disabled', { userId });
 				return {
 					status: 400,
 					info: MFA_TOTP_DISABLED,
@@ -56,7 +55,7 @@ export async function validateMFA(
 			const totp = getTOTPForVerification(row.totp_secret!);
 
 			if (totp.validate({ token: code, window: 1 }) === null) {
-				logger.debug(`Invalid code provided for MFA TOTP password change for user: ${userId}`);
+				logger.debug('Invalid code provided for MFA TOTP password change', { userId });
 				return {
 					status: 403,
 					info: INVALID_CODE,
@@ -71,10 +70,8 @@ export async function validateMFA(
 		if (type === 'email') {
 			const { rowCount, rows } = await getEmailInfo(userId);
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(
-					`Failed to fetch MFA email status, code and timestamp for user: ${userId}`,
-				);
+			if (!rowCount) {
+				logger.error('Failed to fetch MFA email status, code and timestamp', { userId });
 				return {
 					status: 500,
 					info: INTERNAL_ERROR,
@@ -82,7 +79,7 @@ export async function validateMFA(
 			}
 
 			if (!rows[0].email) {
-				logger.debug(`MFA email is disabled for user: ${userId}`);
+				logger.debug('MFA email is disabled', { userId });
 				return {
 					status: 400,
 					info: MFA_EMAIL_DISABLED,
@@ -90,7 +87,7 @@ export async function validateMFA(
 			}
 
 			if (code !== rows[0].email_code) {
-				logger.debug(`Invalid MFA code provided for user: ${userId}`);
+				logger.debug('Invalid MFA code provided', { userId });
 				return {
 					status: 403,
 					info: INVALID_CODE,
@@ -104,7 +101,7 @@ export async function validateMFA(
 			const emailCodeSentAt = rows[0].email_code_sent_at;
 
 			if (!emailCodeSentAt || isExpired(emailCodeSentAt, MFA_EMAIL_CODE_EXPIRATION)) {
-				logger.debug(`MFA code expired for user: ${userId}`);
+				logger.debug('MFA email code is expired', { userId });
 				return {
 					status: 403,
 					info: CODE_EXPIRED,
@@ -115,12 +112,8 @@ export async function validateMFA(
 				};
 			}
 		}
-	} catch (e) {
-		logger.error(
-			`Error while checking MFA code for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
+	} catch (err) {
+		logger.error('Error while validating MFA', { error: extractError(err) });
 		return {
 			status: 500,
 			info: INTERNAL_ERROR,
@@ -166,7 +159,7 @@ export function mfaValidationMiddleware() {
 				next();
 			})
 			.catch((err) => {
-				logger.error('Unexpected error in MFA validation', err);
+				logger.error('Unexpected error in MFA validation', { error: extractError(err) });
 				return res.status(500).json(
 					message('Internal server error during MFA validation.', {}, [
 						{

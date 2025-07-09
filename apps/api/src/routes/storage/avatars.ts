@@ -1,10 +1,6 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { param } from 'express-validator';
-import {
-	INTERNAL_ERROR,
-	INVALID_UUID, 
-	USER_ID_REQUIRED,
-} from 'utils-node/errors';
+import { INVALID_UUID, USER_ID_REQUIRED } from 'utils-node/errors';
 import {
 	CustomValidationError,
 	message
@@ -29,6 +25,7 @@ import {
 } from '../../../env-config';
 import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
+import asyncHandler from '../../utils/asyncHandler';
 
 const router = Router();
 
@@ -46,7 +43,7 @@ router.get(
 			}),
 		validate(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const { userId } = req.params;
 
 		const expires = AVATAR_GET_URL_EXPIRATION;
@@ -57,18 +54,16 @@ router.get(
 			Expires: expires,
 		});
 
-		logger.debug(`Generated new presigned url for avatar: ${userId}`);
+		logger.debug('Generated new presigned url for avatar', { userId });
 
-		return res.json(
-			message(
-				'Presigned get url generated successfully.',
-				{
-					url: signedUrl,
-					expires: expires
-				}
-			)
+		return message(
+			'Presigned get url generated successfully.',
+			{
+				url: signedUrl,
+				expires: expires
+			}
 		);
-	},
+	}),
 );
 
 router.post(
@@ -78,7 +73,7 @@ router.post(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger)
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
 
 		const signedPost = await s3.createPresignedPost({
@@ -99,15 +94,13 @@ router.post(
 			Expires: AVATAR_POST_URL_EXPIRATION,
 		});
 
-		logger.debug(`Generated signed post url for avatar: ${userId}`);
+		logger.debug('Generated signed post url for avatar', { userId });
 
-		return res.json(
-			message(
-				'Presigned post url generated successfully.',
-				{ ...signedPost }
-			)
+		return message(
+			'Presigned post url generated successfully.',
+			{ ...signedPost }
 		);
-	},
+	}),
 );
 
 router.delete(
@@ -117,37 +110,22 @@ router.delete(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
 
-		try {
-			await s3
-				.deleteObjects({
-					Bucket: BUCKET,
-					Delete: {
-						Objects: [{ Key: 'avatars/' + userId }],
-					},
-				})
-				.promise();
+		await s3
+			.deleteObjects({
+				Bucket: BUCKET,
+				Delete: {
+					Objects: [{ Key: 'avatars/' + userId }],
+				},
+			})
+			.promise();
 
-			logger.debug(`Deleted avatar from user: ${userId}`);
-		} catch (e) {
-			logger.error(
-				`Error while deleting avatar. Error: ${e instanceof Error ? e.message : e}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while deleting avatar.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
+		logger.debug('Deleted avatar', { userId });
 
-		return res.sendStatus(204);
-	},
+		return 204;
+	}),
 );
 
 export default router;

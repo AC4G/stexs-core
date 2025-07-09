@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import logger from '../logger';
 import {
   SMTP_EMAIL,
   SMTP_HOST,
