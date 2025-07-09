@@ -2,10 +2,10 @@
   "name": "queue",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/server.ts",
+  "main": "./src/index.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc-watch --onSuccess \"node ./dist/src/server.js\"",
+    "dev": "tsc-watch --onSuccess \"node ./dist/src/index.js\"",
     "clean": "rm -rf dist",
     "clean:logs": "rm -f logs/*"
   },

@@ -1,24 +1,24 @@
 import ip from 'ip';
-import express from 'express';
+import express, {
+	NextFunction,
+	Request,
+	Response
+} from 'express';
 import bodyParser from 'body-parser';
 import authRouter from './routes/auth/router';
 import storageRouter from './routes/storage/router';
-import { ENV, SERVER_PORT } from '../env-config';
+import { ENV, LOG_LEVEL, SERVER_PORT } from '../env-config';
 import logger from './logger';
 import responseTime from 'response-time';
 import { message } from 'utils-node/messageBuilder';
-import { ROUTE_NOT_FOUND } from 'utils-node/errors';
+import { INTERNAL_ERROR, ROUTE_NOT_FOUND } from 'utils-node/errors';
 import cors from 'cors';
 import db from './db';
 import { Server } from 'http';
 import { initEmailProducer } from './producers/emailProducer';
 import { extractError } from 'utils-node/logger';
 import cookieParser from 'cookie-parser';
-
-process.on('uncaughtException', (err) => {
-	logger.error(`Uncaught Exception: ${err.message}`);
-	process.exit(1);
-});
+import AppError from './utils/appError';
 
 (async () => {
 	logger.info('Initializing pulsar producers...')
@@ -40,13 +40,21 @@ app.use(cors());
 app.use(responseTime());
 
 app.use((req, res, next) => {
-	logger.debug(`Request Headers: ${JSON.stringify(req.headers)}`);
-	logger.debug(`Request Body: ${JSON.stringify(req.body)}`);
+	logger.debug('Request Headers', { requestHeaders: req.headers });
+	logger.debug('Request Body', { requestBody: req.body });
 
 	const originalSend = res.send;
 
 	res.send = function (body) {
-		logger.debug(`Response Body: ${body}`);
+		let parsedBody = body;
+		
+		if (typeof body === 'string') {
+			try {
+				parsedBody = JSON.parse(body);
+			} catch {}
+		}
+
+		logger.debug('Response Body', { responseBody: parsedBody });
 
 		return originalSend.call(this, body);
 	};
@@ -67,7 +75,10 @@ app.use('/auth', authRouter);
 app.use('/storage', storageRouter);
 
 app.use((req, res, next) => {
-	logger.debug(`Route not found: ${req.method} ${req.path}`);
+	logger.debug('Route not found', {
+		route: req.path,
+		method: req.method
+	});
 
 	res
 		.status(404)
@@ -89,26 +100,76 @@ app.use((req, res, next) => {
 	next();
 });
 
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+	if (err instanceof AppError) {
+		if (err.log) {
+			logger[err.log.level](err.log.message, {
+				...err.log.meta,
+				stack: err.stackTrace || err.stack,
+			});
+		}
+
+		return res.status(err.status).json(
+			message(
+				err.message,
+				{ ...err.data },
+				err.errors
+			)
+		);
+	}
+
+	const isError = err instanceof Error;
+	const stack = isError ? err.stack : undefined;
+	const errorMessage = isError ? err.message : String(err);
+
+	logger.error('Unhandled error', {
+		message: errorMessage,
+		stack,
+		error: extractError(err),
+	});
+
+	return res.status(500).json(
+		message('Internal Server Error', {}, [
+			{ info: INTERNAL_ERROR }
+		])
+	);
+});
+
 let server: Server;
 
 if (ENV !== 'test') {
 	server = app.listen(SERVER_PORT, () => {
-		logger.info(`Server started in ${ENV} mode and is listening on port ${SERVER_PORT}. Server IP: ${ip.address()}`);
+		logger.info('API server started', {
+			ENV,
+			LOG_LEVEL,
+			SERVER_PORT,
+			SERVER_IP: ip.address(),
+		});
 	});
 }
 
-const closeServer = async () => {
+const closeServer = async (exitCode: number = 0) => {
 	try {
 		await db.close();
 		
 		logger.info('Database pool closed successfully.');
 	} catch (e) {
-		logger.error(`Error closing database pool: ${e instanceof Error ? e.message : e}`);
+		logger.error('Error closing database pool', { error: extractError(e) });
 	}
 
 	logger.info('Server shutted down.');
-	process.exit(0);
+	process.exit(exitCode);
 }
+
+process.on('uncaughtException', (err) => {
+	logger.error('Uncaught Exception', { error: extractError(err) });
+	closeServer(1);
+});
+
+process.on('unhandledRejection', (err) => {
+	logger.error('Unhandled Rejection', { error: extractError(err) });
+	closeServer(1);
+});
 
 process.on('SIGINT', async () => {
 	logger.info('Received SIGINT. Shutting down gracefully...');

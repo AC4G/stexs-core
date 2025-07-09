@@ -7,7 +7,6 @@ import {
 	CODE_FORMAT_INVALID_TOTP,
 	CODE_LENGTH_MISMATCH,
 	CODE_REQUIRED,
-	INTERNAL_ERROR,
 	MFA_FLOWS_NOT_FOUND,
 	TYPE_REQUIRED,
 	UNSUPPORTED_TYPE,
@@ -42,6 +41,8 @@ import {
 } from '../../types/auth';
 import { alphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
 import { codeSupportedMFABodyValidator, typeSupportedMFABodyValidator } from '../../utils/validators';
+import asyncHandler from '../../utils/asyncHandler';
+import AppError from '../../utils/appError';
 
 const router = Router();
 
@@ -52,43 +53,33 @@ router.get(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
 
-		try {
-			const { rowCount, rows } = await getMFAStatus(userId);
+		const { rowCount, rows } = await getMFAStatus(userId);
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(`MFA flows not found for user: ${userId}`);
-				return res
-					.status(404)
-					.json(
-						message(
-							'No MFA flows found for current user.',
-							{},
-							[{ info: MFA_FLOWS_NOT_FOUND }]
-						)
-					);
-			}
-
-			logger.debug(`MFA flows successfully retrieved for user: ${userId}`);
-
-			res.json(message('MFA flows successfully retrieved.', rows[0]));
-		} catch (e) {
-			logger.error(
-				`Error while fetching MFA flows for user: ${userId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res.status(500).json(
-				message(
-					'An unexpected error occured while retrieving MFA flows.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+		if (!rowCount) {
+			throw new AppError({
+				status: 404,
+				message: 'No MFA flows found for current user.',
+				errors: [{ info: MFA_FLOWS_NOT_FOUND }],
+				log: {
+					level: 'error',
+					message: 'MFA flows not found',
+					meta: { userId }
+				}
+			});
 		}
-	},
+
+		const data = rows[0];
+
+		logger.debug('MFA flows successfully retrieved', {
+			userId,
+			data,
+		});
+
+		return message('MFA flows successfully retrieved.', data);
+	}),
 );
 
 router.post(
@@ -109,21 +100,16 @@ router.post(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
-		const {
-			type
-		}: {
-			type: MFATypes;
-		} = req.body;
+	asyncHandler(async (req: Request) => {
+		const type: MFATypes = req.body.type;
 
 		switch (type) {
 			case 'totp':
-				enableTOTP(req, res);
-				break;
+				return enableTOTP(req);
 			case 'email':
-				enableEmail(req, res);
+				return enableEmail(req);
 		}
-	},
+	}),
 );
 
 router.post(
@@ -136,22 +122,16 @@ router.post(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
-		const {
-			type
-		}: {
-			type: MFATypes;
-		} = req.body;
+	asyncHandler(async (req: Request) => {
+		const type: MFATypes = req.body.type;
 
 		switch (type) {
 			case 'totp':
-				disableTOTP(req, res);
-				break;
+				return disableTOTP(req);
 			case 'email':
-				disableEmail(req, res);
-				break;
+				return disableEmail(req);
 		}
-	},
+	}),
 );
 
 router.post(
@@ -177,19 +157,14 @@ router.post(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
-		const {
-			type
-		}: {
-			type: Extract<MFATypes, 'totp'>;
-		} = req.body;
+	asyncHandler(async (req: Request) => {
+		const type: Extract<MFATypes, 'totp'> = req.body.type;
 
 		switch (type) {
 			case 'totp':
-				verifyTOTP(req, res);
-				break;
+				return verifyTOTP(req);
 		}
-	},
+	}),
 );
 
 router.post(
@@ -207,19 +182,14 @@ router.post(
 		),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
-		const {
-			type
-		}: {
-			type: Extract<MFATypes, 'email'>;
-		} = req.body;
+	asyncHandler(async (req: Request) => {
+		const type: Extract<MFATypes, 'email'> = req.body.type;
 
 		switch (type) {
 			case 'email':
-				sendEmailCode(req, res);
-				break;
+				return sendEmailCode(req);
 		}
-	},
+	}),
 );
 
 export default router;

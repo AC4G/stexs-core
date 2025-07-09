@@ -1,5 +1,4 @@
 import { config } from 'dotenv';
-import logger from './src/logger';
 import { z } from 'zod';
 import { EnvValidator } from 'utils-node';
 
@@ -15,7 +14,7 @@ const requiredVars = [
 	'LAGO_API_KEY',
 ];
 
-const envValidator: EnvValidator = new EnvValidator(logger);
+const envValidator: EnvValidator = new EnvValidator('API');
 
 requiredVars.forEach(envValidator.checkEnvVarExists.bind(envValidator));
 
@@ -98,7 +97,7 @@ if (envValidator.getMissingEnvVars().length > 0) {
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-	logger.error('Invalid environment variables:', parsedEnv.error.format());
+	envValidator.logger.error('Invalid environment variables:', parsedEnv.error.format());
 	process.exit(1);
 }
 

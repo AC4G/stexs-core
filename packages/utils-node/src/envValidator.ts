@@ -1,21 +1,20 @@
 import { z } from 'zod';
+import { createConsoleLogger } from './loggers/consoleLogger';
+import { Logger } from 'winston';
 
-type Logger = {
-	error: (message: string) => void;
-	warn: (message: string) => void;
-};
 
 type StringOrEnum = z.ZodString | z.ZodEnum<any>;
 
 export class EnvValidator {
 	private missingEnvVars: string[] = [];
-	private logger: Logger;
+	logger: Logger;
 
-	constructor(logger?: Logger) {
-		this.logger = logger ?? {
-			error: console.error,
-			warn: console.warn,
-		};
+	constructor(serviceName: string) {
+		this.logger = createConsoleLogger(
+			serviceName,
+			'warn',
+			'prod'
+		);
 	}
 
 	checkEnvVarExists(varName: string): void {

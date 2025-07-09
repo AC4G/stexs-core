@@ -8,7 +8,7 @@ import {
 	ITEM_THUMBNAIL_POST_URL_EXPIRATION,
 	ITEM_THUMBNAIL_SIZE_LIMIT,
 } from '../../../env-config';
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import {
 	validate,
 	checkScopes,
@@ -20,31 +20,23 @@ import logger from '../../logger';
 import { Request } from 'express-jwt';
 import db from '../../db';
 import { message } from 'utils-node/messageBuilder';
-import {
-	INTERNAL_ERROR,
-	ITEM_ID_NOT_NUMERIC,
-	ITEM_ID_REQUIRED,
-	UNAUTHORIZED_ACCESS,
-} from 'utils-node/errors';
+import { UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import s3 from '../../s3';
-import { param } from 'express-validator';
 import { isUserAdminOrOwnerOfProjectByItemId } from '../../repositories/public/projectMembers';
 import { isClientAllowedToAccessProjectByItemId } from '../../repositories/public/items';
+import { itemIdQueryValidator } from '../../utils/validators';
+import asyncHandler from '../../utils/asyncHandler';
+import AppError from '../../utils/appError';
 
 const router = Router();
 
 router.get(
 	'/thumbnail/:itemId',
 	[
-		param('itemId')
-			.notEmpty()
-			.withMessage(ITEM_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(ITEM_ID_NOT_NUMERIC),
+		itemIdQueryValidator,
 		validate(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const { itemId } = req.params;
 
 		const expires = ITEM_THUMBNAIL_GET_URL_EXPIRATION;
@@ -55,36 +47,29 @@ router.get(
 			Expires: expires,
 		});
 
-		logger.debug(`Generated new presigned url for item thumbnail: ${itemId}`);
+		logger.debug('Generated new presigned url for item thumbnail', { itemId });
 
-		return res.json(
-			message(
-				'Presigned get url generated successfully.',
-				{
-					url: signedUrl,
-					expires: expires,
-				}
-			)
+		return message(
+			'Presigned get url generated successfully.',
+			{
+				url: signedUrl,
+				expires: expires,
+			}
 		);
-	},
+	}),
 );
 
 router.post(
 	'/thumbnail/:itemId',
 	[
-		param('itemId')
-			.notEmpty()
-			.withMessage(ITEM_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(ITEM_ID_NOT_NUMERIC),
+		itemIdQueryValidator,
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
 		checkScopes(['item.thumbnail.write'], db, logger),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;
 		const { itemId } = req.params;
 		const {
@@ -97,54 +82,40 @@ router.post(
 			organization_id: number;
 		};
 
-		try {
-			let isAllowed = false;
+		let isAllowed = false;
 
-			if (grantType === 'password') {
-				const { rowCount } = await isUserAdminOrOwnerOfProjectByItemId(sub, Number(itemId));
+		if (grantType === 'password') {
+			const { rowCount } = await isUserAdminOrOwnerOfProjectByItemId(sub, Number(itemId));
 
-				if (rowCount === 1) isAllowed = true;
-			} else {
-				const { rowCount } = await isClientAllowedToAccessProjectByItemId(
-					Number(itemId),
-					organizationId,
-					clientId
-				)
+			if (rowCount === 1) isAllowed = true;
+		} else {
+			const { rowCount } = await isClientAllowedToAccessProjectByItemId(
+				Number(itemId),
+				organizationId,
+				clientId
+			)
 
-				if (rowCount === 1) isAllowed = true;
-			}
+			if (rowCount === 1) isAllowed = true;
+		}
 
-			if (!isAllowed) {
-				const consumer = grantType === 'password' ? 'User' : 'Client';
-				const consumerId = grantType === 'password' ? sub : clientId;
+		if (!isAllowed) {
+			const consumer = grantType === 'password' ? 'User' : 'Client';
+			const consumerId = grantType === 'password' ? sub : clientId;
 
-				logger.debug(`${consumer} is not authorized to upload/update the thumbnail of an item: ${itemId}. ${consumer}: ${consumerId}`);
-
-				return res
-					.status(401)
-					.json(
-						message(
-							'Unauthorized access to upload/update the thumbnail of an item.',
-							{},
-							[{ info: UNAUTHORIZED_ACCESS }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while checking the current user if authorized for uploading/updating item thumbnail. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking authorization.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+			throw new AppError({
+				status: 401,
+				message: 'Unauthorized access to upload/update the thumbnail of an item.',
+				errors: [{ info: UNAUTHORIZED_ACCESS }],
+				log: {
+					level: 'debug',
+					message: 'Unauthorized access to upload/update the thumbnail of an item',
+					meta: {
+						consumer,
+						consumerId,
+						itemId
+					},
+				},
+			});
 		}
 
 		const signedPost = await s3.createPresignedPost({
@@ -165,15 +136,13 @@ router.post(
 			Expires: ITEM_THUMBNAIL_POST_URL_EXPIRATION,
 		});
 
-		logger.debug(`Created new presigned post url for item thumbnail: ${itemId}`);
+		logger.debug('Created new presigned post url for item thumbnail', { itemId });
 
-		return res.json(
-			message(
-				'Presigned post url generated successfully.',
-				{ ...signedPost }
-			)
+		return message(
+			'Presigned post url generated successfully.',
+			{ ...signedPost }
 		);
-	},
+	}),
 );
 
 export default router;

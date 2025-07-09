@@ -46,6 +46,7 @@ import { isGrantType } from '../../utils/grantType';
 import { validateUUIDV4 } from '../../utils/uuid';
 import { eightAlphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
 import { mfaValidationMiddleware } from '../../utils/mfa';
+import asyncHandler from '../../utils/asyncHandler';
 
 const router = Router();
 
@@ -188,29 +189,22 @@ router.post(
 			return mfaValidationMiddleware()(req, res, next);
 		},
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const grantType = req.query.grant_type as GrantTypes;
-
-		logger.debug(`Token Endpoint accessed with grant type: ${grantType}`);
 
 		switch (grantType) {
 			case 'mfa_challenge':
-				mfaChallengeController(req, res);
-				break;
+				return mfaChallengeController(req);
 			case 'password':
-				passwordController(req, res);
-				break;
+				return passwordController(req);
 			case 'client_credentials':
-				clientCredentialsController(req, res);
-				break;
+				return clientCredentialsController(req);
 			case 'authorization_code':
-				authorizationCodeController(req, res);
-				break;
+				return authorizationCodeController(req);
 			case 'refresh_token':
-				refreshTokenController(req, res);
-				break;
+				return refreshTokenController(req);
 		}
-	},
+	}),
 );
 
 export default router;

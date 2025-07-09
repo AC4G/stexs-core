@@ -19,13 +19,14 @@ export interface ApiResponse {
 	timestamp: string;
 	data: Record<string, any>;
 	errors: ApiErrorResponse[];
+	onTest: () => {};
 }
 
 export function message(
 	message: string,
 	data: Record<string, any> = {},
 	errors: ApiError[] = [],
-) {
+): ApiResponse {
 	const baseMessage = {
 		success: errors.length === 0,
 		message,

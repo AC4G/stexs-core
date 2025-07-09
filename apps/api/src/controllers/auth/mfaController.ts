@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import { Request } from 'express-jwt';
 import logger from '../../logger';
 import { message } from 'utils-node/messageBuilder';
@@ -13,10 +12,7 @@ import {
 	MFA_TOTP_ALREADY_ENABLED,
 	MFA_TOTP_ALREADY_VERIFIED,
 } from 'utils-node/errors';
-import {
-	getTOTPForSettup,
-	getTOTPForVerification,
-} from '../../utils/totp';
+import { getTOTPForSettup, getTOTPForVerification } from '../../utils/totp';
 import { generateCode, isExpired } from 'utils-node';
 import { sendEmailMessage } from '../../producers/emailProducer';
 import {
@@ -34,692 +30,483 @@ import {
 } from '../../repositories/auth/mfa';
 import { MFA_EMAIL_CODE_EXPIRATION } from '../../../env-config';
 import db from '../../db';
-import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import AppError from '../../utils/appError';
+import { AsyncHandlerResult } from '../../utils/asyncHandler';
 
-export async function enableTOTP(req: Request, res: Response) {
+export async function enableTOTP(req: Request): Promise<AsyncHandlerResult> {
 	const userId = req.auth?.sub!;
-	
-	let email: string;
 
-	try {
-		const { rowCount, rows } = await getTOTPInfoForEnabling(userId);
+	const { rowCount, rows } = await getTOTPInfoForEnabling(userId);
 
-		if (!rowCount || rowCount === 0) {
-			logger.error(`MFA TOTP status not found for user: ${userId}`);
-			return res
-				.status(404)
-				.json(
-					message(
-						'An unexpected error occured while checking MFA status.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		if (rows[0].totp_verified_at) {
-			logger.debug(`MFA TOTP is already enabled for user: ${userId}`);
-			return res
-				.status(400)
-				.json(
-					message(
-						'MFA TOTP is already enabled.',
-						{},
-						[{ info: MFA_TOTP_ALREADY_ENABLED }]
-					)
-				);
-		}
-
-		({ email } = rows[0]);
-	} catch (e) {
-		logger.error(
-			`Error while fetching MFA TOTP status for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while checking MFA TOTP status.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+	if (!rowCount) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while checking MFA status.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'MFA TOTP status not found',
+				meta: { userId },
+			}
+		});
 	}
+
+	if (rows[0].totp_verified_at) {
+		throw new AppError({
+			status: 400,
+			message: 'MFA TOTP is already enabled.',
+			errors: [{ info: MFA_TOTP_ALREADY_ENABLED }],
+			log: {
+				level: 'debug',
+				message: 'MFA TOTP is already enabled',
+				meta: { userId },
+			}
+		});
+	}
+
+	const email = rows[0].email;
 
 	const totp = getTOTPForSettup(email);
 	const secret = totp.secret.base32;
 
-	try {
-		const { rowCount } = await setTOTPSecret(userId, secret);
+	const { rowCount: rowCount2 } = await setTOTPSecret(userId, secret);
 
-		if (!rowCount || rowCount === 0) {
-			logger.error(`Failed to set MFA TOTP secret for user: ${userId}`);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while setting MFA TOTP secret.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-	} catch (e) {
-		logger.error(
-			`Error while updating MFA TOTP secret for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while setting MFA TOTP secret.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+	if (!rowCount2) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while setting MFA TOTP secret.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Setting MFA TOTP secret failed',
+				meta: { userId },
+			}
+		});
 	}
 
-	res.json(message('MFA TOTP successfully initialized.', {
+	return message('MFA TOTP successfully initialized.', {
 		secret,
 		otp_auth_uri: totp.toString(),
-	}));
+	});
 }
 
-export async function enableEmail(req: Request, res: Response) {
+export async function enableEmail(req: Request): Promise<AsyncHandlerResult> {
 	const userId = req.auth?.sub!;
-	const {
-		code
-	}: {
-		code: string
-	} = req.body;
+	const code: string = req.body.code;
 
-	try {
-		const { rowCount, rows } = await getEmailInfo(userId);
+	const { rowCount, rows } = await getEmailInfo(userId);
 
-		if (!rowCount || rowCount === 0) {
-			logger.error(
-				`Failed to fetch MFA email code and timestamp for user: ${userId}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while checking MFA email status.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		const row = rows[0];
-
-		if (row.email) {
-			logger.debug(`MFA email is already enabled for user: ${userId}`);
-			return res
-				.status(400)
-				.json(
-					message(
-						'MFA email is already enabled.',
-						{},
-						[{ info: MFA_EMAIL_ALREADY_ENABLED }]
-					)
-				);
-		}
-
-		if (code !== row.email_code) {
-			logger.debug(`Invalid MFA activation code provided for user: ${userId}`);
-			return res
-				.status(403)
-				.json(
-					message(
-						'Invalid MFA activation code provided.',
-						{},
-						[
-							{
-								info: INVALID_CODE,
-								data: {
-									location: 'body',
-									path: 'code',
-								},
-							},
-						]
-					)
-				);
-		}
-
-		const emailCodeSentAt = row.email_code_sent_at;
-
-		if (!emailCodeSentAt || isExpired(emailCodeSentAt, MFA_EMAIL_CODE_EXPIRATION)) {
-			logger.debug(`MFA activation code expired for user: ${userId}`);
-			return res
-				.status(403)
-				.json(
-					message(
-						'MFA activation code expired.',
-						{},
-						[
-							{
-								info: CODE_EXPIRED,
-								data: {
-									location: 'body',
-									path: 'code',
-								},
-							},
-						]
-					)
-				);
-		}
-
-		const { rowCount: rowCount2 } = await finalizeEnablingEmailMFA(userId);
-
-		if (!rowCount2 || rowCount2 === 0) {
-			logger.error(
-				`Failed to update MFA email status, code and timestamp for user: ${userId}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while enabling MFA email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-	} catch (e) {
-		logger.error(
-			`Error during MFA email activation for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while enabling MFA email.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+	if (!rowCount) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while checking MFA email status.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Failed to fetch MFA email code and timestamp',
+				meta: { userId },
+			}
+		});
 	}
 
-	logger.debug(`Successfully enabled MFA email for user: ${userId}`);
+	const row = rows[0];
 
-	res.json(message('Email MFA successfully enabled.'));
+	if (row.email) {
+		throw new AppError({
+			status: 400,
+			message: 'MFA email is already enabled.',
+			errors: [{ info: MFA_EMAIL_ALREADY_ENABLED }],
+			log: {
+				level: 'debug',
+				message: 'MFA email is already enabled',
+				meta: { userId },
+			}
+		});
+	}
+
+	if (code !== row.email_code) {
+		throw new AppError({
+			status: 403,
+			message: 'Invalid MFA activation code provided.',
+			errors: [
+				{
+					info: INVALID_CODE,
+					data: {
+						location: 'body',
+						path: 'code',
+					}
+				}
+			],
+			log: {
+				level: 'debug',
+				message: 'Invalid MFA activation code provided',
+				meta: { userId },
+			}
+		});
+	}
+
+	const emailCodeSentAt = row.email_code_sent_at;
+
+	if (!emailCodeSentAt || isExpired(emailCodeSentAt, MFA_EMAIL_CODE_EXPIRATION)) {
+		throw new AppError({
+			status: 403,
+			message: 'MFA activation code expired.',
+			errors: [
+				{
+					info: CODE_EXPIRED,
+					data: {
+						location: 'body',
+						path: 'code',
+					},
+				},
+			],
+			log: {
+				level: 'debug',
+				message: 'MFA activation code expired',
+				meta: { userId },
+			}
+		});
+	}
+
+	const { rowCount: rowCount2 } = await finalizeEnablingEmailMFA(userId);
+
+	if (!rowCount2) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while enabling MFA email.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Failed to update MFA email status, code and timestamp',
+				meta: { userId },
+			}
+		});
+	}
+
+	logger.debug('Successfully enabled MFA email', { userId });
+
+	return message('Email MFA successfully enabled.');
 }
 
-export async function disableTOTP(req: Request, res: Response) {
+export async function disableTOTP(req: Request): Promise<AsyncHandlerResult> {
 	const userId = req.auth?.sub!;
-	const {
-		code
-	}: {
-		code: string
-	} = req.body;
+	const code: string = req.body.code;
 
-	let secret: string;
+	const { rowCount, rows } = await getTOTPInfoForDisabling(userId);
 
-	try {
-		const { rowCount, rows } = await getTOTPInfoForDisabling(userId);
-
-		if (!rowCount || rowCount === 0) {
-			logger.error(
-				`Failed to fetch MFA TOTP status and secret for user: ${userId}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while checking MFA status.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		const row = rows[0];
-
-		if (!row.totp_verified_at) {
-			logger.debug(`MFA TOTP is already disabled for user: ${userId}`);
-			return res
-				.status(400)
-				.json(
-					message(
-						'MFA TOTP is already disabled.',
-						{},
-						[{ info: MFA_TOTP_ALREADY_DISABLED }]
-					)
-				);
-		}
-
-		if (!row.email) {
-			logger.debug(`MFA totp cant be disabled because this is the last active MFA method for user: ${userId}`);
-			return res
-				.status(400)
-				.json(
-					message(
-						'MFA TOTP cant be disabled because this is the last active MFA method.',
-						{},
-						[{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }]
-					)
-				);
-		}
-
-		secret = row.totp_secret!;
-	} catch (e) {
-		logger.error(
-			`Error while fetching MFA TOTP status and secret for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while checking MFA status.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+	if (!rowCount) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while checking MFA status.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Failed to fetch MFA TOTP status and secret',
+				meta: { userId },
+			}
+		});
 	}
+
+	const row = rows[0];
+
+	if (!row.totp_verified_at) {
+		throw new AppError({
+			status: 400,
+			message: 'MFA TOTP is already disabled.',
+			errors: [{ info: MFA_TOTP_ALREADY_DISABLED }],
+			log: {
+				level: 'debug',
+				message: 'MFA TOTP is already disabled',
+				meta: { userId },
+			}
+		});
+	}
+
+	if (!row.email) {
+		throw new AppError({
+			status: 400,
+			message: 'MFA TOTP cant be disabled because this is the last active MFA method.',
+			errors: [{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }],
+			log: {
+				level: 'debug',
+				message: 'MFA TOTP cant be disabled because this is the last active MFA method',
+				meta: { userId },
+			}
+		});
+	}
+
+	const secret = row.totp_secret!;
 
 	const totp = getTOTPForVerification(secret);
 
 	if (totp.validate({ token: code, window: 1 }) === null) {
-		logger.debug(`Invalid code provided for MFA TOTP for user: ${userId}`);
-		return res
-			.status(403)
-			.json(
-				message(
-					'Invalid code provided.',
-					{},
-					[
-						{
-							info: INVALID_CODE,
-							data: {
-								location: 'body',
-								path: 'code',
-							},
-						},
-					]
-				)
-			);
+		throw new AppError({
+			status: 403,
+			message: 'Invalid code provided.',
+			errors: [
+				{
+					info: INVALID_CODE,
+					data: {
+						location: 'body',
+						path: 'code',
+					},
+				},
+			],
+			log: {
+				level: 'debug',
+				message: 'Invalid code provided for MFA TOTP',
+				meta: { userId },
+			}
+		});
 	}
 
-	try {
-		const { rowCount } = await disableTOTPMethod(userId)
+	const { rowCount: rowCount2 } = await disableTOTPMethod(userId)
 
-		if (!rowCount || rowCount === 0) {
-			logger.error(
-				`Failed to update MFA TOTP status, secret and timestamp for user: ${userId}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while disabling MFA TOTP.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-	} catch (e) {
-		logger.error(
-			`Error while updating MFA TOTP status, secret and timestamp for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while disabling MFA TOTP.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+	if (!rowCount2) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while disabling MFA TOTP.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Failed to update MFA TOTP status, secret and timestamp',
+				meta: { userId },
+			}
+		});
 	}
 
-	logger.debug(`Successfully disabled MFA TOTP for user: ${userId}`);
+	logger.debug('Successfully disabled MFA TOTP', { userId });
 
-	res.json(message('TOTP MFA successfully disabled.'));
+	return message('TOTP MFA successfully disabled.');
 }
 
-export async function disableEmail(req: Request, res: Response) {
+export async function disableEmail(req: Request): Promise<AsyncHandlerResult> {
 	const userId = req.auth?.sub!;
-	const {
-		code
-	}: {
-		code: string
-	} = req.body;
+	const code: string = req.body.code;
 
-	try {
-		const { rowCount, rows } = await getEmailInfoForDisabling(userId);
+	const { rowCount, rows } = await getEmailInfoForDisabling(userId);
 
-		if (!rowCount || rowCount === 0) {
-			logger.error(
-				`Failed to fetch MFA email code and timestamp for user: ${userId}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while checking MFA status.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		const row = rows[0];
-
-		if (!row.email) {
-			logger.debug(`MFA email is already disabled for user: ${userId}`);
-			return res
-				.status(400)
-				.json(
-					message(
-						'MFA email is already disabled.',
-						{},
-						[{ info: MFA_EMAIL_ALREADY_DISABLED }]
-					)
-				);
-		}
-
-		if (!row.totp_verified_at) {
-			logger.debug(`MFA email cant be disabled because this is the last active MFA method for user: ${userId}`);
-			return res
-				.status(400)
-				.json(
-					message(
-						'MFA email cant be disabled because this is the last active MFA method.',
-						{},
-						[{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }]
-					)
-				);
-		}
-
-		if (code !== row.email_code) {
-			logger.debug(`Invalid MFA code provided for user: ${userId}`);
-			return res
-				.status(403)
-				.json(
-					message(
-						'Invalid code provided.',
-						{},
-						[
-							{
-								info: INVALID_CODE,
-								data: {
-									location: 'body',
-									path: 'code',
-								},
-							},
-						]
-					)
-				);
-		}
- 
-		const emailCodeSentAt = row.email_code_sent_at;
-
-		if (!emailCodeSentAt || isExpired(emailCodeSentAt, MFA_EMAIL_CODE_EXPIRATION)) {
-			logger.debug(`MFA code expired for user: ${userId}`);
-			return res
-				.status(403)
-				.json(
-					message(
-						'Provided code expired.',
-						{},
-						[
-							{
-								info: CODE_EXPIRED,
-								data: {
-									location: 'body',
-									path: 'code',
-								},
-							},
-						]
-					)
-				);
-		}
-
-		const { rowCount: rowCount2 } = await disableEmailMethod(userId);
-
-		if (!rowCount2 || rowCount2 === 0) {
-			logger.error(
-				`Failed to update MFA email status, code and timestamp for user: ${userId}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while disabling MFA email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-	} catch (e) {
-		logger.error(
-			`Error during MFA email confirmation for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while disabling MFA email.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+	if (!rowCount) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while checking MFA status.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Failed to fetch MFA email code and timestamp',
+				meta: { userId },
+			}
+		});
 	}
 
-	logger.debug(`Successfully disabled MFA email for user: ${userId}`);
+	const row = rows[0];
 
-	res.json(message('Email MFA successfully disabled.'));
+	if (!row.email) {
+		throw new AppError({
+			status: 400,
+			message: 'MFA email is already disabled.',
+			errors: [{ info: MFA_EMAIL_ALREADY_DISABLED }],
+			log: {
+				level: 'debug',
+				message: 'MFA email is already disabled',
+				meta: { userId },
+			}
+		});
+	}
+
+	if (!row.totp_verified_at) {
+		throw new AppError({
+			status: 400,
+			message: 'MFA email cant be disabled because this is the last active MFA method.',
+			errors: [{ info: MFA_CANNOT_BE_COMPLETELY_DISABLED }],
+			log: {
+				level: 'debug',
+				message: 'MFA email cant be disabled because this is the last active MFA method',
+				meta: { userId },
+			}
+		});
+	}
+
+	if (code !== row.email_code) {
+		throw new AppError({
+			status: 403,
+			message: 'Invalid code provided.',
+			errors: [
+				{
+					info: INVALID_CODE,
+					data: {
+						location: 'body',
+						path: 'code',
+					},
+				},
+			],
+			log: {
+				level: 'debug',
+				message: 'Invalid code provided for MFA email',
+				meta: { userId },
+			}
+		});
+	}
+
+	const emailCodeSentAt = row.email_code_sent_at;
+
+	if (!emailCodeSentAt || isExpired(emailCodeSentAt, MFA_EMAIL_CODE_EXPIRATION)) {
+		throw new AppError({
+			status: 403,
+			message: 'Provided code expired.',
+			errors: [
+				{
+					info: CODE_EXPIRED,
+					data: {
+						location: 'body',
+						path: 'code',
+					},
+				},
+			],
+			log: {
+				level: 'debug',
+				message: 'MFA code expired',
+				meta: { userId },
+			}
+		});
+	}
+
+	const { rowCount: rowCount2 } = await disableEmailMethod(userId);
+
+	if (!rowCount2) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while disabling MFA email.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Failed to update MFA email status, code and timestamp',
+				meta: { userId },
+			}
+		});
+	}
+
+	logger.debug('Successfully disabled MFA email', { userId });
+
+	return message('Email MFA successfully disabled.');
 }
 
-export async function verifyTOTP(req: Request, res: Response) {
+export async function verifyTOTP(req: Request): Promise<AsyncHandlerResult> {
 	const userId = req.auth?.sub!;
-	const { code } = req.body;
+	const code: string = req.body.code;
 
-	let secret: string;
+	const { rowCount, rows } = await getTOTPStatus(userId);
 
-	try {
-		const { rowCount, rows } = await getTOTPStatus(userId);
-
-		if (!rowCount || rowCount === 0) {
-			logger.error(
-				`Failed to fetch MFA TOTP secret and timestamp for user: ${userId}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while verifying MFA TOTP.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		if (rows[0].totp_verified_at) {
-			logger.debug(`MFA TOTP is already verified for user: ${userId}`);
-			return res
-				.status(400)
-				.json(
-					message(
-						'MFA TOTP is already verified.',
-						{},
-						[{ info: MFA_TOTP_ALREADY_VERIFIED }]
-					)
-				);
-		}
-
-		secret = rows[0].totp_secret!;
-	} catch (e) {
-		logger.error(
-			`Error while fetching MFA TOTP secret and timestamp for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`
-		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while verifying MFA TOTP.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+	if (!rowCount) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while verifying MFA TOTP.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Failed to fetch MFA TOTP secret and timestamp',
+				meta: { userId },
+			}
+		});
 	}
+
+	if (rows[0].totp_verified_at) {
+		throw new AppError({
+			status: 400,
+			message: 'MFA TOTP is already verified.',
+			errors: [{ info: MFA_TOTP_ALREADY_VERIFIED }],
+			log: {
+				level: 'debug',
+				message: 'MFA TOTP is already verified',
+				meta: { userId },
+			}
+		});
+	}
+
+	const secret = rows[0].totp_secret!;
 
 	const totp = getTOTPForVerification(secret);
 
 	if (totp.validate({ token: code, window: 1 }) === null) {
-		logger.debug(`Invalid code provided for MFA TOTP verification for user: ${userId}`);
-		return res
-			.status(403)
-			.json(
-				message(
-					'Invalid code provided.',
-					{},
-					[
-						{
-							info: INVALID_CODE,
-							data: {
-								location: 'body',
-								path: 'code',
-							},
-						},
-					]
-				)
-			);
+		throw new AppError({
+			status: 403,
+			message: 'Invalid code provided.',
+			errors: [
+				{
+					info: INVALID_CODE,
+					data: {
+						location: 'body',
+						path: 'code',
+					},
+				},
+			],
+			log: {
+				level: 'debug',
+				message: 'Invalid code provided for MFA TOTP verification',
+				meta: { userId },
+			}
+		});
 	}
 
-	try {
-		const { rowCount } = await verifyTOTPMethod(userId);
+	const { rowCount: rowCount2 } = await verifyTOTPMethod(userId);
 
-		if (!rowCount || rowCount === 0) {
-			logger.error(
-				`Failed to update MFA TOTP status and timestamp for user: ${userId}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occured while verifying MFA TOTP.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-	} catch (e) {
-		logger.error(
-			`Error while updating MFA TOTP status and timestamp for user: ${userId}. Error: ${
-				e instanceof Error ? e.message : e
-			}`,
-		);
-		return res
-			.status(500)
-			.json(
-				message(
-					'An unexpected error occured while verifying MFA TOTP.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
+	if (!rowCount2) {
+		throw new AppError({
+			status: 500,
+			message: 'An unexpected error occured while verifying MFA TOTP.',
+			errors: [{ info: INTERNAL_ERROR }],
+			log: {
+				level: 'error',
+				message: 'Failed to update MFA TOTP status and timestamp',
+				meta: { userId },
+			}
+		});
 	}
 
-	logger.debug(`Successfully enabled MFA TOTP for user: ${userId}`);
+	logger.debug('Successfully enabled MFA TOTP', { userId });
 
-	res.json(message('TOTP MFA successfully enabled.'));
+	return message('TOTP MFA successfully enabled.');
 }
 
-export async function sendEmailCode(req: Request, res: Response) {
+export async function sendEmailCode(req: Request): Promise<AsyncHandlerResult> {
 	const userId = req.auth?.sub!;
 	const code = generateCode(8);
 
-	try {
-		await db.withTransaction(async (client) => {
-			let email: string;
-			
-			try {
-				const { rowCount, rows } = await setEmailCode(
-					userId,
-					code,
-					client
-				);
+	await db.withTransaction(async (client) => {
 
-				if (!rowCount || rowCount === 0) {
-					logger.error(`User not found for MFA code update for user: ${userId}`);
+		const { rowCount, rows } = await setEmailCode(
+			userId,
+			code,
+			client
+		);
 
-					throw new AppError(
-						500,
-						'An unexpected error occured while creating MFA code.',
-						[{ info: INTERNAL_ERROR }]
-					);
+		if (!rowCount) {
+			throw new AppError({
+				status: 500,
+				message: 'An unexpected error occured while creating MFA code.',
+				errors: [{ info: INTERNAL_ERROR }],
+				log: {
+					level: 'error',
+					message: 'User not found for MFA code update',
+					meta: { userId },
 				}
-
-				({ email } = rows[0]);
-			} catch (e) {
-				logger.error(
-					`Error while updating and fetching MFA code for user: ${userId}. Error: ${
-						e instanceof Error ? e.message : e
-					}`,
-				);
-
-				throw new AppError(
-					500,
-					'An unexpected error occured while creating MFA code.',
-					[{ info: INTERNAL_ERROR }]
-				);
-			}
-
-			try {
-				await sendEmailMessage({
-					to: email,
-					subject: 'MFA Code',
-					content: `Your MFA code: ${code}`,
-				});
-			} catch (e) {
-				logger.error(
-					`Error while sending MFA code to ${email}. Error: ${
-						e instanceof Error ? e.message : e
-					}`,
-				);
-
-				throw new AppError(
-					500,
-					'An unexpected error occurred while sending MFA code.',
-					[{ info: INTERNAL_ERROR }]
-				);
-			}
-
-			logger.debug(`MFA code successfully sent to email: ${email}`);
-
-			res.json(message('MFA code successfully send to users email.'));
-		});
-	} catch (e) {
-		if (e instanceof AppError) {
-			transformAppErrorToResponse(e, res);
-
-			return;
+			});
 		}
 
-		logger.error(`Sending email failed: ${e instanceof Error ? e.message : e}`);
-		
-		res.status(500).json(
-			message(
-				'Unexpected error occurred while sending email.',
-				{},
-				[{ info: INTERNAL_ERROR }]
-			)
-		);
-	}
+		const email = rows[0].email;
+
+		await sendEmailMessage({
+			to: email,
+			subject: 'MFA Code',
+			content: `Your MFA code: ${code}`,
+		});
+
+		logger.debug('MFA code successfully sent', {
+			userId,
+			email,
+			code
+		});
+
+		return message('MFA code successfully send to users email.');
+	});
 }

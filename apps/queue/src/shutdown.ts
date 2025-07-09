@@ -54,7 +54,11 @@ export function registerShutdownHooks(pulsarClient: pulsar.Client) {
   process.on('SIGINT', () => cleanupAndExit(0));
   process.on('SIGTERM', () => cleanupAndExit(0));
   process.on('uncaughtException', (err) => {
-    logger.error(`Uncaught Exception: ${err.message}`);
+    logger.error('Uncaught Exception', { error: extractError(err) });
+    cleanupAndExit(1);
+  });
+  process.on('unhandledRejection', (err) => {
+    logger.error('Unhandled Rejection', { error: extractError(err) });
     cleanupAndExit(1);
   });
 }

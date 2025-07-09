@@ -1,13 +1,7 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import logger from '../../logger';
 import { Request } from 'express-jwt';
-import { param } from 'express-validator';
-import {
-	INTERNAL_ERROR,
-	PROJECT_ID_NOT_NUMERIC,
-	PROJECT_ID_REQUIRED,
-	UNAUTHORIZED_ACCESS,
-} from 'utils-node/errors';
+import { UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import db from '../../db';
 import { message } from 'utils-node/messageBuilder';
 import {
@@ -30,21 +24,19 @@ import {
 } from 'utils-node/middlewares';
 import { isUserAdminOrOwnerOfProject } from '../../repositories/public/projectMembers';
 import { isClientAllowedToAccessProject } from '../../repositories/public/projects';
+import { projectIdQueryValidator } from '../../utils/validators';
+import asyncHandler from '../../utils/asyncHandler';
+import AppError from '../../utils/appError';
 
 const router = Router();
 
 router.get(
 	'/:projectId',
 	[
-		param('projectId')
-			.notEmpty()
-			.withMessage(PROJECT_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(PROJECT_ID_NOT_NUMERIC),
+		projectIdQueryValidator,
 		validate(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const { projectId } = req.params;
 
 		const expires = PROJECT_LOGO_GET_URL_EXPIRATION;
@@ -55,36 +47,29 @@ router.get(
 			Expires: expires,
 		});
 
-		logger.debug(`Generated new presigned url for project logo: ${projectId}`);
+		logger.debug('Generated new presigned url for project logo', { projectId });
 
-		return res.json(
-			message(
-				'Presigned url generated successfully.',
-				{
-					url: signedUrl,
-					expires
-				}
-			)
+		return message(
+			'Presigned url generated successfully.',
+			{
+				url: signedUrl,
+				expires
+			}
 		);
-	},
+	}),
 );
 
 router.post(
 	'/:projectId',
 	[
-		param('projectId')
-			.notEmpty()
-			.withMessage(PROJECT_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(PROJECT_ID_NOT_NUMERIC),
+		projectIdQueryValidator,
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
 		checkScopes(['project.logo.write'], db, logger),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;
 		const { projectId } = req.params;
 		const {
@@ -97,54 +82,40 @@ router.post(
 			organization_id: number;
 		};
 
-		try {
-			let isAllowed = false;
+		let isAllowed = false;
 
-			if (grantType === 'password') {
-				const { rowCount } = await isUserAdminOrOwnerOfProject(sub, Number(projectId));
+		if (grantType === 'password') {
+			const { rowCount } = await isUserAdminOrOwnerOfProject(sub, Number(projectId));
 
-				if (rowCount === 1) isAllowed = true;
-			} else {
-				const { rowCount } = await isClientAllowedToAccessProject(
-					organizationId,
-					Number(projectId),
-					clientId
-				);
-
-				if (rowCount === 1) isAllowed = true;
-			}
-
-			if (!isAllowed) {
-				const consumer = grantType === 'password' ? 'User' : 'Client';
-				const consumerId = grantType === 'password' ? sub : clientId;
-
-				logger.debug(`${consumer} is not authorized to upload/update the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`);
-
-				return res
-					.status(401)
-					.json(
-						message(
-							'Unauthorized access to upload/update the logo of the given project.',
-							{},
-							[{ info: UNAUTHORIZED_ACCESS }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while checking the current user if authorized for uploading/updating project logo. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			if (rowCount === 1) isAllowed = true;
+		} else {
+			const { rowCount } = await isClientAllowedToAccessProject(
+				organizationId,
+				Number(projectId),
+				clientId
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking authorization.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+
+			if (rowCount === 1) isAllowed = true;
+		}
+
+		if (!isAllowed) {
+			const consumer = grantType === 'password' ? 'User' : 'Client';
+			const consumerId = grantType === 'password' ? sub : clientId;
+
+			throw new AppError({
+				status: 401,
+				message: 'Unauthorized access to upload/update the logo of the given project.',
+				errors: [{ info: UNAUTHORIZED_ACCESS }],
+				log: {
+					level: 'debug',
+					message: 'Unauthorized access to upload/update the logo of the given project',
+					meta: {
+						consumer,
+						consumerId,
+						projectId
+					}
+				}
+			});
 		}
 
 		const signedPost = await s3.createPresignedPost({
@@ -165,33 +136,26 @@ router.post(
 			Expires: PROJECT_LOGO_POST_URL_EXPIRATION,
 		});
 
-		logger.debug(`Created signed post url for project logo: ${projectId}`);
+		logger.debug('Created signed post url for project logo', { projectId });
 
-		return res.json(
-			message(
-				'Presigned url generated successfully.',
-				{ ...signedPost }
-			)
+		return message(
+			'Presigned url generated successfully.',
+			{ ...signedPost }
 		);
-	},
+	}),
 );
 
 router.delete(
 	'/:projectId',
 	[
-		param('projectId')
-			.notEmpty()
-			.withMessage(PROJECT_ID_REQUIRED)
-			.bail()
-			.isNumeric()
-			.withMessage(PROJECT_ID_NOT_NUMERIC),
+		projectIdQueryValidator,
 		validate(logger),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
 		checkScopes(['project.logo.delete'], db, logger),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;
 		const { projectId } = req.params;
 		const {
@@ -204,86 +168,55 @@ router.delete(
 			organization_id: number;
 		};
 
-		try {
-			let rowsFound = false;
+		let rowsFound = false;
 
-			if (grantType === 'password') {
-				const { rowCount } = await isUserAdminOrOwnerOfProject(sub, Number(projectId));
+		if (grantType === 'password') {
+			const { rowCount } = await isUserAdminOrOwnerOfProject(sub, Number(projectId));
 
-				if (rowCount === 1) rowsFound = true;
-			} else {
-				const { rowCount } = await isClientAllowedToAccessProject(
-					organizationId,
-					Number(projectId),
-					clientId
-				);
-
-				if (rowCount === 1) rowsFound = true;
-			}
-
-			if (!rowsFound) {
-				const consumer = grantType === 'password' ? 'User' : 'Client';
-				const consumerId = grantType === 'password' ? sub : clientId;
-
-				logger.debug(`${consumer} is not authorized to delete the logo of the given project: ${projectId}. ${consumer}: ${consumerId}`);
-
-				return res
-					.status(401)
-					.json(
-						message(
-							'Unauthorized access to delete the logo of the given project.',
-							{},
-							[{ info: UNAUTHORIZED_ACCESS }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error while checking the current user if authorized for deleting project logo. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
+			if (rowCount === 1) rowsFound = true;
+		} else {
+			const { rowCount } = await isClientAllowedToAccessProject(
+				organizationId,
+				Number(projectId),
+				clientId
 			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking authorization.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+
+			if (rowCount === 1) rowsFound = true;
 		}
 
-		try {
-			await s3
-				.deleteObjects({
-					Bucket: BUCKET,
-					Delete: {
-						Objects: [{ Key: 'projects/' + projectId }],
-					},
-				})
-				.promise();
+		if (!rowsFound) {
+			const consumer = grantType === 'password' ? 'User' : 'Client';
+			const consumerId = grantType === 'password' ? sub : clientId;
 
-			logger.debug(`Deleted logo from project: ${projectId}`);
-
-			res.sendStatus(204);
-		} catch (e) {
-			logger.error(
-				`Error while deleting project logo. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while deleting project logo.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+			throw new AppError({
+				status: 401,
+				message: 'Unauthorized access to delete the logo of the given project.',
+				errors: [{ info: UNAUTHORIZED_ACCESS }],
+				log: {
+					level: 'debug',
+					message: 'Unauthorized access to delete the logo of the given project',
+					meta: {
+						consumer,
+						consumerId,
+						projectId
+					}
+				}
+			});
 		}
-	},
+
+		await s3
+			.deleteObjects({
+				Bucket: BUCKET,
+				Delete: {
+					Objects: [{ Key: 'projects/' + projectId }],
+				},
+			})
+			.promise();
+
+		logger.debug(`Deleted logo from project: ${projectId}`);
+
+		return 204;
+	}),
 );
 
 export default router;

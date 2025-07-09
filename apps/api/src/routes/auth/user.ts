@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { Request } from 'express-jwt';
 import { body } from 'express-validator';
 import {
@@ -42,7 +42,7 @@ import {
 import { getActiveUserSessions } from '../../repositories/auth/refreshTokens';
 import { verifyPassword } from '../../utils/password';
 import db from '../../db';
-import AppError, { transformAppErrorToResponse } from '../../utils/appError';
+import AppError from '../../utils/appError';
 import { alphaNumericRegex } from '../../utils/regex';
 import {
 	codeSupportedMFABodyValidator,
@@ -50,6 +50,7 @@ import {
 	passwordBodyValidator,
 	typeSupportedMFABodyValidator
 } from '../../utils/validators';
+import asyncHandler from '../../utils/asyncHandler';
 
 const router = Router();
 
@@ -60,45 +61,33 @@ router.get(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
 
-		try {
-			const { rowCount, rows } = await getUserData(userId);
+		const { rowCount, rows } = await getUserData(userId);
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(`User not found for user id: ${userId}`);
-				return res
-					.status(404)
-					.json(
-						message(
-							'User not found.',
-							{},
-							[{ info: USER_NOT_FOUND }]
-						)
-					);
-			}
-
-			logger.debug(`User data retrieve successful for user: ${userId}`);
-
-			res.json(message('User data retrieved successfully.', rows[0]));
-		} catch (e) {
-			logger.error(
-				`Error while fetching user data for user: ${userId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while retrieving user data.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+		if (!rowCount) {
+			throw new AppError({
+				status: 404,
+				message: 'User not found.',
+				errors: [{ info: USER_NOT_FOUND }],
+				log: {
+					level: 'error',
+					message: 'User not found',
+					meta: { userId }
+				}
+			});
 		}
-	},
+
+		const data = rows[0];
+
+		logger.debug('User data retrieved successfully', {
+			userId,
+			data
+		});
+
+		return message('User data retrieved successfully.', data);
+	}),
 );
 
 router.get(
@@ -108,34 +97,18 @@ router.get(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
 
-		try {
-			const { rowCount } = await getActiveUserSessions(userId);
+		const { rowCount: amount } = await getActiveUserSessions(userId);
 
-			logger.debug(`Sessions amount retrieve successful for user: ${userId}`);
+		logger.debug('Sessions amount retrieved successfully', {
+			userId,
+			amount
+		});
 
-			res.json(message('Sessions amount retrieved successfully.', {
-				amount: rowCount,
-			}));
-		} catch (e) {
-			logger.error(
-				`Error while fetching sessions amount for user: ${userId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while retrieving sessions amount.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-	},
+		return message('Sessions amount retrieved successfully.', { amount });
+	}),
 );
 
 router.post(
@@ -150,81 +123,64 @@ router.post(
 		transformJwtErrorMessages(logger),
 		mfaValidationMiddleware(),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
 		const password: string = req.body.password;
 
-		try {
-			const { rowCount, rows } = await getUsersEncryptedPassword(userId);
+		const { rowCount, rows } = await getUsersEncryptedPassword(userId);
 
-			if (!rowCount || rowCount === 0) {
-				logger.error(`Password change failed for user: ${userId}`);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while changing password.',
-							{},
-							[{ info: PASSWORD_CHANGE_FAILED }]
-						)
-					);
-			}
-
-			if (await verifyPassword(password, rows[0].encrypted_password)) {
-				logger.debug(`New password matches the current password for user: ${userId}`);
-				return res
-					.status(400)
-					.json(
-						message(
-							'New password matches the current password.',
-							{},
-							[
-								{
-									info: NEW_PASSWORD_EQUALS_CURRENT,
-									data: {
-										path: 'password',
-										location: 'body',
-									},
-								},
-							]
-						)
-					);
-			}
-			const { rowCount: rowCount2 } = await changePassword(userId, password);
-
-			if (!rowCount2 || rowCount2 === 0) {
-				logger.error(`Password change failed for user: ${userId}`);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while changing password.',
-							{},
-							[{ info: PASSWORD_CHANGE_FAILED }]
-						)
-					);
-			}
-
-			logger.debug(`Password change successful for user: ${userId}`);
-
-			res.json(message('Password changed successfully.'));
-		} catch (e) {
-			logger.error(
-				`Error while changing password for user: ${userId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while changing password.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+		if (!rowCount) {
+			throw new AppError({
+				status: 500,
+				message: 'An unexpected error occurred while changing password.',
+				errors: [{ info: PASSWORD_CHANGE_FAILED }],
+				log: {
+					level: 'error',
+					message: 'Password change failed',
+					meta: { userId }
+				}
+			});
 		}
-	},
+
+		if (await verifyPassword(password, rows[0].encrypted_password)) {
+			throw new AppError({
+				status: 400,
+				message: 'New password matches the current password.',
+				errors: [
+					{
+						info: NEW_PASSWORD_EQUALS_CURRENT,
+						data: {
+							path: 'password',
+							location: 'body',
+						},
+					},
+				],
+				log: {
+					level: 'debug',
+					message: 'New password matches the current password',
+					meta: { userId }
+				}
+			});
+		}
+		const { rowCount: rowCount2 } = await changePassword(userId, password);
+
+		if (!rowCount2) {
+			throw new AppError({
+				status: 500,
+				message: 'An unexpected error occurred while changing password.',
+				errors: [{ info: PASSWORD_CHANGE_FAILED }],
+				log: {
+					level: 'error',
+					message: 'Password change failed',
+					meta: { userId }
+				}
+			});
+		}
+
+		logger.debug('Password changed successfully', { userId });
+
+		return message('Password changed successfully.');
+	}),
 );
 
 router.post(
@@ -239,122 +195,67 @@ router.post(
 		transformJwtErrorMessages(logger),
 		mfaValidationMiddleware(),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
 		const newEmail: string = req.body.email;
 
-		try {
-			const { rowCount } = await userExistsByEmail(newEmail);
+		const { rowCount } = await userExistsByEmail(newEmail);
 
-			if (rowCount && rowCount > 0) {
-				logger.debug(`Provided email for change is already in use for user: ${userId}`);
-				return res
-					.status(403)
-					.json(
-						message(
-							'Provided email is not available for use.',
-							{},
-							[{ info: EMAIL_NOT_AVAILABLE }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error during email change check for user: ${userId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while checking email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
-		}
-
-		try {
-			await db.withTransaction(async (client) => {
-				const confirmationCode = generateCode(8);
-
-				try {
-					const { rowCount } = await initalizeEmailChange(
-						userId,
-						newEmail,
-						confirmationCode,
-						client
-					);
-
-					if (!rowCount || rowCount === 0) {
-						logger.error(`Email change failed for user: ${userId}`);
-
-						throw new AppError(
-							500,
-							'An unexpected error occurred while changing email.',
-							[{ info: INTERNAL_ERROR }]
-						);
-					}
-
-					logger.debug(`Email change initiated for user: ${userId}`);
-				} catch (e) {
-					logger.error(
-						`Error during email change initiation for user: ${userId}. Error: ${
-							e instanceof Error ? e.message : e
-						}`,
-					);
-
-					throw new AppError(
-						500,
-						'An unexpected error occurred while changing email.',
-						[{ info: INTERNAL_ERROR }]
-					);
+		if (rowCount && rowCount > 0) {
+			throw new AppError({
+				status: 403,
+				message: 'Provided email is not available for use.',
+				errors: [{ info: EMAIL_NOT_AVAILABLE }],
+				log: {
+					level: 'debug',
+					message: 'Provided email for change is already in use',
+					meta: { userId }
 				}
-
-				try {
-					await sendEmailMessage({
-						to: newEmail,
-						subject: 'Email Change Verification',
-						content: `Please verify your email change by using the following code: ${confirmationCode}`,
-					});
-				} catch (e) {
-					logger.error(
-						`Error sending email change verification link to email: ${newEmail}. Error: ${
-							e instanceof Error ? e.message : e
-						}`,
-					);
-
-					throw new AppError(
-						500,
-						'An unexpected error occurred while sending email change verification link.',
-						[{ info: INTERNAL_ERROR }]
-					);
-				}
-
-				logger.debug(`Email change verification link sent to ${newEmail}`);
-
-				res.json(message('Email change verification link has been sent to the new email address.'));
 			});
-		} catch (e) {
-			if (e instanceof AppError) {
-				transformAppErrorToResponse(e, res);
+		}
 
-				return;
+		return db.withTransaction(async (client) => {
+			const confirmationCode = generateCode(8);
+
+			const { rowCount } = await initalizeEmailChange(
+				userId,
+				newEmail,
+				confirmationCode,
+				client
+			);
+
+			if (!rowCount) {
+				throw new AppError({
+					status: 500,
+					message: 'An unexpected error occurred while changing email.',
+					errors: [{ info: INTERNAL_ERROR }],
+					log: {
+						level: 'error',
+						message: 'Email change failed',
+						meta: { userId }
+					}
+				});
 			}
 
-			logger.error(`Error sending email change verification link: ${e instanceof Error ? e.message : e}`);
-		
-			res.status(500).json(
-				message(
-					'Unexpected error occurred while sending email.',
-					{},
-					[{ info: INTERNAL_ERROR }]
-				)
-			);
-		}
-	},
+			logger.debug('Email change initialized successfully', {
+				userId,
+				newEmail
+			});
+
+			await sendEmailMessage({
+				to: newEmail,
+				subject: 'Email Change Verification',
+				content: `Please verify your email change by using the following code: ${confirmationCode}`,
+			});
+
+			logger.debug('Email change verification link has been sent to the new email address', {
+				userId,
+				newEmail
+			});
+
+			return message('Email change verification link has been sent to the new email address.');
+		});
+	}),
 );
 
 router.post(
@@ -369,80 +270,59 @@ router.post(
 		checkTokenGrantType(['password']),
 		transformJwtErrorMessages(logger),
 	],
-	async (req: Request, res: Response) => {
+	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
-		const {
-			code
-		}: {
-			code: string
-		} = req.body;
+		const code: string = req.body.code;
 
-		try {
-			const { rowCount, rows } = await validateEmailChange(userId, code);
+		const { rowCount, rows } = await validateEmailChange(userId, code);
 
-			if (!rowCount || rowCount === 0) {
-				logger.debug(`Invalid email verification code for user: ${userId}`);
-				return res
-					.status(400)
-					.json(
-						message(
-							'Invalid email verification code.',
-							{},
-							[{ info: INVALID_CODE }]
-						)
-					);
-			}
-
-			const emailChangeSentAt = rows[0].email_change_sent_at;
-
-			if (!emailChangeSentAt || isExpired(emailChangeSentAt, EMAIL_CHANGE_CODE_EXPIRATION)) {
-				logger.debug(`Email change code expired for user: ${userId}`);
-				return res
-					.status(403)
-					.json(
-						message(
-							'Email change code has expired.',
-							{},
-							[{ info: CODE_EXPIRED }]
-						)
-					);
-			}
-
-			const { rowCount: rowCount2 } = await finalizeEmailChange(userId);
-
-			if (!rowCount2 || rowCount2 === 0) {
-				logger.error(`Email verification failed for user: ${userId}`);
-				return res
-					.status(500)
-					.json(
-						message(
-							'An unexpected error occurred while verifying the new email.',
-							{},
-							[{ info: INTERNAL_ERROR }]
-						)
-					);
-			}
-		} catch (e) {
-			logger.error(
-				`Error during email verification for user: ${userId}. Error: ${
-					e instanceof Error ? e.message : e
-				}`,
-			);
-			return res
-				.status(500)
-				.json(
-					message(
-						'An unexpected error occurred while verifying the new email.',
-						{},
-						[{ info: INTERNAL_ERROR }]
-					)
-				);
+		if (!rowCount) {
+			throw new AppError({
+				status: 400,
+				message: 'Invalid email verification code.',
+				errors: [{ info: INVALID_CODE }],
+				log: {
+					level: 'debug',
+					message: 'Invalid email verification code',
+					meta: { userId }
+				}
+			});
 		}
 
-		logger.debug(`Email successfully verified and changed for user: ${userId}`);
+		const emailChangeSentAt = rows[0].email_change_sent_at;
 
-		res.json(message('Email successfully changed.'));
-	},
+		if (!emailChangeSentAt || isExpired(emailChangeSentAt, EMAIL_CHANGE_CODE_EXPIRATION)) {
+			throw new AppError({
+				status: 403,
+				message: 'Email change code has expired.',
+				errors: [{ info: CODE_EXPIRED }],
+				log: {
+					level: 'debug',
+					message: 'Email change code expired',
+					meta: { userId }
+				}
+			});
+		}
+
+		const { rowCount: rowCount2 } = await finalizeEmailChange(userId);
+
+		if (!rowCount2) {
+			throw new AppError({
+				status: 500,
+				message: 'An unexpected error occurred while verifying the new email.',
+				errors: [{ info: INTERNAL_ERROR }],
+				log: {
+					level: 'error',
+					message: 'Email verification failed',
+					meta: { userId }
+				}
+			});
+		}
+
+		logger.debug('Email successfully changed', { userId });
+
+		return message('Email successfully changed.');
+	}),
 );
 
 export default router;

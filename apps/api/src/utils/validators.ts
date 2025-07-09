@@ -19,7 +19,13 @@ import {
   INVALID_PASSWORD_LENGTH,
   INVALID_REFRESH_TOKEN, 
   INVALID_UUID, 
+  ITEM_ID_NOT_NUMERIC, 
+  ITEM_ID_REQUIRED, 
+  ORGANIZATION_ID_NOT_NUMERIC, 
+  ORGANIZATION_ID_REQUIRED, 
   PASSWORD_REQUIRED, 
+  PROJECT_ID_NOT_NUMERIC, 
+  PROJECT_ID_REQUIRED, 
   TYPE_REQUIRED,
   UNSUPPORTED_TYPE
 } from "utils-node/errors";
@@ -30,8 +36,12 @@ import {
   MFA_CHALLENGE_TOKEN_SECRET,
   REFRESH_TOKEN_SECRET
 } from "../../env-config";
-import { body, Meta, query } from "express-validator";
-import { eightAlphaNumericRegex, passwordRegex, sixDigitCodeRegex } from "./regex";
+import { body, Meta, param } from "express-validator";
+import {
+  eightAlphaNumericRegex,
+  passwordRegex,
+  sixDigitCodeRegex
+} from "./regex";
 
 export const isGrantType = (value: any): boolean =>
   possibleGrantTypes.includes(value);
@@ -170,3 +180,15 @@ export const codeSupportedMFABodyValidator = (
       return true;
     });
 };
+
+export const itemIdQueryValidator = param('itemId')
+  .exists().withMessage(ITEM_ID_REQUIRED)
+  .isNumeric().withMessage(ITEM_ID_NOT_NUMERIC);
+
+export const organizationIdQueryValidator = param('organizationId')
+  .exists().withMessage(ORGANIZATION_ID_REQUIRED)
+  .isNumeric().withMessage(ORGANIZATION_ID_NOT_NUMERIC);
+
+export const projectIdQueryValidator = param('projectId')
+  .exists().withMessage(PROJECT_ID_REQUIRED)
+  .isNumeric().withMessage(PROJECT_ID_NOT_NUMERIC);
