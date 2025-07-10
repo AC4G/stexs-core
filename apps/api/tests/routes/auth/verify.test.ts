@@ -22,7 +22,7 @@ import {
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 import { v4 as uuidv4 } from 'uuid';
 
 jest.mock('../../../src/db', () => {

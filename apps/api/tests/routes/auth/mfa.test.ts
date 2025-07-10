@@ -31,7 +31,7 @@ import {
 import { SERVICE_NAME } from '../../../env-config';
 import { getTOTPForVerification } from '../../../src/utils/totp';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 
 jest.mock('../../../src/producers/emailProducer', () => {
   const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(
@@ -44,11 +44,8 @@ jest.mock('../../../src/producers/emailProducer', () => {
   };
 });
 
-jest.mock('utils-node/middlewares', () => {
-	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
-
+jest.mock('../../../src/middlewares/jwtMiddleware', () => {
 	return {
-		validate: before.validate,
 		validateAccessToken: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
@@ -65,9 +62,6 @@ jest.mock('utils-node/middlewares', () => {
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
 		transformJwtErrorMessages: jest.fn(
-			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-		),
-		checkScopes: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
 	}

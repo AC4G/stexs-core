@@ -1,6 +1,6 @@
 import { Request } from 'express-jwt';
 import logger from '../../logger';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import {
 	CODE_EXPIRED,
 	INTERNAL_ERROR,

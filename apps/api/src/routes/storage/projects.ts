@@ -3,7 +3,7 @@ import logger from '../../logger';
 import { Request } from 'express-jwt';
 import { UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import db from '../../db';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
@@ -15,18 +15,18 @@ import {
 	S3_CACHE_CONTROL_EXPIRATION,
 } from '../../../env-config';
 import s3 from '../../s3';
-import {
-	validate,
-	checkScopes,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-	validateAccessToken,
-} from 'utils-node/middlewares';
 import { isUserAdminOrOwnerOfProject } from '../../repositories/public/projectMembers';
 import { isClientAllowedToAccessProject } from '../../repositories/public/projects';
 import { projectIdQueryValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import AppError from '../../utils/appError';
+import { validate } from '../../middlewares/validatorMiddleware';
+import {
+	checkTokenGrantType,
+	transformJwtErrorMessages, 
+	validateAccessToken
+} from '../../middlewares/jwtMiddleware';
+import { checkScopes } from '../../middlewares/scopesMiddleware';
 
 const router = Router();
 

@@ -39,7 +39,7 @@ import {
 	UNSUPPORTED_TYPE,
 	USER_NOT_FOUND
 } from 'utils-node/errors';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 import { sign } from 'jsonwebtoken';
 import {
@@ -53,11 +53,8 @@ import { hashPassword } from '../../../src/utils/password';
 import { v4 as uuidv4 } from 'uuid';
 import { getTOTPForVerification } from '../../../src/utils/totp';
 
-jest.mock('utils-node/middlewares', () => {
-	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
-
+jest.mock('../../../src/middlewares/jwtMiddleware', () => {
 	return {
-		validate: before.validate,
 		validateAccessToken: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
@@ -74,9 +71,6 @@ jest.mock('utils-node/middlewares', () => {
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
 		transformJwtErrorMessages: jest.fn(
-			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-		),
-		checkScopes: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
 	}

@@ -13,16 +13,10 @@ import {
 	PASSWORD_CHANGE_FAILED,
 	USER_NOT_FOUND,
 } from 'utils-node/errors';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import { sendEmailMessage } from '../../producers/emailProducer';
 import logger from '../../logger';
 import { generateCode, isExpired } from 'utils-node';
-import {
-	validate,
-	validateAccessToken,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-} from 'utils-node/middlewares';
 import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
@@ -51,6 +45,12 @@ import {
 	typeSupportedMFABodyValidator
 } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
+import {
+	checkTokenGrantType,
+	transformJwtErrorMessages,
+	validateAccessToken
+} from '../../middlewares/jwtMiddleware';
+import { validate } from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

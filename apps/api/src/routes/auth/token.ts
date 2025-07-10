@@ -1,5 +1,5 @@
 import { Router, Response, NextFunction } from 'express';
-import { CustomValidationError } from 'utils-node/messageBuilder';
+import { CustomValidationError } from '../../utils/messageBuilder';
 import { Request } from 'express-jwt';
 import {
 	CLIENT_SECRET_REQUIRED,
@@ -16,7 +16,6 @@ import {
 } from 'utils-node/errors';
 import logger from '../../logger';
 import { body, cookie, query } from 'express-validator';
-import { validate } from 'utils-node/middlewares';
 import {
 	authorizationCodeController,
 	clientCredentialsController,
@@ -47,6 +46,7 @@ import { validateUUIDV4 } from '../../utils/uuid';
 import { eightAlphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
 import { mfaValidationMiddleware } from '../../utils/mfa';
 import asyncHandler from '../../utils/asyncHandler';
+import { validate } from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

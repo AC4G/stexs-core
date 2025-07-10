@@ -1,4 +1,4 @@
-import { CustomValidationError } from "utils-node/messageBuilder";
+import { CustomValidationError } from "../utils/messageBuilder";
 import {
   GrantTypes,
   grantTypesInRefreshToken,

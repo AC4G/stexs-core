@@ -1,12 +1,12 @@
 import { NextFunction, Response, Request } from 'express';
 import { expressjwt as jwt, Request as JWTRequest } from 'express-jwt';
-import { message } from '../messageBuilder';
+import { message } from '../utils/messageBuilder';
 import {
 	CREDENTIALS_BAD_FORMAT,
 	CREDENTIALS_REQUIRED,
 	INVALID_GRANT_TYPE,
 	INVALID_TOKEN,
-} from '../constants/errors';
+} from 'utils-node/errors';
 import { verify } from 'jsonwebtoken';
 import { Logger } from 'winston';
  
@@ -74,17 +74,17 @@ export function validateSignInConfirmToken(
 
 export function validateSignInConfirmOrAccessToken(
 	accessSecret: string,
-	confirmSecret: string,
+	mfaChallengeSecret: string,
 	audience: string,
 	issuer: string,
 ): (req: any, res: Response, next: NextFunction) => void {
-	return (req, res, next) => {
+	return (req, _res, next) => {
 		const token = req.body.token;
 		let grantType = null;
 
 		verify(
 			token,
-			confirmSecret,
+			mfaChallengeSecret,
 			{
 				audience,
 				issuer,
@@ -165,7 +165,7 @@ export function validateSignInConfirmOrAccessToken(
 }
 
 export function checkTokenGrantType(grantTypes: string[]): (req: any, res: Response, next: NextFunction) => void {
-	return (req: JWTRequest, res: Response, next: NextFunction) => {
+	return (req: JWTRequest, _res: Response, next: NextFunction) => {
 		const token = req.auth;
 
 		if (grantTypes.includes(token?.grant_type)) return next();
@@ -183,7 +183,7 @@ export function checkTokenGrantType(grantTypes: string[]): (req: any, res: Respo
 export function transformJwtErrorMessages(logger: Logger): (err: MiddlewareError, req: any, res: Response, next: NextFunction) => void {
 	return (
 		err: MiddlewareError,
-		req: Request,
+		_req: Request,
 		res: Response,
 		next: NextFunction,
 	) => {

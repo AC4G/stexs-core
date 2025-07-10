@@ -1,7 +1,7 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { Request } from 'express-jwt';
 import logger from '../../logger';
-import { CustomValidationError, message } from 'utils-node/messageBuilder';
+import { CustomValidationError, message } from '../../utils/messageBuilder';
 import {
 	CODE_FORMAT_INVALID_EMAIL,
 	CODE_FORMAT_INVALID_TOTP,
@@ -21,13 +21,6 @@ import {
 	sendEmailCode,
 } from '../../controllers/auth/mfaController';
 import {
-	validate,
-	validateAccessToken,
-	validateSignInConfirmOrAccessToken,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-} from 'utils-node/middlewares';
-import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
 	ISSUER,
@@ -43,6 +36,13 @@ import { alphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
 import { codeSupportedMFABodyValidator, typeSupportedMFABodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import AppError from '../../utils/appError';
+import {
+	checkTokenGrantType,
+	transformJwtErrorMessages,
+	validateAccessToken,
+	validateSignInConfirmOrAccessToken
+} from '../../middlewares/jwtMiddleware';
+import { validate } from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

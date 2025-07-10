@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { message } from "utils-node/messageBuilder";
+import { message } from "../utils/messageBuilder";
 
 type ErrorObject = {
   info: {

@@ -4,7 +4,7 @@ import {
   NextFunction,
   CookieOptions
 } from 'express';
-import { ApiResponse } from 'utils-node/messageBuilder';
+import { ApiResponse } from '../utils/messageBuilder';
 
 type Cookie = {
   name: string;

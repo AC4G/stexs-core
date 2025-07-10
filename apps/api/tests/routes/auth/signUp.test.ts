@@ -22,7 +22,7 @@ import {
 	PASSWORD_REQUIRED,
 	USERNAME_REQUIRED,
 } from 'utils-node/errors';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('../../../src/db', () => {

@@ -5,7 +5,7 @@ import {
 } from 'express';
 import AppError from '../utils/appError';
 import logger from '../logger';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../utils/messageBuilder';
 import { extractError } from 'utils-node/logger';
 import { INTERNAL_ERROR } from 'utils-node/errors';
 

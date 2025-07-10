@@ -13,7 +13,7 @@ import { getEmailInfo, getTOTPStatus } from '../repositories/auth/mfa';
 import { MFA_EMAIL_CODE_EXPIRATION } from '../../env-config';
 import { NextFunction, Response } from 'express';
 import { Request as JWTRequest } from 'express-jwt';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../utils/messageBuilder';
 import { extractError } from 'utils-node/logger';
 
 export interface MFAError {

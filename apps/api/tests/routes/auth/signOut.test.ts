@@ -20,11 +20,8 @@ jest.mock('../../../src/utils/mfa', () => {
 	};
 });
 
-jest.mock('utils-node/middlewares', () => {
-	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
-
+jest.mock('../../../src/middlewares/jwtMiddleware', () => {
 	return {
-		validate: before.validate,
 		validateAccessToken: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
@@ -41,9 +38,6 @@ jest.mock('utils-node/middlewares', () => {
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
 		transformJwtErrorMessages: jest.fn(
-			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-		),
-		checkScopes: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
 	}

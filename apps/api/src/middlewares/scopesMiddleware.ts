@@ -1,24 +1,22 @@
 import { NextFunction, Response } from 'express';
 import { Request } from 'express-jwt';
-import { INSUFFICIENT_SCOPES, INTERNAL_ERROR } from '../constants/errors';
-import MiddlewareError from './jwt';
+import { INSUFFICIENT_SCOPES, INTERNAL_ERROR } from 'utils-node/errors';
+import MiddlewareError from './jwtMiddleware';
 import { QueryConfig } from 'pg';
-import { DbPool } from '../db';
+import { DbPool } from 'utils-node';
 import { Logger } from 'winston';
-import { extractError } from '../loggers/utils';
+import { extractError } from 'utils-node/logger';
+import { grantTypesWithScopes } from '../types/auth';
 
 export function checkScopes(
 	requiredScopes: string[],
 	db: DbPool,
 	logger: Logger
 ): (req: Request, res: Response, next: NextFunction) => void {
-	return (req: Request, res: Response, next: NextFunction) => {
+	return (req: Request, _res: Response, next: NextFunction) => {
 		const grantType = req.auth?.grant_type;
 
-		if (![
-			'authorization_code', 
-			'client_credentials'
-		].includes(grantType)) return next();
+		if (!grantTypesWithScopes.includes(grantType)) return next();
 
 		const clientId = req.auth?.client_id;
 		const sub = req.auth?.sub;

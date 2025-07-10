@@ -1,5 +1,5 @@
 import { Result, validationResult } from 'express-validator';
-import { ValidatorError, errorMessagesFromValidator } from '../messageBuilder';
+import { ValidatorError, errorMessagesFromValidator } from '../utils/messageBuilder';
 import {
 	NextFunction,
 	Request,

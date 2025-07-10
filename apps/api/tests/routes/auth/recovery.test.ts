@@ -25,7 +25,7 @@ import {
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 import { hashPassword } from '../../../src/utils/password';
 
 jest.mock('../../../src/producers/emailProducer', () => {
