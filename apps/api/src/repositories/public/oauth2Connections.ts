@@ -12,7 +12,7 @@ export async function createOAuth2Connection(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 WITH inserted_connection AS (
@@ -49,7 +49,7 @@ export async function connectionExistsByUserIdAndClientId(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 1

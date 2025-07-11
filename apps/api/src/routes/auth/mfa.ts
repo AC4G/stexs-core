@@ -54,7 +54,7 @@ router.get(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
@@ -98,10 +98,10 @@ router.post(
 			.exists().withMessage(CODE_REQUIRED)
 			.isLength({ min: 8, max: 8 }).withMessage(CODE_LENGTH_MISMATCH)
 			.matches(alphaNumericRegex).withMessage(CODE_FORMAT_INVALID_EMAIL),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const type: MFATypes = req.body.type;
@@ -120,10 +120,10 @@ router.post(
 	[
 		typeSupportedMFABodyValidator(),
 		codeSupportedMFABodyValidator(),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const type: MFATypes = req.body.type;
@@ -155,10 +155,10 @@ router.post(
 
 				return true;
 			}),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const type: Extract<MFATypes, 'totp'> = req.body.type;
@@ -176,14 +176,14 @@ router.post(
 		body('type')
 			.exists().withMessage(TYPE_REQUIRED)
 			.isIn(sendCodeMFAMethod).withMessage(UNSUPPORTED_TYPE),
-		validate(logger),
+		validate(),
 		validateSignInConfirmOrAccessToken(
 			ACCESS_TOKEN_SECRET,
 			MFA_CHALLENGE_TOKEN_SECRET,
 			AUDIENCE,
 			ISSUER,
 		),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const type: Extract<MFATypes, 'email'> = req.body.type;

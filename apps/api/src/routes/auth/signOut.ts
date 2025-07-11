@@ -27,7 +27,7 @@ router.post(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const auth = req.auth!;
@@ -59,10 +59,10 @@ router.post(
 	[
 		typeSupportedMFABodyValidator(),
 		codeSupportedMFABodyValidator(),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 		mfaValidationMiddleware(),
 	],
 	asyncHandler(async (req: Request) => {

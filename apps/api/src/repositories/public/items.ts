@@ -11,7 +11,7 @@ export async function createItem(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 INSERT INTO public.items (
@@ -48,7 +48,7 @@ export async function isClientAllowedToAccessProjectByItemId(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 1

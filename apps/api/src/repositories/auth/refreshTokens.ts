@@ -9,7 +9,7 @@ export async function deleteRefreshToken(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text:`
                 DELETE FROM auth.refresh_tokens
@@ -38,7 +38,7 @@ export async function saveRefreshToken(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 INSERT INTO auth.refresh_tokens (
@@ -77,7 +77,7 @@ export async function updateAuthorizationCodeRefreshToken(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.refresh_tokens
@@ -108,7 +108,7 @@ export async function signOutFromSession(
 ) {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 DELETE FROM auth.refresh_tokens
@@ -128,7 +128,7 @@ export async function signOutFromAllSessions(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 DELETE FROM auth.refresh_tokens
@@ -147,7 +147,7 @@ export async function getActiveUserSessions(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text:`
                 SELECT 1
@@ -168,7 +168,7 @@ export async function deleteOAuth2Connection(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 DELETE FROM auth.refresh_tokens
@@ -190,7 +190,7 @@ export async function revokeOAuth2RefreshToken(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 DELETE FROM auth.refresh_tokens
@@ -212,7 +212,7 @@ export async function validateOAuth2RefreshToken(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 1

@@ -9,7 +9,7 @@ export async function joinUserToOrganization(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 INSERT INTO public.organization_members (
@@ -39,7 +39,7 @@ export async function isUserAdminOrOwnerOfOrganization(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 1

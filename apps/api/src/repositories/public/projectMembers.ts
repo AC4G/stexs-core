@@ -9,7 +9,7 @@ export async function joinUserToProject(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 INSERT INTO public.project_members (
@@ -39,7 +39,7 @@ export async function isUserAdminOrOwnerOfProject(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 1
@@ -61,7 +61,7 @@ export async function isUserAdminOrOwnerOfProjectByItemId(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 1

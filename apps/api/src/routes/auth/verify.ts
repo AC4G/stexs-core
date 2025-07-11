@@ -44,7 +44,7 @@ router.get(
 		query('token')
 			.exists().withMessage(TOKEN_REQUIRED)
 			.isUUID('4').withMessage(INVALID_UUID),
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const {
@@ -136,7 +136,7 @@ router.post(
 	'/resend',
 	[
 		emailBodyValidator(),
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const email: string = req.body.email;

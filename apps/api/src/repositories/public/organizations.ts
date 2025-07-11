@@ -14,7 +14,7 @@ export async function createOrganization(
 }>> {
     const query = getQuery(client); 
 
-    return await query(
+    return query(
         {
             text: `
                 INSERT INTO public.organizations (

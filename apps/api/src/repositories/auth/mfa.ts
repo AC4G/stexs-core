@@ -10,7 +10,7 @@ export async function getMFAStatus(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT
@@ -37,7 +37,7 @@ export async function getTOTPInfoForEnabling(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 
@@ -60,7 +60,7 @@ export async function setTOTPSecret(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.mfa
@@ -84,7 +84,7 @@ export async function getEmailInfo(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT
@@ -106,7 +106,7 @@ export async function finalizeEnablingEmailMFA(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.mfa
@@ -132,7 +132,7 @@ export async function getTOTPInfoForDisabling(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 
@@ -154,7 +154,7 @@ export async function disableTOTPMethod(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.mfa
@@ -178,7 +178,7 @@ export async function getTOTPStatus(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 
@@ -199,7 +199,7 @@ export async function verifyTOTPMethod(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.mfa
@@ -222,7 +222,7 @@ export async function setEmailCode(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 WITH updated_mfa AS (
@@ -254,7 +254,7 @@ export async function getEmailInfoForDisabling(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 
@@ -277,7 +277,7 @@ export async function disableEmailMethod(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.mfa

@@ -2,7 +2,6 @@ import { Router } from 'express';
 import logger from '../../logger';
 import { Request } from 'express-jwt';
 import { UNAUTHORIZED_ACCESS } from 'utils-node/errors';
-import db from '../../db';
 import { message } from '../../utils/messageBuilder';
 import {
 	ACCESS_TOKEN_SECRET,
@@ -33,7 +32,7 @@ router.get(
 	'/:projectId',
 	[
 		projectIdQueryValidator,
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const { projectId } = req.params;
@@ -62,11 +61,11 @@ router.post(
 	'/:projectId',
 	[
 		projectIdQueryValidator,
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['project.logo.write'], db, logger),
-		transformJwtErrorMessages(logger),
+		checkScopes(['project.logo.write']),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;
@@ -148,11 +147,11 @@ router.delete(
 	'/:projectId',
 	[
 		projectIdQueryValidator,
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['project.logo.delete'], db, logger),
-		transformJwtErrorMessages(logger),
+		checkScopes(['project.logo.delete']),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;

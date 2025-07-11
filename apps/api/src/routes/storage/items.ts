@@ -11,7 +11,6 @@ import {
 import { Router } from 'express';
 import logger from '../../logger';
 import { Request } from 'express-jwt';
-import db from '../../db';
 import { message } from '../../utils/messageBuilder';
 import { UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import s3 from '../../s3';
@@ -33,7 +32,7 @@ router.get(
 	'/thumbnail/:itemId',
 	[
 		itemIdQueryValidator,
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const { itemId } = req.params;
@@ -62,11 +61,11 @@ router.post(
 	'/thumbnail/:itemId',
 	[
 		itemIdQueryValidator,
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['item.thumbnail.write'], db, logger),
-		transformJwtErrorMessages(logger),
+		checkScopes(['item.thumbnail.write']),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;

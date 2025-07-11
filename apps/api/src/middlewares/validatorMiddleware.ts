@@ -5,7 +5,7 @@ import {
 	Request,
 	Response
 } from 'express';
-import { Logger } from 'winston';
+import logger from '../logger';
 import { CustomValidationError } from "../utils/messageBuilder";
 import {
   GrantTypes,
@@ -202,7 +202,7 @@ export const projectIdQueryValidator = param('projectId')
   .isNumeric().withMessage(PROJECT_ID_NOT_NUMERIC);
 
 
-export function validate(logger: Logger): (req: any, res: Response, next: NextFunction) => void {
+export function validate(): (req: any, res: Response, next: NextFunction) => void {
 	return (req: Request, res: Response, next: NextFunction) => {
 		const errors = validationResult(req) as Result<ValidatorError>;
 

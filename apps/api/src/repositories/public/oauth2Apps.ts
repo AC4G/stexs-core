@@ -14,7 +14,7 @@ export async function createOAuth2App(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 INSERT INTO public.oauth2_apps (
@@ -49,7 +49,7 @@ export async function getRedirectUrlAndScopesByClientId(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 
@@ -80,7 +80,7 @@ export async function validateClientCredentials(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 

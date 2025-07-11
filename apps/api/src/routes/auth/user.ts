@@ -59,7 +59,7 @@ router.get(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
@@ -95,7 +95,7 @@ router.get(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
@@ -117,10 +117,10 @@ router.post(
 		passwordBodyValidator(),
 		typeSupportedMFABodyValidator(),
 		codeSupportedMFABodyValidator(),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 		mfaValidationMiddleware(),
 	],
 	asyncHandler(async (req: Request) => {
@@ -189,10 +189,10 @@ router.post(
 		emailBodyValidator(),
 		typeSupportedMFABodyValidator(),
 		codeSupportedMFABodyValidator(),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 		mfaValidationMiddleware(),
 	],
 	asyncHandler(async (req: Request) => {
@@ -265,10 +265,10 @@ router.post(
 			.exists().withMessage(CODE_REQUIRED)
 			.isLength({ min: 8, max: 8 }).withMessage(CODE_LENGTH_MISMATCH)
 			.matches(alphaNumericRegex).withMessage(CODE_FORMAT_INVALID_EMAIL),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;

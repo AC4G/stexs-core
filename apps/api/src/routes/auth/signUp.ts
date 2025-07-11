@@ -46,7 +46,7 @@ router.post(
 			}),
 		emailBodyValidator(),
 		passwordBodyValidator(),
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const {
