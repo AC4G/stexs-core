@@ -12,7 +12,7 @@ export async function setAuthorizationCode(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 WITH app_info AS (
@@ -51,7 +51,7 @@ export async function validateAuthorizationCode(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 
@@ -87,7 +87,7 @@ export async function deleteAuthorizationCode(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 DELETE FROM auth.oauth2_authorization_codes

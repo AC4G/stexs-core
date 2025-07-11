@@ -8,7 +8,7 @@ import {
 	INVALID_TOKEN,
 } from 'utils-node/errors';
 import { verify } from 'jsonwebtoken';
-import { Logger } from 'winston';
+import logger from '../logger';
  
 export default class MiddlewareError extends Error {
 	code: string;
@@ -180,7 +180,7 @@ export function checkTokenGrantType(grantTypes: string[]): (req: any, res: Respo
 	};
 }
 
-export function transformJwtErrorMessages(logger: Logger): (err: MiddlewareError, req: any, res: Response, next: NextFunction) => void {
+export function transformJwtErrorMessages(): (err: MiddlewareError, req: any, res: Response, next: NextFunction) => void {
 	return (
 		err: MiddlewareError,
 		_req: Request,

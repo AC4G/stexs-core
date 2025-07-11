@@ -56,10 +56,10 @@ router.post(
 		body('scopes')
 			.exists().withMessage(SCOPES_REQUIRED)
 			.isArray({ min: 1 }).withMessage(ARRAY_MIN_ONE_REQUIRED),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
@@ -243,10 +243,10 @@ router.delete(
 		param('connectionId')
 			.exists().withMessage(CONNECTION_ID_REQUIRED)
 			.isNumeric().withMessage(CONNECTION_ID_NOT_NUMERIC),
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const { connectionId } = req.params;
@@ -285,10 +285,10 @@ router.delete(
 		body('refresh_token')
 			.exists().withMessage(REFRESH_TOKEN_REQUIRED)
 			.isString().withMessage(FIELD_MUST_BE_A_STRING),
-		validate(logger),
+		validate(),
 		validateRefreshToken(REFRESH_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['authorization_code']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const auth = req.auth;

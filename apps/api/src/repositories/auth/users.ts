@@ -17,7 +17,7 @@ export async function createUser(
         encryptedPassword = await hashPassword('save-password');
     }
 
-    return await client.query(
+    return client.query(
         {
             text: `
                 INSERT INTO auth.users (
@@ -62,7 +62,7 @@ export async function getEmailVerificationState(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT
@@ -86,7 +86,7 @@ export async function getEmailVerifiedStatus(
 }>> {
     const query = getQuery(client);                                                                                                                                                                                 
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT
@@ -106,7 +106,7 @@ export async function verifyEmail(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.users
@@ -129,7 +129,7 @@ export async function updateEmailVerificationToken(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.users
@@ -153,7 +153,7 @@ export async function signUpUser(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 INSERT INTO auth.users (
@@ -194,7 +194,7 @@ export async function getUserAuth(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 
@@ -223,7 +223,7 @@ export async function userExistsByEmail(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT 1
@@ -243,7 +243,7 @@ export async function setRecoveryToken(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.users
@@ -267,7 +267,7 @@ export async function validateRecoveryToken(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT recovery_sent_at
@@ -289,7 +289,7 @@ export async function getUsersEncryptedPassword(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT
@@ -310,7 +310,7 @@ export async function confirmRecovery(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.users
@@ -333,7 +333,7 @@ export async function changePassword(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.users
@@ -360,7 +360,7 @@ export async function getUserData(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT
@@ -388,7 +388,7 @@ export async function initalizeEmailChange(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.users
@@ -417,7 +417,7 @@ export async function validateEmailChange(
 }>> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 SELECT email_change_sent_at 
@@ -437,7 +437,7 @@ export async function finalizeEmailChange(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 UPDATE auth.users

@@ -41,7 +41,7 @@ router.get(
 
 				return true;
 			}),
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const { userId } = req.params;
@@ -71,7 +71,7 @@ router.post(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger)
+		transformJwtErrorMessages()
 	],
 	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;
@@ -108,7 +108,7 @@ router.delete(
 	[
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password']),
-		transformJwtErrorMessages(logger),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const userId = req.auth?.sub!;

@@ -5,7 +5,7 @@ import { createOAuth2App } from '../../../src/repositories/public/oauth2Apps';
 import { v4 as uuidv4 } from 'uuid';
 import { createUser } from '../../../src/repositories/auth/users';
 import { createOAuth2Connection } from '../../../src/repositories/public/oauth2Connections';
-import { updateConnectionScopes } from '../../../src/repositories/public/oauth2ConnectionScopes';
+import { checkConnectionScopes, updateConnectionScopes } from '../../../src/repositories/public/oauth2ConnectionScopes';
 
 describe('OAuth2 Connection Scopes Queries', () => {
     it('should handle updating connection scopes', async () => {
@@ -92,6 +92,86 @@ describe('OAuth2 Connection Scopes Queries', () => {
             for (const row of rows4) {
                 expect(scopeIds.includes(row.scope_id)).toBe(true);
             }
+        });
+    });
+
+    it('should handle checking connection scopes', async () => {
+        await db.withRollbackTransaction(async (client) => {
+            const { rowCount, rows } = await createOrganization(client, 'TestOrganization');
+                                                             
+            const organizationId = rows[0].id;
+
+            expect(rowCount).toBe(1);
+
+            const { rowCount: rowCount2, rows: rows2 } = await createOAuth2App(
+                'Test OAuth2 App',
+                organizationId,
+                null,
+                'https://example.com/callback',
+                client
+            );
+
+            const clientId = rows2[0].client_id;
+
+            expect(rowCount2).toBe(1);
+
+            const userId = uuidv4();
+            
+            expect((await createUser(
+                client,
+                userId,
+            )).rowCount).toBe(1);
+
+            const scopeIds = [
+                5, 6, 7, 8 // user
+            ];
+
+            const { rowCount: rowCount3, rows: rows3 } = await createOAuth2Connection(
+                userId,
+                clientId,
+                scopeIds,
+                client
+            );
+
+            const connectionId = rows3[0].id;
+
+            expect(rowCount3).toBe(1);
+
+            const requiredScopes = [
+                'inventory.read',
+                'inventory.write',
+            ];
+
+            expect((await checkConnectionScopes(
+                clientId,
+                requiredScopes,
+                userId,
+                client
+            )).rowCount).toBe(1);
+
+            const requiredScopes2 = [
+                'friend.requests.write',
+                'friend.requests.read',
+            ];
+            
+            expect((await checkConnectionScopes(
+                clientId,
+                requiredScopes2,
+                userId,
+                client
+            )).rowCount).toBe(0);
+
+            const requiredScopes3 = [
+                'inventory.read',
+                'friend.requests.write',
+            ];
+            
+            expect((await checkConnectionScopes(
+                clientId,
+                requiredScopes3,
+                userId,
+                client
+            )).rowCount).toBe(0);
         });
     });
 });

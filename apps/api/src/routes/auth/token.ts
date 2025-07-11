@@ -14,7 +14,6 @@ import {
 	REFRESH_TOKEN_REQUIRED,
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
-import logger from '../../logger';
 import { body, cookie, query } from 'express-validator';
 import {
 	authorizationCodeController,
@@ -164,7 +163,7 @@ router.post(
 				await decodeMFAChallengeToken(value, req);
 				return true;
 			}),
-		validate(logger),
+		validate(),
 		(req: Request, res: Response, next: NextFunction) => {
 			const grantType = req.query?.grant_type;
 

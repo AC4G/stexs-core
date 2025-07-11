@@ -8,7 +8,7 @@ export async function insertOrUpdateAuthorizationCodeScopes(
 ): Promise<QueryResult> {
     const query = getQuery(client);
 
-    return await query(
+    return query(
         {
             text: `
                 WITH scope_ids AS (

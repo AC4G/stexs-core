@@ -12,7 +12,6 @@ import {
 	ORGANIZATION_LOGO_SIZE_LIMIT,
 	S3_CACHE_CONTROL_EXPIRATION,
 } from '../../../env-config';
-import db from '../../db';
 import { message } from '../../utils/messageBuilder';
 import s3 from '../../s3';
 import { isUserAdminOrOwnerOfOrganization } from '../../repositories/public/organizationMembers';
@@ -32,7 +31,7 @@ router.get(
 	'/:organizationId',
 	[
 		organizationIdQueryValidator,
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const { organizationId } = req.params;
@@ -61,11 +60,11 @@ router.post(
 	'/:organizationId',
 	[
 		organizationIdQueryValidator,
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['organization.logo.write'], db, logger),
-		transformJwtErrorMessages(logger),
+		checkScopes(['organization.logo.write']),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;
@@ -139,11 +138,11 @@ router.delete(
 	'/:organizationId',
 	[
 		organizationIdQueryValidator,
-		validate(logger),
+		validate(),
 		validateAccessToken(ACCESS_TOKEN_SECRET, AUDIENCE, ISSUER),
 		checkTokenGrantType(['password', 'client_credentials']),
-		checkScopes(['organization.logo.delete'], db, logger),
-		transformJwtErrorMessages(logger),
+		checkScopes(['organization.logo.delete']),
+		transformJwtErrorMessages(),
 	],
 	asyncHandler(async (req: Request) => {
 		const sub = req.auth?.sub!;

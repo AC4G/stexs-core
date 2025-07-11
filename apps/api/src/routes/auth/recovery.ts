@@ -41,7 +41,7 @@ router.post(
 	'/',
 	[
 		emailBodyValidator(),
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const email: string = req.body.email;
@@ -121,7 +121,7 @@ router.post(
 			.exists().withMessage(TOKEN_REQUIRED)
 			.isUUID('4').withMessage(INVALID_UUID),
 		passwordBodyValidator(),
-		validate(logger),
+		validate(),
 	],
 	asyncHandler(async (req: Request) => {
 		const {
