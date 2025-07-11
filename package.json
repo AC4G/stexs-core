@@ -9,6 +9,7 @@
     "build:main": "turbo run build:main",
     "build:module": "turbo run build:module",
     "lint": "turbo run lint",
+    "start": "dotenvx run -- turbo run start",
     "dev": "dotenvx run -- turbo run dev",
     "tauri": "turbo run tauri --filter desktop",
     "clean": "turbo run clean",
@@ -30,7 +31,8 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "prettier": "^3.6.2",
-    "turbo": "^2.5.4"
+    "turbo": "^2.5.4",
+    "wait-on": "^8.0.3"
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^1.47.3"

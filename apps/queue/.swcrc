@@ -1,0 +1,36 @@
+{
+  "$schema": "https://swc.rs/schema.json",
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "jsx": false,
+      "dynamicImport": true,
+      "decorators": false,
+      "decoratorsBeforeExport": false,
+      "topLevelAwait": true,
+      "importMeta": true,
+      "privateMethod": false,
+      "functionBind": false,
+      "exportDefaultFrom": false,
+      "exportNamespaceFrom": false
+    },
+    "target": "es2022",
+    "loose": false,
+    "externalHelpers": false,
+    "keepClassNames": true,
+    "paths": {
+      "~/*": ["./src/*"]
+    },
+    "baseUrl": "./src"
+  },
+  "module": {
+    "type": "commonjs",
+    "strict": true,
+    "strictMode": true,
+    "noInterop": false,
+    "lazy": false
+  },
+  "minify": false,
+  "sourceMaps": true,
+  "inlineSourcesContent": false
+}

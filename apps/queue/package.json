@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "./src/index.ts",
+  "type": "commonjs",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc-watch --onSuccess \"node ./dist/src/index.js\"",
+    "build": "swc ./src ./env-config.ts --out-dir ./dist",
+    "start": "node ./dist/src/index.js",
+    "dev": "nodemon --watch ./src --ext ts --exec 'pnpm predev && pnpm build && pnpm start'",
+    "predev": "wait-on ../../packages/utils-node/dist/src/index.js",
     "clean": "rm -rf dist",
     "clean:logs": "rm -f logs/*"
   },
@@ -21,6 +24,9 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/nodemailer": "^6.4.9"
+    "@swc/cli": "^0.7.8",
+    "@swc/core": "^1.12.11",
+    "@types/nodemailer": "^6.4.9",
+    "nodemon": "^3.1.10"
   }
 }

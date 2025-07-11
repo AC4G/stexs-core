@@ -4,8 +4,10 @@
     "main": "./src/index.ts",
     "type": "commonjs",
     "scripts": {
-        "build": "tsc",
-        "dev": "wait-on ../../packages/utils-node/dist/index.js && tsc-watch --onSuccess \"node ./dist/src/index.js\"",
+        "build": "swc ./src ./env-config.ts --out-dir ./dist",
+        "start": "node ./dist/src/index.js",
+        "dev": "nodemon --watch ./src --ext ts --exec 'pnpm predev && pnpm build && pnpm start'",
+        "predev": "wait-on ../../packages/utils-node/dist/src/index.js",
         "test:unit": "jest --verbose --silent=false --selectProjects unit-tests",
         "test:db": "jest --verbose --runInBand --silent=false --selectProjects db-tests",
         "test": "npm run test:unit && npm run test:db",
@@ -39,6 +41,7 @@
         "zod": "^3.22.4"
     },
     "devDependencies": {
+        "@swc/cli": "^0.7.8",
         "@swc/core": "^1.12.11",
         "@types/bcrypt": "^5.0.2",
         "@types/body-parser": "^1.19.6",
@@ -64,8 +67,6 @@
         "oxlint": "^1.6.0",
         "supertest": "^7.1.3",
         "ts-jest": "^29.4.0",
-        "tsc-watch": "^7.1.1",
-        "typescript": "^5.8.3",
-        "wait-on": "^8.0.2"
+        "typescript": "^5.8.3"
     }
 }
