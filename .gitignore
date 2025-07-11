@@ -2,6 +2,7 @@
 **/package-lock.json
 
 **/.env
+**/.env.keys
 
 **/build
 **/dist

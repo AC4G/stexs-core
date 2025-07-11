@@ -38,19 +38,19 @@ import { verifyPassword } from '../../utils/password';
 import db from '../../db';
 import AppError from '../../utils/appError';
 import { alphaNumericRegex } from '../../utils/regex';
-import {
-	codeSupportedMFABodyValidator,
-	emailBodyValidator,
-	passwordBodyValidator,
-	typeSupportedMFABodyValidator
-} from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 	validateAccessToken
 } from '../../middlewares/jwtMiddleware';
-import { validate } from '../../middlewares/validatorMiddleware';
+import {
+	validate,
+	codeSupportedMFABodyValidator,
+	emailBodyValidator,
+	passwordBodyValidator,
+	typeSupportedMFABodyValidator
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

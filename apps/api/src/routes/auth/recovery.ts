@@ -27,10 +27,13 @@ import {
 import db from '../../db';
 import AppError from '../../utils/appError';
 import { verifyPassword } from '../../utils/password';
-import { emailBodyValidator, passwordBodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import { buildRecoveryUrl } from '../../utils/urlBuilders';
-import { validate } from '../../middlewares/validatorMiddleware';
+import {
+	validate,
+	emailBodyValidator,
+	passwordBodyValidator
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

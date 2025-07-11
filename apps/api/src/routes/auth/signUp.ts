@@ -15,11 +15,14 @@ import { hashPassword } from '../../utils/password';
 import AppError from '../../utils/appError';
 import db from '../../db';
 import { usernameRegex } from '../../utils/regex';
-import { emailBodyValidator, passwordBodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import { extractError } from 'utils-node/logger';
 import { buildVerificationUrl } from '../../utils/urlBuilders';
-import { validate } from '../../middlewares/validatorMiddleware';
+import {
+	validate,
+	emailBodyValidator,
+	passwordBodyValidator
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

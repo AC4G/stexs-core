@@ -33,7 +33,6 @@ import {
 	verifyMFAMethod
 } from '../../types/auth';
 import { alphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
-import { codeSupportedMFABodyValidator, typeSupportedMFABodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import AppError from '../../utils/appError';
 import {
@@ -42,7 +41,11 @@ import {
 	validateAccessToken,
 	validateSignInConfirmOrAccessToken
 } from '../../middlewares/jwtMiddleware';
-import { validate } from '../../middlewares/validatorMiddleware';
+import {
+	validate,
+	codeSupportedMFABodyValidator,
+	typeSupportedMFABodyValidator 
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 
@@ -88,7 +91,7 @@ router.post(
 		typeSupportedMFABodyValidator(),
 		body('code')
 			.if((_, { req }) => {
-				const type = req.body.type as MFATypes;
+				const type = req.body?.type as MFATypes | undefined;
 
 				return type === 'email';
 			})
@@ -143,7 +146,7 @@ router.post(
 		body('code')
 			.exists().withMessage(CODE_REQUIRED)
 			.custom((value, { req }) => {
-				const type = req.body.type as Extract<MFATypes, 'totp'>;
+				const type = req.body?.type as Extract<MFATypes, 'totp'> | undefined;
 
 				if (!type || type.length === 0) return true;
 

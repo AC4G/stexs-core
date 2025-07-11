@@ -1,5 +1,5 @@
 import type pulsar from 'pulsar-client';
-import { ShutdownController } from 'shutdown';
+import { ShutdownController } from '../shutdown';
 
 export type ConsumerLoop = {
   consumer: pulsar.Consumer;

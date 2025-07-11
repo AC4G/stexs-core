@@ -6,7 +6,7 @@ import type pulsar from 'pulsar-client';
 import { ConsumerLoop } from './consumerRegistry';
 import pulsarClient from '../pulsar';
 import { registerConsumer } from './consumerRegistry';
-import { ShutdownController } from 'shutdown';
+import { ShutdownController } from '../shutdown';
 
 const EMAIL_TOPIC = 'emails';
 const EMAIL_SUBSCRIPTION = 'email-sender';
@@ -48,8 +48,6 @@ function buildEmailConsumerLoop(loop: Omit<ConsumerLoop, 'loopPromise'>): Promis
     }
   })();
 }
-
-// create consumer for dlq to add atomacy
 
 export async function setupEmailConsumer(controller: ShutdownController) {
   const emailConsumer = await pulsarClient.subscribe({

@@ -11,7 +11,7 @@ import {
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import { REDIRECT_TO_SIGN_IN } from '../../../env-config';
 import {
 	EMAIL_ALREADY_VERIFIED,
@@ -70,7 +70,7 @@ describe('Email Verification Routes', () => {
 	}); 
 
 	it('should handle email verification with missing email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/verify')
 			.query({ token: uuidv4() });
 
@@ -98,7 +98,7 @@ describe('Email Verification Routes', () => {
 	});
 
 	it('should handle email verification with invalid email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/verify')
 			.query({
 				token: uuidv4(),
@@ -123,7 +123,7 @@ describe('Email Verification Routes', () => {
 	});
 
 	it('should handle email verification with missing token', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/verify')
 			.query({ email: 'test@example.com' });
 
@@ -153,7 +153,7 @@ describe('Email Verification Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
@@ -172,7 +172,7 @@ describe('Email Verification Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
@@ -196,7 +196,7 @@ describe('Email Verification Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
@@ -220,7 +220,7 @@ describe('Email Verification Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
@@ -249,7 +249,7 @@ describe('Email Verification Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/verify')
 			.query({
 				email: 'test@example.com',
@@ -263,7 +263,7 @@ describe('Email Verification Routes', () => {
 	});
 
 	it('should handle email resend with empty email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/verify/resend');
 
 		const data = {
@@ -290,7 +290,7 @@ describe('Email Verification Routes', () => {
 	});
 
 	it('should handle email resend with invalid email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/verify/resend')
 			.send({ email: 'test' });
 
@@ -317,7 +317,7 @@ describe('Email Verification Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/verify/resend')
 			.send({ email: 'test@example.com' });
 
@@ -342,7 +342,7 @@ describe('Email Verification Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/verify/resend')
 			.send({ email: 'test@example.com' });
 
@@ -372,7 +372,7 @@ describe('Email Verification Routes', () => {
 
 		const email = 'test@example.com';
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/verify/resend')
 			.send({ email });
 

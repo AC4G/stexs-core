@@ -27,9 +27,8 @@ import {
 } from '../../repositories/auth/users';
 import db from '../../db';
 import AppError from '../../utils/appError';
-import { emailBodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
-import { validate } from '../../middlewares/validatorMiddleware';
+import { validate, emailBodyValidator } from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

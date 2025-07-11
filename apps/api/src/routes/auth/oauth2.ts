@@ -35,9 +35,8 @@ import { updateConnectionScopes } from '../../repositories/public/oauth2Connecti
 import { deleteOAuth2Connection, revokeOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
 import db from '../../db';
 import AppError from '../../utils/appError';
-import { clientIdBodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
-import { validate } from '../../middlewares/validatorMiddleware';
+import { validate, clientIdBodyValidator } from '../../middlewares/validatorMiddleware';
 import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,

@@ -12,7 +12,7 @@ const mockQuery = jest.fn();
 
 import { NextFunction } from 'express';
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import {
 	CODE_EXPIRED,
 	CODE_FORMAT_INVALID_EMAIL,
@@ -119,7 +119,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/email/verify')
 			.send({ code: 'FGSLKJ23' });
 
@@ -137,7 +137,7 @@ describe('User Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/email/verify')
 			.send({ code: 'FGSLKJ23' });
 
@@ -159,7 +159,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/email/verify')
 			.send({ code: 'FGSLKJ23' });
 
@@ -186,7 +186,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/email/verify')
 			.send({ code: 'FGSLKJ23' });
 
@@ -210,7 +210,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/user');
 
 		expect(response.status).toBe(200);
@@ -226,7 +226,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle password change with missing password', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/password');
 
 		const dataPassword = {
@@ -236,7 +236,7 @@ describe('User Routes', () => {
 		const dataType = {
 			location: 'body',
 			path: 'type',
-		};
+		}; 
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual(
@@ -273,7 +273,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle password change with invalid password according to regex specification', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/password')
 			.send({
 				password: 'test123456',
@@ -319,7 +319,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/password')
 			.send({
 				password,
@@ -363,7 +363,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/password')
 			.send({
 				password: newPassword,
@@ -378,7 +378,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle password change with password having less then 10 characters', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/password')
 			.send({
 				password: 'Test123.',
@@ -408,7 +408,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle email change with missing email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/email')
 			.send({
 				code: 'mfa_code',
@@ -446,7 +446,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle email change with invalid email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/email')
 			.send({
 				email: 'test',
@@ -493,7 +493,7 @@ describe('User Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/email')
 			.send({
 				email: 'test@example.com',
@@ -508,7 +508,7 @@ describe('User Routes', () => {
 	});
 
 	it('should handle email change verification with missing code', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/user/email/verify');
 
 		const data = {

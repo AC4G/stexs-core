@@ -8,14 +8,17 @@ import {
 } from '../../../env-config';
 import { mfaValidationMiddleware } from '../../utils/mfa';
 import { signOutFromAllSessions, signOutFromSession } from '../../repositories/auth/refreshTokens';
-import { codeSupportedMFABodyValidator, typeSupportedMFABodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,
 	validateAccessToken
 } from '../../middlewares/jwtMiddleware';
-import { validate } from '../../middlewares/validatorMiddleware';
+import {
+	validate,
+	codeSupportedMFABodyValidator,
+	typeSupportedMFABodyValidator
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

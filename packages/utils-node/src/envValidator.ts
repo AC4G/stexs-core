@@ -1,109 +1,69 @@
-import { z } from 'zod';
+import { z, type ZodTypeAny } from 'zod';
 import { createConsoleLogger } from './loggers/consoleLogger';
-import { Logger } from 'winston';
-
-
-type StringOrEnum = z.ZodString | z.ZodEnum<any>;
+import type { Logger } from 'winston';
 
 export class EnvValidator {
-	private missingEnvVars: string[] = [];
-	logger: Logger;
+  private missingEnvVars: string[] = [];
+  logger: Logger;
 
-	constructor(serviceName: string) {
-		this.logger = createConsoleLogger(
-			serviceName,
-			'warn',
-			'prod'
-		);
-	}
+  constructor(serviceName: string) {
+    this.logger = createConsoleLogger(serviceName, 'warn', 'prod');
+  }
 
-	checkEnvVarExists(varName: string): void {
-		if (process.env[varName] !== undefined) return;
+  checkEnvVarExists(varName: string): void {
+    if (process.env[varName] !== undefined) return;
+    this.logger.error(`Missing environment variable: ${varName}.`);
+    this.missingEnvVars.push(varName);
+  }
 
-		this.logger.error(
-			`Missing environment variable: ${varName}. Please define it in your .env file.`
-		);
-		this.missingEnvVars.push(varName);
-	}
-
-	withDefaultString<T extends StringOrEnum>(
-		schema: T,
-		defaultValue: string | undefined,
-		varName: string
-	): T {
-		this.checkEnvVarExists(varName);
-
-		const newSchema = schema.transform((value: unknown) => {
-			if (typeof value !== 'string') {
-				this.logger.error(
-					`${varName} has an invalid type (${typeof value}). Expected a string. Applying default: "${defaultValue}"`
-				);
-				return defaultValue!;
-			}
-
-			if (value.trim() !== '') return value;
-
-			this.logger.warn(
-				`${varName} is empty. Applying default value: "${defaultValue}"`
-			);
-			return defaultValue!;
-		}) as unknown as T;
-
-		if (defaultValue === undefined) return newSchema;
-
-		return newSchema.default(defaultValue) as unknown as T;
-	}
-
-  withDefaultNumber(
-    schema: z.ZodNumber,
-    defaultValue: number,
+  withDefaultString<T extends ZodTypeAny>(
+    schema: T,
+    defaultValue: string | undefined,
     varName: string
-  ) {
+  ): z.ZodDefault<z.ZodEffects<T, string, unknown>> {
     this.checkEnvVarExists(varName);
 
+    const transformed = schema.transform((val: unknown) => {
+      if (typeof val !== 'string') {
+        this.logger.error(`${varName} invalid type (${typeof val}). Using default: "${defaultValue}"`);
+        return defaultValue!;
+      }
+      if (val.trim() === '') {
+        this.logger.warn(`${varName} empty. Using default: "${defaultValue}"`);
+        return defaultValue!;
+      }
+      return val;
+    });
+
+    if (defaultValue === undefined) {
+      return transformed as any;
+    }
+
+    return transformed.default(defaultValue as any);
+  }
+
+  withDefaultNumber(schema: z.ZodNumber, defaultValue: number, varName: string) {
+    this.checkEnvVarExists(varName);
     return schema
-		.transform((value: unknown) => {
-			if (typeof value === 'number' && !Number.isNaN(value)) {
-				return value;
-			}
+      .transform((val: unknown) => {
+        if (typeof val === 'number' && !Number.isNaN(val)) return val;
+        this.logger.error(`${varName} invalid number (${val}). Using default ${defaultValue}`);
+        return defaultValue;
+      })
+      .default(defaultValue);
+  }
 
-			if (value === undefined || value === null) {
-				this.logger.warn(
-					`${varName} is empty. Applying default value: "${defaultValue}"`
-				);
-			} else {
-				this.logger.error(
-					`${varName} has an invalid number value: "${value}". Applying default: "${defaultValue}"`
-				);
-			}
+  withDefaultBoolean(defaultValue: boolean, varName: string) {
+    this.checkEnvVarExists(varName);
+    return z.preprocess((v) =>
+      typeof v === 'string' ?
+        ['true','1','yes','on'].includes(v.toLowerCase()) :
+        Boolean(v),
+      z.boolean()
+    ).default(defaultValue);
+  }
 
-			return defaultValue;
-		})
-		.default(defaultValue);
-  	}
-
-  	withDefaultBoolean(
-		defaultValue: boolean,
-		varName: string
-	) {
-		this.checkEnvVarExists(varName);
-
-		const strictBooleanSchema = z.preprocess((val) => {
-			if (typeof val === 'string') {
-				const lower = val.trim().toLowerCase();
-				
-				if (lower === 'false' || lower === '0' || lower === '') return false;
-				if (lower === 'true' || lower === '1') return true;
-
-				return false;
-			}
-			return Boolean(val);
-		}, z.boolean());
-
-		return strictBooleanSchema.default(defaultValue);
-	}
-
-	getMissingEnvVars(): string[] {
-		return [...this.missingEnvVars];
-	}
+  getMissingEnvVars(): string[] {
+    return [...this.missingEnvVars];
+  }
 }

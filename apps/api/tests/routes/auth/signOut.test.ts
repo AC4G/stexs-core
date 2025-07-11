@@ -9,7 +9,7 @@ const mockQuery = jest.fn();
 
 import { NextFunction } from 'express';
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import { getTOTPForVerification } from '../../../src/utils/totp';
 
 jest.mock('../../../src/utils/mfa', () => {
@@ -59,7 +59,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-out');
 
 		expect(response.status).toBe(404);
@@ -75,7 +75,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-out');
 
 		expect(response.status).toBe(204);
@@ -87,7 +87,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-out');
 
 		expect(response.status).toBe(404);
@@ -110,7 +110,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 2,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-out/all-sessions')
 			.send({
 				code,

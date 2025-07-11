@@ -17,10 +17,9 @@ import {
 import s3 from '../../s3';
 import { isUserAdminOrOwnerOfProject } from '../../repositories/public/projectMembers';
 import { isClientAllowedToAccessProject } from '../../repositories/public/projects';
-import { projectIdQueryValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import AppError from '../../utils/appError';
-import { validate } from '../../middlewares/validatorMiddleware';
+import { validate, projectIdQueryValidator } from '../../middlewares/validatorMiddleware';
 import {
 	checkTokenGrantType,
 	transformJwtErrorMessages, 

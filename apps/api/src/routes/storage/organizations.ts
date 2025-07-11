@@ -16,10 +16,9 @@ import db from '../../db';
 import { message } from '../../utils/messageBuilder';
 import s3 from '../../s3';
 import { isUserAdminOrOwnerOfOrganization } from '../../repositories/public/organizationMembers';
-import { organizationIdQueryValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import AppError from '../../utils/appError';
-import { validate } from '../../middlewares/validatorMiddleware';
+import { validate, organizationIdQueryValidator } from '../../middlewares/validatorMiddleware';
 import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,

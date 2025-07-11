@@ -17,10 +17,9 @@ import { UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import s3 from '../../s3';
 import { isUserAdminOrOwnerOfProjectByItemId } from '../../repositories/public/projectMembers';
 import { isClientAllowedToAccessProjectByItemId } from '../../repositories/public/items';
-import { itemIdQueryValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import AppError from '../../utils/appError';
-import { validate } from '../../middlewares/validatorMiddleware';
+import { validate, itemIdQueryValidator } from '../../middlewares/validatorMiddleware';
 import {
 	checkTokenGrantType,
 	transformJwtErrorMessages,
