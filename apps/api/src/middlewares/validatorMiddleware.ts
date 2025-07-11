@@ -1,4 +1,12 @@
-import { CustomValidationError } from "utils-node/messageBuilder";
+import { Result, validationResult } from 'express-validator';
+import { ValidatorError, errorMessagesFromValidator } from '../utils/messageBuilder';
+import {
+	NextFunction,
+	Request,
+	Response
+} from 'express';
+import { Logger } from 'winston';
+import { CustomValidationError } from "../utils/messageBuilder";
 import {
   GrantTypes,
   grantTypesInRefreshToken,
@@ -41,7 +49,7 @@ import {
   eightAlphaNumericRegex,
   passwordRegex,
   sixDigitCodeRegex
-} from "./regex";
+} from "../utils/regex";
 
 export const isGrantType = (value: any): boolean =>
   possibleGrantTypes.includes(value);
@@ -167,7 +175,7 @@ export const codeSupportedMFABodyValidator = (
   return validator
     .exists().withMessage(CODE_REQUIRED)
     .custom((value, { req }) => {
-      const type = req.body.type as MFATypes;
+      const type = req.body?.type as MFATypes | undefined;
 
       if (!type || type.length === 0) return true;
 
@@ -192,3 +200,25 @@ export const organizationIdQueryValidator = param('organizationId')
 export const projectIdQueryValidator = param('projectId')
   .exists().withMessage(PROJECT_ID_REQUIRED)
   .isNumeric().withMessage(PROJECT_ID_NOT_NUMERIC);
+
+
+export function validate(logger: Logger): (req: any, res: Response, next: NextFunction) => void {
+	return (req: Request, res: Response, next: NextFunction) => {
+		const errors = validationResult(req) as Result<ValidatorError>;
+
+		if (!errors.isEmpty()) {
+			const errorCodes = errors
+				.array()
+				.map((error) => {
+					const msg =
+						typeof error.msg === 'string' ? JSON.parse(error.msg) : error.msg;
+					return msg.code;
+				});
+			logger.debug('Request validation errors', { errorCodes: errorCodes});
+
+			return res.status(400).json(errorMessagesFromValidator(errors));
+		}
+
+		return next();
+	};
+}

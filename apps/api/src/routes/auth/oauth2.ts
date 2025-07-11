@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Request } from 'express-jwt';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import { body, param } from 'express-validator';
 import {
 	ARRAY_MIN_ONE_REQUIRED,
@@ -27,13 +27,6 @@ import {
 	ISSUER,
 	REFRESH_TOKEN_SECRET,
 } from '../../../env-config';
-import {
-	validate,
-	validateAccessToken,
-	validateRefreshToken,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-} from 'utils-node/middlewares';
 import { getRedirectUrlAndScopesByClientId } from '../../repositories/public/oauth2Apps';
 import { connectionExistsByUserIdAndClientId } from '../../repositories/public/oauth2Connections';
 import { setAuthorizationCode } from '../../repositories/auth/oauth2AuthorizationCodes';
@@ -42,8 +35,14 @@ import { updateConnectionScopes } from '../../repositories/public/oauth2Connecti
 import { deleteOAuth2Connection, revokeOAuth2RefreshToken } from '../../repositories/auth/refreshTokens';
 import db from '../../db';
 import AppError from '../../utils/appError';
-import { clientIdBodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
+import { validate, clientIdBodyValidator } from '../../middlewares/validatorMiddleware';
+import {
+	checkTokenGrantType,
+	transformJwtErrorMessages,
+	validateAccessToken,
+	validateRefreshToken
+} from '../../middlewares/jwtMiddleware';
 
 const router = Router();
 

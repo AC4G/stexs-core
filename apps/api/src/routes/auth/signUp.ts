@@ -1,6 +1,6 @@
 import { Router, Request } from 'express';
 import { sendEmailMessage } from '../../producers/emailProducer';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import { body } from 'express-validator';
 import {
 	INTERNAL_ERROR,
@@ -10,16 +10,19 @@ import {
 } from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../../logger';
-import { validate } from 'utils-node/middlewares';
 import { signUpUser } from '../../repositories/auth/users';
 import { hashPassword } from '../../utils/password';
 import AppError from '../../utils/appError';
 import db from '../../db';
 import { usernameRegex } from '../../utils/regex';
-import { emailBodyValidator, passwordBodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import { extractError } from 'utils-node/logger';
 import { buildVerificationUrl } from '../../utils/urlBuilders';
+import {
+	validate,
+	emailBodyValidator,
+	passwordBodyValidator
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

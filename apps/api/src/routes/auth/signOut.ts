@@ -6,16 +6,19 @@ import {
 	AUDIENCE,
 	ISSUER
 } from '../../../env-config';
-import {
-	validate,
-	validateAccessToken,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-} from 'utils-node/middlewares';
 import { mfaValidationMiddleware } from '../../utils/mfa';
 import { signOutFromAllSessions, signOutFromSession } from '../../repositories/auth/refreshTokens';
-import { codeSupportedMFABodyValidator, typeSupportedMFABodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
+import {
+	checkTokenGrantType,
+	transformJwtErrorMessages,
+	validateAccessToken
+} from '../../middlewares/jwtMiddleware';
+import {
+	validate,
+	codeSupportedMFABodyValidator,
+	typeSupportedMFABodyValidator
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

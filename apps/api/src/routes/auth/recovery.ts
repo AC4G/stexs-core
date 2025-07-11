@@ -11,11 +11,10 @@ import {
 	RECOVERY_LINK_EXPIRED,
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import { v4 as uuidv4 } from 'uuid';
 import { sendEmailMessage } from '../../producers/emailProducer';
 import { PASSWORD_RECOVERY_CODE_EXPIRATION } from '../../../env-config';
-import { validate } from 'utils-node/middlewares';
 import logger from '../../logger';
 import { isExpired } from 'utils-node';
 import {
@@ -28,9 +27,13 @@ import {
 import db from '../../db';
 import AppError from '../../utils/appError';
 import { verifyPassword } from '../../utils/password';
-import { emailBodyValidator, passwordBodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import { buildRecoveryUrl } from '../../utils/urlBuilders';
+import {
+	validate,
+	emailBodyValidator,
+	passwordBodyValidator
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

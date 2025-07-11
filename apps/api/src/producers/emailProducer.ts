@@ -22,11 +22,20 @@ const EmailProducerManager = (() => {
     await emailProducer.send({ data });
   }
 
+  async function close() {
+    if (emailProducer) {
+      await emailProducer.close();
+      logger.info('Email producer closed.');
+    }
+  }
+
   return {
     init,
     send,
+    close,
   };
 })();
 
 export const initEmailProducer = EmailProducerManager.init;
 export const sendEmailMessage = EmailProducerManager.send;
+export const closeEmailProducer = EmailProducerManager.close;

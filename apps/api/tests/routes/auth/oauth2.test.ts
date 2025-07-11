@@ -11,7 +11,7 @@ import {
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import { NextFunction } from 'express';
 import {
 	CONNECTION_ALREADY_REVOKED,
@@ -20,14 +20,11 @@ import {
 	FIELD_MUST_BE_A_STRING,
 	REFRESH_TOKEN_REQUIRED,
 } from 'utils-node/errors';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 
-jest.mock('utils-node/middlewares', () => {
-	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
-
+jest.mock('../../../src/middlewares/jwtMiddleware', () => {
 	return {
-		validate: before.validate,
 		validateAccessToken: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
@@ -44,9 +41,6 @@ jest.mock('utils-node/middlewares', () => {
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
 		transformJwtErrorMessages: jest.fn(
-			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-		),
-		checkScopes: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
 	}
@@ -75,7 +69,7 @@ describe('OAuth2 Routes', () => {
 	});
 
 	it('should handle delete connection with connection id not as numeric', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.delete(`/auth/oauth2/connections/${'not_a_number'}`);
 
 		expect(response.status).toBe(400);
@@ -98,7 +92,7 @@ describe('OAuth2 Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.delete(`/auth/oauth2/connections/${1}`);
 
 		expect(response.status).toBe(404);
@@ -115,7 +109,7 @@ describe('OAuth2 Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.delete(`/auth/oauth2/connections/${1}`);
 
 		expect(response.status).toBe(200);
@@ -125,7 +119,7 @@ describe('OAuth2 Routes', () => {
 	});
 
 	it('should handle connection revoking without refresh token', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.delete('/auth/oauth2/revoke');
 
 		const data = {
@@ -154,7 +148,7 @@ describe('OAuth2 Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.delete('/auth/oauth2/revoke')
 			.send({ refresh_token: 'valid-token' });
 
@@ -172,7 +166,7 @@ describe('OAuth2 Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.delete('/auth/oauth2/revoke')
 			.send({ refresh_token: 'valid-token' });
 

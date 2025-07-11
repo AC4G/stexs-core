@@ -1,5 +1,5 @@
 import { Router, Request } from 'express';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import { query } from 'express-validator';
 import {
 	EMAIL_VERIFICATION_CODE_EXPIRATION,
@@ -17,7 +17,6 @@ import {
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { v4 as uuidv4 } from 'uuid';
-import { validate } from 'utils-node/middlewares';
 import logger from '../../logger';
 import { isExpired } from 'utils-node';
 import {
@@ -28,8 +27,8 @@ import {
 } from '../../repositories/auth/users';
 import db from '../../db';
 import AppError from '../../utils/appError';
-import { emailBodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
+import { validate, emailBodyValidator } from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 

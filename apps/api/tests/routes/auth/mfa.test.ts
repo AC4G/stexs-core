@@ -11,7 +11,7 @@ import {
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import { NextFunction } from 'express';
 import {
 	CODE_EXPIRED,
@@ -31,7 +31,7 @@ import {
 import { SERVICE_NAME } from '../../../env-config';
 import { getTOTPForVerification } from '../../../src/utils/totp';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 
 jest.mock('../../../src/producers/emailProducer', () => {
   const actual = jest.requireActual<typeof import('../../../src/producers/emailProducer')>(
@@ -44,11 +44,8 @@ jest.mock('../../../src/producers/emailProducer', () => {
   };
 });
 
-jest.mock('utils-node/middlewares', () => {
-	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
-
+jest.mock('../../../src/middlewares/jwtMiddleware', () => {
 	return {
-		validate: before.validate,
 		validateAccessToken: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
@@ -65,9 +62,6 @@ jest.mock('utils-node/middlewares', () => {
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
 		transformJwtErrorMessages: jest.fn(
-			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-		),
-		checkScopes: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
 	}
@@ -117,7 +111,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.get('/auth/mfa');
 
 		expect(response.status).toBe(200);
@@ -140,7 +134,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/enable')
 			.send({
 				type: 'totp',
@@ -168,7 +162,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/enable')
 			.send({
 				type: 'totp',
@@ -186,7 +180,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA TOTP disable without code', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				type: 'totp',
@@ -223,7 +217,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				code: 345089,
@@ -248,7 +242,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				code: 345089,
@@ -290,7 +284,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				code,
@@ -304,7 +298,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA email enable without code', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/enable')
 			.send({
 				type: 'email',
@@ -346,7 +340,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/enable')
 			.send({
 				code: 'DLSL2340',
@@ -373,7 +367,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/enable')
 			.send({
 				code: 'DLSL2341',
@@ -408,7 +402,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/enable')
 			.send({
 				code,
@@ -448,7 +442,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/enable')
 			.send({
 				code,
@@ -462,7 +456,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA email disable without code', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				type: 'email',
@@ -500,7 +494,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				code: '234456TG',
@@ -526,7 +520,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				code: 'DSF2349G',
@@ -548,7 +542,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA verify without type', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/verify')
 			.send({ code: 'code' });
 
@@ -573,7 +567,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA verify with unsupported type', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/verify')
 			.send({
 				code: 'code',
@@ -595,7 +589,7 @@ describe('MFA Routes', () => {
 	});
 
 	it('should handle MFA verify without code', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/verify')
 			.send({ type: 'totp' });
 
@@ -634,7 +628,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				code,
@@ -675,7 +669,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/disable')
 			.send({
 				code,
@@ -708,7 +702,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/verify')
 			.send({
 				code,
@@ -732,7 +726,7 @@ describe('MFA Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/mfa/verify')
 			.send({
 				code: 345089,

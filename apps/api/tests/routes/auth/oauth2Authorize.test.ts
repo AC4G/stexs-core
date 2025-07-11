@@ -11,7 +11,7 @@ import {
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import { NextFunction } from 'express';
 import { advanceTo, clear } from 'jest-date-mock';
 import {
@@ -23,13 +23,10 @@ import {
 	REDIRECT_URL_REQUIRED,
 	SCOPES_REQUIRED,
 } from 'utils-node/errors'; 
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 
-jest.mock('utils-node/middlewares', () => {
-	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
-
+jest.mock('../../../src/middlewares/jwtMiddleware', () => {
 	return {
-		validate: before.validate,
 		validateAccessToken: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
@@ -46,9 +43,6 @@ jest.mock('utils-node/middlewares', () => {
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
 		transformJwtErrorMessages: jest.fn(
-			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-		),
-		checkScopes: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
 	}
@@ -88,7 +82,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize without client id', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				redirect_url: 'https://example.com',
@@ -116,7 +110,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize with invalid uuid', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: 'invalid-uuid',
@@ -139,7 +133,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize without redirect url', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
@@ -167,7 +161,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize with redirect url as not url', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
@@ -190,7 +184,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize without scopes', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
@@ -218,7 +212,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize with scopes as string', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
@@ -241,7 +235,7 @@ describe('OAuth2 Authorize', () => {
 	});
 
 	it('should handle authorize with empty scopes array', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
@@ -269,7 +263,7 @@ describe('OAuth2 Authorize', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
@@ -307,7 +301,7 @@ describe('OAuth2 Authorize', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',
@@ -352,7 +346,7 @@ describe('OAuth2 Authorize', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/oauth2/authorize')
 			.send({
 				client_id: '67054312-b0bf-4c99-a4a8-565988d4c2dd',

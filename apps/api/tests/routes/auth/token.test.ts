@@ -12,7 +12,7 @@ const mockQuery = jest.fn();
 
 import { NextFunction } from 'express';
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import {
 	CLIENT_ID_REQUIRED,
 	CLIENT_SECRET_REQUIRED,
@@ -39,7 +39,7 @@ import {
 	UNSUPPORTED_TYPE,
 	USER_NOT_FOUND
 } from 'utils-node/errors';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 import { sign } from 'jsonwebtoken';
 import {
@@ -53,11 +53,8 @@ import { hashPassword } from '../../../src/utils/password';
 import { v4 as uuidv4 } from 'uuid';
 import { getTOTPForVerification } from '../../../src/utils/totp';
 
-jest.mock('utils-node/middlewares', () => {
-	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
-
+jest.mock('../../../src/middlewares/jwtMiddleware', () => {
 	return {
-		validate: before.validate,
 		validateAccessToken: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
@@ -74,9 +71,6 @@ jest.mock('utils-node/middlewares', () => {
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
 		transformJwtErrorMessages: jest.fn(
-			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-		),
-		checkScopes: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
 	}
@@ -131,7 +125,7 @@ describe('Token Route', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=refresh_token')
 			.set('Cookie', [`refresh_token=${refreshToken}`])
 			.send();
@@ -151,7 +145,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle token route without grant type', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token');
 
 		const data = {
@@ -178,7 +172,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle token route with invalid grant type', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=invalid_grant_type')
 			.send();
 
@@ -200,7 +194,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle token route with authorization code without client id, client secret and code', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=authorization_code')
 			.send();
 
@@ -244,7 +238,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle token route with authorization code with invalid client id format', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=authorization_code')
 			.send({
 				code: 'code',
@@ -279,7 +273,7 @@ describe('Token Route', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=authorization_code')
 			.send({
 				code: uuidv4(),
@@ -316,7 +310,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=authorization_code')
 			.send({
 				code: uuidv4(),
@@ -372,7 +366,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=authorization_code')
 			.send({
 				code: uuidv4(),
@@ -396,7 +390,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle token route with grant type client credentials without client secret and client id', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=client_credentials')
 			.send();
 
@@ -433,7 +427,7 @@ describe('Token Route', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=client_credentials')
 			.send({
 				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
@@ -467,7 +461,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=client_credentials')
 			.send({
 				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
@@ -500,7 +494,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=client_credentials')
 			.send({
 				client_id: '775dc11f-bee2-4cdd-8560-1764b0fd4d07',
@@ -520,7 +514,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle token route with grant type refresh token without refresh token', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=refresh_token')
 			.send();
 
@@ -549,7 +543,7 @@ describe('Token Route', () => {
 			},
 		);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=refresh_token')
 			.set('Cookie', [`refresh_token=${refreshToken}`])
 			.send();
@@ -575,7 +569,7 @@ describe('Token Route', () => {
 			algorithm: 'HS256',
 		});
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=refresh_token')
 			.set('Cookie', [`refresh_token=${refreshToken}`])
 			.send();
@@ -618,7 +612,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=refresh_token')
 			.set('Cookie', [`refresh_token=${refreshToken}`])
 			.send();
@@ -649,7 +643,7 @@ describe('Token Route', () => {
 			},
 		);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=refresh_token')
 			.set('Cookie', [`refresh_token=${refreshToken}`])
 			.send();
@@ -688,7 +682,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=refresh_token')
 			.set('Cookie', [`refresh_token=${refreshToken}`])
 			.send();
@@ -709,7 +703,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in without identifier', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=password')
 			.send({ password: 'Test123324.' });
 
@@ -734,7 +728,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in without password', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=password')
 			.send({ identifier: 'test' });
 
@@ -768,7 +762,7 @@ describe('Token Route', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=password')
 			.send({
 				identifier: 'test',
@@ -803,7 +797,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=password')
 			.send({
 				identifier: 'test',
@@ -832,7 +826,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=password')
 			.send({
 				identifier: 'test',
@@ -867,7 +861,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=password')
 			.send({
 				identifier: 'test',
@@ -897,7 +891,7 @@ describe('Token Route', () => {
 			},
 		);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				type: 'totp',
@@ -935,7 +929,7 @@ describe('Token Route', () => {
 			},
 		);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				code: 'code',
@@ -963,7 +957,7 @@ describe('Token Route', () => {
 	});
 
 	it('should handle sign in mfa challenge without token', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				code: 'code',
@@ -1002,7 +996,7 @@ describe('Token Route', () => {
 			},
 		);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				code: 'code',
@@ -1035,7 +1029,7 @@ describe('Token Route', () => {
 			},
 		);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				code: 234567,
@@ -1068,7 +1062,7 @@ describe('Token Route', () => {
 			},
 		);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				code: 234567,
@@ -1121,7 +1115,7 @@ describe('Token Route', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/token?grant_type=mfa_challenge')
 			.send({
 				code,

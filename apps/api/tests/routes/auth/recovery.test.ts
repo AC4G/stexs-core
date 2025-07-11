@@ -11,7 +11,7 @@ import {
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import {
 	EMAIL_REQUIRED,
 	INVALID_EMAIL,
@@ -25,7 +25,7 @@ import {
 	TOKEN_REQUIRED,
 } from 'utils-node/errors';
 import { advanceTo, clear } from 'jest-date-mock';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 import { hashPassword } from '../../../src/utils/password';
 
 jest.mock('../../../src/producers/emailProducer', () => {
@@ -74,7 +74,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle recovery with missing email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery');
 
 		const data = {
@@ -101,7 +101,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle recovery with invalid email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery')
 			.send({ email: 'test' });
 
@@ -128,7 +128,7 @@ describe('Recovery Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery')
 			.send({ email: 'test@example.com' });
 
@@ -164,7 +164,7 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery')
 			.send({ email: 'test@example.com' });
 
@@ -175,7 +175,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with missing email', async () => {
-		const response = await request(server).post('/auth/recovery/confirm').send({
+		const response = await request(app).post('/auth/recovery/confirm').send({
 			token: '06070f2c-08b3-47ee-aa68-7b8deb151da2',
 			password: 'Test12345.',
 		});
@@ -204,7 +204,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with invalid email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test',
@@ -230,7 +230,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with missing token', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',
@@ -258,7 +258,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with token not in uuid format', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',
@@ -281,7 +281,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with missing password', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',
@@ -313,7 +313,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with invalid password according to regex specification', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',
@@ -342,7 +342,7 @@ describe('Recovery Routes', () => {
 	});
 
 	it('should handle confirm recovery with password having less then 10 characters', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',
@@ -370,7 +370,7 @@ describe('Recovery Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',
@@ -402,7 +402,7 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',
@@ -446,7 +446,7 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',
@@ -494,7 +494,7 @@ describe('Recovery Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/recovery/confirm')
 			.send({
 				email: 'test@example.com',

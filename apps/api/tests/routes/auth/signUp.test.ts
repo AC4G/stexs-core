@@ -11,7 +11,7 @@ import {
 const mockQuery = jest.fn();
 
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import {
 	EMAIL_REQUIRED,
 	INVALID_EMAIL,
@@ -22,7 +22,7 @@ import {
 	PASSWORD_REQUIRED,
 	USERNAME_REQUIRED,
 } from 'utils-node/errors';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../../src/utils/messageBuilder';
 import { advanceTo, clear } from 'jest-date-mock';
 
 jest.mock('../../../src/db', () => {
@@ -70,7 +70,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with missing username', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				email: 'test@example.com',
@@ -108,7 +108,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with username longer then 20 characters', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'ZaZlZeBu1mFOqDuultl1P',
@@ -134,7 +134,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with username as email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'test@example.com',
@@ -169,7 +169,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sing up with username using non QWERTY characters', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'тт123',
@@ -195,7 +195,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with missing email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'Test123',
@@ -226,7 +226,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with invalid email', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'Test123',
@@ -252,7 +252,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with missing password', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'Test123',
@@ -284,7 +284,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with invalid password according to regex specification', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'Test123',
@@ -307,7 +307,7 @@ describe('Sign Up', () => {
 	});
 
 	it('should handle sign up with less then 10 characters', async () => {
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'Test123',
@@ -334,7 +334,7 @@ describe('Sign Up', () => {
 			hint: 'Please choose a different username',
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'Test123',
@@ -364,7 +364,7 @@ describe('Sign Up', () => {
 			hint: 'Please choose a different email',
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'Test123',
@@ -399,7 +399,7 @@ describe('Sign Up', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-up')
 			.send({
 				username: 'Test123',

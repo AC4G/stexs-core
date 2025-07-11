@@ -1,7 +1,7 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { Request } from 'express-jwt';
 import logger from '../../logger';
-import { CustomValidationError, message } from 'utils-node/messageBuilder';
+import { CustomValidationError, message } from '../../utils/messageBuilder';
 import {
 	CODE_FORMAT_INVALID_EMAIL,
 	CODE_FORMAT_INVALID_TOTP,
@@ -21,13 +21,6 @@ import {
 	sendEmailCode,
 } from '../../controllers/auth/mfaController';
 import {
-	validate,
-	validateAccessToken,
-	validateSignInConfirmOrAccessToken,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-} from 'utils-node/middlewares';
-import {
 	ACCESS_TOKEN_SECRET,
 	AUDIENCE,
 	ISSUER,
@@ -40,9 +33,19 @@ import {
 	verifyMFAMethod
 } from '../../types/auth';
 import { alphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
-import { codeSupportedMFABodyValidator, typeSupportedMFABodyValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import AppError from '../../utils/appError';
+import {
+	checkTokenGrantType,
+	transformJwtErrorMessages,
+	validateAccessToken,
+	validateSignInConfirmOrAccessToken
+} from '../../middlewares/jwtMiddleware';
+import {
+	validate,
+	codeSupportedMFABodyValidator,
+	typeSupportedMFABodyValidator 
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 
@@ -88,7 +91,7 @@ router.post(
 		typeSupportedMFABodyValidator(),
 		body('code')
 			.if((_, { req }) => {
-				const type = req.body.type as MFATypes;
+				const type = req.body?.type as MFATypes | undefined;
 
 				return type === 'email';
 			})
@@ -143,7 +146,7 @@ router.post(
 		body('code')
 			.exists().withMessage(CODE_REQUIRED)
 			.custom((value, { req }) => {
-				const type = req.body.type as Extract<MFATypes, 'totp'>;
+				const type = req.body?.type as Extract<MFATypes, 'totp'> | undefined;
 
 				if (!type || type.length === 0) return true;
 

@@ -1,5 +1,5 @@
 import { Router, Response, NextFunction } from 'express';
-import { CustomValidationError } from 'utils-node/messageBuilder';
+import { CustomValidationError } from '../../utils/messageBuilder';
 import { Request } from 'express-jwt';
 import {
 	CLIENT_SECRET_REQUIRED,
@@ -16,7 +16,6 @@ import {
 } from 'utils-node/errors';
 import logger from '../../logger';
 import { body, cookie, query } from 'express-validator';
-import { validate } from 'utils-node/middlewares';
 import {
 	authorizationCodeController,
 	clientCredentialsController,
@@ -35,18 +34,19 @@ import {
   grantTypesRequiringRefreshToken,
   MFATypes,
 } from '../../types/auth';
-import {
-	clientIdBodyValidator,
-	decodeMFAChallengeToken,
-	decodeRefreshToken,
-	passwordBodyValidator,
-	typeSupportedMFABodyValidator
-} from '../../utils/validators';
 import { isGrantType } from '../../utils/grantType';
 import { validateUUIDV4 } from '../../utils/uuid';
 import { eightAlphaNumericRegex, sixDigitCodeRegex } from '../../utils/regex';
 import { mfaValidationMiddleware } from '../../utils/mfa';
 import asyncHandler from '../../utils/asyncHandler';
+import {
+	validate,
+	clientIdBodyValidator,
+	decodeMFAChallengeToken,
+	decodeRefreshToken,
+	passwordBodyValidator,
+	typeSupportedMFABodyValidator
+} from '../../middlewares/validatorMiddleware';
 
 const router = Router();
 
@@ -130,7 +130,7 @@ router.post(
 				if (grantType === 'authorization_code' && !validateUUIDV4(value))
 					throw new CustomValidationError(INVALID_UUID);
 
-				const type = req.body.type as MFATypes | undefined;
+				const type = req.body?.type as MFATypes | undefined;
 
 				if (!type || type.length === 0) return true;
 
@@ -172,15 +172,15 @@ router.post(
 
 			if (!grantTypesForMFA.includes(grantType as typeof grantTypesForMFA[number])) return next();
 
-			const type = req.body.type as MFATypes | undefined;
+			const type = req.body?.type as MFATypes | undefined;
 
 			if (!type || type.length === 0) return true;
 
 			if (!supportedMFATypes.includes(type)) return true;
 
-			const code = req.body.code as string | undefined;
+			const code = req.body?.code as string | undefined;
 
-			if (!code) return next();
+			if (!code || code.length === 0) return next();
 
 			if (type === 'totp' && !sixDigitCodeRegex.test(code)) return next();
 

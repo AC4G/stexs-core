@@ -1,4 +1,4 @@
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import {
     ACCOUNT_BANNED,
 	CODE_EXPIRED,

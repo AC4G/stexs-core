@@ -9,24 +9,23 @@ import {
 	ITEM_THUMBNAIL_SIZE_LIMIT,
 } from '../../../env-config';
 import { Router } from 'express';
-import {
-	validate,
-	checkScopes,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-	validateAccessToken,
-} from 'utils-node/middlewares';
 import logger from '../../logger';
 import { Request } from 'express-jwt';
 import db from '../../db';
-import { message } from 'utils-node/messageBuilder';
+import { message } from '../../utils/messageBuilder';
 import { UNAUTHORIZED_ACCESS } from 'utils-node/errors';
 import s3 from '../../s3';
 import { isUserAdminOrOwnerOfProjectByItemId } from '../../repositories/public/projectMembers';
 import { isClientAllowedToAccessProjectByItemId } from '../../repositories/public/items';
-import { itemIdQueryValidator } from '../../utils/validators';
 import asyncHandler from '../../utils/asyncHandler';
 import AppError from '../../utils/appError';
+import { validate, itemIdQueryValidator } from '../../middlewares/validatorMiddleware';
+import {
+	checkTokenGrantType,
+	transformJwtErrorMessages,
+	validateAccessToken
+} from '../../middlewares/jwtMiddleware';
+import { checkScopes } from '../../middlewares/scopesMiddleware';
 
 const router = Router();
 

@@ -13,8 +13,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.3.1",
-    "nodemailer": "^6.9.9",
+    "dotenv": "^17.2.0",
+    "nodemailer": "^7.0.5",
     "pulsar-client": "^1.14.0",
     "utils-node": "workspace:*",
     "winston": "^3.11.0",

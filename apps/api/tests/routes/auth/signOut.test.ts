@@ -9,7 +9,7 @@ const mockQuery = jest.fn();
 
 import { NextFunction } from 'express';
 import request from 'supertest';
-import server from '../../../src/server';
+import app from '../../../src/app';
 import { getTOTPForVerification } from '../../../src/utils/totp';
 
 jest.mock('../../../src/utils/mfa', () => {
@@ -20,11 +20,8 @@ jest.mock('../../../src/utils/mfa', () => {
 	};
 });
 
-jest.mock('utils-node/middlewares', () => {
-	const before = jest.requireActual('utils-node/middlewares') as typeof import('utils-node/middlewares');
-
+jest.mock('../../../src/middlewares/jwtMiddleware', () => {
 	return {
-		validate: before.validate,
 		validateAccessToken: jest.fn(
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
@@ -41,9 +38,6 @@ jest.mock('utils-node/middlewares', () => {
 			() => (req: Request, res: Response, next: NextFunction) => next(),
 		),
 		transformJwtErrorMessages: jest.fn(
-			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
-		),
-		checkScopes: jest.fn(
 			() => (err: Object, req: Request, res: Response, next: NextFunction) => {},
 		),
 	}
@@ -65,7 +59,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-out');
 
 		expect(response.status).toBe(404);
@@ -81,7 +75,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 1,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-out');
 
 		expect(response.status).toBe(204);
@@ -93,7 +87,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 0,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-out');
 
 		expect(response.status).toBe(404);
@@ -116,7 +110,7 @@ describe('Sign Out Routes', () => {
 			rowCount: 2,
 		} as never);
 
-		const response = await request(server)
+		const response = await request(app)
 			.post('/auth/sign-out/all-sessions')
 			.send({
 				code,

@@ -4,13 +4,7 @@ import { INVALID_UUID, USER_ID_REQUIRED } from 'utils-node/errors';
 import {
 	CustomValidationError,
 	message
-} from 'utils-node/messageBuilder';
-import { 
-	validate,
-	validateAccessToken,
-	checkTokenGrantType,
-	transformJwtErrorMessages,
-} from 'utils-node/middlewares';
+} from '../../utils/messageBuilder';
 import s3 from '../../s3';
 import logger from '../../logger';
 import {
@@ -26,6 +20,12 @@ import {
 import { validate as validateUUID } from 'uuid';
 import { Request } from 'express-jwt';
 import asyncHandler from '../../utils/asyncHandler';
+import { validate } from '../../middlewares/validatorMiddleware';
+import {
+	checkTokenGrantType,
+	transformJwtErrorMessages,
+	validateAccessToken
+} from '../../middlewares/jwtMiddleware';
 
 const router = Router();
 

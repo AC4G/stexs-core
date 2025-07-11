@@ -5,20 +5,20 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "setup-dev": "sudo ln -sf $(pwd)/stexs-dev/main.sh /usr/local/bin/stexs-dev",
-    "build": "dotenv -- turbo run build",
+    "build": "dotenvx run -- turbo run build",
     "build:main": "turbo run build:main",
     "build:module": "turbo run build:module",
     "lint": "turbo run lint",
-    "dev": "dotenv -- turbo run dev",
+    "dev": "dotenvx run -- turbo run dev",
     "tauri": "turbo run tauri --filter desktop",
     "clean": "turbo run clean",
     "clean:logs": "turbo run clean:logs",
     "type-check": "turbo run type-check",
-    "test": "cross-env ENV=test dotenv -- turbo run test",
+    "test": "cross-env ENV=test dotenvx run -- turbo run test",
     "test:coverage": "cross-env ENV=test turbo run test:coverage",
     "test:watch": "cross-env ENV=test turbo run test:watch",
-    "test:db": "cross-env ENV=test dotenv -- turbo run test:db",
-    "test:unit": "cross-env ENV=test dotenv -- turbo run test:unit",
+    "test:db": "cross-env ENV=test dotenvx run -- turbo run test:db",
+    "test:unit": "cross-env ENV=test dotenvx run -- turbo run test:unit",
     "format": "prettier --write '{apps,packages}/**/*.{ts,svelte}'",
     "preview": "turbo run preview",
     "docker-compose:down": "docker-compose down && docker rm -f $(docker ps -a -q --filter name=lago)"
@@ -29,17 +29,11 @@
   ],
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.5.3",
-    "prettier-plugin-svelte": "^3.4.0",
-    "turbo": "^1.13.4"
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.4"
   },
   "dependencies": {
-    "@turbo/gen": "^1.13.4",
-    "autoprefixer": "^10.4.21",
-    "dotenv-cli": "^7.4.4",
-    "tsc-watch": "^6.0.4"
+    "@dotenvx/dotenvx": "^1.47.3"
   },
   "engines": {
     "npm": ">=10.1.0",

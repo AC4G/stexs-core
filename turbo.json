@@ -1,6 +1,7 @@
 {
     "$schema": "https://turborepo.org/schema.json",
-    "pipeline": {
+    "envMode": "loose",
+    "tasks": {
         "build": {
             "dependsOn": ["^build"],
             "outputs": ["dist/**"]
@@ -13,7 +14,7 @@
         "test:watch": {},
         "test:db": {},
         "test:unit": {},
-        "dev": { 
+        "dev": {
             "cache": false, 
             "persistent": true
         },

@@ -6,10 +6,17 @@ import { registerShutdownHooks } from './shutdown';
 import { setupConsumers } from './consumers/setupConsumers';
 
 (async () => {
+  logger.info('Starting QUEUE server...');
+
   try {
     logger.info('Initializing Pulsar consumers...');
 
     await setupConsumers();
+
+    const allConsumers = getRegisteredConsumers();
+    logger.info(`Finished registering consumers. Total: ${allConsumers.length}`, {
+      consumers: allConsumers.map(c => c.subscription),
+    });
 
     registerShutdownHooks(pulsarClient);
 
