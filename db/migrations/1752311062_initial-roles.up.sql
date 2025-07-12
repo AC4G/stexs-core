@@ -1,0 +1,10 @@
+SET TIME ZONE 'UTC';
+
+CREATE ROLE authenticator LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER ENCRYPTED PASSWORD 'authenticator';
+CREATE ROLE anon NOLOGIN;
+CREATE ROLE authenticated NOLOGIN;
+
+
+GRANT anon TO authenticator;
+GRANT authenticated TO authenticator;
+GRANT USAGE ON SCHEMA public TO anon;
