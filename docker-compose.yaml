@@ -1,6 +1,8 @@
 networks:
   pulsar:
     driver: bridge
+  stexs:
+    driver: bridge
 
 volumes:
   db-data:
@@ -33,6 +35,8 @@ services:
       retries: 5
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - stexs
 
   db-migrate:
     image: stexs-db-migrate
@@ -49,6 +53,8 @@ services:
       - ./scripts/migrate.db.sh:/data/scripts/migrate.db.sh
       - ./db/migrations:/data/migrations
     command: ["/bin/sh", "/data/scripts/migrate.db.sh"]
+    networks:
+      - stexs
 
   db-seed:
     image: stexs-db-seed
@@ -68,6 +74,8 @@ services:
       - ./scripts/seed.db.sh:/data/scripts/seed.db.sh
       - ./db/seeds:/data/seeds
     command: ["/bin/sh", "/data/scripts/seed.db.sh"]
+    networks:
+      - stexs
 
   rest:
     image: docker.io/postgrest/postgrest:v12.2.3
@@ -87,6 +95,8 @@ services:
       PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS:-1000}
       PGRST_JWT_SECRET: ${ACCESS_TOKEN_SECRET:-}
       PGRST_JWT_AUD: ${AUDIENCE:-}
+    networks:
+      - stexs
 
   mailpit:
     image: docker.io/axllent/mailpit:v1.21.8
@@ -141,6 +151,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - stexs
 
   kong:
     <<: *kong-image
@@ -175,6 +187,8 @@ services:
       retries: 5
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - stexs
 
   kong-setup:
     image: stexs-kong-setup
@@ -196,6 +210,8 @@ services:
     volumes:
       - ./scripts/setup.kong.sh:/data/scripts/setup.kong.sh
     command: ["/bin/sh", "/data/scripts/setup.kong.sh"]
+    networks:
+      - stexs
 
   swagger-rest:
     image: docker.io/swaggerapi/swagger-ui:v5.18.2
@@ -210,6 +226,8 @@ services:
         condition: service_completed_successfully
     environment:
       SWAGGER_JSON_URL: http://localhost:8000${KONG_REST_API_PATH:-/rest/v1}
+    networks:
+      - stexs
 
   lago-setup:
     image: stexs-lago-setup
