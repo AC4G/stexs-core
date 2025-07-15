@@ -62,14 +62,14 @@ The next version of STEXS will be rewritten from the ground up in **Rust**, with
 
 ## 📚 API Documentation
 
-Documentation will be split into the following sections:
+Documentation is organized into the following sections:
 
-- `docs/auth.md`
-- `docs/events.md`
-- `docs/storage.md`
-- `docs/rest.md`
+- [auth.md](docs/auth.md)
+- [events.md](docs/events.md)
+- [storage.md](docs/storage.md)
+- [rest.md](docs/rest.md)
 
-> 📌 Each API includes routes, request/response formats, error codes, and status expectations.
+> 📌 Each document contains routes, input/output formats, error responses, and status expectations.
 
 ---
 
