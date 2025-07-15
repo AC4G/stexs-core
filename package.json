@@ -20,7 +20,7 @@
     "test:watch": "cross-env ENV=test turbo run test:watch",
     "test:db": "cross-env ENV=test dotenvx run -- turbo run test:db",
     "test:unit": "cross-env ENV=test dotenvx run -- turbo run test:unit",
-    "format": "prettier --write '{apps,packages}/**/*.{ts,svelte}'",
+    "format": "prettier --write '{apps,packages}/**/*.{ts}'",
     "preview": "turbo run preview",
     "docker-compose:down": "docker-compose down && docker rm -f $(docker ps -a -q --filter name=lago)"
   },
@@ -38,8 +38,8 @@
     "@dotenvx/dotenvx": "^1.47.3"
   },
   "engines": {
-    "npm": ">=10.1.0",
-    "node": ">=20.8.0"
+    "npm": ">=10.9.0",
+    "node": ">=22.16.0"
   },
-  "packageManager": "pnpm@9.14.2"
+  "packageManager": "pnpm@9.15.0"
 }
