@@ -60,19 +60,6 @@ The next version of STEXS will be rewritten from the ground up in **Rust**, with
 
 ---
 
-## 📚 API Documentation
-
-Documentation is organized into the following sections:
-
-- [auth.md](docs/auth.md)
-- [events.md](docs/events.md)
-- [storage.md](docs/storage.md)
-- [rest.md](docs/rest.md)
-
-> 📌 Each document contains routes, input/output formats, error responses, and status expectations.
-
----
-
 ## 🧭 Roadmap to Rust
 
 The current Node.js system served as a development foundation.  
