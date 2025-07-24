@@ -109,7 +109,12 @@ To get started with local development:
    docker compose up -d
    ```
 
-5. **Access the API**:
+5. **Start the development server**:
+   ```bash
+   pnpm dev
+   ```
+
+6. **Access the API**:
    - **Auth and Storage API**: http://localhost:8000/api/v1
    - **Rest API (PostgREST)**: http://localhost:8000/rest/v1
 
