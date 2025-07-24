@@ -34,10 +34,10 @@ export type AsyncHandlerResult =
   | void;
 
 const asyncHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<AsyncHandlerResult>
+  fn: (req: Request) => Promise<AsyncHandlerResult>
 ) => async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await fn(req, res, next);
+    const result = await fn(req);
 
     if (res.headersSent || result === undefined) return;
 
