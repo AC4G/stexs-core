@@ -38,7 +38,7 @@ The next version of STEXS will be rewritten from the ground up in **Rust**, with
 - **Pulsar** for event streaming and messaging
 - **ClickHouse** for analytics: user behavior, game data, API usage
 
-### Dev Environment
+## Dev Environment
 
 To get started with local development:
 
